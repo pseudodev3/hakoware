@@ -106,18 +106,18 @@ const Arena = ({ friendships, showToast, onCreateBounty }) => {
             width: '45px',
             height: '45px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #ff4444, #ff8800)',
+            background: 'linear-gradient(135deg, #ffd700, #ffaa00)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 15px rgba(255,68,68,0.3)'
+            boxShadow: '0 4px 15px rgba(255,215,0,0.3)'
           }}>
             <TrophyIcon size={24} color="#fff" />
           </div>
           <div>
-            <h2 style={{ margin: 0, color: '#fff', fontSize: '1.3rem' }}>THE ARENA</h2>
-            <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: '0.75rem' }}>
-              Compete • Hunt • Rise in the Ranks
+            <h2 style={{ margin: 0, color: '#fff', fontSize: '1.3rem' }}>The Arena</h2>
+            <p style={{ margin: '4px 0 0 0', color: '#888', fontSize: '0.8rem' }}>
+              Compete, hunt, rise in the ranks
             </p>
           </div>
         </div>
@@ -136,16 +136,16 @@ const Arena = ({ friendships, showToast, onCreateBounty }) => {
 
         {/* Bounties */}
         <ArenaCard
-          icon={<TargetIcon size={28} color="#ff8800" />}
+          icon={<TargetIcon size={28} color="#ffd700" />}
           title="Bounty Board"
           description="Hunt ghosting friends for Aura rewards"
-          color="#ff8800"
+          color="#ffd700"
           onClick={() => setActiveView('bounties')}
         />
 
         {/* Challenges */}
         <ArenaCard
-          icon={<UsersIcon size={28} color="#9c27b0" />}
+          icon={<UsersIcon size={28} color="#ffd700" />}
           title="Challenges"
           description="Compete 1v1 with friends"
           color="#9c27b0"
@@ -219,10 +219,10 @@ const ArenaCard = ({ icon, title, description, color, onClick }) => {
 // Stat Box Component
 const StatBox = ({ label, value, color }) => (
   <div style={statBoxStyle}>
-    <span style={{ color: '#444', fontSize: '0.7rem', marginBottom: '4px' }}>
+    <span style={{ color: '#666', fontSize: '0.75rem', marginBottom: '4px', textTransform: 'capitalize' }}>
       {label}
     </span>
-    <span style={{ color, fontSize: '1.1rem', fontWeight: 'bold' }}>
+    <span style={{ color, fontSize: '1.1rem', fontWeight: '600' }}>
       {value}
     </span>
   </div>
@@ -231,16 +231,15 @@ const StatBox = ({ label, value, color }) => (
 // Styles
 const containerStyle = {
   background: 'linear-gradient(145deg, #111, #0a0a0a)',
-  border: '1px solid #222',
   borderRadius: '16px',
   overflow: 'hidden',
-  marginBottom: '20px'
+  marginBottom: '20px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
 };
 
 const headerStyle = {
   padding: '20px 25px',
-  borderBottom: '1px solid #222',
-  background: 'linear-gradient(90deg, rgba(255,68,68,0.05) 0%, transparent 100%)'
+  background: 'linear-gradient(90deg, rgba(255,215,0,0.03) 0%, transparent 100%)'
 };
 
 const gridStyle = {
@@ -251,20 +250,19 @@ const gridStyle = {
 };
 
 const cardStyle = {
-  background: 'linear-gradient(145deg, #111, #0a0a0a)',
-  border: '1px solid #222',
+  background: 'linear-gradient(145deg, #151515, #0d0d0d)',
   borderRadius: '12px',
   padding: '20px',
   cursor: 'pointer',
-  transition: 'all 0.2s ease',
-  textAlign: 'left'
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  textAlign: 'left',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
 };
 
 const iconContainerStyle = {
   width: '50px',
   height: '50px',
   borderRadius: '12px',
-  border: '1px solid',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -273,8 +271,7 @@ const iconContainerStyle = {
 
 const statsContainerStyle = {
   padding: '20px',
-  borderTop: '1px solid #222',
-  background: 'rgba(0,0,0,0.2)'
+  background: 'linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.05))'
 };
 
 const statsGridStyle = {
