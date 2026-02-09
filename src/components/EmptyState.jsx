@@ -66,10 +66,10 @@ const EmptyState = ({
 export const EmptyFriends = () => (
   <EmptyState
     icon="👥"
-    title="No friendships yet"
-    description="Connect with people you want to stay accountable with. The debt clock starts ticking immediately."
+    title="Start your journey"
+    description="Add a friend to begin your accountability partnership. Stay connected, or face the consequences."
     action="add-friend"
-    actionLabel="Add Your First Friend"
+    actionLabel="Add your first friend"
   />
 );
 

@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import CountUp from './CountUp';
 import { calculateDebt, getDebtStatus } from '../utils/gameLogic';
-import { UsersIcon, FlameIcon, Skull2Icon, TrendingUpIcon, AlertIcon, CrownIcon, ArrowUpIcon, ArrowDownIcon } from './icons/Icons';
+import { UsersIcon, FlameIcon, Skull2Icon, TrendingUpIcon, AlertIcon, CrownIcon, ArrowUpIcon, ArrowDownIcon, TargetIcon } from './icons/Icons';
 
 const Dashboard = ({ friendships, recentActivity }) => {
   const sfxCoin = useRef(new Audio('https://www.myinstants.com/media/sounds/ka-ching.mp3'));
@@ -193,19 +193,19 @@ const Dashboard = ({ friendships, recentActivity }) => {
         <div style={secondaryStatsStyle}>
           <CompactStat 
             icon={<UsersIcon size={16} color="#888" />}
-            label="FRIENDS"
+            label="Friends"
             value={totalFriends}
             subValue={activeStreaks > 0 ? `${activeStreaks} streaking` : null}
           />
           <CompactStat 
-            icon={<FlameIcon size={16} color="#ff8800" />}
-            label="STREAKS"
+            icon={<FlameIcon size={16} color="#ffd700" />}
+            label="Streaks"
             value={activeStreaks}
-            color="#ff8800"
+            color="#ffd700"
           />
           <CompactStat 
             icon={<Skull2Icon size={16} color={bankruptcies > 0 ? '#ff4444' : '#666'} />}
-            label="BANKRUPT"
+            label="Bankrupt"
             value={bankruptcies}
             color={bankruptcies > 0 ? '#ff4444' : '#666'}
             alert={warningZone > 0 ? `${warningZone} warning` : null}
@@ -218,8 +218,8 @@ const Dashboard = ({ friendships, recentActivity }) => {
         <div style={spotlightRowStyle}>
           {mostWanted && (
             <SpotlightCard
-              icon="🎯"
-              label="MOST WANTED"
+              icon={<TargetIcon size={20} color="#ff4444" />}
+              label="Most wanted"
               name={mostWanted.friend?.displayName}
               subtext={(() => {
                 const isUser1 = mostWanted.myPerspective === 'user1';
@@ -237,11 +237,11 @@ const Dashboard = ({ friendships, recentActivity }) => {
 
           {cleanest && (
             <SpotlightCard
-              icon={<CrownIcon size={20} color="#00e676" />}
-              label="HUNTER STAR"
+              icon={<CrownIcon size={20} color="#ffd700" />}
+              label="Hunter star"
               name={cleanest.friend?.displayName}
-              subtext={`Debt Free • ${cleanest.streak || 0} day streak`}
-              color="#00e676"
+              subtext={`Debt free • ${cleanest.streak || 0} day streak`}
+              color="#ffd700"
             />
           )}
         </div>
