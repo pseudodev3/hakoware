@@ -299,38 +299,39 @@ function App() {
           )
       )}
 
-      {loading ? (
-        <div style={{color: 'white', textAlign: 'center', marginTop: '50px', fontFamily: 'var(--font-main)'}}>
-            Connecting to Nen Network...
-        </div>
-      ) : friendships.length === 0 ? (
-        <div style={{
-          color: '#666', 
-          textAlign: 'center', 
-          marginTop: '50px', 
-          fontFamily: 'var(--font-main)',
-          padding: '40px'
-        }}>
-          <p style={{ fontSize: '1.2rem', marginBottom: '20px' }}>No friendships yet.</p>
-          <p>Click "+ Add Friend" to get started!</p>
-        </div>
-      ) : (
-        <div className="grid-container">
-          {friendships.map((friendship, index) => (
-            <NenCard 
-              key={friendship.id}
-              friendship={friendship}
-              currentUserId={user.uid}
-              index={index}
-              isAdmin={isAdmin && adminUnlocked}
-              onAction={handleAction}
-              onPoke={handlePoke}
-            />
-          ))}
-        </div>
-      )}
-
       {/* TAB CONTENT */}
+      {activeTab === 'friends' && (
+        loading ? (
+          <div style={{color: 'white', textAlign: 'center', marginTop: '50px', fontFamily: 'var(--font-main)'}}>
+              Connecting to Nen Network...
+          </div>
+        ) : friendships.length === 0 ? (
+          <div style={{
+            color: '#666', 
+            textAlign: 'center', 
+            marginTop: '50px', 
+            fontFamily: 'var(--font-main)',
+            padding: '40px'
+          }}>
+            <p style={{ fontSize: '1.2rem', marginBottom: '20px' }}>No friendships yet.</p>
+            <p>Click "+ Add Friend" to get started!</p>
+          </div>
+        ) : (
+          <div className="grid-container">
+            {friendships.map((friendship, index) => (
+              <NenCard 
+                key={friendship.id}
+                friendship={friendship}
+                currentUserId={user.uid}
+                index={index}
+                isAdmin={isAdmin && adminUnlocked}
+                onAction={handleAction}
+                onPoke={handlePoke}
+              />
+            ))}
+          </div>
+        )
+      )}
       {activeTab === 'achievements' && <AchievementShowcase />}
       {activeTab === 'shame' && <ShameWall />}
       {activeTab === 'bounties' && (
