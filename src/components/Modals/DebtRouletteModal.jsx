@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SkullIcon, ZapIcon, DollarIcon, RefreshIcon } from '../icons/Icons';
+import { calculateDebt } from '../../utils/gameLogic';
 
 const DebtRouletteModal = ({ isOpen, onClose, friendship, showToast, onRouletteComplete }) => {
   const { user } = useAuth();
@@ -13,7 +14,14 @@ const DebtRouletteModal = ({ isOpen, onClose, friendship, showToast, onRouletteC
 
   const isUser1 = friendship.myPerspective === 'user1';
   const myData = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
-  const currentDebt = myData.baseDebt || 0;
+  
+  // Calculate actual total debt (baseDebt + interest from missed check-ins)
+  const debtStats = calculateDebt({
+    baseDebt: myData.baseDebt,
+    lastInteraction: myData.lastInteraction,
+    bankruptcyLimit: myData.limit
+  });
+  const currentDebt = debtStats.totalDebt || 0;
 
   const outcomes = [
     { type: 'win', label: 'DEBT HALVED', value: 0.5, color: '#00e676', icon: '✨', chance: 15 },

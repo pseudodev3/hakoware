@@ -342,7 +342,16 @@ function App() {
         )
       )}
       {activeTab === 'achievements' && <AchievementShowcase />}
-      {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
+      {activeTab === 'arena' && (
+        <Arena 
+          friendships={friendships} 
+          showToast={showToast}
+          onCreateBounty={(friendship) => {
+            setSelectedFriendship(friendship);
+            setShowCreateBounty(true);
+          }}
+        />
+      )}
       {activeTab === 'tools' && <Tools friendships={friendships} />}
       {activeTab === 'wallet' && <AuraWallet />}
 
@@ -452,6 +461,13 @@ function App() {
             handleRefreshData('Debt Roulette spun');
             checkForAchievements('ROULETTE');
           }}
+      />
+
+      <FlexModal
+          isOpen={modalType === 'FLEX'}
+          onClose={closeModal}
+          friendship={selectedFriendship}
+          showToast={showToast}
       />
 
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}

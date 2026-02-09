@@ -9,13 +9,14 @@
  */
 
 import { useState } from 'react';
+import { calculateDebt } from '../utils/gameLogic';
 import { SkullIcon, TargetIcon, TrophyIcon, UsersIcon, ChevronRightIcon } from './icons/Icons';
 import ShameWall from './ShameWall';
 import BountyBoard from './BountyBoard';
 import FriendChallenges from './FriendChallenges';
 import Leaderboard from './Leaderboard';
 
-const Arena = ({ friendships, showToast }) => {
+const Arena = ({ friendships, showToast, onCreateBounty }) => {
   const [activeView, setActiveView] = useState('hub');
 
   const views = {
@@ -65,7 +66,24 @@ const Arena = ({ friendships, showToast }) => {
         {activeView === 'bounties' ? (
           <BountyBoard 
             friendships={friendships}
-            onCreateBounty={() => showToast("Create bounty feature", "INFO")}
+            onCreateBounty={() => {
+              // Find a friendship with debt to create bounty on
+              const targetFriendship = friendships.find(f => {
+                const isUser1 = f.myPerspective === 'user1';
+                const friendData = isUser1 ? f.user2Perspective : f.user1Perspective;
+                const friendStats = calculateDebt({
+                  baseDebt: friendData.baseDebt,
+                  lastInteraction: friendData.lastInteraction,
+                  bankruptcyLimit: friendData.limit
+                });
+                return friendStats.totalDebt > 0;
+              });
+              if (targetFriendship) {
+                onCreateBounty?.(targetFriendship);
+              } else {
+                showToast("No friends with debt to place bounty on!", "INFO");
+              }
+            }}
           />
         ) : activeView === 'challenges' ? (
           <FriendChallenges 
