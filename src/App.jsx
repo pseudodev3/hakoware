@@ -453,6 +453,17 @@ function App() {
           onUpdate={loadData}
       />
 
+      <DebtRouletteModal
+          isOpen={modalType === 'ROULETTE'}
+          onClose={closeModal}
+          friendship={selectedFriendship}
+          showToast={showToast}
+          onRouletteComplete={() => {
+            handleRefreshData('Debt Roulette spun');
+            checkForAchievements('ROULETTE');
+          }}
+      />
+
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
