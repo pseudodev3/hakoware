@@ -46,7 +46,7 @@ import Potclean from './components/Potclean'
 import NenSealedStatus from './components/NenSealedStatus'
 import AuraWallet from './components/AuraWallet'
 import { initializeAuraBalance } from './services/auraService'
-import { UsersIcon, AwardIcon, TrophyIcon, WrenchIcon, DollarIcon } from './components/icons/Icons'
+import { UsersIcon, AwardIcon, TrophyIcon, WrenchIcon, DollarIcon, BellIcon } from './components/icons/Icons'
 
 function App() {
   const { user, isAuthenticated, isEmailVerified } = useAuth();
@@ -80,6 +80,10 @@ function App() {
   const [showCreateBounty, setShowCreateBounty] = useState(false);
   const [newAchievement, setNewAchievement] = useState(null);
   const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'achievements', 'shame', 'bounties'
+  
+  // Notification state
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const sfxReset = useRef(new Audio('https://www.myinstants.com/media/sounds/discord-notification.mp3'));
   const sfxAchievement = useRef(new Audio('https://www.myinstants.com/media/sounds/level-up.mp3'));
@@ -237,16 +241,66 @@ function App() {
           </div>
         </div>
 
-        {/* Hamburger Menu */}
-        <HamburgerMenu 
-          onAddFriend={() => setShowAddFriend(true)}
-          onRefresh={loadData}
-          onOpenMarketplace={() => setShowMarketplace(true)}
-        />
+        {/* Header Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {/* Notification Bell */}
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            style={{
+              position: 'relative',
+              background: 'transparent',
+              border: '1px solid #333',
+              borderRadius: '10px',
+              padding: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#444';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#333';
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <BellIcon size={20} color={unreadNotificationCount > 0 ? '#ffd700' : '#888'} />
+            {unreadNotificationCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                background: '#ff4444',
+                color: '#fff',
+                fontSize: '0.65rem',
+                fontWeight: 'bold',
+                padding: '2px 5px',
+                borderRadius: '10px',
+                minWidth: '16px',
+                textAlign: 'center'
+              }}>
+                {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+              </span>
+            )}
+          </button>
+
+          {/* Hamburger Menu */}
+          <HamburgerMenu 
+            onAddFriend={() => setShowAddFriend(true)}
+            onRefresh={loadData}
+            onOpenMarketplace={() => setShowMarketplace(true)}
+          />
+        </div>
       </header>
 
       {/* Notifications, Invitations, Mercy & Bailout Panels */}
-      <NotificationsPanel />
+      <NotificationsPanel 
+        externalExpanded={showNotifications}
+        onUnreadCountChange={setUnreadNotificationCount}
+      />
       <InvitationsPanel onUpdate={loadData} />
       <MercyPanel onUpdate={loadData} />
       <BailoutHistoryPanel />
