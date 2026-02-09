@@ -111,7 +111,7 @@ export const EmptyChallenges = () => (
 const containerStyle = {
   textAlign: 'center',
   padding: '50px 30px',
-  background: 'linear-gradient(145deg, #0a0a0a, #111)',
+  background: 'linear-gradient(145deg, #111, #0a0a0a)',
   border: '1px dashed #333',
   borderRadius: '16px'
 };

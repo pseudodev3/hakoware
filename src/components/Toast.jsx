@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { CheckCircleIcon, AlertCircleIcon, SparklesIcon } from './icons/Icons';
 
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -10,14 +11,17 @@ const Toast = ({ message, type, onClose }) => {
 
   // Styles based on type
   let borderColor = '#00e676'; // Default Green
-  let icon = '✅';
+  let iconColor = '#00e676';
+  let Icon = CheckCircleIcon;
   
   if (type === 'ERROR') {
       borderColor = '#ff4444'; 
-      icon = '⚠️';
+      iconColor = '#ff4444';
+      Icon = AlertCircleIcon;
   } else if (type === 'MERCY') {
       borderColor = '#ffd700';
-      icon = '🧚';
+      iconColor = '#ffd700';
+      Icon = SparklesIcon;
   }
 
   return (
@@ -40,7 +44,7 @@ const Toast = ({ message, type, onClose }) => {
       minWidth: '250px',
       animation: 'slideUp 0.3s ease-out'
     }}>
-      <span style={{fontSize: '1.2rem'}}>{icon}</span>
+      <Icon size={20} color={iconColor} />
       <span style={{fontWeight: 600, fontFamily: 'var(--font-main)'}}>{message}</span>
       
       {/* Quick CSS for animation inside the component for simplicity */}

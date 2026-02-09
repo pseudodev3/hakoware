@@ -393,7 +393,7 @@ const NenCard = ({
 // Styles
 const cardContainerStyle = {
   background: 'linear-gradient(145deg, #111, #0a0a0a)',
-  border: '1px solid #333',
+  border: '1px solid #222',
   borderRadius: '16px',
   padding: '20px',
   position: 'relative',

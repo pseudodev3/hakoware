@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SkullIcon, ZapIcon, DollarIcon, RefreshIcon } from '../icons/Icons';
 import { calculateDebt } from '../../utils/gameLogic';
