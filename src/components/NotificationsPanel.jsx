@@ -9,16 +9,15 @@ import {
 } from '../services/notificationService';
 import { BellIcon, CheckIcon, XIcon, ChevronDownIcon, ChevronUpIcon, TrashIcon } from './icons/Icons';
 
-const NotificationsPanel = ({ onUpdate, externalExpanded, onUnreadCountChange }) => {
+const NotificationsPanel = ({ onUpdate, isOpen, onUnreadCountChange }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [internalExpanded, setInternalExpanded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   
-  // Use external expanded state if provided, otherwise use internal
-  const expanded = externalExpanded !== undefined ? externalExpanded : internalExpanded;
-  const setExpanded = externalExpanded !== undefined ? () => {} : setInternalExpanded;
+  // Use external open state if provided, otherwise use internal
+  const expanded = isOpen !== undefined ? isOpen : internalExpanded;
 
   useEffect(() => {
     loadNotifications();
@@ -106,68 +105,62 @@ const NotificationsPanel = ({ onUpdate, externalExpanded, onUnreadCountChange })
     }
   };
 
-  // When controlled externally, show even if empty (for loading state)
-  const isControlled = externalExpanded !== undefined;
-  
-  if (!isControlled && loading && notifications.length === 0) return null;
-  if (!isControlled && notifications.length === 0) return null;
-  
-  // When controlled externally and collapsed, don't render
-  if (isControlled && !expanded) return null;
+  // Don't render if externally controlled and collapsed
+  if (isOpen !== undefined && !isOpen) return null;
+  if (loading && notifications.length === 0) return null;
+  if (notifications.length === 0) return null;
 
   return (
     <div style={containerStyle}>
-      {/* Only show header when not controlled externally */}
-      {!isControlled && (
-        <button 
-          onClick={() => setExpanded(!expanded)}
-          style={headerStyle}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ position: 'relative' }}>
-              <BellIcon size={18} color={unreadCount > 0 ? '#ffd700' : '#888'} />
-              {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  right: '-6px',
-                  background: '#ff4444',
-                  color: '#fff',
-                  fontSize: '0.65rem',
-                  fontWeight: 'bold',
-                  padding: '2px 5px',
-                  borderRadius: '10px',
-                  minWidth: '16px',
-                  textAlign: 'center'
-                }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </div>
-            <span style={{ color: unreadCount > 0 ? '#ffd700' : '#888' }}>
-              NOTIFICATIONS
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {unreadCount > 0 && !expanded && (
-              <span style={{ 
-                color: '#ff4444', 
-                fontSize: '0.75rem',
-                fontWeight: 'bold'
+      <button 
+        onClick={() => isOpen === undefined && setInternalExpanded(!internalExpanded)}
+        style={{...headerStyle, cursor: isOpen === undefined ? 'pointer' : 'default'}}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ position: 'relative' }}>
+            <BellIcon size={18} color={unreadCount > 0 ? '#ffd700' : '#888'} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-6px',
+                right: '-6px',
+                background: '#ff4444',
+                color: '#fff',
+                fontSize: '0.65rem',
+                fontWeight: 'bold',
+                padding: '2px 5px',
+                borderRadius: '10px',
+                minWidth: '16px',
+                textAlign: 'center'
               }}>
-                {unreadCount} new
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
-            {expanded ? (
-              <ChevronUpIcon size={18} color="#666" />
-            ) : (
-              <ChevronDownIcon size={18} color="#666" />
-            )}
           </div>
-        </button>
-      )}
+          <span style={{ color: unreadCount > 0 ? '#ffd700' : '#888' }}>
+            NOTIFICATIONS
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {unreadCount > 0 && !expanded && (
+            <span style={{ 
+              color: '#ff4444', 
+              fontSize: '0.75rem',
+              fontWeight: 'bold'
+            }}>
+              {unreadCount} new
+            </span>
+          )}
+          {expanded ? (
+            <ChevronUpIcon size={18} color="#666" />
+          ) : (
+            <ChevronDownIcon size={18} color="#666" />
+          )}
+        </div>
+      </button>
 
-      <div style={contentStyle}>
+      {expanded && (
+        <div style={contentStyle}>
           {/* Mark all as read button */}
           {unreadCount > 0 && (
             <button
@@ -299,7 +292,7 @@ const NotificationsPanel = ({ onUpdate, externalExpanded, onUnreadCountChange })
             ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

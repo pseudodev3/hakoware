@@ -298,7 +298,7 @@ function App() {
 
       {/* Notifications, Invitations, Mercy & Bailout Panels */}
       <NotificationsPanel 
-        externalExpanded={showNotifications}
+        isOpen={showNotifications}
         onUnreadCountChange={setUnreadNotificationCount}
       />
       <InvitationsPanel onUpdate={loadData} />
