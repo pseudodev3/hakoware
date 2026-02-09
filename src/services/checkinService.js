@@ -1,5 +1,5 @@
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc, runTransaction, Timestamp } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { db } from './firebase';
 
 // Feature flag - set to true when functions are deployed
 const USE_SERVER_CHECKIN = false;
