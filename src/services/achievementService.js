@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   increment,
   arrayUnion,
-  orderBy
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { db } from './firebase';
 
