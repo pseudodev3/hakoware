@@ -331,7 +331,7 @@ function App() {
       )}
       {activeTab === 'achievements' && <AchievementShowcase />}
       {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
-      {activeTab === 'tools' && <Tools friendships={friendships} />
+      {activeTab === 'tools' && <Tools friendships={friendships} />}
 
       {/* Potclean - The Debt Collector Mascot */}
       {user && <Potclean friendships={friendships} />}
