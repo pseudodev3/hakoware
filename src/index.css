@@ -1,0 +1,876 @@
+/* --- HAKOWARE STYLES --- */
+
+/* --- GLOBAL RESET --- */
+:root {
+  --bg: #0a0a0a;
+  --card-bg: #111;
+  --text: #e0e0e0;
+  --gold: #ffd700;
+  --red: #ff4444;
+  --green: #00e676;
+  --blue: #33b5e5;
+  --orange: #ff8800;
+  --purple: #9c27b0;
+  
+  /* Font Family - Unified */
+  --font-main: 'Space Grotesk', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- APP CONTAINER --- */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* --- TYPOGRAPHY --- */
+h1, h2, h3, .glitch, .section-title {
+  font-family: var(--font-main);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.stat-value, .debt-display, .count-up {
+  font-family: var(--font-main);
+  font-weight: 600;
+}
+
+/* --- GLITCH TITLE --- */
+.glitch {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  text-shadow: 2px 2px var(--red);
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+  font-family: var(--font-main);
+}
+
+/* --- DASHBOARD & TICKER --- */
+.dashboard-container {
+  background: #1a1a1a;
+  border-bottom: 2px solid #333;
+  margin-bottom: 20px;
+  padding: 20px 0;
+  border-radius: 8px;
+}
+
+.stat-box {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  font-family: var(--font-main);
+  letter-spacing: -0.02em;
+}
+
+/* --- INFINITE TICKER ANIMATION --- */
+
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  background: #000;
+  padding: 8px 0;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); /* Fades edges */
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.ticker {
+  display: inline-block;
+  color: #00e676; /* Hacker Green */
+  font-family: var(--font-main);
+  font-weight: bold;
+  font-size: 0.9rem;
+  
+  /* Reset padding from previous version */
+  padding-left: 0; 
+  
+  /* Run infinite loop */
+  animation: ticker-infinite 30s linear infinite;
+}
+
+@keyframes ticker-infinite {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Move exactly half way (since we duplicated the text) */
+    transform: translateX(-50%);
+  }
+}
+
+
+/* --- CARD GRID (SMART LAYOUT) --- */
+.grid-container {
+  display: grid;
+  /* Auto-fit columns: Minimum 280px wide, otherwise stack */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding-bottom: 50px;
+}
+
+/* --- CARD STYLING --- */
+.card {
+  background: var(--card-bg);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+/* RANKINGS and STATES are defined below in the "RESTORING THE VISUAL FX" section */
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.mascot-icon {
+  font-size: 2rem;
+}
+
+.debt-display {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin: 10px 0;
+  color: #fff;
+  font-family: var(--font-main);
+  letter-spacing: -0.02em;
+}
+
+.bankrupt .debt-display { color: var(--red); }
+.rank-0 .debt-display { color: var(--gold); }
+
+/* SOUL SCORE */
+.soul-score-container {
+  background: #000;
+  border: 1px solid #333;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.soul-label {
+  font-size: 0.6rem;
+  color: #666;
+  margin-right: 8px;
+}
+
+.soul-value {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.info {
+  font-size: 0.8rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* BUTTONS */
+button {
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  text-transform: uppercase;
+  border: none;
+  width: 100%;
+  transition: opacity 0.2s;
+  letter-spacing: 0.05em;
+}
+
+button:active { transform: scale(0.98); }
+
+.action-btn { background: #333; color: #fff; }
+.notify-btn { background: #222; color: #888; border: 1px solid #444; }
+
+/* Dynamic Button Colors */
+.bankrupt .notify-btn {
+  background: #330000;
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.flex-btn {
+  background: linear-gradient(45deg, #001f33, #003366);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.warning-btn {
+  background: linear-gradient(45deg, #332200, #664400);
+  color: #ff8800;
+  border-color: #ff8800;
+  animation: warning-pulse 2s infinite ease-in-out;
+}
+
+/* --- MOBILE OPTIMIZATIONS (The Fix) --- */
+@media (max-width: 600px) {
+  .app-container {
+    padding: 10px; /* Less padding on edges */
+  }
+
+  .glitch {
+    font-size: 1.8rem; /* Smaller Title */
+  }
+
+  .stat-value {
+    font-size: 2.5rem; /* Smaller Dashboard Number */
+  }
+
+  .grid-container {
+    /* On mobile, cards fill width but aren't huge */
+    grid-template-columns: 1fr; 
+    gap: 15px;
+  }
+
+  .card {
+    padding: 15px; /* Tighter internal spacing */
+  }
+
+  .debt-display {
+    font-size: 2rem; /* Smaller Debt Number */
+  }
+}
+
+/* --- RESTORING THE VISUAL FX --- */
+
+/* 1. GLITCH ANIMATION (The Title) */
+.glitch {
+  position: relative;
+  animation: glitch-skew 1s infinite linear alternate-reverse;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text); /* Requires <h1 data-text="HAKOWARE"> in App.jsx */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 #ff00c1;
+  clip: rect(44px, 450px, 56px, 0);
+  animation: glitch-anim 5s infinite linear alternate-reverse;
+}
+.glitch::after {
+  left: -2px;
+  text-shadow: -2px 0 #00fff9;
+  clip: rect(44px, 450px, 56px, 0);
+  animation: glitch-anim2 5s infinite linear alternate-reverse;
+}
+
+/* 2. RANKING GLOWS (Make Gold Shine) */
+.rank-0 {
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); /* Gold Glow */
+}
+.rank-1 {
+  border: 2px solid #c0c0c0;
+  box-shadow: 0 0 10px rgba(192, 192, 192, 0.3); /* Silver Glow */
+}
+.rank-2 {
+  border: 2px solid #cd7f32;
+  box-shadow: 0 0 10px rgba(205, 127, 50, 0.3); /* Bronze Glow */
+}
+
+/* 3. BANKRUPT PULSE (The Scary Red Breath) */
+.card.bankrupt {
+  animation: breathe 3s infinite ease-in-out;
+}
+
+@keyframes breathe {
+  0% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); border-color: #500; }
+  50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); border-color: #f00; }
+  100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); border-color: #500; }
+}
+
+@keyframes glitch-anim {
+  0% { clip: rect(11px, 9999px, 83px, 0); }
+  20% { clip: rect(84px, 9999px, 8px, 0); }
+  40% { clip: rect(32px, 9999px, 2px, 0); }
+  60% { clip: rect(61px, 9999px, 66px, 0); }
+  80% { clip: rect(79px, 9999px, 23px, 0); }
+  100% { clip: rect(98px, 9999px, 44px, 0); }
+}
+@keyframes glitch-anim2 {
+  0% { clip: rect(65px, 9999px, 100px, 0); }
+  20% { clip: rect(4px, 9999px, 64px, 0); }
+  40% { clip: rect(25px, 9999px, 87px, 0); }
+  60% { clip: rect(95px, 9999px, 5px, 0); }
+  80% { clip: rect(50px, 9999px, 36px, 0); }
+  100% { clip: rect(12px, 9999px, 1px, 0); }
+}
+
+/* ============================ */
+/* --- ANIMATION DEFINITIONS --- */
+/* ============================ */
+
+/* 1. The "Bankrupt Shake" (Aggressive jitter) */
+@keyframes intense-shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* 2. The "Angel Float" (Gentle bobbing) */
+@keyframes gentle-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* ============================ */
+/* --- CARD STATE STYLING --- */
+/* ============================ */
+
+/* 1. CLEAN RECORD (Debt Free) - The Angel */
+.card.clean-record {
+  background: linear-gradient(145deg, #001a00, #050505); /* Very Dark Green/Black */
+  border: 1px solid var(--green);
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); /* Soft green glow */
+}
+
+.card.clean-record .debt-display {
+  color: var(--green);
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+}
+
+/* ANGEL MASCOT: Floating effect */
+.mascot-icon.angel {
+  display: inline-block;
+  animation: gentle-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px var(--green));
+}
+
+
+/* 2. BANKRUPT (Over Limit) - The Demon */
+.card.bankrupt {
+  background: linear-gradient(145deg, #3a0000, #000); /* Dark Red/Black */
+  border: 2px solid var(--red);
+  /* Combines red glow with constant shaking */
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+  animation: intense-shake 0.5s infinite; 
+}
+
+.card.bankrupt .debt-display {
+  color: var(--red);
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+}
+
+/* DEMON MASCOT: Shaking effect (shakes slightly differently than card) */
+.mascot-icon.demon {
+  display: inline-block;
+  animation: intense-shake 0.5s infinite reverse;
+  filter: drop-shadow(0 0 10px var(--red));
+}
+
+
+/* 3. WARNING ZONE ( approaching bankruptcy ) */
+.card.warning-zone {
+  background: linear-gradient(145deg, #2a1a00, #0a0a0a); /* Dark orange/amber tint */
+  border: 1px solid #ff8800;
+  box-shadow: 0 0 15px rgba(255, 136, 0, 0.2);
+  animation: warning-pulse 2s infinite ease-in-out;
+}
+
+@keyframes warning-pulse {
+  0% { box-shadow: 0 0 5px rgba(255, 136, 0, 0.2); border-color: #884400; }
+  50% { box-shadow: 0 0 15px rgba(255, 136, 0, 0.4); border-color: #ff8800; }
+  100% { box-shadow: 0 0 5px rgba(255, 136, 0, 0.2); border-color: #884400; }
+}
+
+/* 4. ACTIVE USERS (Middle Ground) */
+/* This targets cards that are NOT bankrupt and NOT clean and NOT warning */
+.card:not(.bankrupt):not(.clean-record):not(.warning-zone) {
+  background: linear-gradient(145deg, #1a1a1a, #0a0a0a); /* Subtle dark grey gradient */
+  border: 1px solid #444;
+}
+
+/* Make Rank borders glow subtly on active cards */
+.rank-0:not(.bankrupt):not(.clean-record) { box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.2); }
+.rank-1:not(.bankrupt):not(.clean-record) { box-shadow: inset 0 0 10px rgba(192, 192, 192, 0.2); }
+.rank-2:not(.bankrupt):not(.clean-record) { box-shadow: inset 0 0 10px rgba(205, 127, 50, 0.2); }
+
+
+/* --- SUBTITLE STYLE --- */
+.sub-header {
+  color: #a0a0a0;
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.8;
+  text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
+}
+
+/* --- FLOATING ANIMATION --- */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); } /* Moves up */
+  100% { transform: translateY(0px); }
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ======================================== */
+/* --- GLASSMORPHISM ENHANCEMENTS --- */
+/* ======================================== */
+
+/* Glass Card Base */
+.glass-card {
+  background: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Glow Variants */
+.glass-gold {
+  background: rgba(255, 215, 0, 0.05);
+  border-color: rgba(255, 215, 0, 0.2);
+  box-shadow: 
+    0 0 30px rgba(255, 215, 0, 0.1),
+    inset 0 1px 0 rgba(255, 215, 0, 0.1);
+}
+
+.glass-red {
+  background: rgba(255, 68, 68, 0.05);
+  border-color: rgba(255, 68, 68, 0.2);
+  box-shadow: 
+    0 0 30px rgba(255, 68, 68, 0.1),
+    inset 0 1px 0 rgba(255, 68, 68, 0.1);
+}
+
+.glass-green {
+  background: rgba(0, 230, 118, 0.05);
+  border-color: rgba(0, 230, 118, 0.2);
+  box-shadow: 
+    0 0 30px rgba(0, 230, 118, 0.1),
+    inset 0 1px 0 rgba(0, 230, 118, 0.1);
+}
+
+.glass-orange {
+  background: rgba(255, 136, 0, 0.05);
+  border-color: rgba(255, 136, 0, 0.2);
+  box-shadow: 
+    0 0 30px rgba(255, 136, 0, 0.1),
+    inset 0 1px 0 rgba(255, 136, 0, 0.1);
+}
+
+/* ======================================== */
+/* --- ENHANCED ANIMATIONS --- */
+/* ======================================== */
+
+/* Slide In From Bottom */
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slide-in-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Pop In */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Shake Error */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Pulse Glow */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Gradient Shift */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* ======================================== */
+/* --- NEON TEXT EFFECTS --- */
+/* ======================================== */
+
+.neon-text-gold {
+  color: var(--gold);
+  text-shadow: 
+    0 0 5px var(--gold),
+    0 0 10px var(--gold),
+    0 0 20px var(--gold),
+    0 0 40px var(--gold);
+}
+
+.neon-text-red {
+  color: var(--red);
+  text-shadow: 
+    0 0 5px var(--red),
+    0 0 10px var(--red),
+    0 0 20px var(--red),
+    0 0 40px var(--red);
+}
+
+.neon-text-green {
+  color: var(--green);
+  text-shadow: 
+    0 0 5px var(--green),
+    0 0 10px var(--green),
+    0 0 20px var(--green),
+    0 0 40px var(--green);
+}
+
+.neon-text-blue {
+  color: var(--blue);
+  text-shadow: 
+    0 0 5px var(--blue),
+    0 0 10px var(--blue),
+    0 0 20px var(--blue),
+    0 0 40px var(--blue);
+}
+
+/* ======================================== */
+/* --- HOVER EFFECTS --- */
+/* ======================================== */
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* ======================================== */
+/* --- STAGGERED ANIMATION DELAYS --- */
+/* ======================================== */
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ======================================== */
+/* --- LOADING ANIMATIONS --- */
+/* ======================================== */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { 
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.loading-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ======================================== */
+/* --- SCROLLBAR STYLING --- */
+/* ======================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* ======================================== */
+/* --- SELECTION STYLING --- */
+/* ======================================== */
+
+::selection {
+  background: rgba(255, 215, 0, 0.3);
+  color: #fff;
+}
+
+/* ======================================== */
+/* --- FOCUS STYLES --- */
+/* ======================================== */
+
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+/* ======================================== */
+/* --- BUTTON VARIANTS --- */
+/* ======================================== */
+
+.btn-gold {
+  background: linear-gradient(145deg, #ffd700, #ffaa00);
+  color: #000;
+  border: none;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-gold:hover {
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-red {
+  background: linear-gradient(145deg, #ff4444, #cc0000);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+}
+
+.btn-green {
+  background: linear-gradient(145deg, #00e676, #00c853);
+  color: #000;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #888;
+}
+
+.btn-ghost:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+/* ======================================== */
+/* --- BADGES --- */
+/* ======================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.badge-gold {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.badge-red {
+  background: rgba(255, 68, 68, 0.15);
+  color: var(--red);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.badge-green {
+  background: rgba(0, 230, 118, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+}
+
+.badge-orange {
+  background: rgba(255, 136, 0, 0.15);
+  color: var(--orange);
+  border: 1px solid rgba(255, 136, 0, 0.3);
+}
+
+/* ======================================== */
+/* --- DIVIDERS --- */
+/* ======================================== */
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #333, transparent);
+  margin: 20px 0;
+}
+
+.divider-gold {
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* ======================================== */
+/* --- GRADIENT TEXT --- */
+/* ======================================== */
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--gold), #ff6b6b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-green {
+  background: linear-gradient(90deg, var(--green), #00bcd4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
