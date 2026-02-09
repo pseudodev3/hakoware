@@ -70,61 +70,61 @@ const NenCard = ({
     else if (index === 2) rankMedal = '🥉';
   }
 
-  // Status Configuration
+  // Status Configuration - Simplified palette
   const statusConfig = {
     bankrupt: {
       icon: <SkullIcon size={28} color="#ff4444" />,
-      bg: 'linear-gradient(145deg, rgba(255,68,68,0.1), rgba(255,0,0,0.05))',
-      border: '#ff4444',
-      glow: '0 0 20px rgba(255,68,68,0.3)',
-      badge: 'BANKRUPT',
+      bg: 'linear-gradient(145deg, rgba(255,68,68,0.08), rgba(20,10,10,1))',
+      border: 'transparent',
+      glow: '0 4px 20px rgba(255,68,68,0.15)',
+      badge: 'Bankrupt',
       badgeColor: '#ff4444'
     },
     clean: {
-      icon: <CrownIcon size={28} color="#00e676" />,
-      bg: 'linear-gradient(145deg, rgba(0,230,118,0.1), rgba(0,230,118,0.05))',
-      border: '#00e676',
-      glow: '0 0 20px rgba(0,230,118,0.2)',
-      badge: 'CLEAN',
-      badgeColor: '#00e676'
+      icon: <CrownIcon size={28} color="#ffd700" />,
+      bg: 'linear-gradient(145deg, rgba(255,215,0,0.08), rgba(20,20,10,1))',
+      border: 'transparent',
+      glow: '0 4px 20px rgba(255,215,0,0.15)',
+      badge: 'Clean',
+      badgeColor: '#ffd700'
     },
     warning: {
       icon: <AlertIcon size={28} color="#ff8800" />,
-      bg: 'linear-gradient(145deg, rgba(255,136,0,0.1), rgba(255,136,0,0.05))',
-      border: '#ff8800',
-      glow: '0 0 20px rgba(255,136,0,0.2)',
-      badge: 'WARNING',
+      bg: 'linear-gradient(145deg, rgba(255,136,0,0.08), rgba(20,15,10,1))',
+      border: 'transparent',
+      glow: '0 4px 20px rgba(255,136,0,0.15)',
+      badge: 'Warning',
       badgeColor: '#ff8800'
     },
     active: {
-      icon: <FlameIcon size={28} color="#888" />,
-      bg: 'linear-gradient(145deg, rgba(255,215,0,0.05), transparent)',
-      border: '#444',
-      glow: 'none',
-      badge: 'ACTIVE',
-      badgeColor: '#888'
+      icon: <FlameIcon size={28} color="#666" />,
+      bg: 'linear-gradient(145deg, #151515, #0d0d0d)',
+      border: 'transparent',
+      glow: '0 2px 8px rgba(0,0,0,0.4)',
+      badge: 'Active',
+      badgeColor: '#666'
     }
   };
 
   const currentStatus = iAmBankrupt ? 'bankrupt' : iAmClean ? 'clean' : iAmInWarningZone ? 'warning' : 'active';
   const config = statusConfig[currentStatus];
 
-  // Button Logic
-  let btnText = "CHECK IN";
-  let btnStyle = { background: '#222', color: '#fff', borderColor: '#444' };
+  // Button Logic - Sentence case, simplified colors
+  let btnText = "Check in";
+  let btnStyle = { background: '#1a1a1a', color: '#fff' };
   let actionType = 'CHECKIN';
 
   if (iAmClean) {
-    btnText = "FLEX STATUS";
-    btnStyle = { background: 'linear-gradient(135deg, #001a33, #003366)', color: '#33b5e5', borderColor: '#33b5e5' };
+    btnText = "Flex status";
+    btnStyle = { background: 'rgba(255,215,0,0.15)', color: '#ffd700' };
     actionType = 'FLEX';
   } else if (iAmBankrupt) {
-    btnText = "BEG FOR MERCY";
-    btnStyle = { background: 'linear-gradient(135deg, #330000, #1a0000)', color: '#ff4444', borderColor: '#ff4444' };
+    btnText = "Beg for mercy";
+    btnStyle = { background: 'rgba(255,68,68,0.15)', color: '#ff4444' };
     actionType = 'BEG';
   } else if (iAmInWarningZone) {
-    btnText = "CHECK IN NOW";
-    btnStyle = { background: 'linear-gradient(135deg, #332200, #1a0f00)', color: '#ff8800', borderColor: '#ff8800' };
+    btnText = "Check in now";
+    btnStyle = { background: 'rgba(255,136,0,0.15)', color: '#ff8800' };
   }
 
   const data = friendship || contract;
@@ -205,21 +205,21 @@ const NenCard = ({
 
         {/* Status Message */}
         {iAmBankrupt && (
-          <div style={{ ...statusMessageStyle, color: '#ff4444', background: 'rgba(255,68,68,0.1)' }}>
+          <div style={{ ...statusMessageStyle, color: '#ff4444', background: 'rgba(255,68,68,0.08)' }}>
             <SkullIcon size={14} color="#ff4444" />
-            <span>CHAPTER 7 BANKRUPTCY</span>
+            <span>Chapter 7 bankruptcy</span>
           </div>
         )}
         {iAmInWarningZone && !iAmBankrupt && (
-          <div style={{ ...statusMessageStyle, color: '#ff8800', background: 'rgba(255,136,0,0.1)' }}>
+          <div style={{ ...statusMessageStyle, color: '#ff8800', background: 'rgba(255,136,0,0.08)' }}>
             <AlertIcon size={14} color="#ff8800" />
             <span>{myStats.daysUntilBankrupt} days until bankruptcy</span>
           </div>
         )}
         {iAmClean && (
-          <div style={{ ...statusMessageStyle, color: '#00e676', background: 'rgba(0,230,118,0.1)' }}>
-            <CrownIcon size={14} color="#00e676" />
-            <span>Debt Free Champion</span>
+          <div style={{ ...statusMessageStyle, color: '#ffd700', background: 'rgba(255,215,0,0.08)' }}>
+            <CrownIcon size={14} color="#ffd700" />
+            <span>Debt free champion</span>
           </div>
         )}
       </div>
@@ -228,10 +228,10 @@ const NenCard = ({
       <div style={statsRowStyle}>
         {/* Aura Score */}
         <div style={statBoxStyle}>
-          <span style={statLabelStyle}>AURA</span>
+          <span style={statLabelStyle}>Aura</span>
           <span style={{ 
             ...statValueStyle, 
-            color: auraScore > 700 ? '#00e676' : auraScore > 500 ? '#ffaa00' : '#ff4444'
+            color: auraScore > 700 ? '#00e676' : auraScore > 500 ? '#ffd700' : '#ff4444'
           }}>
             {auraScore}
           </span>
@@ -241,7 +241,7 @@ const NenCard = ({
         
         {/* Limit */}
         <div style={statBoxStyle}>
-          <span style={statLabelStyle}>LIMIT</span>
+          <span style={statLabelStyle}>Limit</span>
           <span style={statValueStyle}>{myData.limit}d</span>
         </div>
         
@@ -249,8 +249,8 @@ const NenCard = ({
         
         {/* Streak */}
         <div style={statBoxStyle}>
-          <span style={statLabelStyle}>STREAK</span>
-          <span style={{ ...statValueStyle, color: streak > 0 ? '#ff8800' : '#666' }}>
+          <span style={statLabelStyle}>Streak</span>
+          <span style={{ ...statValueStyle, color: streak > 0 ? '#ffd700' : '#666' }}>
             {streak > 0 ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <FlameIcon size={12} color="#ff8800" />
@@ -390,20 +390,17 @@ const NenCard = ({
   );
 };
 
-// Styles
+// Styles - Cleaner design with shadows instead of borders
 const cardContainerStyle = {
   background: 'linear-gradient(145deg, #111, #0a0a0a)',
-  border: '1px solid #222',
   borderRadius: '16px',
   padding: '20px',
   position: 'relative',
-  transition: 'all 0.2s ease',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
   ':hover': {
-    borderColor: '#444',
     transform: 'translateY(-2px)',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
   }
 };
 
@@ -420,22 +417,22 @@ const avatarStyle = {
   width: '40px',
   height: '40px',
   borderRadius: '50%',
-  background: 'rgba(0,0,0,0.3)',
-  border: '2px solid',
+  background: 'linear-gradient(145deg, #1a1a1a, #0d0d0d)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   color: '#fff',
-  fontWeight: 'bold'
+  fontWeight: '600',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
 };
 
 const badgeStyle = {
-  fontSize: '0.6rem',
-  padding: '3px 10px',
-  border: '1px solid',
-  borderRadius: '12px',
-  fontWeight: 'bold',
-  letterSpacing: '1px'
+  fontSize: '0.65rem',
+  padding: '4px 12px',
+  borderRadius: '20px',
+  fontWeight: '500',
+  letterSpacing: '0.5px',
+  background: 'rgba(255,255,255,0.05)'
 };
 
 const iconButtonStyle = {
@@ -455,14 +452,13 @@ const iconButtonStyle = {
 
 const mainDebtContainerStyle = {
   textAlign: 'center',
-  padding: '20px',
-  background: 'rgba(0,0,0,0.2)',
+  padding: '24px 20px',
+  background: 'linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1))',
   borderRadius: '12px',
-  marginBottom: '15px',
+  marginBottom: '16px',
   fontSize: '3rem',
-  fontWeight: '900',
-  color: '#fff',
-  fontFamily: 'var(--font-main)'
+  fontWeight: '700',
+  color: '#fff'
 };
 
 const statusMessageStyle = {
@@ -481,10 +477,10 @@ const statsRowStyle = {
   display: 'flex',
   justifyContent: 'space-around',
   alignItems: 'center',
-  padding: '12px',
-  background: 'rgba(0,0,0,0.2)',
+  padding: '12px 16px',
+  background: 'linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.15))',
   borderRadius: '10px',
-  marginBottom: '15px'
+  marginBottom: '16px'
 };
 
 const statBoxStyle = {

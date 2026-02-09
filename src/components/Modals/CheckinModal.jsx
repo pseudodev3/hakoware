@@ -209,20 +209,23 @@ const overlayStyle = {
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.9)',
+  backgroundColor: 'rgba(0,0,0,0.85)',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
   zIndex: 1000,
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center'
+  justifyContent: 'center',
+  padding: '20px'
 };
 
 const modalStyle = {
-  background: '#111',
-  padding: '30px',
-  borderRadius: '12px',
-  width: '90%',
-  maxWidth: '400px',
-  border: '1px solid #333',
+  background: 'linear-gradient(145deg, #151515, #0d0d0d)',
+  padding: '32px',
+  borderRadius: '16px',
+  width: '100%',
+  maxWidth: '420px',
+  boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
   textAlign: 'center'
 };
 

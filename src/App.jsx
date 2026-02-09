@@ -320,21 +320,21 @@ function App() {
           onClick={() => setActiveTab('friends')}
         >
           <UsersIcon size={16} color={activeTab === 'friends' ? '#ffd700' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>FRIENDS</span>
+          <span style={{ marginLeft: '8px' }}>Friends</span>
         </button>
         <button 
           style={{...tabButtonStyle, ...(activeTab === 'achievements' ? tabActiveStyle : {})}}
           onClick={() => setActiveTab('achievements')}
         >
           <AwardIcon size={16} color={activeTab === 'achievements' ? '#ffd700' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>ACHIEVEMENTS</span>
+          <span style={{ marginLeft: '8px' }}>Achievements</span>
         </button>
         <button 
           style={{...tabButtonStyle, ...(activeTab === 'arena' ? tabActiveStyle : {})}}
           onClick={() => setActiveTab('arena')}
         >
-          <TrophyIcon size={16} color={activeTab === 'arena' ? '#ff4444' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>ARENA</span>
+          <TrophyIcon size={16} color={activeTab === 'arena' ? '#ffd700' : '#666'} />
+          <span style={{ marginLeft: '8px' }}>Arena</span>
         </button>
 
       </div>
@@ -559,22 +559,21 @@ const tabButtonStyle = {
   alignItems: 'center',
   padding: '12px 20px',
   background: 'transparent',
-  border: '1px solid #333',
-  borderRadius: '8px',
-  color: '#666',
-  fontSize: '0.8rem',
-  fontWeight: 'bold',
+  border: 'none',
+  borderRadius: '10px',
+  color: '#888',
+  fontSize: '0.85rem',
+  fontWeight: '500',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
-  transition: 'all 0.3s ease',
+  transition: 'all 0.2s ease',
   fontFamily: 'inherit'
 };
 
 const tabActiveStyle = {
-  background: 'linear-gradient(145deg, #1a1a1a, #0a0a0a)',
-  borderColor: '#ffd700',
+  background: 'rgba(255,215,0,0.1)',
   color: '#ffd700',
-  boxShadow: '0 0 15px rgba(255, 215, 0, 0.2)'
+  fontWeight: '600'
 };
 
 export default App
