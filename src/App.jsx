@@ -35,19 +35,16 @@ import FriendshipSettingsModal from './components/Modals/FriendshipSettingsModal
 
 // NEW: Fun Features
 import AchievementShowcase from './components/AchievementShowcase'
-import ShameWall from './components/ShameWall'
-import BountyBoard from './components/BountyBoard'
-import GhostPredictor from './components/GhostPredictor'
+import Arena from './components/Arena'
+import Tools from './components/Tools'
 import CreateBountyModal from './components/Modals/CreateBountyModal'
 import AchievementUnlockModal from './components/Modals/AchievementUnlockModal'
 import VoiceCheckinModal from './components/Modals/VoiceCheckinModal'
 import FlexModal from './components/Modals/FlexModal'
 import DebtRouletteModal from './components/Modals/DebtRouletteModal'
 import Potclean from './components/Potclean'
-import Leaderboard from './components/Leaderboard'
-import FriendChallenges from './components/FriendChallenges'
 import NenSealedStatus from './components/NenSealedStatus'
-import { UsersIcon, AwardIcon, Skull2Icon, Target2Icon, CrystalBallIcon, TrophyIcon, TargetIcon } from './components/icons/Icons'
+import { UsersIcon, AwardIcon, TrophyIcon, WrenchIcon } from './components/icons/Icons'
 
 function App() {
   const { user, isAuthenticated, isEmailVerified } = useAuth();
@@ -252,7 +249,7 @@ function App() {
       {/* Nen Sealed Status - Shows when bankrupt */}
       <NenSealedStatus friendships={friendships} />
 
-      {/* NEW: Tab Navigation */}
+      {/* Simplified Tab Navigation - 4 Tabs Only */}
       <div style={tabContainerStyle}>
         <button 
           style={{...tabButtonStyle, ...(activeTab === 'friends' ? tabActiveStyle : {})}}
@@ -269,39 +266,18 @@ function App() {
           <span style={{ marginLeft: '8px' }}>ACHIEVEMENTS</span>
         </button>
         <button 
-          style={{...tabButtonStyle, ...(activeTab === 'shame' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('shame')}
+          style={{...tabButtonStyle, ...(activeTab === 'arena' ? tabActiveStyle : {})}}
+          onClick={() => setActiveTab('arena')}
         >
-          <Skull2Icon size={16} color={activeTab === 'shame' ? '#ff4444' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>WALL OF SHAME</span>
+          <TrophyIcon size={16} color={activeTab === 'arena' ? '#ff4444' : '#666'} />
+          <span style={{ marginLeft: '8px' }}>ARENA</span>
         </button>
         <button 
-          style={{...tabButtonStyle, ...(activeTab === 'bounties' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('bounties')}
+          style={{...tabButtonStyle, ...(activeTab === 'tools' ? tabActiveStyle : {})}}
+          onClick={() => setActiveTab('tools')}
         >
-          <Target2Icon size={16} color={activeTab === 'bounties' ? '#ff8800' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>BOUNTIES</span>
-        </button>
-        <button 
-          style={{...tabButtonStyle, ...(activeTab === 'predictor' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('predictor')}
-        >
-          <CrystalBallIcon size={16} color={activeTab === 'predictor' ? '#9c27b0' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>PREDICTOR</span>
-        </button>
-        <button 
-          style={{...tabButtonStyle, ...(activeTab === 'leaderboard' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('leaderboard')}
-        >
-          <TrophyIcon size={16} color={activeTab === 'leaderboard' ? '#ffd700' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>RANKINGS</span>
-        </button>
-        <button 
-          style={{...tabButtonStyle, ...(activeTab === 'challenges' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('challenges')}
-        >
-          <TargetIcon size={16} color={activeTab === 'challenges' ? '#9c27b0' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>CHALLENGES</span>
+          <WrenchIcon size={16} color={activeTab === 'tools' ? '#33b5e5' : '#666'} />
+          <span style={{ marginLeft: '8px' }}>TOOLS</span>
         </button>
       </div>
 
@@ -354,34 +330,8 @@ function App() {
         )
       )}
       {activeTab === 'achievements' && <AchievementShowcase />}
-      {activeTab === 'shame' && <ShameWall />}
-      {activeTab === 'bounties' && (
-        <BountyBoard 
-          friendships={friendships}
-          onCreateBounty={() => {
-            // Find a friendship with debt to create bounty on
-            const targetFriendship = friendships.find(f => {
-              const isUser1 = f.myPerspective === 'user1';
-              const friendData = isUser1 ? f.user2Perspective : f.user1Perspective;
-              const friendStats = calculateDebt({
-                baseDebt: friendData.baseDebt,
-                lastInteraction: friendData.lastInteraction,
-                bankruptcyLimit: friendData.limit
-              });
-              return friendStats.totalDebt > 0;
-            });
-            if (targetFriendship) {
-              setSelectedFriendship(targetFriendship);
-              setShowCreateBounty(true);
-            } else {
-              showToast("No friends with debt to place bounty on!", "INFO");
-            }
-          }}
-        />
-      )}
-      {activeTab === 'predictor' && <GhostPredictor friendships={friendships} />}
-      {activeTab === 'leaderboard' && <Leaderboard />}
-      {activeTab === 'challenges' && <FriendChallenges friendships={friendships} showToast={showToast} />}
+      {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
+      {activeTab === 'tools' && <Tools friendships={friendships} />
 
       {/* Potclean - The Debt Collector Mascot */}
       {user && <Potclean friendships={friendships} />}
