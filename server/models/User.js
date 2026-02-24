@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true }, // For custom Auth
   avatar: { type: String, default: null },
   auraScore: { type: Number, default: 850 },
+  auraBalance: { type: Number, default: 0 },
   defaultLimit: { type: Number, default: 7 },
   emailVerified: { type: Boolean, default: false },
   notificationPreferences: {
