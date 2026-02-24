@@ -74,3 +74,14 @@ export const getDebtStatus = (totalDebt, limit = 7) => {
   }
   return { label: 'STABLE', color: '#00e676' };
 };
+
+/**
+ * Calculate aura credit score (0-999)
+ */
+export const calculateCreditScore = (totalDebt, daysMissed) => {
+  const baseScore = 850;
+  const debtPenalty = totalDebt * 5;
+  const ghostPenalty = daysMissed * 10;
+  
+  return Math.max(0, Math.min(999, baseScore - debtPenalty - ghostPenalty));
+};
