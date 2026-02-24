@@ -58,3 +58,19 @@ export const getDebtStatusLabel = (stats) => {
   if (stats.totalDebt > 0) return 'GHOSTING';
   return 'STABLE';
 };
+
+/**
+ * Get status info based on total debt
+ */
+export const getDebtStatus = (totalDebt, limit = 7) => {
+  const bankruptcyLimit = limit * 2;
+  
+  if (totalDebt >= bankruptcyLimit) {
+    return { label: 'BANKRUPT', color: '#ff4444' };
+  } else if (totalDebt >= limit) {
+    return { label: 'WARNING', color: '#ffbb33' };
+  } else if (totalDebt > 0) {
+    return { label: 'GHOSTING', color: '#33b5e5' };
+  }
+  return { label: 'STABLE', color: '#00e676' };
+};
