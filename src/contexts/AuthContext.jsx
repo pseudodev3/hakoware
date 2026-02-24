@@ -1,15 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import {
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  updateProfile
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../services/firebase';
+import { api } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -26,63 +16,44 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen for auth state changes
+  // Check for token on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        // Fetch user profile from Firestore
-        const profileDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (profileDoc.exists()) {
-          setUserProfile(profileDoc.data());
+    const loadUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await api.get('/auth/user');
+          if (res.msg) {
+            // Token invalid or expired
+            localStorage.removeItem('token');
+            setUser(null);
+          } else {
+            setUser(res);
+            setUserProfile(res); // For now, profile is same as user object
+          }
+        } catch (error) {
+          console.error('Error loading user:', error);
+          localStorage.removeItem('token');
+          setUser(null);
         }
-      } else {
-        setUser(null);
-        setUserProfile(null);
       }
       setLoading(false);
-    });
+    };
 
-    return unsubscribe;
+    loadUser();
   }, []);
 
   // Sign up new user
   const signup = async (email, password, displayName) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUser = userCredential.user;
-
-      // Update profile with display name
-      await updateProfile(newUser, { displayName });
-
-      // Create user document in Firestore
-      await setDoc(doc(db, 'users', newUser.uid), {
-        uid: newUser.uid,
-        email: newUser.email,
-        displayName: displayName,
-        avatar: null, // Default avatar
-        auraScore: 850, // Starting aura score
-        defaultLimit: 7, // Default ghosting limit
-        emailVerified: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        notificationPreferences: {
-          email: true,
-          inApp: true,
-          weeklySummary: true,
-          bankruptcyWarnings: true
-        },
-        privacySettings: {
-          hideAuraScore: false,
-          optOutLeaderboard: false,
-          optOutPublicBankruptcy: false
-        }
-      });
-
-      // Send email verification
-      await sendEmailVerification(newUser);
-
-      return { success: true, user: newUser };
+      const res = await api.post('/auth/signup', { email, password, displayName });
+      if (res.token) {
+        localStorage.setItem('token', res.token);
+        setUser(res.user);
+        setUserProfile(res.user);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: res.msg || 'Signup failed' };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -91,8 +62,14 @@ export const AuthProvider = ({ children }) => {
   // Login existing user
   const login = async (email, password) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return { success: true, user: userCredential.user };
+      const res = await api.post('/auth/login', { email, password });
+      if (res.token) {
+        localStorage.setItem('token', res.token);
+        setUser(res.user);
+        setUserProfile(res.user);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: res.msg || 'Login failed' };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -100,61 +77,15 @@ export const AuthProvider = ({ children }) => {
 
   // Logout user
   const logout = async () => {
-    try {
-      await signOut(auth);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    localStorage.removeItem('token');
+    setUser(null);
+    setUserProfile(null);
+    return { success: true };
   };
 
-  // Send password reset email
-  const resetPassword = async (email) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Resend verification email
-  const resendVerificationEmail = async () => {
-    try {
-      if (user && !user.emailVerified) {
-        await sendEmailVerification(user);
-        return { success: true };
-      }
-      return { success: false, error: 'User already verified or not logged in' };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Update user profile
   const updateUserProfile = async (updates) => {
-    try {
-      if (!user) throw new Error('No user logged in');
-      
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        ...updates,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      // Update local state
-      const updatedDoc = await getDoc(userRef);
-      setUserProfile(updatedDoc.data());
-
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Check if email is verified
-  const isEmailVerified = () => {
-    return user?.emailVerified || false;
+    // To be implemented in backend
+    return { success: true };
   };
 
   const value = {
@@ -164,10 +95,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     login,
     logout,
-    resetPassword,
-    resendVerificationEmail,
     updateUserProfile,
-    isEmailVerified,
     isAuthenticated: !!user
   };
 

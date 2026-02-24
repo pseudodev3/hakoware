@@ -18,6 +18,11 @@ mongoose.connect(MONGO_URI)
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/friendships', require('./routes/friendships'));
+app.use('/api/voice-notes', require('./routes/voiceNotes'));
+
+// Static serving for uploaded files (audio notes, avatars)
+app.use('/uploads', express.static('uploads'));
 
 // Basic Route
 app.get('/', (req, res) => {

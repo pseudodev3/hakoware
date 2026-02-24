@@ -1,81 +1,44 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  getDocs,
-  serverTimestamp,
-  deleteDoc
-} from 'firebase/firestore';
-import { db } from './firebase';
-import { createNotification } from './notificationService';
+import { api } from './api';
 
-const VOICE_NOTES_COLLECTION = 'voiceNotes';
+const API_URL = 'http://5.180.182.73:5001/api';
 
-// Upload voice note (stores base64 in Firestore for demo - in production use Firebase Storage)
+// Send a voice note using custom backend
 export const sendVoiceNote = async (friendshipId, senderId, senderName, recipientId, audioBlob) => {
   try {
-    // Convert blob to base64 for storage
-    const reader = new FileReader();
-    const base64Promise = new Promise((resolve) => {
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(audioBlob);
-    });
-    const base64Audio = await base64Promise;
+    const formData = new FormData();
+    formData.append('audio', audioBlob, `voice_note_${Date.now()}.wav`);
+    formData.append('friendshipId', friendshipId);
+    formData.append('senderName', senderName);
+    formData.append('recipientId', recipientId);
 
-    // Create voice note record
-    const voiceNoteRef = await addDoc(collection(db, VOICE_NOTES_COLLECTION), {
-      friendshipId,
-      senderId,
-      senderName,
-      recipientId,
-      audioData: base64Audio,
-      duration: Math.round(audioBlob.size / 1000), // rough estimate
-      listened: false,
-      createdAt: serverTimestamp()
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/voice-notes/upload`, {
+      method: 'POST',
+      headers: {
+        'x-auth-token': token
+      },
+      body: formData
     });
 
-    // Create notification for recipient
-    await createNotification({
-      type: 'VOICE_NOTE',
-      toUserId: recipientId,
-      fromUserId: senderId,
-      fromUserName: senderName,
-      friendshipId,
-      title: 'New Voice Note',
-      message: `${senderName} sent you a voice check-in message`,
-      voiceNoteId: voiceNoteRef.id
-    });
-
-    return {
-      success: true,
-      voiceNoteId: voiceNoteRef.id,
-      message: 'Voice note sent!'
-    };
+    const res = await response.json();
+    if (res.msg) throw new Error(res.msg);
+    
+    return { success: true, voiceNoteId: res._id };
   } catch (error) {
     console.error('Error sending voice note:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Get voice notes for a friendship
-export const getVoiceNotes = async (friendshipId, userId) => {
+// Get voice notes for current user's inbox
+export const getMyVoiceNotes = async () => {
   try {
-    const q = query(
-      collection(db, VOICE_NOTES_COLLECTION),
-      where('friendshipId', '==', friendshipId),
-      orderBy('createdAt', 'desc')
-    );
-
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      isMine: doc.data().senderId === userId,
-      createdAt: doc.data().createdAt?.toDate?.() || new Date()
+    const notes = await api.get('/voice-notes/my-inbox');
+    return notes.map(n => ({
+        ...n,
+        id: n._id,
+        // Convert static path to full URL for player
+        audioUrl: `http://5.180.182.73:5001${n.filePath}`
     }));
   } catch (error) {
     console.error('Error getting voice notes:', error);
@@ -86,10 +49,7 @@ export const getVoiceNotes = async (friendshipId, userId) => {
 // Mark voice note as listened
 export const markVoiceNoteListened = async (voiceNoteId) => {
   try {
-    await updateDoc(doc(db, VOICE_NOTES_COLLECTION, voiceNoteId), {
-      listened: true,
-      listenedAt: serverTimestamp()
-    });
+    const res = await api.put(`/voice-notes/${voiceNoteId}/listened`);
     return { success: true };
   } catch (error) {
     console.error('Error marking voice note:', error);
@@ -97,30 +57,7 @@ export const markVoiceNoteListened = async (voiceNoteId) => {
   }
 };
 
-// Get unread voice note count for a user
-export const getUnreadVoiceNoteCount = async (userId) => {
-  try {
-    const q = query(
-      collection(db, VOICE_NOTES_COLLECTION),
-      where('recipientId', '==', userId),
-      where('listened', '==', false)
-    );
-
-    const snapshot = await getDocs(q);
-    return snapshot.size;
-  } catch (error) {
-    console.error('Error getting unread count:', error);
-    return 0;
-  }
-};
-
-// Delete voice note
-export const deleteVoiceNote = async (voiceNoteId) => {
-  try {
-    await deleteDoc(doc(db, VOICE_NOTES_COLLECTION, voiceNoteId));
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting voice note:', error);
-    return { success: false, error: error.message };
-  }
+// For backward compatibility (not used anymore in backend approach)
+export const getVoiceNotes = async (friendshipId, userId) => {
+    return getMyVoiceNotes();
 };
