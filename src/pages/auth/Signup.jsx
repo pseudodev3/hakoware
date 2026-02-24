@@ -9,7 +9,6 @@ const Signup = ({ onToggle }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const { signup, resendVerificationEmail } = useAuth();
 
@@ -53,44 +52,6 @@ const Signup = ({ onToggle }) => {
 
   const getErrorMessage = (error) => {
     if (!error) return 'An unknown error occurred.';
-    if (error.includes('email-already-in-use')) return 'An account with this email already exists.';
-    if (error.includes('invalid-email')) return 'Invalid email address.';
-    if (error.includes('weak-password')) return 'Password is too weak.';
-    return error;
-  };
-
-  if (success) {
-    return (
-      <div className="auth-container">
-        <div className="auth-box">
-          <h1 className="auth-title glitch" data-text="HAKOWARE">HAKOWARE</h1>
-          <div className="auth-success">
-            <div className="success-icon">EMAIL SENT</div>
-            <h2>Verification Email Sent!</h2>
-            <p>Please check your inbox and verify your email before logging in.</p>
-            <p className="small-text">Didn't receive it? Check your spam folder.</p>
-            
-            <div className="auth-links" style={{ marginTop: '20px' }}>
-              <button 
-                className="link-btn"
-                onClick={handleResendEmail}
-                disabled={loading}
-              >
-                Resend Email
-              </button>
-              <span className="divider">|</span>
-              <button 
-                className="link-btn"
-                onClick={onToggle}
-              >
-                Go to Login
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="auth-container">
