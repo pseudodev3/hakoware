@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  onSnapshot,
-  addDoc,
+import { api } from '../services/api';
 import { FlameIcon, MessageIcon, SendIcon } from './icons/Icons';
 
 /**
  * Roast Feed - Public Roasts on Bankruptcies
- * 
- * When someone goes bankrupt, friends can post roasts on their wall.
- * The most upvoted roasts get displayed on the Shame Wall.
  */
 const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
   const { user } = useAuth();
@@ -42,42 +32,30 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
 
   useEffect(() => {
     if (!bankruptcyId) return;
-
-    const roastsQuery = query(
-      collection( 'bankruptcyRoasts'),
-      where('bankruptcyId', '==', bankruptcyId),
-      orderBy('createdAt', 'desc'),
-      limit(20)
-    );
-
-    const unsubscribe = onSnapshot(roastsQuery, (snapshot) => {
-      const roastData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date()
-      }));
-      setRoasts(roastData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    loadRoasts();
   }, [bankruptcyId]);
+
+  const loadRoasts = async () => {
+    try {
+      const res = await api.get(`/bankruptcy/${bankruptcyId}/roasts`);
+      setRoasts(res);
+    } catch (error) {
+      console.error('Error loading roasts:', error);
+    }
+    setLoading(false);
+  };
 
   const submitRoast = async () => {
     if (!newRoast.trim() || !user) return;
 
     try {
-      await addDoc(collection( 'bankruptcyRoasts'), {
-        bankruptcyId,
+      await api.post(`/bankruptcy/${bankruptcyId}/roast`, {
         targetUserId,
         targetUserName,
-        authorId: user.uid,
-        authorName: user.displayName || 'Anonymous',
-        message: newRoast.trim(),
-        upvotes: 0,
-        createdAt: new Date()
+        message: newRoast.trim()
       });
       setNewRoast('');
+      loadRoasts();
     } catch (error) {
       console.error('Error posting roast:', error);
     }
@@ -90,7 +68,8 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
 
   const formatTimeAgo = (date) => {
     const now = new Date();
-    const diff = now - date;
+    const then = new Date(date);
+    const diff = now - then;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor(diff / (1000 * 60));
     
@@ -109,15 +88,11 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
 
   return (
     <div style={containerStyle}>
-      {/* Header */}
       <div style={headerStyle}>
         <FlameIcon size={16} color="#ff4444" />
-        <span style={{ color: '#ff4444', fontSize: '0.8rem', fontWeight: 'bold' }}>
-          COMMUNITY ROASTS
-        </span>
+        <span style={{ color: '#ff4444', fontSize: '0.8rem', fontWeight: 'bold' }}>COMMUNITY ROASTS</span>
       </div>
 
-      {/* Roast Input */}
       <div style={inputContainerStyle}>
         <textarea
           value={newRoast}
@@ -127,53 +102,27 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
           maxLength={200}
         />
         <div style={inputActionsStyle}>
-          <button onClick={useTemplate} style={templateButtonStyle}>
-            🎲 Random
-          </button>
-          <button 
-            onClick={submitRoast}
-            disabled={!newRoast.trim()}
-            style={{
-              ...submitButtonStyle,
-              opacity: newRoast.trim() ? 1 : 0.5,
-              cursor: newRoast.trim() ? 'pointer' : 'not-allowed'
-            }}
-          >
-            <SendIcon size={14} color="#fff" />
-            ROAST
+          <button onClick={useTemplate} style={templateButtonStyle}>🎲 Random</button>
+          <button onClick={submitRoast} disabled={!newRoast.trim()} style={{ ...submitButtonStyle, opacity: newRoast.trim() ? 1 : 0.5, cursor: newRoast.trim() ? 'pointer' : 'not-allowed' }}>
+            <SendIcon size={14} color="#fff" /> ROAST
           </button>
         </div>
       </div>
 
-      {/* Roast List */}
       <div style={roastListStyle}>
         {roasts.length === 0 ? (
           <div style={emptyStateStyle}>
             <MessageIcon size={24} color="#333" />
-            <p style={{ margin: '10px 0 0 0', color: '#444', fontSize: '0.8rem' }}>
-              No roasts yet. Be the first!
-            </p>
+            <p style={{ margin: '10px 0 0 0', color: '#444', fontSize: '0.8rem' }}>No roasts yet. Be the first!</p>
           </div>
         ) : (
           roasts.map((roast) => (
             <div key={roast.id} style={roastItemStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                <span style={{ color: '#9c27b0', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                  {roast.authorName}
-                </span>
-                <span style={{ color: '#444', fontSize: '0.65rem' }}>
-                  {formatTimeAgo(roast.createdAt)}
-                </span>
+                <span style={{ color: '#9c27b0', fontSize: '0.75rem', fontWeight: 'bold' }}>{roast.authorName}</span>
+                <span style={{ color: '#444', fontSize: '0.65rem' }}>{formatTimeAgo(roast.createdAt)}</span>
               </div>
-              <p style={{ 
-                margin: 0, 
-                color: '#ccc', 
-                fontSize: '0.85rem',
-                lineHeight: '1.4',
-                fontStyle: 'italic'
-              }}>
-                "{roast.message}"
-              </p>
+              <p style={{ margin: 0, color: '#ccc', fontSize: '0.85rem', lineHeight: '1.4', fontStyle: 'italic' }}>"{roast.message}"</p>
             </div>
           ))
         )}
@@ -182,90 +131,15 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
   );
 };
 
-// Styles
-const containerStyle = {
-  marginTop: '15px',
-  padding: '15px',
-  background: 'rgba(255,68,68,0.03)',
-  border: '1px solid #2a1a1a',
-  borderRadius: '12px'
-};
-
-const headerStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  marginBottom: '15px',
-  paddingBottom: '10px',
-  borderBottom: '1px solid #1a0000'
-};
-
-const inputContainerStyle = {
-  marginBottom: '15px'
-};
-
-const textareaStyle = {
-  width: '100%',
-  minHeight: '60px',
-  padding: '10px',
-  background: '#0a0a0a',
-  border: '1px solid #333',
-  borderRadius: '8px',
-  color: '#fff',
-  fontSize: '0.85rem',
-  resize: 'vertical',
-  outline: 'none',
-  marginBottom: '8px'
-};
-
-const inputActionsStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-};
-
-const templateButtonStyle = {
-  padding: '6px 12px',
-  background: 'transparent',
-  border: '1px solid #333',
-  borderRadius: '6px',
-  color: '#666',
-  fontSize: '0.75rem',
-  cursor: 'pointer'
-};
-
-const submitButtonStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  padding: '8px 16px',
-  background: '#ff4444',
-  border: 'none',
-  borderRadius: '6px',
-  color: '#fff',
-  fontWeight: 'bold',
-  fontSize: '0.75rem'
-};
-
-const roastListStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  maxHeight: '200px',
-  overflowY: 'auto'
-};
-
-const roastItemStyle = {
-  padding: '10px',
-  background: 'rgba(0,0,0,0.3)',
-  borderRadius: '8px',
-  borderLeft: '2px solid #ff4444'
-};
-
-const emptyStateStyle = {
-  textAlign: 'center',
-  padding: '20px',
-  color: '#444'
-};
+const containerStyle = { marginTop: '15px', padding: '15px', background: 'rgba(255,68,68,0.03)', border: '1px solid #2a1a1a', borderRadius: '12px' };
+const headerStyle = { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #1a0000' };
+const inputContainerStyle = { marginBottom: '15px' };
+const textareaStyle = { width: '100%', minHeight: '60px', padding: '10px', background: '#0a0a0a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.85rem', resize: 'vertical', outline: 'none', marginBottom: '8px' };
+const inputActionsStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+const templateButtonStyle = { padding: '6px 12px', background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#666', fontSize: '0.75rem', cursor: 'pointer' };
+const submitButtonStyle = { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#ff4444', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: 'bold', fontSize: '0.75rem' };
+const roastListStyle = { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto' };
+const roastItemStyle = { padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', borderLeft: '2px solid #ff4444' };
+const emptyStateStyle = { textAlign: 'center', padding: '20px', color: '#444' };
 
 export default RoastFeed;

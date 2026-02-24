@@ -1,26 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  deleteDoc 
+import { api } from '../services/api';
 import { calculateDebt } from '../utils/gameLogic';
 import { TargetIcon, TrophyIcon, ClockIcon, AlertIcon } from './icons/Icons';
 
 /**
  * Friend Challenges - Competitive Accountability
- * 
- * Challenge a friend to:
- * - Maintain the longest clean streak
- * - Avoid bankruptcy the longest
- * - Most check-ins in a week
- * 
- * Winner gets Aura Points / Bragging rights
  */
 const FriendChallenges = ({ friendships = [], showToast }) => {
   const { user } = useAuth();
@@ -62,28 +47,9 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
   const loadChallenges = async () => {
     setLoading(true);
     try {
-      // Get active challenges where user is participant
-      const challengesQuery = query(
-        collection( 'friendChallenges'),
-        where('status', 'in', ['active', 'pending'])
-      );
-
-      const snapshot = await getDocs(challengesQuery);
-      const active = [];
-      const pending = [];
-
-      snapshot.docs.forEach(docSnap => {
-        const data = { id: docSnap.id, ...docSnap.data() };
-        
-        // Check if user is involved
-        if (data.challengerId === user.uid || data.targetId === user.uid) {
-          if (data.status === 'pending' && data.targetId === user.uid) {
-            pending.push(data);
-          } else if (data.status === 'active') {
-            active.push(data);
-          }
-        }
-      });
+      const res = await api.get('/challenges');
+      const active = res.filter(c => c.status === 'active');
+      const pending = res.filter(c => c.status === 'pending' && c.targetId === user.id);
 
       setActiveChallenges(active);
       setPendingChallenges(pending);
@@ -98,22 +64,13 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
 
     try {
       const challengeData = {
-        challengerId: user.uid,
-        challengerName: user.displayName || 'Anonymous',
         targetId: selectedFriend.id,
         targetName: selectedFriend.name,
         type: challengeType,
-        duration: duration,
-        status: 'pending',
-        createdAt: new Date(),
-        startedAt: null,
-        endsAt: null,
-        challengerScore: 0,
-        targetScore: 0,
-        winner: null
+        duration: duration
       };
 
-      await addDoc(collection( 'friendChallenges'), challengeData);
+      await api.post('/challenges', challengeData);
       showToast('Challenge sent!', 'SUCCESS');
       setShowCreateModal(false);
       loadChallenges();
@@ -125,23 +82,13 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
 
   const respondToChallenge = async (challengeId, accept) => {
     try {
-      const challengeRef = doc( 'friendChallenges', challengeId);
-      
       if (accept) {
-        const now = new Date();
-        const endsAt = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000);
-        
-        await updateDoc(challengeRef, {
-          status: 'active',
-          startedAt: new Date(),
-          endsAt: endsAt
-        });
+        await api.put(`/challenges/${challengeId}/accept`);
         showToast('Challenge accepted! Game on!', 'SUCCESS');
       } else {
-        await deleteDoc(challengeRef);
+        await api.delete(`/challenges/${challengeId}`);
         showToast('Challenge declined', 'INFO');
       }
-      
       loadChallenges();
     } catch (error) {
       console.error('Error responding to challenge:', error);
@@ -149,7 +96,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
   };
 
   const getTimeRemaining = (endsAt) => {
-    const end = endsAt?.toDate ? endsAt.toDate() : new Date(endsAt);
+    const end = new Date(endsAt);
     const now = new Date();
     const diff = end - now;
     
@@ -265,7 +212,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
                     height: '50px', 
                     borderRadius: '50%', 
                     background: '#1a1a1a',
-                    border: `2px solid ${challenge.challengerId === user.uid ? '#9c27b0' : '#333'}`,
+                    border: `2px solid ${challenge.challengerId === user.id ? '#9c27b0' : '#333'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -301,7 +248,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
                     height: '50px', 
                     borderRadius: '50%', 
                     background: '#1a1a1a',
-                    border: `2px solid ${challenge.targetId === user.uid ? '#9c27b0' : '#333'}`,
+                    border: `2px solid ${challenge.targetId === user.id ? '#9c27b0' : '#333'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -337,7 +284,6 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
           <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 20px 0', color: '#9c27b0' }}>⚔️ Issue Challenge</h3>
             
-            {/* Select Friend */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', color: '#888', fontSize: '0.8rem', marginBottom: '8px' }}>
                 Select Opponent
@@ -346,12 +292,12 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
                 value={selectedFriend?.id || ''}
                 onChange={(e) => {
                   const friend = friendships.find(f => {
-                    const id = f.myPerspective === 'user1' ? f.user2Id : f.user1Id;
+                    const id = f.myPerspective === 'user1' ? f.user2._id : f.user1._id;
                     return id === e.target.value;
                   });
                   if (friend) {
                     const friendData = friend.myPerspective === 'user1' ? friend.user2 : friend.user1;
-                    setSelectedFriend({ id: friendData.userId, name: friendData.displayName });
+                    setSelectedFriend({ id: friendData._id, name: friendData.displayName });
                   }
                 }}
                 style={selectStyle}
@@ -360,7 +306,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
                 {friendships.map(f => {
                   const friendData = f.myPerspective === 'user1' ? f.user2 : f.user1;
                   return (
-                    <option key={f.id} value={friendData.userId}>
+                    <option key={f.id} value={friendData._id}>
                       {friendData.displayName}
                     </option>
                   );
@@ -368,7 +314,6 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
               </select>
             </div>
 
-            {/* Select Challenge Type */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', color: '#888', fontSize: '0.8rem', marginBottom: '8px' }}>
                 Challenge Type
@@ -398,7 +343,6 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
               </div>
             </div>
 
-            {/* Duration */}
             <div style={{ marginBottom: '25px' }}>
               <label style={{ display: 'block', color: '#888', fontSize: '0.8rem', marginBottom: '8px' }}>
                 Duration: {duration} days
@@ -411,13 +355,8 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
                 onChange={(e) => setDuration(parseInt(e.target.value))}
                 style={{ width: '100%' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#444', fontSize: '0.7rem', marginTop: '5px' }}>
-                <span>3 days</span>
-                <span>30 days</span>
-              </div>
             </div>
 
-            {/* Actions */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <button 
                 onClick={() => setShowCreateModal(false)}
@@ -447,128 +386,18 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
 };
 
 // Styles
-const containerStyle = {
-  background: 'linear-gradient(145deg, #111, #0a0a0a)',
-  border: '1px solid #222',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  marginBottom: '20px'
-};
-
-const headerStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '20px 25px',
-  borderBottom: '1px solid #222',
-  background: 'linear-gradient(90deg, rgba(156,39,176,0.05) 0%, transparent 100%)'
-};
-
-const createButtonStyle = {
-  padding: '10px 20px',
-  background: '#9c27b0',
-  border: 'none',
-  borderRadius: '8px',
-  color: '#fff',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  fontSize: '0.8rem',
-  letterSpacing: '0.5px'
-};
-
-const sectionStyle = {
-  padding: '20px',
-  borderBottom: '1px solid #1a1a1a'
-};
-
-const pendingCardStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '15px',
-  padding: '15px',
-  background: 'rgba(255,136,0,0.05)',
-  border: '1px solid #332200',
-  borderRadius: '12px',
-  marginBottom: '10px'
-};
-
-const activeCardStyle = {
-  padding: '20px',
-  background: 'rgba(156,39,176,0.05)',
-  border: '1px solid #2a1a30',
-  borderRadius: '12px',
-  marginBottom: '10px'
-};
-
-const actionButtonStyle = {
-  padding: '8px 16px',
-  border: 'none',
-  borderRadius: '6px',
-  fontWeight: 'bold',
-  fontSize: '0.75rem',
-  cursor: 'pointer'
-};
-
-const emptyStateStyle = {
-  textAlign: 'center',
-  padding: '40px 20px'
-};
-
-const modalOverlayStyle = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  background: 'rgba(0,0,0,0.8)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-  padding: '20px'
-};
-
-const modalContentStyle = {
-  background: 'linear-gradient(145deg, #111, #0a0a0a)',
-  border: '1px solid #333',
-  borderRadius: '16px',
-  padding: '25px',
-  maxWidth: '400px',
-  width: '100%',
-  maxHeight: '80vh',
-  overflowY: 'auto'
-};
-
-const selectStyle = {
-  width: '100%',
-  padding: '12px',
-  background: '#1a1a1a',
-  border: '1px solid #333',
-  borderRadius: '8px',
-  color: '#fff',
-  fontSize: '0.9rem',
-  outline: 'none'
-};
-
-const typeButtonStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  padding: '12px',
-  border: '1px solid',
-  borderRadius: '8px',
-  background: 'transparent',
-  cursor: 'pointer',
-  textAlign: 'left'
-};
-
-const modalActionButtonStyle = {
-  flex: 1,
-  padding: '12px',
-  border: 'none',
-  borderRadius: '8px',
-  fontWeight: 'bold',
-  cursor: 'pointer'
-};
+const containerStyle = { background: '#111', border: '1px solid #222', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' };
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 25px', borderBottom: '1px solid #222' };
+const createButtonStyle = { padding: '10px 20px', background: '#9c27b0', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: 'bold', cursor: 'pointer' };
+const sectionStyle = { padding: '20px', borderBottom: '1px solid #1a1a1a' };
+const pendingCardStyle = { display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', background: 'rgba(255,136,0,0.05)', border: '1px solid #332200', borderRadius: '12px', marginBottom: '10px' };
+const activeCardStyle = { padding: '20px', background: 'rgba(156,39,176,0.05)', border: '1px solid #2a1a30', borderRadius: '12px', marginBottom: '10px' };
+const actionButtonStyle = { padding: '8px 16px', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75rem', cursor: 'pointer' };
+const emptyStateStyle = { textAlign: 'center', padding: '40px 20px' };
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' };
+const modalContentStyle = { background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '25px', maxWidth: '400px', width: '100%' };
+const selectStyle = { width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff' };
+const typeButtonStyle = { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', border: '1px solid', borderRadius: '8px', background: 'transparent', cursor: 'pointer' };
+const modalActionButtonStyle = { flex: 1, padding: '12px', border: 'none', borderRadius: '8px', fontWeight: 'bold' };
 
 export default FriendChallenges;
