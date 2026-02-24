@@ -42,7 +42,7 @@ const BailoutHistoryPanel = () => {
   const totalReceived = Array.isArray(bailouts?.received) ? bailouts.received.reduce((sum, b) => sum + (b.amount || 0), 0) : 0;
 
   if (loading) return null;
-  if (bailouts.all.length === 0) return null;
+  if (!Array.isArray(bailouts?.all) || bailouts.all.length === 0) return null;
 
   return (
     <div style={containerStyle}>
@@ -56,7 +56,7 @@ const BailoutHistoryPanel = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ color: '#666', fontSize: '0.8rem' }}>
-            {bailouts.all.length} total
+            {bailouts?.all?.length || 0} total
           </span>
           {expanded ? (
             <ChevronUpIcon size={18} color="#666" />

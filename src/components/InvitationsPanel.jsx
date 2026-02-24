@@ -28,7 +28,7 @@ const InvitationsPanel = ({ onUpdate }) => {
     }
   };
 
-  const totalCount = invitations.received.length + invitations.sent.length;
+  const totalCount = (invitations?.received?.length || 0) + (invitations?.sent?.length || 0);
 
   if (loading) return null;
   if (totalCount === 0) return null;
@@ -44,7 +44,7 @@ const InvitationsPanel = ({ onUpdate }) => {
           <span>Invitations</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {invitations.received.length > 0 && (
+          {(invitations?.received?.length || 0) > 0 && (
             <span style={badgeStyle}>{invitations.received.length}</span>
           )}
           {expanded ? (
@@ -57,7 +57,7 @@ const InvitationsPanel = ({ onUpdate }) => {
 
       {expanded && (
         <div style={contentStyle}>
-          {invitations.received.length > 0 && (
+          {(invitations?.received?.length || 0) > 0 && (
             <div style={{ marginBottom: '20px' }}>
               <h4 style={{ 
                 color: '#555', 
@@ -107,7 +107,7 @@ const InvitationsPanel = ({ onUpdate }) => {
             </div>
           )}
 
-          {invitations.sent.length > 0 && (
+          {(invitations?.sent?.length || 0) > 0 && (
             <div>
               <h4 style={{ 
                 color: '#555', 
