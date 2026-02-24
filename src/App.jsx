@@ -130,7 +130,7 @@ function App() {
         });
 
         // Sort by urgency (highest debt first)
-        const sorted = friendshipsWithStats.sort((a, b) => b.myDebt - a.myDebt);
+        const sorted = (friendshipsWithStats || []).sort((a, b) => (b.myDebt || 0) - (a.myDebt || 0));
         setFriendships(sorted);
         setLoading(false);
     } catch (e) {

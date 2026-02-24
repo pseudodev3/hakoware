@@ -44,9 +44,9 @@ const AuraMarketplace = ({ onBailout }) => {
   };
 
   if (loading) return null;
-  if (bankruptFriends.length === 0) return null;
+  if (!Array.isArray(bankruptFriends) || bankruptFriends.length === 0) return null;
 
-  const totalDebtAvailable = bankruptFriends.reduce((sum, f) => sum + f.stats.totalDebt, 0);
+  const totalDebtAvailable = bankruptFriends.reduce((sum, f) => sum + (f.stats?.totalDebt || 0), 0);
 
   return (
     <div style={containerStyle}>

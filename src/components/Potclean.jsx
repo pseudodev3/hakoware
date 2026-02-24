@@ -28,7 +28,7 @@ const Potclean = ({ friendships = [] }) => {
 
   // Calculate total debt across all friendships
   useEffect(() => {
-    if (!friendships || friendships.length === 0) {
+    if (!Array.isArray(friendships) || friendships.length === 0) {
       setTotalDebt(0);
       return;
     }

@@ -141,14 +141,14 @@ const ShameWall = () => {
         <div style={{ width: '1px', height: '30px', background: '#333' }} />
         <div style={statItemStyle}>
           <span style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
-            {bankruptcies.reduce((acc, b) => acc + (b.debtAtBankruptcy || 0), 0)}
+            {Array.isArray(bankruptcies) ? bankruptcies.reduce((acc, b) => acc + (b.debtAtBankruptcy || 0), 0) : 0}
           </span>
           <span style={{ color: '#666', fontSize: '0.7rem' }}>Total APR lost</span>
         </div>
         <div style={{ width: '1px', height: '30px', background: '#333' }} />
         <div style={statItemStyle}>
           <span style={{ color: '#ff8800', fontSize: '1.5rem', fontWeight: 'bold' }}>
-            {bankruptcies.length > 0 
+            {Array.isArray(bankruptcies) && bankruptcies.length > 0 
               ? Math.round(bankruptcies.reduce((acc, b) => acc + (b.debtAtBankruptcy || 0), 0) / bankruptcies.length)
               : 0}
           </span>

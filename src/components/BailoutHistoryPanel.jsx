@@ -38,8 +38,8 @@ const BailoutHistoryPanel = () => {
   };
 
   const filteredBailouts = getFilteredBailouts();
-  const totalGiven = bailouts.given.reduce((sum, b) => sum + (b.amount || 0), 0);
-  const totalReceived = bailouts.received.reduce((sum, b) => sum + (b.amount || 0), 0);
+  const totalGiven = Array.isArray(bailouts?.given) ? bailouts.given.reduce((sum, b) => sum + (b.amount || 0), 0) : 0;
+  const totalReceived = Array.isArray(bailouts?.received) ? bailouts.received.reduce((sum, b) => sum + (b.amount || 0), 0) : 0;
 
   if (loading) return null;
   if (bailouts.all.length === 0) return null;
