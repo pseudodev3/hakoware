@@ -1,79 +1,56 @@
-/**
- * Firebase Functions Service
- * 
- * Client-side interface to Firebase Functions
- * Replaces local calculations with server-side execution
- */
-
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const functions = getFunctions();
+import { api } from './api';
 
 /**
- * Calculate debt for a friendship (server-side)
+ * Call a backend function for debt calculation
  */
-export const calculateDebtServer = async (friendshipId) => {
+export const calculateFriendshipDebt = async (friendshipId) => {
   try {
-    const calculateDebtFn = httpsCallable(functions, 'calculateFriendshipDebt');
-    const result = await calculateDebtFn({ friendshipId });
-    return result.data;
+    return await api.post(`/friendships/${friendshipId}/calculate-debt`);
   } catch (error) {
-    console.error('Error calculating debt:', error);
+    console.error('Error calculating friendship debt:', error);
     throw error;
   }
 };
 
 /**
- * Perform check-in via server function
+ * Award aura points for a specific action
  */
-export const performCheckinServer = async (friendshipId, proof = null) => {
+export const awardAuraPoints = async (userId, type, metadata = {}) => {
   try {
-    const performCheckinFn = httpsCallable(functions, 'performCheckin');
-    const result = await performCheckinFn({ friendshipId, proof });
-    return result.data;
+    return await api.post('/aura/award', { type, metadata });
   } catch (error) {
-    console.error('Error in server check-in:', error);
+    console.error('Error awarding aura points:', error);
     throw error;
   }
 };
 
 /**
- * Get pre-calculated debt from friendship document
- * This reads the stored calculation from Firestore (no function call needed)
+ * Trigger bankruptcy process for a user in a friendship
  */
-export const getStoredDebt = (friendship, userId) => {
-  if (!friendship || !userId) return null;
-  
-  const isUser1 = friendship.user1Id === userId;
-  const perspective = isUser1 ? 'user1Perspective' : 'user2Perspective';
-  const myData = friendship[perspective];
-  
-  if (!myData) return null;
-  
-  // Return stored calculation if available
-  if (myData.calculatedDebt !== undefined) {
-    return {
-      totalDebt: myData.calculatedDebt,
-      daysMissed: myData.daysMissed || 0,
-      isBankrupt: myData.isBankrupt || false,
-      isInWarningZone: myData.isInWarningZone || false,
-      daysUntilBankrupt: myData.daysUntilBankrupt || 0,
-      calculatedAt: myData.calculatedAt?.toDate?.() || null,
-      isFromServer: true
-    };
+export const triggerBankruptcy = async (friendshipId, userId) => {
+  try {
+    return await api.post(`/bankruptcy/declare`, { friendshipId, userId });
+  } catch (error) {
+    console.error('Error triggering bankruptcy:', error);
+    throw error;
   }
-  
-  // Fallback to local calculation if server hasn't calculated yet
-  return null;
 };
 
 /**
- * Check if debt calculation is fresh (within last hour)
+ * Send a notification through the backend
  */
-export const isDebtCalculationFresh = (friendship, userId) => {
-  const debt = getStoredDebt(friendship, userId);
-  if (!debt?.calculatedAt) return false;
-  
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  return debt.calculatedAt > oneHourAgo;
+export const sendAppNotification = async (notificationData) => {
+  try {
+    return await api.post('/notifications', notificationData);
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    throw error;
+  }
+};
+
+export default {
+  calculateFriendshipDebt,
+  awardAuraPoints,
+  triggerBankruptcy,
+  sendAppNotification
 };

@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { calculateDebt } from '../utils/gameLogic';
 import { LockIcon, ClockIcon, SkullIcon } from './icons/Icons';
 

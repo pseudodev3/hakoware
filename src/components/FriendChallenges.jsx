@@ -8,10 +8,7 @@ import {
   addDoc, 
   updateDoc, 
   doc, 
-  serverTimestamp,
   deleteDoc 
-} from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { calculateDebt } from '../utils/gameLogic';
 import { TargetIcon, TrophyIcon, ClockIcon, AlertIcon } from './icons/Icons';
 
@@ -67,7 +64,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
     try {
       // Get active challenges where user is participant
       const challengesQuery = query(
-        collection(db, 'friendChallenges'),
+        collection( 'friendChallenges'),
         where('status', 'in', ['active', 'pending'])
       );
 
@@ -108,7 +105,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
         type: challengeType,
         duration: duration,
         status: 'pending',
-        createdAt: serverTimestamp(),
+        createdAt: new Date(),
         startedAt: null,
         endsAt: null,
         challengerScore: 0,
@@ -116,7 +113,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
         winner: null
       };
 
-      await addDoc(collection(db, 'friendChallenges'), challengeData);
+      await addDoc(collection( 'friendChallenges'), challengeData);
       showToast('Challenge sent!', 'SUCCESS');
       setShowCreateModal(false);
       loadChallenges();
@@ -128,7 +125,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
 
   const respondToChallenge = async (challengeId, accept) => {
     try {
-      const challengeRef = doc(db, 'friendChallenges', challengeId);
+      const challengeRef = doc( 'friendChallenges', challengeId);
       
       if (accept) {
         const now = new Date();
@@ -136,7 +133,7 @@ const FriendChallenges = ({ friendships = [], showToast }) => {
         
         await updateDoc(challengeRef, {
           status: 'active',
-          startedAt: serverTimestamp(),
+          startedAt: new Date(),
           endsAt: endsAt
         });
         showToast('Challenge accepted! Game on!', 'SUCCESS');

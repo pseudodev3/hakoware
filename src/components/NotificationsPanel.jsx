@@ -59,7 +59,7 @@ const NotificationsPanel = ({ onUpdate, isOpen, onUnreadCountChange, onClose }) 
 
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     const now = new Date();
     const diff = (now - date) / 1000; // seconds
 

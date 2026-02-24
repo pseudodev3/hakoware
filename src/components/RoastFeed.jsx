@@ -8,9 +8,6 @@ import {
   limit, 
   onSnapshot,
   addDoc,
-  serverTimestamp 
-} from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { FlameIcon, MessageIcon, SendIcon } from './icons/Icons';
 
 /**
@@ -47,7 +44,7 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
     if (!bankruptcyId) return;
 
     const roastsQuery = query(
-      collection(db, 'bankruptcyRoasts'),
+      collection( 'bankruptcyRoasts'),
       where('bankruptcyId', '==', bankruptcyId),
       orderBy('createdAt', 'desc'),
       limit(20)
@@ -70,7 +67,7 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
     if (!newRoast.trim() || !user) return;
 
     try {
-      await addDoc(collection(db, 'bankruptcyRoasts'), {
+      await addDoc(collection( 'bankruptcyRoasts'), {
         bankruptcyId,
         targetUserId,
         targetUserName,
@@ -78,7 +75,7 @@ const RoastFeed = ({ bankruptcyId, targetUserId, targetUserName }) => {
         authorName: user.displayName || 'Anonymous',
         message: newRoast.trim(),
         upvotes: 0,
-        createdAt: serverTimestamp()
+        createdAt: new Date()
       });
       setNewRoast('');
     } catch (error) {

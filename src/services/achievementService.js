@@ -1,21 +1,4 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-  increment,
-  arrayUnion,
-  orderBy,
-  limit
-} from 'firebase/firestore';
-import { db } from './firebase';
-
-const ACHIEVEMENTS_COLLECTION = 'userAchievements';
+import { api } from './api';
 
 // Achievement Definitions - The "Collection Plaques"
 export const ACHIEVEMENTS = {
@@ -129,7 +112,7 @@ export const ACHIEVEMENTS = {
   
   // Received Bailouts (Shame/Achievement)
   PROFESSIONAL_BEGGAR: {
-    id: 'PROFESSIONAL_BEGGAR',
+    id: 'PROFESSIONAR_BEGGAR',
     name: 'Professional Beggar',
     description: 'Receive 5 bailouts. Your friends are enablers.',
     icon: '🥺',
@@ -271,35 +254,7 @@ export const RARITY_TIERS = {
 // Initialize user achievements document
 export const initializeUserAchievements = async (userId) => {
   try {
-    const achievementRef = doc(db, ACHIEVEMENTS_COLLECTION, userId);
-    const achievementDoc = await getDoc(achievementRef);
-    
-    if (!achievementDoc.exists()) {
-      await setDoc(achievementRef, {
-        userId,
-        unlockedAchievements: [],
-        totalPoints: 0,
-        stats: {
-          totalBankruptcies: 0,
-          highestDebt: 0,
-          maxCleanStreak: 0,
-          bailoutsGiven: 0,
-          bailoutsReceived: 0,
-          totalCheckins: 0,
-          longestStreak: 0,
-          totalFriends: 0,
-          mercyGranted: 0,
-          mercyGiven: 0,
-          nightCheckins: 0,
-          perfectWeeks: 0,
-          phoenixRises: 0
-        },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-    }
-    
-    return { success: true };
+    return await api.post('/achievements/initialize', { userId });
   } catch (error) {
     console.error('Error initializing achievements:', error);
     return { success: false, error: error.message };
@@ -309,24 +264,12 @@ export const initializeUserAchievements = async (userId) => {
 // Get user achievements and stats
 export const getUserAchievements = async (userId) => {
   try {
-    const achievementRef = doc(db, ACHIEVEMENTS_COLLECTION, userId);
-    const achievementDoc = await getDoc(achievementRef);
-    
-    if (!achievementDoc.exists()) {
-      await initializeUserAchievements(userId);
-      return {
-        unlockedAchievements: [],
-        totalPoints: 0,
-        stats: {},
-        allAchievements: ACHIEVEMENTS
-      };
-    }
-    
-    const data = achievementDoc.data();
+    const res = await api.get(`/achievements/${userId}`);
+    if (res.msg) throw new Error(res.msg);
     return {
-      unlockedAchievements: data.unlockedAchievements || [],
-      totalPoints: data.totalPoints || 0,
-      stats: data.stats || {},
+      unlockedAchievements: res.unlockedAchievements || [],
+      totalPoints: res.totalPoints || 0,
+      stats: res.stats || {},
       allAchievements: ACHIEVEMENTS
     };
   } catch (error) {
@@ -338,99 +281,8 @@ export const getUserAchievements = async (userId) => {
 // Check and unlock achievements
 export const checkAchievements = async (userId, activityType, activityData = {}) => {
   try {
-    const achievementRef = doc(db, ACHIEVEMENTS_COLLECTION, userId);
-    const achievementDoc = await getDoc(achievementRef);
-    
-    if (!achievementDoc.exists()) {
-      await initializeUserAchievements(userId);
-      return { newlyUnlocked: [] };
-    }
-    
-    const data = achievementDoc.data();
-    const currentStats = { ...data.stats };
-    const unlockedIds = data.unlockedAchievements.map(a => a.id);
-    
-    // Update stats based on activity
-    switch (activityType) {
-      case 'BANKRUPTCY':
-        currentStats.totalBankruptcies = (currentStats.totalBankruptcies || 0) + 1;
-        currentStats.highestDebt = Math.max(currentStats.highestDebt || 0, activityData.debt || 0);
-        break;
-      case 'DEBT_INCREASE':
-        currentStats.highestDebt = Math.max(currentStats.highestDebt || 0, activityData.debt || 0);
-        break;
-      case 'CLEAN_STREAK':
-        currentStats.maxCleanStreak = Math.max(currentStats.maxCleanStreak || 0, activityData.days || 0);
-        break;
-      case 'BAILOUT_GIVEN':
-        currentStats.bailoutsGiven = (currentStats.bailoutsGiven || 0) + 1;
-        break;
-      case 'BAILOUT_RECEIVED':
-        currentStats.bailoutsReceived = (currentStats.bailoutsReceived || 0) + 1;
-        break;
-      case 'CHECKIN':
-        currentStats.totalCheckins = (currentStats.totalCheckins || 0) + 1;
-        if (activityData.hour >= 2 && activityData.hour <= 5) {
-          currentStats.nightCheckins = (currentStats.nightCheckins || 0) + 1;
-        }
-        break;
-      case 'STREAK':
-        currentStats.longestStreak = Math.max(currentStats.longestStreak || 0, activityData.streak || 0);
-        break;
-      case 'FRIEND_ADDED':
-        currentStats.totalFriends = activityData.totalFriends || (currentStats.totalFriends || 0) + 1;
-        break;
-      case 'MERCY_GRANTED':
-        currentStats.mercyGranted = (currentStats.mercyGranted || 0) + 1;
-        break;
-      case 'MERCY_GIVEN':
-        currentStats.mercyGiven = (currentStats.mercyGiven || 0) + 1;
-        break;
-      case 'PERFECT_WEEK':
-        currentStats.perfectWeeks = (currentStats.perfectWeeks || 0) + 1;
-        break;
-      case 'PHOENIX':
-        currentStats.phoenixRises = (currentStats.phoenixRises || 0) + 1;
-        break;
-    }
-    
-    // Check which achievements should be unlocked
-    const newlyUnlocked = [];
-    let additionalPoints = 0;
-    
-    Object.values(ACHIEVEMENTS).forEach(achievement => {
-      if (!unlockedIds.includes(achievement.id)) {
-        if (achievement.condition(currentStats)) {
-          newlyUnlocked.push({
-            ...achievement,
-            unlockedAt: new Date().toISOString()
-          });
-          additionalPoints += achievement.points;
-        }
-      }
-    });
-    
-    // Update Firestore if new achievements unlocked
-    if (newlyUnlocked.length > 0) {
-      await updateDoc(achievementRef, {
-        unlockedAchievements: arrayUnion(...newlyUnlocked),
-        stats: currentStats,
-        totalPoints: increment(additionalPoints),
-        updatedAt: serverTimestamp()
-      });
-    } else {
-      // Just update stats
-      await updateDoc(achievementRef, {
-        stats: currentStats,
-        updatedAt: serverTimestamp()
-      });
-    }
-    
-    return {
-      newlyUnlocked,
-      totalNewPoints: additionalPoints,
-      currentStats
-    };
+    const res = await api.post('/achievements/check', { activityType, activityData });
+    return res;
   } catch (error) {
     console.error('Error checking achievements:', error);
     return { newlyUnlocked: [] };
@@ -440,17 +292,7 @@ export const checkAchievements = async (userId, activityType, activityData = {})
 // Get leaderboard by achievement points
 export const getAchievementLeaderboard = async (limit_count = 10) => {
   try {
-    const q = query(
-      collection(db, ACHIEVEMENTS_COLLECTION),
-      orderBy('totalPoints', 'desc'),
-      limit(limit_count)
-    );
-    
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      userId: doc.id,
-      ...doc.data()
-    }));
+    return await api.get(`/achievements/leaderboard?limit=${limit_count}`);
   } catch (error) {
     console.error('Error getting leaderboard:', error);
     return [];
@@ -460,35 +302,7 @@ export const getAchievementLeaderboard = async (limit_count = 10) => {
 // Get recently unlocked achievements (for feed)
 export const getRecentAchievements = async (limit_count = 20) => {
   try {
-    const q = query(
-      collection(db, ACHIEVEMENTS_COLLECTION),
-      orderBy('updatedAt', 'desc'),
-      limit(limit_count)
-    );
-    
-    const snapshot = await getDocs(q);
-    const recent = [];
-    
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.unlockedAchievements && data.unlockedAchievements.length > 0) {
-        // Get the most recent unlock
-        const sorted = [...data.unlockedAchievements].sort(
-          (a, b) => new Date(b.unlockedAt) - new Date(a.unlockedAt)
-        );
-        if (sorted[0]) {
-          recent.push({
-            userId: doc.id,
-            achievement: sorted[0],
-            unlockedAt: sorted[0].unlockedAt
-          });
-        }
-      }
-    });
-    
-    return recent.sort((a, b) => 
-      new Date(b.unlockedAt) - new Date(a.unlockedAt)
-    ).slice(0, limit_count);
+    return await api.get(`/achievements/recent?limit=${limit_count}`);
   } catch (error) {
     console.error('Error getting recent achievements:', error);
     return [];

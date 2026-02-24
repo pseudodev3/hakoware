@@ -29,7 +29,7 @@ const BailoutHistoryPanel = () => {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Unknown';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',

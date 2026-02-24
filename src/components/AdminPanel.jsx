@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { calculateDebt } from '../utils/gameLogic';
 import { sendSystemEmail } from '../services/emailService';
 import { calculateDailyInterest } from '../services/checkinService';
@@ -23,11 +21,11 @@ const AdminPanel = ({ onRefresh, showToast }) => {
     setLoading(true);
     try {
       // Get all friendships
-      const friendshipsSnapshot = await getDocs(collection(db, 'friendships'));
+      const friendshipsSnapshot = await getDocs(collection( 'friendships'));
       const friendships = friendshipsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
       // Get all users
-      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersSnapshot = await getDocs(collection( 'users'));
       const users = usersSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
       // Calculate bankruptcy stats
@@ -77,7 +75,7 @@ const AdminPanel = ({ onRefresh, showToast }) => {
     setSendingEmails(true);
     try {
       // Get all friendships
-      const friendshipsSnapshot = await getDocs(collection(db, 'friendships'));
+      const friendshipsSnapshot = await getDocs(collection( 'friendships'));
       const friendships = friendshipsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
       let emailsSent = 0;

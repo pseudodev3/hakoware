@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { calculateDebt } from '../../utils/gameLogic';
-import { notifyBailoutReceived } from '../../services/notificationService';
-import { doc, getDoc, updateDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { api } from '../../services/api';
 
 const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplete }) => {
   const { user, userProfile } = useAuth();
@@ -33,52 +31,13 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
 
     setLoading(true);
     try {
-      // Get your own data to check if you can afford this
-      const myData = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
-      
-      // In a real system, you'd have a separate "aura balance" 
-      // For now, we'll just reduce your base debt (you're paying with your own credit)
-      // This represents "transferring" aura from your good standing to their debt
-      
-      const friendshipRef = doc(db, 'friendships', friendship.id);
-      const friendshipDoc = await getDoc(friendshipRef);
-      
-      if (!friendshipDoc.exists()) {
-        throw new Error('Friendship not found');
-      }
-
-      const perspective = isUser1 ? 'user2Perspective' : 'user1Perspective';
-      
-      // Reduce friend's debt
-      const newFriendDebt = Math.max(0, (friendData.baseDebt || 0) - amount);
-      
-      // Increase your debt (you're paying for them)
-      const newMyDebt = (myData.baseDebt || 0) + Math.ceil(amount * 0.5); // 50% penalty for bailout
-
-      await updateDoc(friendshipRef, {
-        [`${perspective}.baseDebt`]: newFriendDebt,
-        [`${isUser1 ? 'user1Perspective' : 'user2Perspective'}.baseDebt`]: newMyDebt,
-        lastBailoutAt: serverTimestamp()
+      const res = await api.post(`/friendships/${friendship.id}/bailout`, {
+        amount,
+        message,
+        recipientId: friend.userId
       });
 
-      // Record the bailout transaction
-      await addDoc(collection(db, 'bailouts'), {
-        friendshipId: friendship.id,
-        fromUserId: user.uid,
-        fromUserName: isUser1 ? friendship.user1.displayName : friendship.user2.displayName,
-        toUserId: friend.userId,
-        toUserName: friend.displayName,
-        amount: amount,
-        message: message || null,
-        createdAt: serverTimestamp()
-      });
-
-      // Send notification to the friend who was bailed out
-      try {
-        await notifyBailoutReceived(friendship, user.uid, friend.userId, amount, message);
-      } catch (error) {
-        console.error('Error sending bailout notification:', error);
-      }
+      if (res.msg) throw new Error(res.msg);
 
       showToast(`Bailed out ${friend.displayName} for ${amount} APR!`, 'SUCCESS');
       onBailoutComplete();
@@ -114,7 +73,6 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
             to help them avoid bankruptcy.
           </p>
 
-          {/* Friend's Debt Info */}
           <div style={{
             background: 'linear-gradient(135deg, #330000 0%, #1a0000 100%)',
             border: '1px solid #ff4444',
@@ -134,7 +92,6 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
             </div>
           </div>
 
-          {/* Bailout Amount */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ 
               display: 'block', 
@@ -150,7 +107,7 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
               <input
                 type="range"
                 min="1"
-                max={maxBailout}
+                max={maxBailout || 1}
                 value={amount}
                 onChange={(e) => setAmount(parseInt(e.target.value))}
                 style={{ flex: 1 }}
@@ -158,7 +115,7 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
               <input
                 type="number"
                 min="1"
-                max={maxBailout}
+                max={maxBailout || 1}
                 value={amount}
                 onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
                 style={{
@@ -175,43 +132,8 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
               />
               <span style={{ color: '#666' }}>APR</span>
             </div>
-            
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {[1, 5, 10, Math.min(20, maxBailout)].filter((v, i, a) => a.indexOf(v) === i && v <= maxBailout).map(quickAmount => (
-                <button
-                  key={quickAmount}
-                  onClick={() => setAmount(quickAmount)}
-                  style={{
-                    padding: '6px 12px',
-                    background: amount === quickAmount ? '#004d40' : '#0a0a0a',
-                    color: amount === quickAmount ? '#00e676' : '#666',
-                    border: `1px solid ${amount === quickAmount ? '#00e676' : '#333'}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem'
-                  }}
-                >
-                  {quickAmount}
-                </button>
-              ))}
-              <button
-                onClick={() => setAmount(Math.min(friendStats.totalDebt, maxBailout))}
-                style={{
-                  padding: '6px 12px',
-                  background: '#0a0a0a',
-                  color: '#ffd700',
-                  border: '1px solid #443300',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem'
-                }}
-              >
-                MAX
-              </button>
-            </div>
           </div>
 
-          {/* Cost Warning */}
           <div style={{
             background: 'rgba(255, 215, 0, 0.05)',
             border: '1px solid #443300',
@@ -228,7 +150,6 @@ const BailoutModal = ({ isOpen, onClose, friendship, showToast, onBailoutComplet
             </p>
           </div>
 
-          {/* Message */}
           <div style={{ marginBottom: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <label style={{ 

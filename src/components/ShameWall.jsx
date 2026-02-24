@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { SkullIcon, FlameIcon, MessageIcon } from './icons/Icons';
 
 const ShameWall = () => {
@@ -28,7 +26,7 @@ const ShameWall = () => {
     // Real-time listener for new bankruptcies (simplified query without composite index)
     const unsubscribe = onSnapshot(
       query(
-        collection(db, 'bankruptcyHistory'),
+        collection( 'bankruptcyHistory'),
         where('resolvedAt', '==', null)
       ),
       (snapshot) => {
@@ -63,7 +61,7 @@ const ShameWall = () => {
     try {
       // Simple query without composite index requirement
       const q = query(
-        collection(db, 'bankruptcyHistory'),
+        collection( 'bankruptcyHistory'),
         where('resolvedAt', '==', null)
       );
       
