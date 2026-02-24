@@ -1,4 +1,4 @@
-const API_URL = 'http://5.180.182.73:5001/api';
+const API_URL = '/api';
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');

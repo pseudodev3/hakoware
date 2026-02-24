@@ -1,7 +1,5 @@
 import { api } from './api';
 
-const API_URL = 'http://5.180.182.73:5001/api';
-
 // Send a voice note using custom backend
 export const sendVoiceNote = async (friendshipId, senderId, senderName, recipientId, audioBlob) => {
   try {
@@ -12,7 +10,7 @@ export const sendVoiceNote = async (friendshipId, senderId, senderName, recipien
     formData.append('recipientId', recipientId);
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/voice-notes/upload`, {
+    const response = await fetch(`/api/voice-notes/upload`, {
       method: 'POST',
       headers: {
         'x-auth-token': token
@@ -37,8 +35,8 @@ export const getMyVoiceNotes = async () => {
     return notes.map(n => ({
         ...n,
         id: n._id,
-        // Convert static path to full URL for player
-        audioUrl: `http://5.180.182.73:5001${n.filePath}`
+        // Use relative path for player (Vercel will proxy this to /uploads on server)
+        audioUrl: n.filePath
     }));
   } catch (error) {
     console.error('Error getting voice notes:', error);
