@@ -19,6 +19,11 @@ export const getUserFriendships = async (userId) => {
   try {
     const friendships = await api.get('/friendships');
     
+    if (!Array.isArray(friendships)) {
+      console.error('Expected array from /friendships, got:', friendships);
+      return [];
+    }
+    
     // Map backend data to frontend expected format
     return friendships.map(f => {
       const isUser1 = f.user1._id === userId;

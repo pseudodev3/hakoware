@@ -8,12 +8,22 @@ const getHeaders = () => {
   };
 };
 
+const handleResponse = async (response) => {
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.indexOf("application/json") !== -1) {
+    return response.json();
+  } else {
+    // If not JSON (like a 404 HTML page), return an error object
+    return { msg: 'Server error: Not JSON', status: response.status };
+  }
+};
+
 export const api = {
   get: async (endpoint) => {
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers: getHeaders()
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   post: async (endpoint, data) => {
@@ -22,7 +32,7 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   put: async (endpoint, data) => {
@@ -31,7 +41,7 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   delete: async (endpoint) => {
@@ -39,6 +49,6 @@ export const api = {
       method: 'DELETE',
       headers: getHeaders()
     });
-    return response.json();
+    return handleResponse(response);
   }
 };
