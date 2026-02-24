@@ -28,8 +28,9 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('token');
             setUser(null);
           } else {
-            setUser(res);
-            setUserProfile(res); // For now, profile is same as user object
+            const userWithUid = { ...res, uid: res.id || res._id };
+            setUser(userWithUid);
+            setUserProfile(userWithUid); // For now, profile is same as user object
           }
         } catch (error) {
           console.error('Error loading user:', error);
@@ -49,9 +50,10 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/signup', { email, password, displayName });
       if (res.token) {
         localStorage.setItem('token', res.token);
-        setUser(res.user);
-        setUserProfile(res.user);
-        return { success: true, user: res.user };
+        const userWithUid = { ...res.user, uid: res.user.id || res.user._id };
+        setUser(userWithUid);
+        setUserProfile(userWithUid);
+        return { success: true, user: userWithUid };
       }
       return { success: false, error: res.msg || 'Signup failed' };
     } catch (error) {
@@ -65,9 +67,10 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/login', { email, password });
       if (res.token) {
         localStorage.setItem('token', res.token);
-        setUser(res.user);
-        setUserProfile(res.user);
-        return { success: true, user: res.user };
+        const userWithUid = { ...res.user, uid: res.user.id || res.user._id };
+        setUser(userWithUid);
+        setUserProfile(userWithUid);
+        return { success: true, user: userWithUid };
       }
       return { success: false, error: res.msg || 'Login failed' };
     } catch (error) {

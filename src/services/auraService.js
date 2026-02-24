@@ -10,11 +10,21 @@ export const getUserAura = async (userId) => {
     return {
       balance: res.balance || 0,
       totalEarned: res.totalEarned || 0,
+      totalSpent: res.totalSpent || 0,
+      totalTransactions: res.totalTransactions || 0,
+      earningsByType: res.earningsByType || {},
       history: res.history || []
     };
   } catch (error) {
     console.error('Error getting aura:', error);
-    return { balance: 0, totalEarned: 0, history: [] };
+    return { 
+      balance: 0, 
+      totalEarned: 0, 
+      totalSpent: 0, 
+      totalTransactions: 0, 
+      earningsByType: {}, 
+      history: [] 
+    };
   }
 };
 
@@ -23,7 +33,7 @@ export const getUserAura = async (userId) => {
  */
 export const getAuraBalance = async (userId) => {
     const aura = await getUserAura(userId);
-    return aura.balance;
+    return { balance: aura.balance };
 };
 
 /**
@@ -41,6 +51,9 @@ export const getAuraStats = async (userId) => {
     const aura = await getUserAura(userId);
     return {
         totalEarned: aura.totalEarned,
+        totalSpent: aura.totalSpent,
+        totalTransactions: aura.totalTransactions,
+        earningsByType: aura.earningsByType,
         balance: aura.balance
     };
 };
