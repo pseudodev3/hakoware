@@ -52,6 +52,8 @@ const Signup = ({ onToggle }) => {
 
   const getErrorMessage = (error) => {
     if (!error) return 'An unknown error occurred.';
+    return error;
+  };
 
   return (
     <div className="auth-container">
