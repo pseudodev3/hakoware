@@ -10,6 +10,39 @@ export const createNotification = async (notificationData) => {
   }
 };
 
+// Notify friend that their ghosting limit was changed
+export const notifyLimitChanged = async (friendship, changerId, newLimit) => {
+    return createNotification({
+        toUserId: friendship.friend.userId,
+        fromUserId: changerId,
+        type: 'LIMIT_CHANGED',
+        message: `Ghosting limit for your contract with ${friendship.myData.displayName} was updated to ${newLimit} days.`,
+        friendshipId: friendship.id
+    });
+};
+
+// Notify user of mercy request response
+export const notifyMercyResponse = async (request, response, condition = '') => {
+    return createNotification({
+        toUserId: request.requesterId,
+        fromUserId: request.targetId,
+        type: 'MERCY_RESPONSE',
+        message: `Your mercy request was ${response}${condition ? `. Condition: ${condition}` : ''}.`,
+        friendshipId: request.friendshipId
+    });
+};
+
+// Notify user of bailout
+export const notifyBailoutReceived = async (friendship, fromUserId, toUserId, amount, message) => {
+    return createNotification({
+        toUserId: toUserId,
+        fromUserId: fromUserId,
+        type: 'BAILOUT_RECEIVED',
+        message: `You received a ${amount} APR bailout from ${friendship.myData.displayName}!${message ? ` Message: ${message}` : ''}`,
+        friendshipId: friendship.id
+    });
+};
+
 // Get notifications for a user
 export const getUserNotifications = async (userId) => {
   try {

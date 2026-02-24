@@ -13,6 +13,42 @@ export const declareBankruptcy = async (friendshipId, userId, debtAmount) => {
 };
 
 /**
+ * File a mercy request
+ */
+export const fileMercyRequest = async (friendshipId, message) => {
+  try {
+    return await api.post(`/bankruptcy/mercy-request`, { friendshipId, message });
+  } catch (error) {
+    console.error('Error filing mercy request:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get pending mercy requests for the current user
+ */
+export const getPendingMercyRequests = async (userId) => {
+  try {
+    return await api.get('/bankruptcy/mercy-requests/pending');
+  } catch (error) {
+    console.error('Error getting mercy requests:', error);
+    return [];
+  }
+};
+
+/**
+ * Respond to a mercy request
+ */
+export const respondToMercyRequest = async (requestId, response, condition = '') => {
+  try {
+    return await api.post(`/bankruptcy/mercy-requests/${requestId}/respond`, { response, condition });
+  } catch (error) {
+    console.error('Error responding to mercy request:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Get bankruptcy history for a user
  */
 export const getUserBankruptcyHistory = async (userId) => {
@@ -25,7 +61,19 @@ export const getUserBankruptcyHistory = async (userId) => {
 };
 
 /**
- * Resolve bankruptcy (e.g. after a mercy grant or bailout)
+ * Get bailout history for a user
+ */
+export const getUserBailoutHistory = async (userId) => {
+  try {
+    return await api.get(`/bankruptcy/bailouts/user/${userId}`);
+  } catch (error) {
+    console.error('Error getting bailout history:', error);
+    return [];
+  }
+};
+
+/**
+ * Resolve bankruptcy
  */
 export const resolveBankruptcy = async (bankruptcyId) => {
   try {

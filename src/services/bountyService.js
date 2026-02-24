@@ -47,3 +47,15 @@ export const getUserBounties = async (userId) => {
     return [];
   }
 };
+
+/**
+ * Get bounty statistics for a user
+ */
+export const getUserBountyStats = async (userId) => {
+  try {
+    return await api.get(`/bounties/user/${userId}/stats`);
+  } catch (error) {
+    console.error('Error getting user bounty stats:', error);
+    return { created: 0, claimed: 0, active: 0 };
+  }
+};

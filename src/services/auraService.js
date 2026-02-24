@@ -19,6 +19,45 @@ export const getUserAura = async (userId) => {
 };
 
 /**
+ * Get simple aura balance
+ */
+export const getAuraBalance = async (userId) => {
+    const aura = await getUserAura(userId);
+    return aura.balance;
+};
+
+/**
+ * Get aura transaction history
+ */
+export const getAuraTransactions = async (userId) => {
+    const aura = await getUserAura(userId);
+    return aura.history;
+};
+
+/**
+ * Get aura statistics
+ */
+export const getAuraStats = async (userId) => {
+    const aura = await getUserAura(userId);
+    return {
+        totalEarned: aura.totalEarned,
+        balance: aura.balance
+    };
+};
+
+/**
+ * Initialize aura balance for new user
+ */
+export const initializeAuraBalance = async (userId) => {
+  try {
+    return await api.post('/aura/initialize', { userId });
+  } catch (error) {
+    console.error('Error initializing aura:', error);
+    return { success: false };
+  }
+};
+
+/**
  * Award aura points for an action
  */
 export const awardAura = async (userId, type, amount, data = {}) => {
