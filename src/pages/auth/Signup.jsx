@@ -32,7 +32,7 @@ const Signup = ({ onToggle }) => {
     const result = await signup(email, password, displayName);
     
     if (result.success) {
-      setSuccess(true);
+      // Logic handled in AuthContext (setting user state)
     } else {
       setError(getErrorMessage(result.error));
     }

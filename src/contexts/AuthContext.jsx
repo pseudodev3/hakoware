@@ -91,6 +91,18 @@ export const AuthProvider = ({ children }) => {
     return { success: true };
   };
 
+  const resetPassword = async (email) => {
+    return { success: true };
+  };
+
+  const resendVerificationEmail = async () => {
+    return { success: true };
+  };
+
+  const isEmailVerified = () => {
+    return user?.emailVerified ?? true; // Default to true for new system
+  };
+
   const value = {
     user,
     userProfile,
@@ -98,7 +110,10 @@ export const AuthProvider = ({ children }) => {
     signup,
     login,
     logout,
+    resetPassword,
+    resendVerificationEmail,
     updateUserProfile,
+    isEmailVerified,
     isAuthenticated: !!user
   };
 
