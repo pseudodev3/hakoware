@@ -16,7 +16,7 @@ import BountyBoard from './BountyBoard';
 import FriendChallenges from './FriendChallenges';
 import Leaderboard from './Leaderboard';
 
-const Arena = ({ friendships, showToast, onCreateBounty }) => {
+const Arena = ({ friendships = [], showToast, onCreateBounty }) => {
   const [activeView, setActiveView] = useState('hub');
 
   const views = {

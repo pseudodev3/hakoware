@@ -6,7 +6,9 @@
  * Calculate debt for a perspective
  */
 export const calculateDebt = (perspective) => {
-  if (!perspective) return { totalDebt: 0, daysMissed: 0, isBankrupt: false, daysUntilBankrupt: 7 };
+  if (!perspective || typeof perspective !== 'object') {
+    return { totalDebt: 0, daysMissed: 0, isBankrupt: false, daysUntilBankrupt: 7, daysOverLimit: 0, baseDebt: 0, limit: 7, isInWarningZone: false };
+  }
 
   const { baseDebt = 0, lastInteraction, limit = 7 } = perspective;
   

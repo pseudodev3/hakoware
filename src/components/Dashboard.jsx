@@ -3,7 +3,7 @@ import CountUp from './CountUp';
 import { calculateDebt, getDebtStatus } from '../utils/gameLogic';
 import { UsersIcon, FlameIcon, Skull2Icon, TrendingUpIcon, AlertIcon, CrownIcon, ArrowUpIcon, ArrowDownIcon, TargetIcon } from './icons/Icons';
 
-const Dashboard = ({ friendships, recentActivity }) => {
+const Dashboard = ({ friendships = [], recentActivity }) => {
   const sfxCoin = useRef(new Audio('https://www.myinstants.com/media/sounds/ka-ching.mp3'));
 
   // Calculate total APR across all friendships (what user owes)
