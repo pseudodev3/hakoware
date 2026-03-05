@@ -9,6 +9,7 @@ import { AddFriendModal } from './features/friendship/components/AddFriendModal'
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { VoiceNotesInbox } from './features/debt/components/VoiceNotesInbox';
+import { LandingPage } from './features/landing/LandingPage';
 import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
 import { Arena } from './features/arena/components/Arena';
 import { AuraWallet } from './features/aura/components/AuraWallet';
@@ -19,6 +20,9 @@ import './App.css';
 
 function App() {
   const { user, isAuthenticated } = useAuth();
+  const [hasEntered, setHasEntered] = useState(() => {
+    return localStorage.getItem('hakoware_visited') === 'true';
+  });
   
   // UI State
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -71,8 +75,16 @@ function App() {
     setSelectedFriendship(null);
   };
 
+  const handleEnter = () => {
+    localStorage.setItem('hakoware_visited', 'true');
+    setHasEntered(true);
+  };
+
   // Auth Guard
   if (!isAuthenticated) {
+    if (!hasEntered) {
+      return <LandingPage onEnter={handleEnter} />;
+    }
     return showSignup ? (
       <Signup onToggle={() => setShowSignup(false)} />
     ) : (
