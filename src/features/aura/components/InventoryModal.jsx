@@ -1,16 +1,15 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Zap, Shield, Sparkles, AlertCircle } from 'lucide-react';
+import { Package, Zap, Shield, Sparkles, AlertCircle, User, ChevronLeft } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { useAuth } from '../../../contexts/AuthContext';
-import { User, ChevronLeft } from 'lucide-react';
 import './InventoryModal.css';
 
 const CARD_DATA = {
-  'STEAL': { name: 'THIEF', desc: "Steal 10% of a bankrupt friend's Aura.", icon: Zap, color: '#ff4444', targeted: true },
-  'REFLECT': { name: 'REFLECT', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#00e5ff', targeted: false },
-  'PURIFY': { name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676', targeted: false }
+  'STEAL': { name: 'THIEF', rank: 'A-20', desc: "Steal 10% of a bankrupt friend's Aura.", icon: Zap, color: '#ff4444', targeted: true },
+  'REFLECT': { name: 'REFLECT', rank: 'B-30', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#00e5ff', targeted: false },
+  'PURIFY': { name: 'PURIFY', rank: 'S-10', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676', targeted: false }
 };
 
 export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
@@ -60,18 +59,22 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
     }
   };
 
+  // Greed island binder has fixed slots. We will pad the inventory to show empty slots.
+  const MAX_SLOTS = Math.max(9, Math.ceil(inventory.length / 3) * 3);
+  const binderSlots = Array.from({ length: MAX_SLOTS }, (_, i) => inventory[i] || null);
+
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={selectingTargetFor ? "SELECT TARGET" : "HUNTER COLLECTION"}
-      size="md"
+      title={selectingTargetFor ? "SELECT TARGET" : "GREED ISLAND BINDER"}
+      size="lg" // Larger for binder UI
     >
       <div className="inventory-container">
         {selectingTargetFor ? (
           <div className="target-selection-view">
             <button className="back-to-inv" onClick={() => setSelectingTargetFor(null)}>
-              <ChevronLeft size={16} /> BACK TO COLLECTION
+              <ChevronLeft size={16} /> BACK TO BINDER
             </button>
             <p className="selection-instruction">CHOOSE A TARGET FOR {CARD_DATA[selectingTargetFor.cardId].name}</p>
             
@@ -92,43 +95,58 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
               })}
             </div>
           </div>
-        ) : inventory.length === 0 ? (
-          <div className="inventory-empty">
-            <Package size={48} opacity={0.2} />
-            <p>YOUR COLLECTION IS EMPTY</p>
-            <span>PURCHASE SPELL CARDS IN THE MARKET</span>
-          </div>
         ) : (
-          <div className="inventory-grid">
-            {inventory.map((cardId, idx) => {
-              const card = CARD_DATA[cardId];
-              if (!card) return null;
-              return (
-                <motion.div 
-                  key={idx} 
-                  className="inventory-card glass"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.05 }}
-                >
-                  <div className="inv-icon" style={{ color: card.color }}>
-                    <card.icon size={24} />
-                  </div>
-                  <div className="inv-info">
-                    <span className="inv-name" style={{ color: card.color }}>{card.name}</span>
-                    <p className="inv-desc">{card.desc}</p>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    loading={usingCard === idx}
-                    onClick={() => handleUseCard(cardId, idx)}
+          <div className="binder-book">
+            <div className="binder-page">
+              {binderSlots.map((cardId, idx) => {
+                if (!cardId) {
+                  return (
+                    <div key={idx} className="binder-slot empty">
+                       <span className="slot-number">{String(idx).padStart(3, '0')}</span>
+                    </div>
+                  )
+                }
+
+                const card = CARD_DATA[cardId];
+                if (!card) return null;
+                
+                return (
+                  <motion.div 
+                    key={idx} 
+                    className="binder-slot filled"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    style={{ '--card-color': card.color }}
                   >
-                    USE CARD
-                  </Button>
-                </motion.div>
-              );
-            })}
+                    <div className="gi-card">
+                      <div className="gi-card-header">
+                        <span className="gi-card-rank">{card.rank}</span>
+                        <span className="gi-card-name" style={{ color: card.color }}>{card.name}</span>
+                      </div>
+                      <div className="gi-card-art" style={{ borderColor: card.color }}>
+                        <card.icon size={40} color={card.color} />
+                        <div className="gi-card-glow" style={{ backgroundColor: card.color }} />
+                      </div>
+                      <div className="gi-card-desc">
+                        {card.desc}
+                      </div>
+                      <div className="gi-card-action">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          loading={usingCard === idx}
+                          onClick={() => handleUseCard(cardId, idx)}
+                          className="gi-use-btn"
+                        >
+                          MATERIALIZE
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
