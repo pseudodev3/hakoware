@@ -4,17 +4,19 @@ import { Mail, Lock, User, Loader2, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
+import { ForgotPasswordModal } from './components/ForgotPasswordModal';
 import './Auth.css';
 
 /**
  * Professional, high-fidelity Login page.
  * Implements HxH theme with smooth animations and aura effects.
  */
-export const Login = ({ onToggle }) => {
+export const Login = ({ onToggle, showToast }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -61,15 +63,20 @@ export const Login = ({ onToggle }) => {
             required
           />
 
-          <Input 
-            label="SECURITY PIN / PASSWORD"
-            type="password"
-            placeholder="••••••••"
-            icon={Lock}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="input-with-action-label">
+            <Input 
+              label="SECURITY PIN / PASSWORD"
+              type="password"
+              placeholder="••••••••"
+              icon={Lock}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>
+              FORGOT PIN?
+            </button>
+          </div>
 
           <Button 
             variant="primary" 
@@ -87,11 +94,17 @@ export const Login = ({ onToggle }) => {
           <p>NEW HUNTER DETECTED? <button onClick={onToggle}>REGISTER CONTRACT</button></p>
         </div>
       </motion.div>
+
+      <ForgotPasswordModal 
+        isOpen={showForgot} 
+        onClose={() => setShowForgot(false)}
+        showToast={showToast}
+      />
     </div>
   );
 };
 
-export const Signup = ({ onToggle }) => {
+export const Signup = ({ onToggle, showToast }) => {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

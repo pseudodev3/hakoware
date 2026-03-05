@@ -6,6 +6,7 @@ import { NenCard } from './features/debt/components/NenCard';
 import { Button } from './shared/components/Button';
 import { Login, Signup } from './features/auth/Auth';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
+import { FriendshipSettingsModal } from './features/friendship/components/FriendshipSettingsModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { VoiceNotesInbox } from './features/debt/components/VoiceNotesInbox';
@@ -89,9 +90,9 @@ function App() {
       return <LandingPage onEnter={handleEnter} />;
     }
     return showSignup ? (
-      <Signup onToggle={() => setShowSignup(false)} />
+      <Signup onToggle={() => setShowSignup(false)} showToast={showToast} />
     ) : (
-      <Login onToggle={() => setShowSignup(true)} />
+      <Login onToggle={() => setShowSignup(true)} showToast={showToast} />
     );
   }
 
@@ -137,7 +138,7 @@ function App() {
                    <div className="card-icon"><TrendingUp size={20} color="var(--aura-red)" /></div>
                    <div className="card-data">
                       <span className="label">BANKRUPTCY RISK</span>
-                      <span className="value">{systemStats.bankruptCount} ALERTS</span>
+                      <span className="value">{systemStats.bankruptCount}</span>
                    </div>
                 </motion.div>
                 <motion.div className="overview-card glass" initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.2}}>
@@ -245,6 +246,15 @@ function App() {
       <AddFriendModal 
         isOpen={modalType === 'ADD_FRIEND'}
         onClose={closeModal}
+        onRefresh={loadData}
+        showToast={showToast}
+      />
+
+      <FriendshipSettingsModal
+        isOpen={modalType === 'SETTINGS'}
+        onClose={closeModal}
+        friendship={selectedFriendship}
+        currentUserId={user.uid || user.id}
         onRefresh={loadData}
         showToast={showToast}
       />

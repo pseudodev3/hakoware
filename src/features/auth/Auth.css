@@ -59,6 +59,31 @@
   gap: 24px;
 }
 
+.input-with-action-label {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.forgot-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--aura-gold);
+  letter-spacing: 0.05em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.forgot-link:hover {
+  opacity: 0.7;
+}
+
 .auth-error-banner {
   background: rgba(255, 77, 77, 0.1);
   border: 1px solid rgba(255, 77, 77, 0.2);

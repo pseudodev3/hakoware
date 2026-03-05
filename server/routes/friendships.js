@@ -60,7 +60,7 @@ router.get('/', auth, async (req, res) => {
   try {
     const friendships = await Friendship.find({
       $or: [{ user1: req.user.id }, { user2: req.user.id }]
-    }).populate('user1 user2', 'displayName email avatar auraScore');
+    }).populate('user1 user2', 'displayName email avatar auraScore nenType');
     
     res.json(friendships);
   } catch (err) {
@@ -138,6 +138,49 @@ router.post('/:id/checkin', auth, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
+  }
+});
+
+// @route    PUT api/friendships/:id/limit
+// @desc     Update friendship limit
+// @access   Private
+router.put('/:id/limit', auth, async (req, res) => {
+  try {
+    const { limit } = req.body;
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Friendship not found' });
+
+    const isUser1 = friendship.user1.toString() === req.user.id;
+    const perspectiveKey = isUser1 ? 'user1Perspective' : 'user2Perspective';
+    
+    friendship[perspectiveKey].limit = limit;
+    await friendship.save();
+    
+    res.json(friendship);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route    DELETE api/friendships/:id
+// @desc     Delete a friendship
+// @access   Private
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Friendship not found' });
+
+    // Check if user is part of the friendship
+    if (friendship.user1.toString() !== req.user.id && friendship.user2.toString() !== req.user.id) {
+      return res.status(401).json({ msg: 'User not authorized' });
+    }
+
+    await friendship.deleteOne();
+    res.json({ msg: 'Friendship removed' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
 });
 
