@@ -10,7 +10,8 @@ import {
   Trophy,
   Activity,
   User,
-  Target
+  Target,
+  Package
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import './AchievementShowcase.css';
