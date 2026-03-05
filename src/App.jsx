@@ -9,6 +9,7 @@ import { AddFriendModal } from './features/friendship/components/AddFriendModal'
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { VoiceNotesInbox } from './features/debt/components/VoiceNotesInbox';
+import { Potclean } from './features/debt/components/Potclean';
 import { LandingPage } from './features/landing/LandingPage';
 import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
 import { Arena } from './features/arena/components/Arena';
@@ -246,6 +247,8 @@ function App() {
         onRefresh={loadData}
         showToast={showToast}
       />
+
+      {user && <Potclean friendships={friendships} />}
 
       {toast && (
         <Toast 
