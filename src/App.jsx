@@ -214,7 +214,7 @@ function App() {
         {activeTab === 'achievements' && <AchievementShowcase />}
 
         {/* ARENA MODULE */}
-        {activeTab === 'arena' && <Arena />}
+        {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
 
         {/* WALLET MODULE */}
         {activeTab === 'wallet' && <AuraWallet />}

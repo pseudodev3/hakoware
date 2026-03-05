@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
+import { CreateBountyModal } from './CreateBountyModal';
 import { api } from '../../../lib/api';
 import './Arena.css';
 
@@ -20,22 +21,17 @@ import './Arena.css';
  * Professional Arena / Bounty Board module.
  * Competitive HxH environment with visual hierarchy.
  */
-export const Arena = () => {
+export const Arena = ({ friendships, showToast }) => {
   const [bounties, setBounties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const loadBounties = async () => {
     setLoading(true);
     try {
-      // In a real app, this would be a real endpoint.
-      // For now, we'll simulate some professional bounty data.
-      const simulatedBounties = [
-        { id: 1, target: 'Leorio Paradinight', amount: 500, type: 'GHOSTING', urgency: 'HIGH', hunter: 'Killua' },
-        { id: 2, target: 'Kurapika', amount: 1200, type: 'DEBT_LIMIT', urgency: 'CRITICAL', hunter: 'Hisoka' },
-        { id: 3, target: 'Isaac Netero', amount: 50, type: 'STREAK_RESET', urgency: 'LOW', hunter: 'Gon' }
-      ];
-      setBounties(simulatedBounties);
+      const res = await api.get('/bounties/active');
+      setBounties(res || []);
     } catch (error) {
       console.error('Failed to load arena data:', error);
     } finally {
@@ -62,7 +58,9 @@ export const Arena = () => {
           <div className="stat-icon"><Skull size={20} color="var(--aura-red)" /></div>
           <div className="stat-info">
             <span className="label">TOTAL BOUNTY POOL</span>
-            <span className="value">1,750 APR</span>
+            <span className="value">
+              {bounties.reduce((acc, b) => acc + (b.amount || 0), 0)} AURA
+            </span>
           </div>
         </div>
         <div className="stat-card glass">
@@ -92,7 +90,7 @@ export const Arena = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button variant="danger" icon={Plus} size="sm">PLACE BOUNTY</Button>
+            <Button variant="danger" icon={Plus} size="sm" onClick={() => setShowCreateModal(true)}>PLACE BOUNTY</Button>
           </div>
         </header>
 
@@ -105,36 +103,42 @@ export const Arena = () => {
             <span>STATUS</span>
           </div>
 
-          {loading ? (
+          {loading && bounties.length === 0 ? (
             <div className="board-loading">
               <div className="loading-spinner" />
               <p>ACCESSING HUNTER ASSOCIATION RECORDS...</p>
             </div>
+          ) : bounties.length === 0 ? (
+            <div className="board-loading">
+               <p>NO ACTIVE BOUNTIES ON THE BLACKLIST</p>
+            </div>
           ) : (
-            bounties.map((b) => (
+            bounties
+              .filter(b => b.targetName?.toLowerCase().includes(search.toLowerCase()))
+              .map((b) => (
               <motion.div 
-                key={b.id} 
-                className={`bounty-row ${b.urgency.toLowerCase()}`}
+                key={b.id || b._id} 
+                className={`bounty-row ${b.amount > 50 ? 'critical' : 'high'}`}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
               >
                 <div className="target-cell">
-                  <div className="target-avatar">{b.target[0]}</div>
-                  <span className="target-name">{b.target}</span>
+                  <div className="target-avatar">{b.targetName ? b.targetName[0] : 'T'}</div>
+                  <span className="target-name">{b.targetName}</span>
                 </div>
                 <div className="type-cell">
-                  <span className="type-tag">{b.type}</span>
+                  <span className="type-tag">GHOSTING</span>
                 </div>
                 <div className="reward-cell">
                   <Zap size={12} color="var(--aura-gold)" />
-                  <span className="reward-value">{b.amount} APR</span>
+                  <span className="reward-value">{b.amount} AURA</span>
                 </div>
                 <div className="hunter-cell">
-                  <span className="hunter-name">@{b.hunter.toLowerCase()}</span>
+                  <span className="hunter-name">@{b.senderName?.toLowerCase()}</span>
                 </div>
                 <div className="status-cell">
-                  <div className={`status-pill ${b.urgency.toLowerCase()}`}>
-                    {b.urgency}
+                  <div className={`status-pill ${b.amount > 50 ? 'critical' : 'high'}`}>
+                    {b.amount > 50 ? 'CRITICAL' : 'HIGH'}
                   </div>
                 </div>
                 <div className="action-cell">
@@ -147,6 +151,14 @@ export const Arena = () => {
           )}
         </div>
       </div>
+
+      <CreateBountyModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        friendships={friendships || []}
+        onRefresh={loadBounties}
+        showToast={showToast}
+      />
     </div>
   );
 };
