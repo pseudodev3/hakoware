@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Zap, ShieldCheck, Award, Package, Flame, Wind, Droplets, BrainCircuit, Sparkles, TrendingUp } from 'lucide-react';
-import { Modal } from '../../../shared/components/Modal';
-import { Button } from '../../../shared/components/Button';
+import { Modal } from './Modal';
+import { Button } from './Button';
 import { useAuth } from '../../../contexts/AuthContext';
 import './ProfileModal.css';
 
