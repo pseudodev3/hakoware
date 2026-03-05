@@ -169,6 +169,7 @@ export const AuraWallet = ({ friendships, showToast }) => {
       <MarketplaceModal 
         isOpen={showMarket}
         onClose={() => setShowMarket(false)}
+        friendships={friendships}
         showToast={showToast}
       />
 

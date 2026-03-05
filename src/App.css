@@ -144,6 +144,37 @@
   margin: 40px auto;
 }
 
+.alert-content .alert-desc {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.nen-sealed-alert {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: linear-gradient(90deg, rgba(255, 77, 77, 0.1), transparent);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: var(--radius-md);
+  margin-top: 24px;
+  color: var(--aura-red);
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-title {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
 .empty-icon {
   width: 60px;
   height: 60px;

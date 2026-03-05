@@ -20,6 +20,20 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
   const inventory = user?.inventory || [];
 
   const handleUseCard = async (cardId, idx, targetFriendshipId = null) => {
+    // Check if any friendship is bankrupt (Zetsu mode)
+    const isAnyBankrupt = friendships?.some(f => {
+      const isU1 = f.user1._id === (user.uid || user.id) || f.user1 === (user.uid || user.id);
+      const p = isU1 ? f.user1Perspective : f.user2Perspective;
+      if (!p) return false;
+      const daysMissed = Math.floor(Math.max(0, new Date() - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
+      return (p.baseDebt || 0) + Math.max(0, daysMissed - (p.limit || 7)) >= (p.limit || 7) * 2;
+    });
+
+    if (isAnyBankrupt && cardId !== 'PURIFY') {
+      showToast('NEN SEALED: RESOLVE BANKRUPTCY FIRST', 'ERROR');
+      return;
+    }
+
     const cardInfo = CARD_DATA[cardId];
     
     if (cardInfo.targeted && !targetFriendshipId) {

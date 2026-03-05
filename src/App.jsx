@@ -149,6 +149,20 @@ function App() {
                 </motion.div>
              </div>
 
+             {systemStats.bankruptCount > 0 && (
+               <motion.div 
+                className="nen-sealed-alert"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+               >
+                  <ShieldAlert size={20} />
+                  <div className="alert-content">
+                    <span className="alert-title">NEN SEALED (ZETSU MODE)</span>
+                    <span className="alert-desc">CRITICAL DEBT DETECTED. SYSTEM ABILITIES AND MARKET ACCESS ARE REVOKED.</span>
+                  </div>
+               </motion.div>
+             )}
+
              <div className="view-header" style={{marginTop: '20px'}}>
               <div className="header-label-group">
                 <h3>URGENT CONTRACTS</h3>

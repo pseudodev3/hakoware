@@ -12,11 +12,25 @@ const CARDS = [
   { id: 'PURIFY', name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676' }
 ];
 
-export const MarketplaceModal = ({ isOpen, onClose, showToast }) => {
+export const MarketplaceModal = ({ isOpen, onClose, friendships, showToast }) => {
   const { user, buyCard } = useAuth();
   const [loading, setLoading] = useState(null);
 
   const handleBuy = async (card) => {
+    // Check if any friendship is bankrupt (Zetsu mode)
+    const isAnyBankrupt = friendships?.some(f => {
+      const isU1 = f.user1._id === (user.uid || user.id) || f.user1 === (user.uid || user.id);
+      const p = isU1 ? f.user1Perspective : f.user2Perspective;
+      if (!p) return false;
+      const daysMissed = Math.floor(Math.max(0, new Date() - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
+      return (p.baseDebt || 0) + Math.max(0, daysMissed - (p.limit || 7)) >= (p.limit || 7) * 2;
+    });
+
+    if (isAnyBankrupt) {
+      showToast('ACCESS DENIED: NEN SEALED', 'ERROR');
+      return;
+    }
+
     if (user?.auraBalance < card.cost) {
       showToast('INSUFFICIENT AURA', 'ERROR');
       return;
