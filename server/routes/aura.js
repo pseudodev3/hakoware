@@ -35,12 +35,28 @@ router.get('/:userId', auth, async (req, res) => {
     const stats = {};
     earningsByType.forEach(item => stats[item._id] = item.total);
 
+    // Calculate weekly change
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const weeklyTransactions = await AuraTransaction.find({
+      userId: user._id,
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    const netChange = weeklyTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+    const previousBalance = (user.auraBalance || 0) - netChange;
+    const weeklyChangePercent = previousBalance > 0 
+      ? Math.round((netChange / previousBalance) * 100) 
+      : netChange > 0 ? 100 : 0;
+
     res.json({
       balance: user.auraBalance || 0,
       totalEarned: totalEarned.length > 0 ? totalEarned[0].total : 0,
       totalSpent: totalSpent.length > 0 ? Math.abs(totalSpent[0].total) : 0,
       totalTransactions: await AuraTransaction.countDocuments({ userId: user._id }),
       earningsByType: stats,
+      weeklyChangePercent,
       history
     });
   } catch (err) {

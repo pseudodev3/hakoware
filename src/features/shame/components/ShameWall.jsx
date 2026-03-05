@@ -81,7 +81,7 @@ export const ShameWall = () => {
 
               <div className="debt-severity">
                 <TrendingDown size={16} color="var(--aura-red)" />
-                <span className="score">{hunter.auraScore} AURA SCORE</span>
+                <span className="score">{hunter.totalDebt} APR DEBT</span>
               </div>
               
               <div className="shame-action">

@@ -25,7 +25,7 @@ import './AuraWallet.css';
  */
 export const AuraWallet = ({ friendships, showToast }) => {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState([]);
+  const [data, setData] = useState({ balance: 0, history: [], weeklyChangePercent: 0 });
   const [loading, setLoading] = useState(true);
   const [showMarket, setShowMarket] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
@@ -35,7 +35,7 @@ export const AuraWallet = ({ friendships, showToast }) => {
     setLoading(true);
     try {
       const res = await api.get(`/aura/${user.uid || user.id}`);
-      setTransactions(res.history || []);
+      setData(res);
     } catch (error) {
       console.error('Failed to load aura data:', error);
     } finally {
@@ -46,6 +46,8 @@ export const AuraWallet = ({ friendships, showToast }) => {
   useEffect(() => {
     loadAuraData();
   }, []);
+
+  const transactions = data.history || [];
 
   return (
     <div className="aura-wallet-container">
@@ -74,13 +76,13 @@ export const AuraWallet = ({ friendships, showToast }) => {
             </div>
           </div>
           <div className="balance-display">
-            <span className="amount">{(user?.auraBalance || 0).toLocaleString()}</span>
+            <span className="amount">{(data.balance || 0).toLocaleString()}</span>
             <span className="unit">AURA</span>
           </div>
           <div className="card-footer">
-            <div className="footer-stat">
-              <TrendingUp size={14} color="var(--aura-green)" />
-              <span>+12% THIS WEEK</span>
+            <div className="footer-stat" style={{ color: data.weeklyChangePercent >= 0 ? 'var(--aura-green)' : 'var(--aura-red)' }}>
+              <TrendingUp size={14} style={{ transform: data.weeklyChangePercent >= 0 ? 'none' : 'rotate(180deg)' }} />
+              <span>{data.weeklyChangePercent >= 0 ? '+' : ''}{data.weeklyChangePercent}% THIS WEEK</span>
             </div>
           </div>
         </motion.div>

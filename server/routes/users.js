@@ -9,36 +9,52 @@ const auth = require('../middleware/auth');
 // @access   Private
 router.get('/leaderboard', auth, async (req, res) => {
   try {
-    // 1. Find all friendships where someone is bankrupt
+    // 1. Find all active friendships
     const allFriendships = await Friendship.find({ status: 'ACTIVE' });
-    const bankruptUserIds = new Set();
+    const bankruptStats = {}; // Map of userId -> { isBankrupt: boolean, totalDebt: number }
 
     const now = new Date();
     allFriendships.forEach(f => {
-      // Check user1
-      const p1 = f.user1Perspective;
-      const d1 = Math.floor(Math.max(0, now - new Date(p1.lastInteraction)) / (1000 * 60 * 60 * 24));
-      if ((p1.baseDebt || 0) + Math.max(0, d1 - (p1.limit || 7)) >= (p1.limit || 7) * 2) {
-        bankruptUserIds.add(f.user1.toString());
-      }
-      // Check user2
-      const p2 = f.user2Perspective;
-      const d2 = Math.floor(Math.max(0, now - new Date(p2.lastInteraction)) / (1000 * 60 * 60 * 24));
-      if ((p2.baseDebt || 0) + Math.max(0, d2 - (p2.limit || 7)) >= (p2.limit || 7) * 2) {
-        bankruptUserIds.add(f.user2.toString());
-      }
+      const perspectives = [
+        { userId: f.user1.toString(), p: f.user1Perspective },
+        { userId: f.user2.toString(), p: f.user2Perspective }
+      ];
+
+      perspectives.forEach(({ userId, p }) => {
+        const lastInteraction = new Date(p.lastInteraction || 0);
+        const daysMissed = Math.floor(Math.max(0, now - lastInteraction) / (1000 * 60 * 60 * 24));
+        const limit = p.limit || 7;
+        const totalDebt = (p.baseDebt || 0) + Math.max(0, daysMissed - limit);
+        
+        if (!bankruptStats[userId]) {
+          bankruptStats[userId] = { isBankrupt: false, totalDebt: 0 };
+        }
+        
+        bankruptStats[userId].totalDebt += totalDebt;
+        if (totalDebt >= limit * 2) {
+          bankruptStats[userId].isBankrupt = true;
+        }
+      });
     });
 
-    // 2. Fetch user details for those IDs
+    // 2. Filter IDs of users who are actually bankrupt
+    const bankruptUserIds = Object.keys(bankruptStats).filter(uid => bankruptStats[uid].isBankrupt);
+
+    // 3. Fetch user details
     const users = await User.find({ 
-      _id: { $in: Array.from(bankruptUserIds) },
+      _id: { $in: bankruptUserIds },
       'privacySettings.optOutPublicBankruptcy': false 
     })
-      .sort({ auraScore: 1 })
-      .limit(20)
-      .select('displayName avatar auraScore nenType');
+      .select('displayName avatar auraScore nenType')
+      .lean();
       
-    res.json(users);
+    // 4. Attach the calculated debt stats
+    const usersWithStats = users.map(u => ({
+      ...u,
+      totalDebt: bankruptStats[u._id.toString()].totalDebt
+    })).sort((a, b) => b.totalDebt - a.totalDebt); // Rank by highest debt first
+      
+    res.json(usersWithStats);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
