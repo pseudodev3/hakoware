@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
+import { ProfileModal } from './ProfileModal';
 import './Layout.css';
 
 /**
@@ -25,6 +26,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const navItems = [
@@ -85,18 +87,18 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
              {!collapsed && <span>ADD FRIEND</span>}
           </button>
           
-          <div className="user-profile">
+          <div className="user-profile" onClick={() => setShowProfile(true)} style={{ cursor: 'pointer' }}>
             <div className="user-avatar">
               {user?.displayName?.[0] || 'U'}
             </div>
             {!collapsed && (
               <div className="user-info">
                 <p className="user-name">{user?.displayName}</p>
-                <p className="user-aura">{user?.auraScore || 850} AURA</p>
+                <p className="user-aura">{user?.auraBalance || 0} AURA</p>
               </div>
             )}
             {!collapsed && (
-              <button className="logout-btn" onClick={logout}>
+              <button className="logout-btn" onClick={(e) => { e.stopPropagation(); logout(); }}>
                 <LogOut size={16} />
               </button>
             )}
@@ -128,6 +130,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
         isOpen={showNotifications} 
         onClose={() => setShowNotifications(false)}
         onUnreadCountChange={setUnreadCount}
+      />
+
+      <ProfileModal 
+        isOpen={showProfile}
+        onClose={() => setShowProfile(false)}
       />
     </div>
   );

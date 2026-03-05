@@ -40,7 +40,9 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '7d' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, user: { id: user.id, displayName: user.displayName, email: user.email } });
+        const userResp = user.toObject();
+        delete userResp.password;
+        res.json({ token, user: userResp });
       }
     );
   } catch (err) {
@@ -78,7 +80,9 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, user: { id: user.id, displayName: user.displayName, email: user.email } });
+        const userResp = user.toObject();
+        delete userResp.password;
+        res.json({ token, user: userResp });
       }
     );
   } catch (err) {

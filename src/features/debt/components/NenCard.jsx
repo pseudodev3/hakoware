@@ -8,11 +8,25 @@ import {
   Zap, 
   MessageSquare, 
   Settings,
-  DollarSign
+  DollarSign,
+  Flame,
+  Wind,
+  Droplets,
+  BrainCircuit,
+  Sparkles
 } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
 import './NenCard.css';
+
+const NEN_ICONS = {
+  'ENHANCER': Flame,
+  'TRANSMUTER': Zap,
+  'CONJURER': Droplets,
+  'EMITTER': Wind,
+  'MANIPULATOR': BrainCircuit,
+  'SPECIALIST': Sparkles
+};
 
 /**
  * The core friend card. Professional UI with visual hierarchy.
@@ -25,6 +39,8 @@ export const NenCard = ({ friendship, currentUserId, onAction }) => {
   const stats = useDebt(perspective);
 
   if (!stats) return null;
+
+  const NenIcon = NEN_ICONS[friend.nenType] || User;
 
   return (
     <motion.div 
@@ -39,9 +55,16 @@ export const NenCard = ({ friendship, currentUserId, onAction }) => {
           <span className="dot" style={{ backgroundColor: stats.color }}></span>
           {stats.status}
         </div>
-        <button className="settings-trigger" onClick={() => onAction('SETTINGS', friendship)}>
-          <Settings size={16} />
-        </button>
+        <div className="card-header-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {friend.nenType && (
+            <div className="nen-type-mini" title={friend.nenType} style={{ color: stats.color }}>
+               <NenIcon size={14} />
+            </div>
+          )}
+          <button className="settings-trigger" onClick={() => onAction('SETTINGS', friendship)}>
+            <Settings size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Profile Section */}
@@ -50,12 +73,12 @@ export const NenCard = ({ friendship, currentUserId, onAction }) => {
           {friend.avatar ? (
             <img src={friend.avatar} alt={friend.displayName} className="avatar" />
           ) : (
-            <div className="avatar-placeholder"><User size={24} /></div>
+            <div className="avatar-placeholder">{friend.displayName[0]}</div>
           )}
         </div>
         <div className="profile-info">
           <h3 className="friend-name">{friend.displayName}</h3>
-          <p className="friend-email">{friend.email}</p>
+          <p className="friend-email">{friend.nenType || 'UNKNOWN NEN'}</p>
         </div>
       </div>
 

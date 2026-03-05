@@ -32,7 +32,12 @@ export const AchievementShowcase = () => {
         { id: 2, title: 'HAKOWARE MASTER', description: 'USE THE HAKOWARE PROTOCOL 10 TIMES.', icon: Zap, unlocked: true, date: '2025-02-15' },
         { id: 3, title: 'GHOSTING SURVIVOR', description: 'ESCAPE A BANKRUPTCY WARNING WITH 24H TO SPARE.', icon: ShieldCheck, unlocked: false },
         { id: 4, title: 'WHALE HUNTER', description: 'INITIATE A CONTRACT WITH 1,000+ APR ACCRUAL.', icon: Trophy, unlocked: false },
-        { id: 5, title: 'SYSTEM INTEGRITY', description: 'MAINTAIN AN AURA SCORE OF 900+ FOR 30 DAYS.', icon: Activity, unlocked: true, date: '2025-03-01' }
+        { id: 5, title: 'SYSTEM INTEGRITY', description: 'MAINTAIN AN AURA SCORE OF 900+ FOR 30 DAYS.', icon: Activity, unlocked: true, date: '2025-03-01' },
+        { id: 6, title: 'BLACK-LIST HUNTER', description: 'CLAIM YOUR FIRST BOUNTY FROM THE ARENA.', icon: Target, unlocked: false },
+        { id: 7, title: 'COLLECTORS EDITION', description: 'FILL 5 SLOTS IN YOUR GREED ISLAND BINDER.', icon: Package, unlocked: false },
+        { id: 8, title: 'THIEF OF HEARTS', description: 'SUCCESSFULLY USE THE THIEF SPELL ON A FRIEND.', icon: Zap, unlocked: false },
+        { id: 9, title: 'ONE STAR HUNTER', description: 'ACCUMULATE 5,000 TOTAL AURA BALANCE.', icon: Star, unlocked: false },
+        { id: 10, title: 'ZETSU ESCAPEE', description: 'RESTORE YOUR NEN AFTER A BANKRUPTCY.', icon: Unlock, unlocked: false }
       ];
       setAchievements(simulatedAchievements);
     } catch (error) {
