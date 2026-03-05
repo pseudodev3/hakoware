@@ -18,7 +18,13 @@
 
 .btn-primary {
   background: var(--text-primary);
-  color: var(--bg-dark);
+  color: #000;
+  border-color: var(--text-primary);
+}
+
+.btn-primary:hover {
+  background: #fff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary {
@@ -39,19 +45,20 @@
 }
 
 .btn-danger:hover {
-  background: rgba(255, 77, 77, 0.2);
+  background: var(--aura-red);
+  color: white;
 }
 
 .btn-aura {
-  background: rgba(255, 215, 0, 0.05);
-  color: var(--aura-gold);
-  border-color: rgba(255, 215, 0, 0.2);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.05);
+  background: var(--aura-gold);
+  color: #000;
+  border-color: var(--aura-gold);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
 }
 
 .btn-aura:hover {
-  background: rgba(255, 215, 0, 0.1);
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+  background: #ffe135;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
 }
 
 .btn-ghost {

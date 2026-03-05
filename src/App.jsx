@@ -8,6 +8,7 @@ import { Login, Signup } from './features/auth/Auth';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
+import { VoiceNotesInbox } from './features/debt/components/VoiceNotesInbox';
 import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
 import { Arena } from './features/arena/components/Arena';
 import { AuraWallet } from './features/aura/components/AuraWallet';
@@ -169,6 +170,10 @@ function App() {
                 ))}
               </div>
             )}
+            
+            <div style={{ marginTop: '20px' }}>
+              <VoiceNotesInbox />
+            </div>
           </div>
         )}
 
