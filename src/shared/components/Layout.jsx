@@ -1,0 +1,118 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Award, 
+  Trophy, 
+  Wallet, 
+  Bell, 
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Plus
+} from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import './Layout.css';
+
+/**
+ * Main Layout with professional sidebar and navigation.
+ * Handles the visual hierarchy of the entire application.
+ */
+export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
+  const { user, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'friends', label: 'Friends', icon: Users },
+    { id: 'achievements', label: 'Achievements', icon: Award },
+    { id: 'arena', label: 'Arena', icon: Trophy },
+    { id: 'wallet', label: 'Aura Wallet', icon: Wallet },
+  ];
+
+  return (
+    <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
+      {/* Sidebar Navigation */}
+      <aside className="sidebar glass">
+        <div className="sidebar-header">
+          <div className="logo-container">
+            <div className="logo-icon">H</div>
+            {!collapsed && (
+              <motion.span 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }}
+                className="logo-text"
+              >
+                HAKOWARE
+              </motion.span>
+            )}
+          </div>
+          <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
+
+        <nav className="sidebar-nav">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+              onClick={() => onTabChange(item.id)}
+            >
+              <item.icon size={20} className="nav-icon" />
+              {!collapsed && <span>{item.label}</span>}
+              {activeTab === item.id && !collapsed && (
+                <motion.div layoutId="nav-pill" className="nav-pill" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button className="add-friend-btn" onClick={onAddFriend}>
+             <Plus size={20} />
+             {!collapsed && <span>ADD FRIEND</span>}
+          </button>
+          
+          <div className="user-profile">
+            <div className="user-avatar">
+              {user?.displayName?.[0] || 'U'}
+            </div>
+            {!collapsed && (
+              <div className="user-info">
+                <p className="user-name">{user?.displayName}</p>
+                <p className="user-aura">{user?.auraScore || 850} AURA</p>
+              </div>
+            )}
+            {!collapsed && (
+              <button className="logout-btn" onClick={logout}>
+                <LogOut size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="content-container">
+        <header className="content-header">
+          <div className="header-title">
+            <h2>{navItems.find(i => i.id === activeTab)?.label}</h2>
+            <p>System status: Active</p>
+          </div>
+          <div className="header-actions">
+            <button className="icon-btn">
+              <Bell size={20} />
+              <span className="badge">3</span>
+            </button>
+          </div>
+        </header>
+        
+        <div className="scroll-content">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};

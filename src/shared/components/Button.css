@@ -1,0 +1,70 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.btn-sm { padding: 8px 12px; font-size: 0.7rem; }
+.btn-md { padding: 12px 20px; }
+.btn-lg { padding: 16px 28px; font-size: 0.85rem; }
+
+.btn-primary {
+  background: var(--text-primary);
+  color: var(--bg-dark);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-active);
+}
+
+.btn-danger {
+  background: rgba(255, 77, 77, 0.1);
+  color: var(--aura-red);
+  border-color: rgba(255, 77, 77, 0.2);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 77, 77, 0.2);
+}
+
+.btn-aura {
+  background: rgba(255, 215, 0, 0.05);
+  color: var(--aura-gold);
+  border-color: rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.05);
+}
+
+.btn-aura:hover {
+  background: rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+}
+
+.btn-ghost {
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}

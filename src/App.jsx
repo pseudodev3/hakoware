@@ -1,108 +1,31 @@
-import { useState, useEffect, useRef } from 'react'
-import { useAuth } from './contexts/AuthContext'
-import { getUserFriendships } from './services/friendshipService'
-
-import { getRandomQuote } from './utils/quotes' 
-import './index.css' 
-import { calculateDebt } from './utils/gameLogic'
-import { checkAchievements } from './services/achievementService'
-
-// Pages
-import LandingPage from './pages/LandingPage'
-import Login from './pages/auth/Login'
-import Signup from './pages/auth/Signup'
-import VerificationRequired from './pages/auth/VerificationRequired'
-
-// Components
-import ErrorBoundary from './components/ErrorBoundary'
-import LoadingSpinner from './components/LoadingSpinner'
-import Dashboard from './components/Dashboard'
-import NenCard from './components/NenCard'
-import InvitationsPanel from './components/InvitationsPanel'
-import MercyPanel from './components/MercyPanel'
-import BailoutHistoryPanel from './components/BailoutHistoryPanel'
-import NotificationsPanel from './components/NotificationsPanel'
-import HamburgerMenu from './components/HamburgerMenu'
-import AuraMarketplaceModal from './components/Modals/AuraMarketplaceModal'
-import AdminPanel from './components/AdminPanel'
-import AdminLock from './components/AdminLock'
-import Toast from './components/Toast'
-import AddFriendModal from './components/Modals/AddFriendModal'
-import CheckinModal from './components/Modals/CheckinModal'
-import MercyRequestModal from './components/Modals/MercyRequestModal'
-import BailoutModal from './components/Modals/BailoutModal'
-import SettleModal from './components/Modals/SettleModal'
-import PetitionModal from './components/Modals/PetitionModal'
-import FriendshipSettingsModal from './components/Modals/FriendshipSettingsModal'
-
-// NEW: Fun Features
-import AchievementShowcase from './components/AchievementShowcase'
-import Arena from './components/Arena'
-
-import CreateBountyModal from './components/Modals/CreateBountyModal'
-import AchievementUnlockModal from './components/Modals/AchievementUnlockModal'
-import VoiceCheckinModal from './components/Modals/VoiceCheckinModal'
-import FlexModal from './components/Modals/FlexModal'
-import DebtRouletteModal from './components/Modals/DebtRouletteModal'
-import Potclean from './components/Potclean'
-import NenSealedStatus from './components/NenSealedStatus'
-import AuraWallet from './components/AuraWallet'
-import { initializeAuraBalance } from './services/auraService'
-import { UsersIcon, AwardIcon, TrophyIcon, BellIcon, WalletIcon } from './components/icons/Icons'
+import React, { useState, useEffect, Suspense } from 'react';
+import { useAuth } from './contexts/AuthContext';
+import { getUserFriendships } from './services/friendshipService';
+import { Layout } from './shared/components/Layout';
+import { NenCard } from './features/debt/components/NenCard';
+import { Button } from './shared/components/Button';
+import { Login, Signup } from './features/auth/Auth';
+import { AddFriendModal } from './features/friendship/components/AddFriendModal';
+import { CheckinModal } from './features/debt/components/CheckinModal';
+import { Toast } from './components/Toast';
+import { Loader2, Plus, RefreshCw } from 'lucide-react';
+import './App.css';
 
 function App() {
   const { user, isAuthenticated, isEmailVerified } = useAuth();
-  const [hasEntered, setHasEntered] = useState(() => {
-    return localStorage.getItem('hakoware_visited') === 'true';
-  });
+  
+  // UI State
+  const [activeTab, setActiveTab] = useState('friends');
+  const [friendships, setFriendships] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
 
-  const handleEnter = () => {
-    localStorage.setItem('hakoware_visited', 'true');
-    setHasEntered(true);
-  };
-  
-  // App state
-  const [friendships, setFriendships] = useState([])
-  const [loading, setLoading] = useState(true)
-  
-  // --- AUTH STATE ---
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [adminUnlocked, setAdminUnlocked] = useState(false)
+  // Modal State
+  const [modalType, setModalType] = useState(null);
+  const [selectedFriendship, setSelectedFriendship] = useState(null);
 
-  // --- UI STATE ---
-  const [selectedFriendship, setSelectedFriendship] = useState(null)
-  const [modalType, setModalType] = useState(null) 
-  const [showAddFriend, setShowAddFriend] = useState(false)
-  const [showMarketplace, setShowMarketplace] = useState(false)
-  const [toast, setToast] = useState(null)
-  const [recentActivity, setRecentActivity] = useState("SYSTEM: MONITORING TRANSACTIONS...");
-
-  // NEW: Feature States
-  const [showCreateBounty, setShowCreateBounty] = useState(false);
-  const [newAchievement, setNewAchievement] = useState(null);
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'achievements', 'shame', 'bounties'
-  
-  // Notification state
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-  
-  // Wallet modal state
-  const [showWallet, setShowWallet] = useState(false);
-
-  const sfxReset = useRef(new Audio('https://www.myinstants.com/media/sounds/discord-notification.mp3'));
-  const sfxAchievement = useRef(new Audio('https://www.myinstants.com/media/sounds/level-up.mp3'));
-
-  // Check for admin mode
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'admin') setIsAdmin(true);
-  }, []);
-
-  const showToast = (msg, type = 'SUCCESS') => {
-      setToast({ msg, type });
-  };
-
+  // Load Data
   const loadData = async () => {
     if (!isAuthenticated || !user) {
       setLoading(false);
@@ -111,107 +34,38 @@ function App() {
     
     setLoading(true);
     try {
-        // Initialize Aura balance for new users
-        await initializeAuraBalance(user.uid);
-        
-        // Load friendships using the new service
-        const userFriendships = await getUserFriendships(user.uid);
-        
-        // Calculate total APR for sorting
-        const friendshipsWithStats = userFriendships.map(f => {
-          const isUser1 = f.myPerspective === 'user1';
-          const myData = isUser1 ? f.user1Perspective : f.user2Perspective;
-          const stats = calculateDebt({
-            baseDebt: myData.baseDebt,
-            lastInteraction: myData.lastInteraction,
-            bankruptcyLimit: myData.limit
-          });
-          return { ...f, myDebt: stats.totalDebt };
-        });
-
-        // Sort by urgency (highest debt first)
-        const sorted = (friendshipsWithStats || []).sort((a, b) => (b.myDebt || 0) - (a.myDebt || 0));
-        setFriendships(sorted);
-        setLoading(false);
-    } catch (e) {
-        console.error(e);
-        showToast("Database Error", "ERROR");
-        setLoading(false);
+      const data = await getUserFriendships(user.uid || user.id);
+      setFriendships(data || []);
+    } catch (error) {
+      console.error('Failed to load friendships:', error);
+      showToast('SYNC ERROR: DATABASE UNREACHABLE', 'ERROR');
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => { 
-    loadData(); 
-  }, [isAuthenticated, user]) 
+  useEffect(() => {
+    if (isAuthenticated) loadData();
+  }, [isAuthenticated, user]);
 
-  // --- HANDLERS ---
-
-  const handlePoke = (name, isBankrupt, isClean) => {
-      sfxReset.current.volume = 0.5;
-      sfxReset.current.currentTime = 0;
-      sfxReset.current.play().catch(e => console.log("Audio Blocked:", e));
-      
-      const msg = getRandomQuote(isBankrupt, isClean);
-      const type = isBankrupt ? "ERROR" : isClean ? "SUCCESS" : "INFO";
-      
-      showToast(msg, type);
+  const showToast = (msg, type = 'SUCCESS') => {
+    setToast({ msg, type });
   };
 
   const handleAction = (type, friendship) => {
-      // SECURITY CHECK: If Admin is present but locked, BLOCK EVERYTHING
-      if (isAdmin && !adminUnlocked) {
-          showToast("SYSTEM LOCKED: ENTER PIN", "ERROR");
-          return;
-      }
-
-      setSelectedFriendship(friendship);
-      
-      if (type === 'CHECKIN') {
-        setModalType('CHECKIN');
-      } else if (type === 'VOICE_CHECKIN') {
-        setModalType('VOICE_CHECKIN');
-      } else if (type === 'BEG') {
-        setModalType('MERCY_REQUEST');
-      } else if (type === 'FLEX') {
-        setModalType('FLEX');
-      } else if (type === 'ROULETTE') {
-        setModalType('ROULETTE');
-      } else if (type === 'BAILOUT') {
-        setModalType('BAILOUT');
-      } else if (type === 'SETTINGS') {
-        setModalType('SETTINGS');
-      }
-  };
-
-  const handleRefreshData = (actionMsg) => {
-      if(actionMsg) setRecentActivity(actionMsg); 
-      loadData(); 
-  };
-
-  // NEW: Check achievements after actions
-  const checkForAchievements = async (activityType, activityData = {}) => {
-    if (!user) return;
-    const result = await checkAchievements(user.uid, activityType, activityData);
-    if (result.newlyUnlocked && result.newlyUnlocked.length > 0) {
-      // Show the first new achievement (or queue them)
-      setNewAchievement(result.newlyUnlocked[0]);
-      // Play achievement sound
-      sfxAchievement.current.volume = 0.5;
-      sfxAchievement.current.play().catch(e => console.log("Audio Blocked:", e));
-    }
+    setSelectedFriendship(friendship);
+    if (type === 'CHECKIN') setModalType('CHECKIN');
+    else if (type === 'VOICE_CHECKIN') setModalType('VOICE_CHECKIN');
+    else if (type === 'SETTINGS') setModalType('SETTINGS');
+    else if (type === 'BAILOUT') setModalType('BAILOUT');
   };
 
   const closeModal = () => {
-      setSelectedFriendship(null);
-      setModalType(null);
+    setModalType(null);
+    setSelectedFriendship(null);
   };
 
-  // Show landing page if first visit
-  if (!hasEntered) {
-    return <LandingPage onEnter={handleEnter} />;
-  }
-
-  // Show auth screens if not logged in
+  // Auth Guard
   if (!isAuthenticated) {
     return showSignup ? (
       <Signup onToggle={() => setShowSignup(false)} />
@@ -220,364 +74,109 @@ function App() {
     );
   }
 
-  // Show verification required screen if email not verified
-  if (!isEmailVerified()) {
-    return <VerificationRequired />;
-  }
+  // Calculate Total Debt (using the same logic as the hook for consistency)
+  const totalDebt = friendships.reduce((acc, f) => {
+    const isUser1 = f.user1._id === (user.uid || user.id) || f.user1 === (user.uid || user.id);
+    const perspective = isUser1 ? f.user1Perspective : f.user2Perspective;
+    if (!perspective) return acc;
+
+    const interactionDate = new Date(perspective.lastInteraction || 0);
+    const now = new Date();
+    const daysMissed = Math.floor(Math.max(0, now - interactionDate) / (1000 * 60 * 60 * 24));
+    const daysOverLimit = Math.max(0, daysMissed - (perspective.limit || 7));
+    return acc + (perspective.baseDebt || 0) + daysOverLimit;
+  }, 0);
 
   return (
-    <div className="app-container">
-      {/* HEADER SECTION */}
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: '20px 30px',
-        marginBottom: '20px',
-        borderBottom: '1px solid #222'
-      }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'left' }}>
-          <h1 className="glitch" data-text="HAKOWARE" style={{margin: 0, fontSize: '1.5rem', letterSpacing: '4px'}}>
-            HAKOWARE 
-          </h1>
-          <div className="sub-header" style={{fontSize: '0.7rem', marginTop: '2px'}}>
-            CHAPTER 7 BANKRUPTCY
-          </div>
-        </div>
+    <Layout 
+      activeTab={activeTab} 
+      onTabChange={setActiveTab}
+      onAddFriend={() => setModalType('ADD_FRIEND')}
+    >
+      <Suspense fallback={<div className="loading-screen"><Loader2 className="animate-spin" /></div>}>
+        {activeTab === 'friends' && (
+          <div className="dashboard-view">
+            <div className="view-header">
+              <div className="header-label-group">
+                <h3>ACTIVE CONTRACTS</h3>
+                <button className="refresh-btn" onClick={loadData} disabled={loading}>
+                  <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                </button>
+              </div>
+              <div className="stats-summary">
+                <div className="summary-item">
+                  <span className="label">TOTAL SYSTEM DEBT</span>
+                  <span className="value">{totalDebt} APR</span>
+                </div>
+              </div>
+            </div>
 
-        {/* Header Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          {/* Notification Bell */}
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            style={{
-              position: 'relative',
-              background: 'transparent',
-              border: '1px solid #333',
-              borderRadius: '10px',
-              padding: '10px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#444';
-              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#333';
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            <BellIcon size={20} color={unreadNotificationCount > 0 ? '#ffd700' : '#888'} />
-            {unreadNotificationCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-4px',
-                background: '#ff4444',
-                color: '#fff',
-                fontSize: '0.65rem',
-                fontWeight: 'bold',
-                padding: '2px 5px',
-                borderRadius: '10px',
-                minWidth: '16px',
-                textAlign: 'center'
-              }}>
-                {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
-              </span>
+            {loading && friendships.length === 0 ? (
+              <div className="loading-container">
+                <Loader2 className="animate-spin" size={32} />
+                <p>SYNCHRONIZING WITH SERVER...</p>
+              </div>
+            ) : friendships.length === 0 ? (
+              <div className="empty-state glass">
+                <div className="empty-icon">H</div>
+                <h3>NO ACTIVE CONTRACTS</h3>
+                <p>Initiate a new contract to start tracking aura debt.</p>
+                <Button variant="aura" icon={Plus} onClick={() => setModalType('ADD_FRIEND')}>
+                  INITIATE NEW CONTRACT
+                </Button>
+              </div>
+            ) : (
+              <div className="nen-grid">
+                {friendships.map((f) => (
+                  <NenCard 
+                    key={f.id || f._id} 
+                    friendship={f} 
+                    currentUserId={user.uid || user.id}
+                    onAction={handleAction}
+                  />
+                ))}
+              </div>
             )}
-          </button>
-
-          {/* Hamburger Menu */}
-          <HamburgerMenu 
-            onAddFriend={() => setShowAddFriend(true)}
-            onRefresh={loadData}
-            onOpenMarketplace={() => setShowMarketplace(true)}
-            onOpenWallet={() => setShowWallet(true)}
-          />
-        </div>
-      </header>
-
-      {/* Notifications, Invitations, Mercy & Bailout Panels */}
-      <NotificationsPanel 
-        isOpen={showNotifications}
-        onUnreadCountChange={setUnreadNotificationCount}
-        onClose={() => setShowNotifications(false)}
-      />
-      <InvitationsPanel onUpdate={loadData} />
-      <MercyPanel onUpdate={loadData} />
-      <BailoutHistoryPanel />
-
-      {/* Nen Sealed Status - Shows when bankrupt */}
-      <NenSealedStatus friendships={friendships} />
-
-      {/* Simplified Tab Navigation - 3 Tabs */}
-      <div style={tabContainerStyle}>
-        <button 
-          style={{...tabButtonStyle, ...(activeTab === 'friends' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('friends')}
-        >
-          <UsersIcon size={16} color={activeTab === 'friends' ? '#ffd700' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>Friends</span>
-        </button>
-        <button 
-          style={{...tabButtonStyle, ...(activeTab === 'achievements' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('achievements')}
-        >
-          <AwardIcon size={16} color={activeTab === 'achievements' ? '#ffd700' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>Achievements</span>
-        </button>
-        <button 
-          style={{...tabButtonStyle, ...(activeTab === 'arena' ? tabActiveStyle : {})}}
-          onClick={() => setActiveTab('arena')}
-        >
-          <TrophyIcon size={16} color={activeTab === 'arena' ? '#ffd700' : '#666'} />
-          <span style={{ marginLeft: '8px' }}>Arena</span>
-        </button>
-
-      </div>
-
-      {/* Stats Dashboard */}
-      {!loading && activeTab === 'friends' && <Dashboard friendships={friendships} recentActivity={recentActivity} />}
-      
-      {/* --- ADMIN LOCK SYSTEM --- */}
-      {isAdmin && (
-          !adminUnlocked ? (
-              <AdminLock onUnlock={() => {
-                  setAdminUnlocked(true);
-                  showToast("ADMIN PRIVILEGES GRANTED", "SUCCESS");
-              }} />
-          ) : (
-              <AdminPanel onRefresh={() => handleRefreshData("SYSTEM: NEW CONTRACT ISSUED")} />
-          )
-      )}
-
-      {/* TAB CONTENT */}
-      {activeTab === 'friends' && (
-        loading ? (
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: '80px', gap: '20px'}}>
-              <LoadingSpinner size={48} color="#ffd700" />
-              <span style={{color: '#888', fontSize: '0.9rem'}}>Loading...</span>
           </div>
-        ) : friendships.length === 0 ? (
-          <div style={{
-            color: '#666', 
-            textAlign: 'center', 
-            marginTop: '50px', 
-            fontFamily: 'var(--font-main)',
-            padding: '40px'
-          }}>
-            <p style={{ fontSize: '1.2rem', marginBottom: '20px' }}>No friendships yet.</p>
-            <p>Click "+ Add Friend" to get started!</p>
+        )}
+        
+        {activeTab !== 'friends' && (
+          <div className="empty-state glass">
+            <h2>{activeTab.toUpperCase()} MODULE</h2>
+            <p>This module is currently being optimized for high-performance aura tracking.</p>
+            <Button variant="secondary" onClick={() => setActiveTab('friends')}>
+              RETURN TO DASHBOARD
+            </Button>
           </div>
-        ) : (
-          <div className="grid-container">
-            {friendships.map((friendship, index) => (
-              <ErrorBoundary key={friendship.id} fallback="Card failed to load">
-                <NenCard 
-                  friendship={friendship}
-                  currentUserId={user.uid}
-                  index={index}
-                  isAdmin={isAdmin && adminUnlocked}
-                  onAction={handleAction}
-                  onPoke={handlePoke}
-                />
-              </ErrorBoundary>
-            ))}
-          </div>
-        )
-      )}
-      {activeTab === 'achievements' && <AchievementShowcase />}
-      {activeTab === 'arena' && (
-        <Arena 
-          friendships={friendships} 
-          showToast={showToast}
-          onCreateBounty={(friendship) => {
-            setSelectedFriendship(friendship);
-            setShowCreateBounty(true);
-          }}
-        />
-      )}
-      {/* Wallet Modal */}
-      {showWallet && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.9)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }} onClick={() => setShowWallet(false)}>
-          <div style={{
-            width: '100%',
-            maxWidth: '600px',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }} onClick={e => e.stopPropagation()}>
-            <AuraWallet />
-          </div>
-        </div>
-      )}
+        )}
+      </Suspense>
 
-      {/* Potclean - The Debt Collector Mascot */}
-      {user && <Potclean friendships={friendships} />}
-
-      {/* --- MODALS --- */}
+      {/* MODALS */}
       <AddFriendModal 
-        isOpen={showAddFriend}
-        onClose={() => setShowAddFriend(false)}
+        isOpen={modalType === 'ADD_FRIEND'}
+        onClose={closeModal}
+        onRefresh={loadData}
         showToast={showToast}
       />
 
-      <CreateBountyModal
-        isOpen={showCreateBounty}
-        onClose={() => setShowCreateBounty(false)}
-        friendship={selectedFriendship}
-        showToast={showToast}
-        onBountyCreated={() => checkForAchievements('BOUNTY_CREATED')}
-      />
-
-      <AchievementUnlockModal
-        achievement={newAchievement}
-        onClose={() => setNewAchievement(null)}
-      />
-
-      {(isAdmin && adminUnlocked) && (
-        <SettleModal 
-            isOpen={modalType === 'SETTLE'} 
-            contract={selectedFriendship}
-            friendship={selectedFriendship}
-            onClose={closeModal} 
-            onRefresh={handleRefreshData} 
-            showToast={showToast} 
-        />
-      )}
-      
       <CheckinModal
         isOpen={modalType === 'CHECKIN'}
         onClose={closeModal}
         friendship={selectedFriendship}
+        currentUserId={user.uid || user.id}
+        onRefresh={loadData}
         showToast={showToast}
-        onCheckinComplete={() => {
-          loadData();
-          checkForAchievements('CHECKIN', { hour: new Date().getHours() });
-        }}
       />
 
-      <VoiceCheckinModal
-        isOpen={modalType === 'VOICE_CHECKIN'}
-        onClose={closeModal}
-        friendship={selectedFriendship}
-        showToast={showToast}
-        onCheckinComplete={() => {
-          loadData();
-          checkForAchievements('CHECKIN', { hour: new Date().getHours() });
-        }}
-      />
-
-      <MercyRequestModal
-        isOpen={modalType === 'MERCY_REQUEST'}
-        onClose={closeModal}
-        friendship={selectedFriendship}
-        showToast={showToast}
-        onRequestComplete={loadData}
-      />
-
-      <BailoutModal
-        isOpen={modalType === 'BAILOUT'}
-        onClose={closeModal}
-        friendship={selectedFriendship}
-        showToast={showToast}
-        onBailoutComplete={loadData}
-      />
-
-      <AuraMarketplaceModal
-        isOpen={showMarketplace}
-        onClose={() => setShowMarketplace(false)}
-        onBailout={(friendship) => {
-          setShowMarketplace(false);
-          handleAction('BAILOUT', friendship);
-        }}
-      />
-
-      <PetitionModal 
-          isOpen={modalType === 'PETITION'} 
-          contract={selectedFriendship}
-          friendship={selectedFriendship}
-          onClose={closeModal}
-          showToast={showToast}
-      />
-
-      <FriendshipSettingsModal
-          isOpen={modalType === 'SETTINGS'}
-          onClose={closeModal}
-          friendship={selectedFriendship}
-          showToast={showToast}
-          onUpdate={loadData}
-      />
-
-      <DebtRouletteModal
-          isOpen={modalType === 'ROULETTE'}
-          onClose={closeModal}
-          friendship={selectedFriendship}
-          showToast={showToast}
-          onRouletteComplete={() => {
-            handleRefreshData('Debt Roulette spun');
-            checkForAchievements('ROULETTE');
-          }}
-      />
-
-      <FlexModal
-          isOpen={modalType === 'FLEX'}
-          onClose={closeModal}
-          friendship={selectedFriendship}
-          showToast={showToast}
-      />
-
-      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
-  )
+      {toast && (
+        <Toast 
+          message={toast.msg} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
+    </Layout>
+  );
 }
 
-// Tab Styles
-const tabContainerStyle = {
-  display: 'flex',
-  gap: '10px',
-  padding: '0 0 20px 0',
-  overflowX: 'auto',
-  borderBottom: '1px solid #222',
-  marginBottom: '20px'
-};
-
-const tabButtonStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  padding: '12px 20px',
-  background: 'transparent',
-  border: 'none',
-  borderRadius: '10px',
-  color: '#888',
-  fontSize: '0.85rem',
-  fontWeight: '500',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-  transition: 'all 0.2s ease',
-  fontFamily: 'inherit'
-};
-
-const tabActiveStyle = {
-  background: 'rgba(255,215,0,0.1)',
-  color: '#ffd700',
-  fontWeight: '600'
-};
-
-export default App
+export default App;
