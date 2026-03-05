@@ -7,7 +7,7 @@ import { Button } from './shared/components/Button';
 import { Login, Signup } from './features/auth/Auth';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
-import { Toast } from './components/Toast';
+import Toast from './components/Toast';
 import { Loader2, Plus, RefreshCw } from 'lucide-react';
 import './App.css';
 
