@@ -81,4 +81,33 @@ router.post('/initialize', auth, async (req, res) => {
   }
 });
 
+// @route    POST api/aura/buy-card
+// @desc     Buy a spell card
+// @access   Private
+router.post('/buy-card', auth, async (req, res) => {
+  const { cardId, cardName, cost } = req.body;
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    if (user.auraBalance < cost) return res.status(400).json({ msg: 'INSUFFICIENT AURA' });
+
+    user.auraBalance -= cost;
+    user.inventory.push(cardId);
+    await user.save();
+
+    const transaction = new AuraTransaction({
+      userId: user._id,
+      amount: -cost,
+      type: 'MARKETPLACE_PURCHASE',
+      description: `Purchased spell card: ${cardName}`
+    });
+
+    await transaction.save();
+    res.json({ success: true, balance: user.auraBalance, inventory: user.inventory });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

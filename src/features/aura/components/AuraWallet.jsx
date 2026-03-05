@@ -9,12 +9,14 @@ import {
   TrendingUp, 
   History,
   Activity,
-  ShoppingBag
+  ShoppingBag,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../lib/api';
 import { Button } from '../../../shared/components/Button';
 import { MarketplaceModal } from './MarketplaceModal';
+import { InventoryModal } from './InventoryModal';
 import './AuraWallet.css';
 
 /**
@@ -26,6 +28,7 @@ export const AuraWallet = ({ showToast }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMarket, setShowMarket] = useState(false);
+  const [showInventory, setShowInventory] = useState(false);
 
   const loadAuraData = async () => {
     setLoading(true);
@@ -45,7 +48,10 @@ export const AuraWallet = ({ showToast }) => {
 
   return (
     <div className="aura-wallet-container">
-      <div className="wallet-actions-bar" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-16px' }}>
+      <div className="wallet-actions-bar" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-16px', gap: '12px' }}>
+        <Button variant="secondary" icon={Package} onClick={() => setShowInventory(true)}>
+          COLLECTION
+        </Button>
         <Button variant="aura" icon={ShoppingBag} onClick={() => setShowMarket(true)}>
           GREED ISLAND MARKET
         </Button>
@@ -161,6 +167,11 @@ export const AuraWallet = ({ showToast }) => {
         isOpen={showMarket}
         onClose={() => setShowMarket(false)}
         showToast={showToast}
+      />
+
+      <InventoryModal 
+        isOpen={showInventory}
+        onClose={() => setShowInventory(false)}
       />
     </div>
   );

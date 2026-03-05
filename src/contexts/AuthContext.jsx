@@ -105,6 +105,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const buyCard = async (card) => {
+    try {
+      const res = await api.post('/aura/buy-card', { 
+        cardId: card.id, 
+        cardName: card.name, 
+        cost: card.cost 
+      });
+      if (res.success) {
+        setUser({ ...user, auraBalance: res.balance, inventory: res.inventory });
+        return { success: true };
+      }
+      return { success: false, error: res.msg || 'Purchase failed' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const resetPassword = async (email) => {
     return { success: true };
   };
@@ -128,6 +145,7 @@ export const AuthProvider = ({ children }) => {
     resendVerificationEmail,
     updateUserProfile,
     setNenType,
+    buyCard,
     isEmailVerified,
     isAuthenticated: !!user
   };

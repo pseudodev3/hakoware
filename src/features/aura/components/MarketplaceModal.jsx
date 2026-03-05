@@ -13,7 +13,7 @@ const CARDS = [
 ];
 
 export const MarketplaceModal = ({ isOpen, onClose, showToast }) => {
-  const { user } = useAuth();
+  const { user, buyCard } = useAuth();
   const [loading, setLoading] = useState(null);
 
   const handleBuy = async (card) => {
@@ -23,12 +23,18 @@ export const MarketplaceModal = ({ isOpen, onClose, showToast }) => {
     }
     
     setLoading(card.id);
-    // Simulate API call for buying a card
-    setTimeout(() => {
-      showToast(`ACQUIRED SPELL CARD: ${card.name}`, 'SUCCESS');
+    try {
+      const result = await buyCard(card);
+      if (result.success) {
+        showToast(`ACQUIRED SPELL CARD: ${card.name}`, 'SUCCESS');
+      } else {
+        showToast(result.error || 'PURCHASE FAILED', 'ERROR');
+      }
+    } catch (err) {
+      showToast('SYSTEM ERROR', 'ERROR');
+    } finally {
       setLoading(null);
-      // Ideally update user inventory via Context here
-    }, 1000);
+    }
   };
 
   return (
