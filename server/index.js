@@ -24,6 +24,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/aura', require('./routes/aura'));
 app.use('/api/achievements', require('./routes/achievements'));
 app.use('/api/bankruptcy', require('./routes/bankruptcy'));
+app.use('/api/bounties', require('./routes/bounties'));
 
 // Static serving for uploaded files (audio notes, avatars)
 app.use('/uploads', express.static('uploads'));
