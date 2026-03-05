@@ -10,7 +10,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Plus
+  Plus,
+  Skull
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -31,6 +32,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
     { id: 'friends', label: 'Friends', icon: Users },
     { id: 'achievements', label: 'Achievements', icon: Award },
     { id: 'arena', label: 'Arena', icon: Trophy },
+    { id: 'shame', label: 'Wall of Shame', icon: Skull },
     { id: 'wallet', label: 'Aura Wallet', icon: Wallet },
   ];
 

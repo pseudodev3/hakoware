@@ -1,0 +1,99 @@
+.marketplace-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.market-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.market-info {
+  flex: 1;
+}
+
+.market-info h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--aura-gold);
+}
+
+.market-info p {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.current-aura {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.current-aura span:first-child {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--aura-gold);
+  line-height: 1;
+}
+
+.current-aura .unit {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.spell-card {
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.card-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.spell-card h4 {
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.spell-card p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.buy-btn {
+  width: 100%;
+  margin-top: 12px;
+}

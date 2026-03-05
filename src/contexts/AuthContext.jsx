@@ -91,6 +91,19 @@ export const AuthProvider = ({ children }) => {
     return { success: true };
   };
 
+  const setNenType = async (nenType) => {
+    try {
+      const res = await api.put('/auth/nen-type', { nenType });
+      if (res._id) {
+        setUser({ ...user, nenType: res.nenType });
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const resetPassword = async (email) => {
     return { success: true };
   };
@@ -113,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     resendVerificationEmail,
     updateUserProfile,
+    setNenType,
     isEmailVerified,
     isAuthenticated: !!user
   };

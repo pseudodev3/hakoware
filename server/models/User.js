@@ -5,6 +5,8 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // For custom Auth
   avatar: { type: String, default: null },
+  nenType: { type: String, enum: ['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST', null], default: null },
+  inventory: [{ type: String }], // Array of spell card names
   auraScore: { type: Number, default: 850 },
   auraBalance: { type: Number, default: 0 },
   defaultLimit: { type: Number, default: 7 },

@@ -100,4 +100,24 @@ router.get('/user', auth, async (req, res) => {
   }
 });
 
+// @route    PUT api/auth/nen-type
+// @desc     Set user's Nen type
+// @access   Private
+router.put('/nen-type', auth, async (req, res) => {
+  try {
+    const { nenType } = req.body;
+    const user = await User.findById(req.user.id);
+    
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    user.nenType = nenType;
+    await user.save();
+    
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

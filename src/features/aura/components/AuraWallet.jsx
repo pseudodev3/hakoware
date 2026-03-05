@@ -8,20 +8,24 @@ import {
   ShieldCheck, 
   TrendingUp, 
   History,
-  Activity
+  Activity,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../lib/api';
+import { Button } from '../../../shared/components/Button';
+import { MarketplaceModal } from './MarketplaceModal';
 import './AuraWallet.css';
 
 /**
  * Professional Aura Wallet module.
  * Visualizes currency and financial standing within the HxH system.
  */
-export const AuraWallet = () => {
+export const AuraWallet = ({ showToast }) => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showMarket, setShowMarket] = useState(false);
 
   const loadAuraData = async () => {
     setLoading(true);
@@ -41,6 +45,11 @@ export const AuraWallet = () => {
 
   return (
     <div className="aura-wallet-container">
+      <div className="wallet-actions-bar" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-16px' }}>
+        <Button variant="aura" icon={ShoppingBag} onClick={() => setShowMarket(true)}>
+          GREED ISLAND MARKET
+        </Button>
+      </div>
       <div className="wallet-grid">
         {/* Main Balance Card */}
         <motion.div 
@@ -147,6 +156,12 @@ export const AuraWallet = () => {
           )}
         </div>
       </div>
+      
+      <MarketplaceModal 
+        isOpen={showMarket}
+        onClose={() => setShowMarket(false)}
+        showToast={showToast}
+      />
     </div>
   );
 };

@@ -11,8 +11,10 @@ import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal'
 import { VoiceNotesInbox } from './features/debt/components/VoiceNotesInbox';
 import { Potclean } from './features/debt/components/Potclean';
 import { LandingPage } from './features/landing/LandingPage';
+import { WaterDivinationModal } from './features/auth/components/WaterDivinationModal';
 import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
 import { Arena } from './features/arena/components/Arena';
+import { ShameWall } from './features/shame/components/ShameWall';
 import { AuraWallet } from './features/aura/components/AuraWallet';
 import Toast from './components/Toast';
 import { Loader2, Plus, RefreshCw, Zap, TrendingUp, Users } from 'lucide-react';
@@ -217,8 +219,11 @@ function App() {
         {/* ARENA MODULE */}
         {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
 
+        {/* SHAME WALL MODULE */}
+        {activeTab === 'shame' && <ShameWall />}
+
         {/* WALLET MODULE */}
-        {activeTab === 'wallet' && <AuraWallet />}
+        {activeTab === 'wallet' && <AuraWallet showToast={showToast} />}
         
       </Suspense>
 
@@ -247,6 +252,8 @@ function App() {
         onRefresh={loadData}
         showToast={showToast}
       />
+
+      <WaterDivinationModal />
 
       {user && <Potclean friendships={friendships} />}
 

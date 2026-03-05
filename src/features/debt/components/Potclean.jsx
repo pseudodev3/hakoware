@@ -10,6 +10,7 @@ import './Potclean.css';
 export const Potclean = ({ friendships = [] }) => {
   const { user } = useAuth();
   const [totalDebt, setTotalDebt] = useState(0);
+  const [isBankrupt, setIsBankrupt] = useState(false);
   const [displayDebt, setDisplayDebt] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [expression, setExpression] = useState('neutral');
@@ -21,9 +22,11 @@ export const Potclean = ({ friendships = [] }) => {
   useEffect(() => {
     if (!Array.isArray(friendships) || friendships.length === 0) {
       setTotalDebt(0);
+      setIsBankrupt(false);
       return;
     }
 
+    let bankrupt = false;
     const debt = friendships.reduce((acc, f) => {
       const isUser1 = f.user1._id === (user?.uid || user?.id) || f.user1 === (user?.uid || user?.id);
       const perspective = isUser1 ? f.user1Perspective : f.user2Perspective;
@@ -33,10 +36,17 @@ export const Potclean = ({ friendships = [] }) => {
       const now = new Date();
       const daysMissed = Math.floor(Math.max(0, now - interactionDate) / (1000 * 60 * 60 * 24));
       const daysOverLimit = Math.max(0, daysMissed - (perspective.limit || 7));
-      return acc + (perspective.baseDebt || 0) + daysOverLimit;
+      const currentDebt = (perspective.baseDebt || 0) + daysOverLimit;
+      
+      if (currentDebt >= (perspective.limit || 7) * 2) {
+        bankrupt = true;
+      }
+      
+      return acc + currentDebt;
     }, 0);
 
     setTotalDebt(debt);
+    setIsBankrupt(bankrupt);
   }, [friendships, user]);
 
   // Handle debt changes and comments
@@ -83,6 +93,7 @@ export const Potclean = ({ friendships = [] }) => {
   if (!isVisible) return null;
 
   const getExpressionColor = () => {
+    if (isBankrupt) return 'var(--aura-red)';
     if (totalDebt === 0) return 'var(--text-muted)';
     if (totalDebt > 50) return 'var(--aura-red)';
     if (totalDebt > 20) return 'var(--aura-gold)';
@@ -91,7 +102,7 @@ export const Potclean = ({ friendships = [] }) => {
 
   return (
     <motion.div 
-      className={`potclean-root ${totalDebt === 0 ? 'dormant' : 'active'}`}
+      className={`potclean-root ${totalDebt === 0 ? 'dormant' : 'active'} ${isBankrupt ? 'toritaten-mode' : ''}`}
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       drag
@@ -113,7 +124,7 @@ export const Potclean = ({ friendships = [] }) => {
 
       <div className="potclean-body-container">
         <div className="potclean-stats glass" style={{ borderColor: getExpressionColor(), opacity: totalDebt === 0 ? 0.5 : 1 }}>
-          <span className="label">{totalDebt === 0 ? 'SYSTEM READY' : 'ACCUMULATED'}</span>
+          <span className="label">{isBankrupt ? 'BANKRUPT' : totalDebt === 0 ? 'SYSTEM READY' : 'ACCUMULATED'}</span>
           <span className="value" style={{ color: getExpressionColor() }}>
             {totalDebt === 0 ? '0' : displayDebt} <span>APR</span>
           </span>
@@ -123,48 +134,62 @@ export const Potclean = ({ friendships = [] }) => {
           className="potclean-svg-wrapper"
           animate={{ 
             y: totalDebt === 0 ? 0 : [0, -10, 0],
-            opacity: totalDebt === 0 ? 0.3 : 1
+            opacity: totalDebt === 0 ? 0.3 : 1,
+            scale: isBankrupt ? 1.2 : 1
           }}
-          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+          transition={{ repeat: Infinity, duration: isBankrupt ? 1 : 3, ease: "easeInOut" }}
         >
           <svg viewBox="0 0 100 100" className="potclean-svg">
-            <circle cx="50" cy="65" r="30" fill="white" stroke="#ddd" strokeWidth="2" />
-            <ellipse cx="50" cy="75" rx="15" ry="10" fill="#f0f0f0" />
-            
-            {/* Ears */}
-            <ellipse cx="35" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(-15, 35, 30)" />
-            <ellipse cx="65" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(15, 65, 30)" />
-            
-            {/* Face */}
-            {totalDebt === 0 ? (
+            {isBankrupt ? (
+              // Toritaten Form
               <g>
-                <line x1="40" y1="58" x2="46" y2="58" stroke="#999" strokeWidth="2" />
-                <line x1="54" y1="58" x2="60" y2="58" stroke="#999" strokeWidth="2" />
-                <path d="M45 75 L55 75" stroke="#999" strokeWidth="2" />
-              </g>
-            ) : expression === 'angry' ? (
-              <g>
-                <path d="M40 55 L45 60" stroke="black" strokeWidth="2" />
-                <path d="M60 55 L55 60" stroke="black" strokeWidth="2" />
-                <path d="M42 75 Q50 70 58 75" fill="none" stroke="black" strokeWidth="2" />
-              </g>
-            ) : expression === 'happy' ? (
-              <g>
-                <path d="M40 58 Q45 53 50 58" fill="none" stroke="black" strokeWidth="2" />
-                <path d="M50 58 Q55 53 60 58" fill="none" stroke="black" strokeWidth="2" />
-                <path d="M42 72 Q50 80 58 72" fill="none" stroke="black" strokeWidth="2" />
+                <circle cx="50" cy="65" r="30" fill="#111" stroke="var(--aura-red)" strokeWidth="2" />
+                <ellipse cx="50" cy="75" rx="15" ry="10" fill="#222" />
+                <path d="M25 40 L40 50 L35 30 Z" fill="#111" stroke="var(--aura-red)" strokeWidth="2" />
+                <path d="M75 40 L60 50 L65 30 Z" fill="#111" stroke="var(--aura-red)" strokeWidth="2" />
+                <circle cx="40" cy="60" r="4" fill="var(--aura-red)" />
+                <circle cx="60" cy="60" r="4" fill="var(--aura-red)" />
+                <path d="M40 75 Q50 70 60 75" fill="none" stroke="white" strokeWidth="2" />
               </g>
             ) : (
+              // Normal Potclean Form
               <g>
-                <circle cx="43" cy="58" r="3" fill="black" />
-                <circle cx="57" cy="58" r="3" fill="black" />
-                <line x1="45" y1="75" x2="55" y2="75" stroke="black" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="50" cy="65" r="30" fill="white" stroke="#ddd" strokeWidth="2" />
+                <ellipse cx="50" cy="75" rx="15" ry="10" fill="#f0f0f0" />
+                <ellipse cx="35" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(-15, 35, 30)" />
+                <ellipse cx="65" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(15, 65, 30)" />
+                
+                {/* Face */}
+                {totalDebt === 0 ? (
+                  <g>
+                    <line x1="40" y1="58" x2="46" y2="58" stroke="#999" strokeWidth="2" />
+                    <line x1="54" y1="58" x2="60" y2="58" stroke="#999" strokeWidth="2" />
+                    <path d="M45 75 L55 75" stroke="#999" strokeWidth="2" />
+                  </g>
+                ) : expression === 'angry' ? (
+                  <g>
+                    <path d="M40 55 L45 60" stroke="black" strokeWidth="2" />
+                    <path d="M60 55 L55 60" stroke="black" strokeWidth="2" />
+                    <path d="M42 75 Q50 70 58 75" fill="none" stroke="black" strokeWidth="2" />
+                  </g>
+                ) : expression === 'happy' ? (
+                  <g>
+                    <path d="M40 58 Q45 53 50 58" fill="none" stroke="black" strokeWidth="2" />
+                    <path d="M50 58 Q55 53 60 58" fill="none" stroke="black" strokeWidth="2" />
+                    <path d="M42 72 Q50 80 58 72" fill="none" stroke="black" strokeWidth="2" />
+                  </g>
+                ) : (
+                  <g>
+                    <circle cx="43" cy="58" r="3" fill="black" />
+                    <circle cx="57" cy="58" r="3" fill="black" />
+                    <line x1="45" y1="75" x2="55" y2="75" stroke="black" strokeWidth="2" strokeLinecap="round" />
+                  </g>
+                )}
+                <circle cx="50" cy="65" r="2" fill="#ffb6c1" />
               </g>
             )}
-            
-            <circle cx="50" cy="65" r="2" fill="#ffb6c1" />
           </svg>
-          {totalDebt > 0 && <div className="aura-glow" style={{ backgroundColor: getExpressionColor() }} />}
+          {(totalDebt > 0 || isBankrupt) && <div className="aura-glow" style={{ backgroundColor: getExpressionColor() }} />}
         </motion.div>
       </div>
 
