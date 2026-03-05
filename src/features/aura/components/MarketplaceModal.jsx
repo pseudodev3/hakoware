@@ -7,7 +7,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import './MarketplaceModal.css';
 
 const CARDS = [
-  { id: 'STEAL', name: 'THIEF', desc: 'Steal 10% of a bankrupt friend's Aura.', cost: 50, icon: Zap, color: '#ff4444' },
+  { id: 'STEAL', name: 'THIEF', desc: "Steal 10% of a bankrupt friend's Aura.", cost: 50, icon: Zap, color: '#ff4444' },
   { id: 'REFLECT', name: 'REFLECT', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#00e5ff' },
   { id: 'PURIFY', name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676' }
 ];
