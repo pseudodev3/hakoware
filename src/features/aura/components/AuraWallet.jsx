@@ -31,10 +31,11 @@ export const AuraWallet = ({ friendships, showToast }) => {
   const [showInventory, setShowInventory] = useState(false);
 
   const loadAuraData = async () => {
+    if (!user) return;
     setLoading(true);
     try {
-      const res = await api.get('/aura/transactions');
-      setTransactions(res || []);
+      const res = await api.get(`/aura/${user.uid || user.id}`);
+      setTransactions(res.history || []);
     } catch (error) {
       console.error('Failed to load aura data:', error);
     } finally {
