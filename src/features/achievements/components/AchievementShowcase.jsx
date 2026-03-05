@@ -9,7 +9,8 @@ import {
   ShieldCheck, 
   Trophy,
   Activity,
-  User
+  User,
+  Target
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import './AchievementShowcase.css';
