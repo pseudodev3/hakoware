@@ -12,6 +12,52 @@ router.get('/:userId', auth, async (req, res) => {
     const user = await User.findById(req.params.userId);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
+    // --- DAILY PASSIVE AURA GENERATION ---
+    const now = new Date();
+    const lastGeneration = user.updatedAt; // Using updatedAt as a proxy for last visit for now, but we'll check transactions
+    const lastDailyTx = await AuraTransaction.findOne({
+      userId: user._id,
+      type: 'DAILY_BONUS',
+      createdAt: { $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) }
+    });
+
+    if (!lastDailyTx) {
+      // 1. Check if user is debt-free (Social Health)
+      const Friendship = require('../models/Friendship');
+      const friendships = await Friendship.find({ $or: [{ user1: user._id }, { user2: user._id }] });
+      
+      let isDebtFree = true;
+      for (const f of friendships) {
+        const isU1 = f.user1.toString() === user._id.toString();
+        const p = isU1 ? f.user1Perspective : f.user2Perspective;
+        const d = Math.floor(Math.max(0, now - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
+        if ((p.baseDebt || 0) + Math.max(0, d - (p.limit || 7)) > 0) {
+          isDebtFree = false;
+          break;
+        }
+      }
+
+      if (isDebtFree) {
+        let dailyAmount = 10; // Base healthy bonus
+        
+        // Nen Affinity Passives
+        if (user.nenType === 'ENHANCER') dailyAmount += 15; // +15 extra for Enhancers
+        if (user.nenType === 'SPECIALIST') dailyAmount += 5; // +5 for Specialists (random factor handled simply)
+
+        user.auraBalance += dailyAmount;
+        await user.save();
+
+        const bonusTx = new AuraTransaction({
+          userId: user._id,
+          amount: dailyAmount,
+          type: 'DAILY_BONUS',
+          description: `Daily Social Health Bonus (${user.nenType || 'HUNTER'})`
+        });
+        await bonusTx.save();
+      }
+    }
+    // ---------------------------------------
+
     const history = await AuraTransaction.find({ userId: req.params.userId })
       .sort({ createdAt: -1 })
       .limit(50);

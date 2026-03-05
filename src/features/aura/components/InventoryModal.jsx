@@ -59,9 +59,19 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
     }
   };
 
-  // Greed island binder has fixed slots. We will pad the inventory to show empty slots.
-  const MAX_SLOTS = Math.max(9, Math.ceil(inventory.length / 3) * 3);
-  const binderSlots = Array.from({ length: MAX_SLOTS }, (_, i) => inventory[i] || null);
+  // Greed island binder: group duplicates
+  const groupedInventory = inventory.reduce((acc, cardId) => {
+    const existing = acc.find(item => item.cardId === cardId);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ cardId, count: 1 });
+    }
+    return acc;
+  }, []);
+
+  const MAX_SLOTS = Math.max(9, Math.ceil(groupedInventory.length / 3) * 3);
+  const binderSlots = Array.from({ length: MAX_SLOTS }, (_, i) => groupedInventory[i] || null);
 
   return (
     <Modal 
@@ -98,8 +108,8 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
         ) : (
           <div className="binder-book">
             <div className="binder-page">
-              {binderSlots.map((cardId, idx) => {
-                if (!cardId) {
+              {binderSlots.map((item, idx) => {
+                if (!item) {
                   return (
                     <div key={idx} className="binder-slot empty">
                        <span className="slot-number">{String(idx).padStart(3, '0')}</span>
@@ -107,6 +117,7 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
                   )
                 }
 
+                const { cardId, count } = item;
                 const card = CARD_DATA[cardId];
                 if (!card) return null;
                 
@@ -120,6 +131,7 @@ export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
                     style={{ '--card-color': card.color }}
                   >
                     <div className="gi-card">
+                      {count > 1 && <div className="card-count-badge">x{count}</div>}
                       <div className="gi-card-header">
                         <span className="gi-card-rank">{card.rank}</span>
                         <span className="gi-card-name" style={{ color: card.color }}>{card.name}</span>

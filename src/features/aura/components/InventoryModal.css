@@ -74,6 +74,22 @@
   flex-direction: column;
   box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.5);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.card-count-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--aura-gold);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  z-index: 30;
 }
 
 .binder-slot.filled:hover .gi-card {
