@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { User, Mail, Zap, ShieldCheck, Award, Package, Flame, Wind, Droplets, BrainCircuit, Sparkles, TrendingUp } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './ProfileModal.css';
 
 const NEN_CONFIG = {
