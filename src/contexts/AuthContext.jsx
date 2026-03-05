@@ -94,11 +94,12 @@ export const AuthProvider = ({ children }) => {
   const setNenType = async (nenType) => {
     try {
       const res = await api.put('/auth/nen-type', { nenType });
-      if (res._id) {
-        setUser({ ...user, nenType: res.nenType });
+      if (res && (res._id || res.id)) {
+        const userWithUid = { ...res, uid: res.id || res._id };
+        setUser(userWithUid);
         return { success: true };
       }
-      return { success: false };
+      return { success: false, error: 'Malformed response from server' };
     } catch (error) {
       return { success: false, error: error.message };
     }

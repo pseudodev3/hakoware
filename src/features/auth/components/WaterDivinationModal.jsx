@@ -18,9 +18,11 @@ const NEN_TYPES = [
 export const WaterDivinationModal = () => {
   const { user, setNenType } = useAuth();
   const [isTesting, setIsTesting] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
   const [result, setResult] = useState(null);
+  const [hasFinished, setHasFinished] = useState(false);
   
-  if (!user || user.nenType) return null;
+  if (!user || user.nenType || hasFinished) return null;
 
   const performTest = () => {
     setIsTesting(true);
@@ -35,8 +37,17 @@ export const WaterDivinationModal = () => {
 
   const acceptResult = async () => {
     if (result) {
-      await setNenType(result.id);
-      window.location.reload(); // Quick refresh to apply buffs globally if needed
+      setIsAccepting(true);
+      try {
+        const success = await setNenType(result.id);
+        if (success) {
+          setHasFinished(true);
+        }
+      } catch (err) {
+        console.error("Failed to set Nen type", err);
+      } finally {
+        setIsAccepting(false);
+      }
     }
   };
 
@@ -84,7 +95,12 @@ export const WaterDivinationModal = () => {
             </div>
             <h2 style={{ color: result.color }}>{result.id}</h2>
             <p className="result-desc">{result.desc}</p>
-            <Button variant="primary" size="lg" onClick={acceptResult}>
+            <Button 
+              variant="primary" 
+              size="lg" 
+              onClick={acceptResult}
+              loading={isAccepting}
+            >
               ACCEPT AFFINITY
             </Button>
           </motion.div>
