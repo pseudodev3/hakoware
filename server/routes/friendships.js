@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Friendship = require('../models/Friendship');
 const User = require('../models/User');
+const Bounty = require('../models/Bounty');
 
 // @route    POST api/friendships
 // @desc     Create a new friendship (Contract)
@@ -114,6 +115,25 @@ router.post('/:id/checkin', auth, async (req, res) => {
     friendship.streak += 1;
 
     await friendship.save();
+
+    // BOUNTY CLAIM LOGIC
+    // If there were bounties on the user who just checked in, they are now 'Claimed'
+    const activeBounties = await Bounty.find({ targetId: req.user.id, status: { $in: ['ACTIVE', 'HUNTING'] } });
+    
+    for (const bounty of activeBounties) {
+      bounty.status = 'CLAIMED';
+      await bounty.save();
+      
+      // Reward the hunter if one was assigned, otherwise reward the first person who might have nudged (simulated)
+      if (bounty.hunterId) {
+        const hunter = await User.findById(bounty.hunterId);
+        if (hunter) {
+          hunter.auraBalance += bounty.amount;
+          await hunter.save();
+        }
+      }
+    }
+
     res.json(friendship);
   } catch (err) {
     console.error(err.message);

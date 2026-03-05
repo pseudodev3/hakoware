@@ -51,4 +51,28 @@ router.get('/active', auth, async (req, res) => {
   }
 });
 
+// @route    POST api/bounties/:id/hunt
+// @desc     Accept a bounty contract
+// @access   Private
+router.post('/:id/hunt', auth, async (req, res) => {
+  try {
+    const bounty = await Bounty.findById(req.params.id);
+    if (!bounty) return res.status(404).json({ msg: 'BOUNTY NOT FOUND' });
+    if (bounty.status !== 'ACTIVE') return res.status(400).json({ msg: 'BOUNTY NO LONGER ACTIVE' });
+    if (bounty.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'CANNOT HUNT YOURSELF' });
+
+    const user = await User.findById(req.user.id);
+    
+    bounty.status = 'HUNTING';
+    bounty.hunterId = req.user.id;
+    bounty.hunterName = user.displayName;
+    
+    await bounty.save();
+    res.json(bounty);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

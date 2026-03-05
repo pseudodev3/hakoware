@@ -142,15 +142,26 @@ export const Arena = ({ friendships, showToast }) => {
                   </div>
                 </div>
                 <div className="action-cell">
-                   <button 
-                    className="challenge-btn"
-                    onClick={() => {
-                      showToast(`HUNT INITIATED: NOTIFYING ${b.targetName.toUpperCase()}`, 'SUCCESS');
-                      // Logic to send a 'Nudge' or 'Challenge' notification could go here
-                    }}
-                   >
-                     <Sword size={16} />
-                   </button>
+                   {b.status === 'ACTIVE' ? (
+                     <button 
+                      className="challenge-btn"
+                      onClick={async () => {
+                        try {
+                          await api.post(`/bounties/${b.id || b._id}/hunt`);
+                          showToast(`CONTRACT ACCEPTED: APPREHEND ${b.targetName.toUpperCase()}`, 'SUCCESS');
+                          loadBounties();
+                        } catch (err) {
+                          showToast(err.message || 'FAILED TO CLAIM CONTRACT', 'ERROR');
+                        }
+                      }}
+                     >
+                       <Sword size={16} />
+                     </button>
+                   ) : (
+                     <div className="hunter-assigned">
+                        <ShieldCheck size={14} color="var(--aura-blue)" />
+                     </div>
+                   )}
                 </div>
               </motion.div>
             ))

@@ -8,7 +8,9 @@ const BountySchema = new mongoose.Schema({
   friendshipId: { type: mongoose.Schema.Types.ObjectId, ref: 'Friendship', required: true },
   amount: { type: Number, required: true },
   message: { type: String },
-  status: { type: String, enum: ['ACTIVE', 'CLAIMED', 'EXPIRED'], default: 'ACTIVE' },
+  status: { type: String, enum: ['ACTIVE', 'HUNTING', 'CLAIMED', 'EXPIRED'], default: 'ACTIVE' },
+  hunterId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  hunterName: { type: String },
   createdAt: { type: Date, default: Date.now },
   expiresAt: { type: Date, default: () => new Date(+new Date() + 7*24*60*60*1000) } // 7 days
 }, { timestamps: true });
