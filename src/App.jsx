@@ -7,15 +7,19 @@ import { Button } from './shared/components/Button';
 import { Login, Signup } from './features/auth/Auth';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
+import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
+import { Arena } from './features/arena/components/Arena';
+import { AuraWallet } from './features/aura/components/AuraWallet';
 import Toast from './components/Toast';
-import { Loader2, Plus, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, RefreshCw, Zap, TrendingUp, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
 import './App.css';
 
 function App() {
-  const { user, isAuthenticated, isEmailVerified } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   // UI State
-  const [activeTab, setActiveTab] = useState('friends');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [friendships, setFriendships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -74,8 +78,8 @@ function App() {
     );
   }
 
-  // Calculate Total Debt (using the same logic as the hook for consistency)
-  const totalDebt = friendships.reduce((acc, f) => {
+  // Calculate System Stats
+  const systemStats = friendships.reduce((acc, f) => {
     const isUser1 = f.user1._id === (user.uid || user.id) || f.user1 === (user.uid || user.id);
     const perspective = isUser1 ? f.user1Perspective : f.user2Perspective;
     if (!perspective) return acc;
@@ -84,8 +88,14 @@ function App() {
     const now = new Date();
     const daysMissed = Math.floor(Math.max(0, now - interactionDate) / (1000 * 60 * 60 * 24));
     const daysOverLimit = Math.max(0, daysMissed - (perspective.limit || 7));
-    return acc + (perspective.baseDebt || 0) + daysOverLimit;
-  }, 0);
+    const totalDebt = (perspective.baseDebt || 0) + daysOverLimit;
+
+    return {
+      totalDebt: acc.totalDebt + totalDebt,
+      bankruptCount: acc.bankruptCount + (totalDebt >= (perspective.limit || 7) * 2 ? 1 : 0),
+      activeCount: acc.activeCount + 1
+    };
+  }, { totalDebt: 0, bankruptCount: 0, activeCount: 0 });
 
   return (
     <Layout 
@@ -94,21 +104,42 @@ function App() {
       onAddFriend={() => setModalType('ADD_FRIEND')}
     >
       <Suspense fallback={<div className="loading-screen"><Loader2 className="animate-spin" /></div>}>
-        {activeTab === 'friends' && (
+        
+        {/* DASHBOARD MODULE */}
+        {activeTab === 'dashboard' && (
           <div className="dashboard-view">
-            <div className="view-header">
+             <div className="stats-overview">
+                <motion.div className="overview-card glass aura-pulse" initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}}>
+                   <div className="card-icon"><Zap size={20} color="var(--aura-gold)" /></div>
+                   <div className="card-data">
+                      <span className="label">TOTAL APR DEBT</span>
+                      <span className="value">{systemStats.totalDebt}</span>
+                   </div>
+                </motion.div>
+                <motion.div className="overview-card glass" initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.1}}>
+                   <div className="card-icon"><TrendingUp size={20} color="var(--aura-red)" /></div>
+                   <div className="card-data">
+                      <span className="label">BANKRUPTCY RISK</span>
+                      <span className="value">{systemStats.bankruptCount} ALERTS</span>
+                   </div>
+                </motion.div>
+                <motion.div className="overview-card glass" initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.2}}>
+                   <div className="card-icon"><Users size={20} color="var(--aura-blue)" /></div>
+                   <div className="card-data">
+                      <span className="label">ACTIVE CONTRACTS</span>
+                      <span className="value">{systemStats.activeCount}</span>
+                   </div>
+                </motion.div>
+             </div>
+
+             <div className="view-header" style={{marginTop: '20px'}}>
               <div className="header-label-group">
-                <h3>ACTIVE CONTRACTS</h3>
+                <h3>URGENT CONTRACTS</h3>
                 <button className="refresh-btn" onClick={loadData} disabled={loading}>
                   <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 </button>
               </div>
-              <div className="stats-summary">
-                <div className="summary-item">
-                  <span className="label">TOTAL SYSTEM DEBT</span>
-                  <span className="value">{totalDebt} APR</span>
-                </div>
-              </div>
+              <Button variant="secondary" size="sm" onClick={() => setActiveTab('friends')}>VIEW ALL</Button>
             </div>
 
             {loading && friendships.length === 0 ? (
@@ -127,7 +158,7 @@ function App() {
               </div>
             ) : (
               <div className="nen-grid">
-                {friendships.map((f) => (
+                {friendships.slice(0, 3).map((f) => (
                   <NenCard 
                     key={f.id || f._id} 
                     friendship={f} 
@@ -139,16 +170,41 @@ function App() {
             )}
           </div>
         )}
-        
-        {activeTab !== 'friends' && (
-          <div className="empty-state glass">
-            <h2>{activeTab.toUpperCase()} MODULE</h2>
-            <p>This module is currently being optimized for high-performance aura tracking.</p>
-            <Button variant="secondary" onClick={() => setActiveTab('friends')}>
-              RETURN TO DASHBOARD
-            </Button>
+
+        {/* FRIENDS MODULE */}
+        {activeTab === 'friends' && (
+          <div className="dashboard-view">
+             <div className="view-header">
+                <h3>ALL HUNTER CONTRACTS</h3>
+                <div className="header-actions" style={{display: 'flex', gap: '12px'}}>
+                   <button className="refresh-btn" onClick={loadData} disabled={loading}>
+                      <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                   </button>
+                   <Button variant="aura" size="sm" icon={Plus} onClick={() => setModalType('ADD_FRIEND')}>NEW CONTRACT</Button>
+                </div>
+             </div>
+             <div className="nen-grid">
+                {friendships.map((f) => (
+                  <NenCard 
+                    key={f.id || f._id} 
+                    friendship={f} 
+                    currentUserId={user.uid || user.id}
+                    onAction={handleAction}
+                  />
+                ))}
+              </div>
           </div>
         )}
+
+        {/* ACHIEVEMENTS MODULE */}
+        {activeTab === 'achievements' && <AchievementShowcase />}
+
+        {/* ARENA MODULE */}
+        {activeTab === 'arena' && <Arena />}
+
+        {/* WALLET MODULE */}
+        {activeTab === 'wallet' && <AuraWallet />}
+        
       </Suspense>
 
       {/* MODALS */}

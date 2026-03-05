@@ -1,0 +1,228 @@
+.arena-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.arena-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-info .label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.stat-info .value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Bounty Board */
+.bounty-board {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.board-header {
+  padding: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.board-header .title-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.board-header h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+}
+
+.board-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  width: 240px;
+}
+
+.search-wrapper input {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  width: 100%;
+}
+
+.search-wrapper input:focus { outline: none; }
+
+.bounty-list {
+  padding: 0 32px 32px 32px;
+}
+
+.list-header {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr 60px;
+  padding: 24px 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.bounty-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr 60px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.2s;
+}
+
+.bounty-row:hover {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.target-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.target-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--aura-gold);
+}
+
+.target-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.type-tag {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.reward-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reward-value {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--aura-gold);
+}
+
+.hunter-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--aura-blue);
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.status-pill.critical { background: rgba(255, 77, 77, 0.1); color: var(--aura-red); }
+.status-pill.high { background: rgba(255, 215, 0, 0.1); color: var(--aura-gold); }
+.status-pill.low { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+
+.challenge-btn {
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.challenge-btn:hover {
+  color: var(--aura-red);
+}
+
+.board-loading {
+  padding: 80px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}

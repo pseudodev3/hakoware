@@ -29,6 +29,57 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Stats Overview */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.overview-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  transition: border-color 0.3s;
+}
+
+.overview-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.overview-card .card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+}
+
+.card-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-data .label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.card-data .value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
 .view-header {
   display: flex;
   justify-content: space-between;
@@ -59,27 +110,6 @@
 
 .refresh-btn:hover {
   color: var(--aura-gold);
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.summary-item .label {
-  font-size: 0.6rem;
-  font-weight: 800;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
-}
-
-.summary-item .value {
-  font-family: var(--font-mono);
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--aura-gold);
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
 }
 
 .nen-grid {

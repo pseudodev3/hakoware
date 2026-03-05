@@ -13,6 +13,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
 import './Layout.css';
 
 /**
@@ -22,6 +23,8 @@ import './Layout.css';
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,6 +33,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
     { id: 'arena', label: 'Arena', icon: Trophy },
     { id: 'wallet', label: 'Aura Wallet', icon: Wallet },
   ];
+
+  const handleTabClick = (id) => {
+    onTabChange(id);
+    if (window.innerWidth < 768) setCollapsed(true);
+  };
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
@@ -58,7 +66,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
             <button
               key={item.id}
               className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleTabClick(item.id)}
             >
               <item.icon size={20} className="nav-icon" />
               {!collapsed && <span>{item.label}</span>}
@@ -102,9 +110,9 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
             <p>System status: Active</p>
           </div>
           <div className="header-actions">
-            <button className="icon-btn">
+            <button className="icon-btn" onClick={() => setShowNotifications(true)}>
               <Bell size={20} />
-              <span className="badge">3</span>
+              {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
             </button>
           </div>
         </header>
@@ -113,6 +121,13 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
           {children}
         </div>
       </main>
+
+      {/* Slide-out Notifications */}
+      <NotificationsPanel 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)}
+        onUnreadCountChange={setUnreadCount}
+      />
     </div>
   );
 };
