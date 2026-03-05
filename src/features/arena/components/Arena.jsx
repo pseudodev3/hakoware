@@ -142,7 +142,13 @@ export const Arena = ({ friendships, showToast }) => {
                   </div>
                 </div>
                 <div className="action-cell">
-                   <button className="challenge-btn">
+                   <button 
+                    className="challenge-btn"
+                    onClick={() => {
+                      showToast(`HUNT INITIATED: NOTIFYING ${b.targetName.toUpperCase()}`, 'SUCCESS');
+                      // Logic to send a 'Nudge' or 'Challenge' notification could go here
+                    }}
+                   >
                      <Sword size={16} />
                    </button>
                 </div>

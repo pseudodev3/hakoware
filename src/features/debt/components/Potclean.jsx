@@ -80,9 +80,10 @@ export const Potclean = ({ friendships = [] }) => {
     setTimeout(() => setComment(''), 4000);
   };
 
-  if (!isVisible || totalDebt === 0) return null;
+  if (!isVisible) return null;
 
   const getExpressionColor = () => {
+    if (totalDebt === 0) return 'var(--text-muted)';
     if (totalDebt > 50) return 'var(--aura-red)';
     if (totalDebt > 20) return 'var(--aura-gold)';
     return 'var(--aura-blue)';
@@ -90,7 +91,7 @@ export const Potclean = ({ friendships = [] }) => {
 
   return (
     <motion.div 
-      className="potclean-root"
+      className={`potclean-root ${totalDebt === 0 ? 'dormant' : 'active'}`}
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       drag
@@ -111,14 +112,19 @@ export const Potclean = ({ friendships = [] }) => {
       </AnimatePresence>
 
       <div className="potclean-body-container">
-        <div className="potclean-stats glass" style={{ borderColor: getExpressionColor() }}>
-          <span className="label">ACCUMULATED</span>
-          <span className="value" style={{ color: getExpressionColor() }}>{displayDebt} <span>APR</span></span>
+        <div className="potclean-stats glass" style={{ borderColor: getExpressionColor(), opacity: totalDebt === 0 ? 0.5 : 1 }}>
+          <span className="label">{totalDebt === 0 ? 'SYSTEM READY' : 'ACCUMULATED'}</span>
+          <span className="value" style={{ color: getExpressionColor() }}>
+            {totalDebt === 0 ? '0' : displayDebt} <span>APR</span>
+          </span>
         </div>
 
         <motion.div 
           className="potclean-svg-wrapper"
-          animate={{ y: [0, -10, 0] }}
+          animate={{ 
+            y: totalDebt === 0 ? 0 : [0, -10, 0],
+            opacity: totalDebt === 0 ? 0.3 : 1
+          }}
           transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
         >
           <svg viewBox="0 0 100 100" className="potclean-svg">
@@ -130,7 +136,13 @@ export const Potclean = ({ friendships = [] }) => {
             <ellipse cx="65" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(15, 65, 30)" />
             
             {/* Face */}
-            {expression === 'angry' ? (
+            {totalDebt === 0 ? (
+              <g>
+                <line x1="40" y1="58" x2="46" y2="58" stroke="#999" strokeWidth="2" />
+                <line x1="54" y1="58" x2="60" y2="58" stroke="#999" strokeWidth="2" />
+                <path d="M45 75 L55 75" stroke="#999" strokeWidth="2" />
+              </g>
+            ) : expression === 'angry' ? (
               <g>
                 <path d="M40 55 L45 60" stroke="black" strokeWidth="2" />
                 <path d="M60 55 L55 60" stroke="black" strokeWidth="2" />
@@ -152,7 +164,7 @@ export const Potclean = ({ friendships = [] }) => {
             
             <circle cx="50" cy="65" r="2" fill="#ffb6c1" />
           </svg>
-          <div className="aura-glow" style={{ backgroundColor: getExpressionColor() }} />
+          {totalDebt > 0 && <div className="aura-glow" style={{ backgroundColor: getExpressionColor() }} />}
         </motion.div>
       </div>
 
