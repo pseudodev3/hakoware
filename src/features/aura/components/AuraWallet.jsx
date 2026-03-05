@@ -23,7 +23,7 @@ import './AuraWallet.css';
  * Professional Aura Wallet module.
  * Visualizes currency and financial standing within the HxH system.
  */
-export const AuraWallet = ({ showToast }) => {
+export const AuraWallet = ({ friendships, showToast }) => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +172,7 @@ export const AuraWallet = ({ showToast }) => {
       <InventoryModal 
         isOpen={showInventory}
         onClose={() => setShowInventory(false)}
+        friendships={friendships}
         showToast={showToast}
       />
     </div>

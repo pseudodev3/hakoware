@@ -141,6 +141,50 @@ router.post('/use-card', auth, async (req, res) => {
       }
     }
 
+    if (cardId === 'STEAL') {
+      const Friendship = require('../models/Friendship');
+      const targetFriendship = await Friendship.findById(targetFriendshipId);
+      if (!targetFriendship) return res.status(404).json({ msg: 'TARGET NOT FOUND' });
+
+      const isUser1 = targetFriendship.user1.toString() === req.user.id;
+      const targetId = isUser1 ? targetFriendship.user2 : targetFriendship.user1;
+      const targetUser = await User.findById(targetId);
+      
+      if (!targetUser) return res.status(404).json({ msg: 'TARGET USER NOT FOUND' });
+
+      // Check if target is actually bankrupt
+      const pKey = isUser1 ? 'user2Perspective' : 'user1Perspective';
+      const p = targetFriendship[pKey];
+      const daysMissed = Math.floor(Math.max(0, new Date() - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
+      const totalDebt = (p.baseDebt || 0) + Math.max(0, daysMissed - (p.limit || 7));
+      
+      if (totalDebt < (p.limit || 7) * 2) {
+        return res.status(400).json({ msg: 'TARGET IS NOT BANKRUPT' });
+      }
+
+      const stealAmount = Math.floor(targetUser.auraBalance * 0.1);
+      targetUser.auraBalance -= stealAmount;
+      user.auraBalance += stealAmount;
+      
+      await targetUser.save();
+      
+      const stealTx = new AuraTransaction({
+        userId: targetUser._id,
+        amount: -stealAmount,
+        type: 'SPELL_EFFECT',
+        description: `Aura stolen by ${user.displayName} (THIEF SPELL)`
+      });
+      await stealTx.save();
+
+      const gainTx = new AuraTransaction({
+        userId: user._id,
+        amount: stealAmount,
+        type: 'SPELL_EFFECT',
+        description: `Stole aura from ${targetUser.displayName} (THIEF SPELL)`
+      });
+      await gainTx.save();
+    }
+
     // Remove one instance of the card
     const cardIndex = user.inventory.indexOf(cardId);
     if (cardIndex > -1) {

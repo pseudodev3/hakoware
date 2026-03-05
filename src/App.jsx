@@ -223,7 +223,7 @@ function App() {
         {activeTab === 'shame' && <ShameWall />}
 
         {/* WALLET MODULE */}
-        {activeTab === 'wallet' && <AuraWallet showToast={showToast} />}
+        {activeTab === 'wallet' && <AuraWallet friendships={friendships} showToast={showToast} />}
         
       </Suspense>
 

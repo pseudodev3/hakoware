@@ -4,27 +4,36 @@ import { Package, Zap, Shield, Sparkles, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { useAuth } from '../../../contexts/AuthContext';
+import { User, ChevronLeft } from 'lucide-react';
 import './InventoryModal.css';
 
 const CARD_DATA = {
-  'STEAL': { name: 'THIEF', desc: "Steal 10% of a bankrupt friend's Aura.", icon: Zap, color: '#ff4444' },
-  'REFLECT': { name: 'REFLECT', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#00e5ff' },
-  'PURIFY': { name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676' }
+  'STEAL': { name: 'THIEF', desc: "Steal 10% of a bankrupt friend's Aura.", icon: Zap, color: '#ff4444', targeted: true },
+  'REFLECT': { name: 'REFLECT', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#00e5ff', targeted: false },
+  'PURIFY': { name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676', targeted: false }
 };
 
-export const InventoryModal = ({ isOpen, onClose, showToast }) => {
+export const InventoryModal = ({ isOpen, onClose, friendships, showToast }) => {
   const { user, useCard } = useAuth();
   const [usingCard, setUsingCard] = React.useState(null);
+  const [selectingTargetFor, setSelectingTargetFor] = React.useState(null);
   const inventory = user?.inventory || [];
 
-  const handleUseCard = async (cardId, idx) => {
+  const handleUseCard = async (cardId, idx, targetFriendshipId = null) => {
+    const cardInfo = CARD_DATA[cardId];
+    
+    if (cardInfo.targeted && !targetFriendshipId) {
+      setSelectingTargetFor({ cardId, idx });
+      return;
+    }
+
     setUsingCard(idx);
     try {
-      const result = await useCard(cardId);
+      const result = await useCard(cardId, targetFriendshipId);
       if (result.success) {
-        showToast(`SPELL ACTIVATED: ${CARD_DATA[cardId].name}`, 'SUCCESS');
+        showToast(`SPELL ACTIVATED: ${cardInfo.name}`, 'SUCCESS');
+        setSelectingTargetFor(null);
         if (cardId === 'PURIFY') {
-          // Debt reset needs a refresh of the main data
           window.location.reload();
         }
       } else {
@@ -41,11 +50,35 @@ export const InventoryModal = ({ isOpen, onClose, showToast }) => {
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="HUNTER COLLECTION"
+      title={selectingTargetFor ? "SELECT TARGET" : "HUNTER COLLECTION"}
       size="md"
     >
       <div className="inventory-container">
-        {inventory.length === 0 ? (
+        {selectingTargetFor ? (
+          <div className="target-selection-view">
+            <button className="back-to-inv" onClick={() => setSelectingTargetFor(null)}>
+              <ChevronLeft size={16} /> BACK TO COLLECTION
+            </button>
+            <p className="selection-instruction">CHOOSE A TARGET FOR {CARD_DATA[selectingTargetFor.cardId].name}</p>
+            
+            <div className="target-grid">
+              {friendships.map(f => {
+                const isUser1 = f.user1._id === (user.uid || user.id) || f.user1 === (user.uid || user.id);
+                const friend = isUser1 ? f.user2 : f.user1;
+                return (
+                  <button 
+                    key={f.id || f._id} 
+                    className="target-select-card glass"
+                    onClick={() => handleUseCard(selectingTargetFor.cardId, selectingTargetFor.idx, f.id || f._id)}
+                  >
+                    <div className="target-avatar-sm">{friend.displayName[0]}</div>
+                    <span>{friend.displayName}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : inventory.length === 0 ? (
           <div className="inventory-empty">
             <Package size={48} opacity={0.2} />
             <p>YOUR COLLECTION IS EMPTY</p>

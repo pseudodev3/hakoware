@@ -105,7 +105,7 @@ export const Signup = ({ onToggle }) => {
     setError('');
     
     try {
-      const result = await signup(displayName, email, password);
+      const result = await signup(email, password, displayName);
       if (!result.success) {
         setError(result.error || 'REGISTRATION FAILED');
       }

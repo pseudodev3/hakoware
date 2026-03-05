@@ -75,3 +75,72 @@
   color: var(--text-secondary);
   line-height: 1.4;
 }
+
+/* Target Selection */
+.target-selection-view {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.back-to-inv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--aura-gold);
+  margin-bottom: 24px;
+}
+
+.selection-instruction {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.target-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.target-select-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s;
+}
+
+.target-select-card:hover {
+  border-color: var(--aura-gold);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.target-avatar-sm {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.target-select-card span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+}
