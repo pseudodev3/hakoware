@@ -107,7 +107,6 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
         <header className="content-header">
           <div className="header-title">
             <h2>{navItems.find(i => i.id === activeTab)?.label}</h2>
-            <p>System status: Active</p>
           </div>
           <div className="header-actions">
             <button className="icon-btn" onClick={() => setShowNotifications(true)}>

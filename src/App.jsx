@@ -7,6 +7,7 @@ import { Button } from './shared/components/Button';
 import { Login, Signup } from './features/auth/Auth';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
+import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
 import { Arena } from './features/arena/components/Arena';
 import { AuraWallet } from './features/aura/components/AuraWallet';
@@ -217,6 +218,15 @@ function App() {
 
       <CheckinModal
         isOpen={modalType === 'CHECKIN'}
+        onClose={closeModal}
+        friendship={selectedFriendship}
+        currentUserId={user.uid || user.id}
+        onRefresh={loadData}
+        showToast={showToast}
+      />
+
+      <VoiceCheckinModal
+        isOpen={modalType === 'VOICE_CHECKIN'}
         onClose={closeModal}
         friendship={selectedFriendship}
         currentUserId={user.uid || user.id}

@@ -8,7 +8,8 @@ import {
   TrendingDown, 
   Users,
   Search,
-  Plus
+  Plus,
+  Zap
 } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
