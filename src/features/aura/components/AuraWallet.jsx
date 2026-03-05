@@ -172,6 +172,7 @@ export const AuraWallet = ({ showToast }) => {
       <InventoryModal 
         isOpen={showInventory}
         onClose={() => setShowInventory(false)}
+        showToast={showToast}
       />
     </div>
   );

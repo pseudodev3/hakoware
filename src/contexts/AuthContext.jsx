@@ -122,6 +122,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const useCard = async (cardId, targetFriendshipId = null) => {
+    try {
+      const res = await api.post('/aura/use-card', { cardId, targetFriendshipId });
+      if (res.success) {
+        setUser({ ...user, inventory: res.inventory });
+        return { success: true };
+      }
+      return { success: false, error: res.msg || 'Failed to use card' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const resetPassword = async (email) => {
     return { success: true };
   };
@@ -146,6 +159,7 @@ export const AuthProvider = ({ children }) => {
     updateUserProfile,
     setNenType,
     buyCard,
+    useCard,
     isEmailVerified,
     isAuthenticated: !!user
   };

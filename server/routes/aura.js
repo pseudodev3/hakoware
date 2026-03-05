@@ -110,4 +110,50 @@ router.post('/buy-card', auth, async (req, res) => {
   }
 });
 
+// @route    POST api/aura/use-card
+// @desc     Use a spell card
+// @access   Private
+router.post('/use-card', auth, async (req, res) => {
+  const { cardId, index, targetFriendshipId } = req.body;
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    // Check if user has the card
+    if (!user.inventory.includes(cardId)) {
+      return res.status(400).json({ msg: 'CARD NOT FOUND IN INVENTORY' });
+    }
+
+    if (cardId === 'PURIFY') {
+      const Friendship = require('../models/Friendship');
+      // Reset all debts for this user
+      const friendships = await Friendship.find({
+        $or: [{ user1: req.user.id }, { user2: req.user.id }]
+      });
+
+      for (const f of friendships) {
+        const isUser1 = f.user1.toString() === req.user.id;
+        const pKey = isUser1 ? 'user1Perspective' : 'user2Perspective';
+        f[pKey].baseDebt = 0;
+        f[pKey].lastInteraction = new Date();
+        f[pKey].calculatedDebt = 0;
+        await f.save();
+      }
+    }
+
+    // Remove one instance of the card
+    const cardIndex = user.inventory.indexOf(cardId);
+    if (cardIndex > -1) {
+      user.inventory.splice(cardIndex, 1);
+    }
+    
+    await user.save();
+
+    res.json({ success: true, inventory: user.inventory });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

@@ -12,9 +12,30 @@ const CARD_DATA = {
   'PURIFY': { name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676' }
 };
 
-export const InventoryModal = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+export const InventoryModal = ({ isOpen, onClose, showToast }) => {
+  const { user, useCard } = useAuth();
+  const [usingCard, setUsingCard] = React.useState(null);
   const inventory = user?.inventory || [];
+
+  const handleUseCard = async (cardId, idx) => {
+    setUsingCard(idx);
+    try {
+      const result = await useCard(cardId);
+      if (result.success) {
+        showToast(`SPELL ACTIVATED: ${CARD_DATA[cardId].name}`, 'SUCCESS');
+        if (cardId === 'PURIFY') {
+          // Debt reset needs a refresh of the main data
+          window.location.reload();
+        }
+      } else {
+        showToast(result.error || 'ACTIVATION FAILED', 'ERROR');
+      }
+    } catch (err) {
+      showToast('SYSTEM ERROR', 'ERROR');
+    } finally {
+      setUsingCard(null);
+    }
+  };
 
   return (
     <Modal 
@@ -50,7 +71,14 @@ export const InventoryModal = ({ isOpen, onClose }) => {
                     <span className="inv-name" style={{ color: card.color }}>{card.name}</span>
                     <p className="inv-desc">{card.desc}</p>
                   </div>
-                  <Button variant="ghost" size="sm">USE CARD</Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    loading={usingCard === idx}
+                    onClick={() => handleUseCard(cardId, idx)}
+                  >
+                    USE CARD
+                  </Button>
                 </motion.div>
               );
             })}
