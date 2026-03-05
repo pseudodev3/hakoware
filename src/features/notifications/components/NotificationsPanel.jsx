@@ -20,6 +20,7 @@ import {
   NOTIFICATION_TYPES 
 } from '../../../services/notificationService';
 import { Button } from '../../../shared/components/Button';
+import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
 import './NotificationsPanel.css';
 
 /**
@@ -125,6 +126,10 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange }) => 
             </header>
 
             <div className="panel-content">
+              <div style={{ marginBottom: '32px' }}>
+                <VoiceNotesInbox />
+              </div>
+              
               {loading && notifications.length === 0 ? (
                 <div className="panel-empty">
                   <div className="loading-spinner" />

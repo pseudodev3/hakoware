@@ -170,10 +170,6 @@ function App() {
                 ))}
               </div>
             )}
-            
-            <div style={{ marginTop: '20px' }}>
-              <VoiceNotesInbox />
-            </div>
           </div>
         )}
 
