@@ -27,7 +27,7 @@ import './NotificationsPanel.css';
  * Premium slide-out notifications panel.
  * Professional HxH aesthetic with motion feedback.
  */
-export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange }) => {
+export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, showToast }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +37,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange }) => 
       const data = await getUserNotifications();
       setNotifications(data || []);
       if (onUnreadCountChange) {
-        onUnreadCountChange(data.filter(n => !n.read).length);
+        onUnreadCountChange((data?.filter(n => !n.read).length || 0) + (pendingInvitations?.length || 0));
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
@@ -55,7 +55,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange }) => 
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, pendingInvitations]);
 
   const handleMarkAsRead = async (id) => {
     await markNotificationAsRead(id);
@@ -70,6 +70,16 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange }) => 
   const handleDelete = async (id) => {
     await deleteNotification(id);
     loadNotifications();
+  };
+
+  const handleRespond = async (id, action) => {
+    try {
+      await api.put(`/friendships/${id}/respond`, { action });
+      showToast(action === 'ACCEPT' ? 'CONTRACT AUTHORIZED' : 'CONTRACT DECLINED', 'SUCCESS');
+      onRefresh();
+    } catch (err) {
+      showToast('FAILED TO RESPOND', 'ERROR');
+    }
   };
 
   const getIcon = (type) => {
@@ -113,19 +123,35 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange }) => 
           >
             <header className="panel-header">
               <div className="header-top">
-                <h3>NOTIFICATIONS</h3>
+                <h3>SYSTEM ALERTS</h3>
                 <button className="close-panel" onClick={onClose}>
                   <X size={20} />
                 </button>
               </div>
-              {notifications.filter(n => !n.read).length > 0 && (
-                <button className="mark-all-btn" onClick={handleMarkAllRead}>
-                  MARK ALL AS READ
-                </button>
-              )}
             </header>
 
             <div className="panel-content">
+              {/* INVITATIONS SECTION */}
+              {pendingInvitations?.length > 0 && (
+                <div className="invitations-section" style={{ marginBottom: '32px' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <UserPlus size={16} color="var(--aura-blue)" />
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>PENDING CONTRACTS</span>
+                   </div>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {pendingInvitations.map(inv => (
+                        <div key={inv._id} className="invitation-card glass" style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                           <p style={{ fontSize: '0.8rem', marginBottom: '12px' }}><strong>{inv.user1.displayName}</strong> requests a binding contract.</p>
+                           <div style={{ display: 'flex', gap: '8px' }}>
+                              <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(inv._id, 'ACCEPT')}>AUTHORIZE</Button>
+                              <Button variant="secondary" size="sm" onClick={() => handleRespond(inv._id, 'DECLINE')}>DECLINE</Button>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
               <div style={{ marginBottom: '32px' }}>
                 <VoiceNotesInbox />
               </div>

@@ -33,6 +33,7 @@ function MainApp({ showToast }) {
   // UI State
   const [activeTab, setActiveTab] = useState('dashboard');
   const [friendships, setFriendships] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSignup, setShowSignup] = useState(false);
 
@@ -50,7 +51,8 @@ function MainApp({ showToast }) {
     setLoading(true);
     try {
       const data = await getUserFriendships(user.uid || user.id);
-      setFriendships(data || []);
+      setFriendships(data.active || []);
+      setPendingInvitations(data.pendingReceived || []);
     } catch (error) {
       console.error('Failed to load friendships:', error);
       showToast('SYNC ERROR: DATABASE UNREACHABLE', 'ERROR');
@@ -117,6 +119,9 @@ function MainApp({ showToast }) {
       activeTab={activeTab} 
       onTabChange={setActiveTab}
       onAddFriend={() => setModalType('ADD_FRIEND')}
+      pendingInvitations={pendingInvitations}
+      onRefresh={loadData}
+      showToast={showToast}
     >
       <Suspense fallback={<div className="loading-screen"><Loader2 className="animate-spin" /></div>}>
         

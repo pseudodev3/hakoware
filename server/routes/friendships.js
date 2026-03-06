@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const Bounty = require('../models/Bounty');
+const { sendFriendRequestEmail } = require('../services/emailService');
 
 // @route    POST api/friendships
 // @desc     Create a new friendship (Contract)
@@ -42,17 +43,13 @@ router.post('/', auth, async (req, res) => {
       user2DisplayName: friend.displayName,
       user1Perspective: { limit: limit || user.defaultLimit },
       user2Perspective: { limit: friend.defaultLimit },
-      status: 'ACTIVE' // For now, auto-accept
+      status: 'PENDING'
     });
 
     await friendship.save();
 
-    // Update Hunter Exam Progress
-    user.examTasks.friendAdded = true;
-    if (user.examTasks.nenTypeSet && user.examTasks.voiceNoteSent) {
-      user.hunterLicense = true;
-    }
-    await user.save();
+    // Send Contract Alert Email
+    sendFriendRequestEmail(friend.email, user.displayName);
 
     res.json(friendship);
   } catch (err) {
@@ -70,7 +67,39 @@ router.get('/', auth, async (req, res) => {
       $or: [{ user1: req.user.id }, { user2: req.user.id }]
     }).populate('user1 user2', 'displayName email avatar auraScore nenType');
     
-    res.json(friendships);
+    // Split into categories for the frontend
+    const active = friendships.filter(f => f.status === 'ACTIVE');
+    const pendingReceived = friendships.filter(f => f.status === 'PENDING' && f.user2._id.toString() === req.user.id);
+    const pendingSent = friendships.filter(f => f.status === 'PENDING' && f.user1._id.toString() === req.user.id);
+
+    res.json({ active, pendingReceived, pendingSent });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route    PUT api/friendships/:id/respond
+// @desc     Accept or decline a friendship request
+// @access   Private
+router.put('/:id/respond', auth, async (req, res) => {
+  try {
+    const { action } = req.body; // 'ACCEPT' or 'DECLINE'
+    const friendship = await Friendship.findById(req.params.id);
+    
+    if (!friendship) return res.status(404).json({ msg: 'Friendship not found' });
+    if (friendship.user2.toString() !== req.user.id) {
+      return res.status(401).json({ msg: 'Not authorized to respond to this request' });
+    }
+
+    if (action === 'ACCEPT') {
+      friendship.status = 'ACTIVE';
+      await friendship.save();
+      res.json(friendship);
+    } else {
+      await friendship.deleteOne();
+      res.json({ msg: 'Request declined' });
+    }
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
@@ -125,14 +154,12 @@ router.post('/:id/checkin', auth, async (req, res) => {
     await friendship.save();
 
     // BOUNTY CLAIM LOGIC
-    // If there were bounties on the user who just checked in, they are now 'Claimed'
     const activeBounties = await Bounty.find({ targetId: req.user.id, status: { $in: ['ACTIVE', 'HUNTING'] } });
     
     for (const bounty of activeBounties) {
       bounty.status = 'CLAIMED';
       await bounty.save();
       
-      // Reward the hunter if one was assigned, otherwise reward the first person who might have nudged (simulated)
       if (bounty.hunterId) {
         const hunter = await User.findById(bounty.hunterId);
         if (hunter) {

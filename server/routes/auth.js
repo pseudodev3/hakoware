@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { sendResetPasswordEmail } = require('../services/emailService');
+const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 
 // @route    POST api/auth/signup
 // @desc     Register user
@@ -29,6 +29,9 @@ router.post('/signup', async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
+
+    // Association Enrollment Email
+    sendWelcomeEmail(user.email, user.displayName);
 
     const payload = {
       user: {

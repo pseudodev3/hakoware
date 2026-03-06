@@ -22,7 +22,7 @@ import './Layout.css';
  * Main Layout with professional sidebar and navigation.
  * Handles the visual hierarchy of the entire application.
  */
-export const Layout = ({ children, activeTab, onTabChange, onAddFriend, className = '' }) => {
+export const Layout = ({ children, activeTab, onTabChange, onAddFriend, className = '', pendingInvitations = [], onRefresh, showToast }) => {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -115,7 +115,9 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
           <div className="header-actions">
             <button className="icon-btn" onClick={() => setShowNotifications(true)}>
               <Bell size={20} />
-              {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+              {(unreadCount > 0 || pendingInvitations.length > 0) && (
+                <span className="badge">{unreadCount + pendingInvitations.length}</span>
+              )}
             </button>
           </div>
         </header>
@@ -130,6 +132,9 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
         isOpen={showNotifications} 
         onClose={() => setShowNotifications(false)}
         onUnreadCountChange={setUnreadCount}
+        pendingInvitations={pendingInvitations}
+        onRefresh={onRefresh}
+        showToast={showToast}
       />
 
       <ProfileModal 
