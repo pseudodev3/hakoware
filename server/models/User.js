@@ -24,6 +24,12 @@ const UserSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  hunterLicense: { type: Boolean, default: false },
+  examTasks: {
+    nenTypeSet: { type: Boolean, default: false },
+    friendAdded: { type: Boolean, default: false },
+    voiceNoteSent: { type: Boolean, default: false }
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });

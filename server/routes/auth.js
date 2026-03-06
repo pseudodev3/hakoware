@@ -117,6 +117,13 @@ router.put('/nen-type', auth, async (req, res) => {
     if (!user) return res.status(404).json({ msg: 'User not found' });
     
     user.nenType = nenType;
+    user.examTasks.nenTypeSet = true;
+    
+    // Check if license is complete
+    if (user.examTasks.friendAdded && user.examTasks.voiceNoteSent) {
+      user.hunterLicense = true;
+    }
+    
     await user.save();
     
     res.json(user);

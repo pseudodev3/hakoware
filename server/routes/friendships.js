@@ -46,6 +46,14 @@ router.post('/', auth, async (req, res) => {
     });
 
     await friendship.save();
+
+    // Update Hunter Exam Progress
+    user.examTasks.friendAdded = true;
+    if (user.examTasks.nenTypeSet && user.examTasks.voiceNoteSent) {
+      user.hunterLicense = true;
+    }
+    await user.save();
+
     res.json(friendship);
   } catch (err) {
     console.error(err.message);

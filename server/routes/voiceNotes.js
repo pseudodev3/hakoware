@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const VoiceNote = require('../models/VoiceNote');
 const Friendship = require('../models/Friendship');
+const User = require('../models/User');
 
 // Configure Multer for audio storage
 const storage = multer.diskStorage({
@@ -45,6 +46,17 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
     });
 
     await voiceNote.save();
+
+    // Update Hunter Exam Progress
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.examTasks.voiceNoteSent = true;
+      if (user.examTasks.nenTypeSet && user.examTasks.friendAdded) {
+        user.hunterLicense = true;
+      }
+      await user.save();
+    }
+
     res.json(voiceNote);
   } catch (err) {
     console.error(err.message);

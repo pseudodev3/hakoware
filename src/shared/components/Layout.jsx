@@ -22,7 +22,7 @@ import './Layout.css';
  * Main Layout with professional sidebar and navigation.
  * Handles the visual hierarchy of the entire application.
  */
-export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
+export const Layout = ({ children, activeTab, onTabChange, onAddFriend, className = '' }) => {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -44,7 +44,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend }) => {
   };
 
   return (
-    <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
+    <div className={`app-layout ${collapsed ? 'collapsed' : ''} ${className}`}>
       {/* Sidebar Navigation */}
       <aside className="sidebar glass">
         <div className="sidebar-header">
