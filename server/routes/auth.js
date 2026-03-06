@@ -151,7 +151,7 @@ router.post('/forgot-password', async (req, res) => {
     res.json({ msg: 'RECOVERY PROTOCOL INITIATED' });
   } catch (err) {
     console.error('FORGOT PASSWORD ERROR:', err);
-    res.status(500).json({ msg: 'SERVER ERROR' });
+    res.status(500).json({ msg: 'SERVER ERROR', error: err.message, stack: err.stack });
   }
 });
 
