@@ -5,10 +5,6 @@ import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
 import { api } from '../../../lib/api';
 
-/**
- * Professional Forgot Password Modal.
- * High-fidelity HxH aesthetic.
- */
 export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,10 +14,9 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // In a real production app, this would send an actual reset email via server
       await api.post('/auth/forgot-password', { email });
       setSubmitted(true);
-      showToast('RECOVERY PROTOCOL INITIATED: CHECK YOUR INBOX', 'SUCCESS');
+      showToast('RECOVERY PROTOCOL INITIATED', 'SUCCESS');
     } catch (err) {
       showToast(err.message || 'RECOVERY FAILED', 'ERROR');
     } finally {
@@ -50,7 +45,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
             }}>
               <AlertCircle size={20} color="var(--aura-gold)" />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                Lost your security pin? Provide your registered email address to receive a recovery link from the Association.
+                Provide your registered email address to receive a recovery link from the Association.
               </p>
             </div>
 
@@ -74,8 +69,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
              <ShieldCheck size={48} color="var(--aura-green)" style={{ margin: '0 auto 20px auto' }} />
              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>TRANSMISSION SUCCESSFUL</h3>
              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-               The Association has dispatched a recovery protocol to <strong>{email}</strong>. 
-               Check your spam folder if the signal is weak.
+               The Association has dispatched a recovery protocol to <strong>{email}</strong>.
              </p>
              <Button variant="secondary" onClick={onClose} style={{ marginTop: '32px' }} className="w-full">
                RETURN TO LOGIN

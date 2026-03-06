@@ -5,6 +5,7 @@ import { Layout } from './shared/components/Layout';
 import { NenCard } from './features/debt/components/NenCard';
 import { Button } from './shared/components/Button';
 import { Login, Signup } from './features/auth/Auth';
+import { ResetPassword } from './features/auth/ResetPassword';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { FriendshipSettingsModal } from './features/friendship/components/FriendshipSettingsModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
@@ -18,11 +19,12 @@ import { Arena } from './features/arena/components/Arena';
 import { ShameWall } from './features/shame/components/ShameWall';
 import { AuraWallet } from './features/aura/components/AuraWallet';
 import Toast from './components/Toast';
-import { Loader2, Plus, RefreshCw, Zap, TrendingUp, Users } from 'lucide-react';
+import { Loader2, Plus, RefreshCw, Zap, TrendingUp, Users, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
-function App() {
+function MainApp({ showToast }) {
   const { user, isAuthenticated } = useAuth();
   const [hasEntered, setHasEntered] = useState(() => {
     return localStorage.getItem('hakoware_visited') === 'true';
@@ -32,7 +34,6 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [friendships, setFriendships] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
 
   // Modal State
@@ -61,10 +62,6 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) loadData();
   }, [isAuthenticated, user]);
-
-  const showToast = (msg, type = 'SUCCESS') => {
-    setToast({ msg, type });
-  };
 
   const handleAction = (type, friendship) => {
     setSelectedFriendship(friendship);
@@ -280,7 +277,22 @@ function App() {
       <WaterDivinationModal />
 
       {user && <Potclean friendships={friendships} />}
+    </Layout>
+  );
+}
 
+function App() {
+  const [toast, setToast] = useState(null);
+  const showToast = (msg, type = 'SUCCESS') => {
+    setToast({ msg, type });
+  };
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/reset-password/:token" element={<ResetPassword showToast={showToast} />} />
+        <Route path="/*" element={<MainApp showToast={showToast} />} />
+      </Routes>
       {toast && (
         <Toast 
           message={toast.msg} 
@@ -288,7 +300,7 @@ function App() {
           onClose={() => setToast(null)} 
         />
       )}
-    </Layout>
+    </BrowserRouter>
   );
 }
 

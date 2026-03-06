@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sendResetPasswordEmail } = require('../services/emailService');
 
 // @route    POST api/auth/signup
+// ... (rest of imports and signup)
 // @desc     Register user
 // @access   Public
 router.post('/signup', async (req, res) => {
@@ -118,6 +121,60 @@ router.put('/nen-type', auth, async (req, res) => {
     await user.save();
     
     res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route    POST api/auth/forgot-password
+// @desc     Request password reset
+// @access   Public
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ msg: 'USER NOT REGISTERED' });
+
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+
+    await user.save();
+
+    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+    
+    const sent = await sendResetPasswordEmail(user.email, resetUrl);
+    if (!sent) return res.status(500).json({ msg: 'EMAIL FAILED TO SEND' });
+
+    res.json({ msg: 'RECOVERY PROTOCOL INITIATED' });
+  } catch (err) {
+    console.error('FORGOT PASSWORD ERROR:', err);
+    res.status(500).json({ msg: 'SERVER ERROR' });
+  }
+});
+
+// @route    POST api/auth/reset-password/:token
+// @desc     Reset password
+// @access   Public
+router.post('/reset-password/:token', async (req, res) => {
+  const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ msg: 'INVALID OR EXPIRED TOKEN' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+    res.json({ msg: 'PASSWORD RECOVERY SUCCESSFUL' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

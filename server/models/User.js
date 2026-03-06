@@ -22,6 +22,8 @@ const UserSchema = new mongoose.Schema({
     optOutLeaderboard: { type: Boolean, default: false },
     optOutPublicBankruptcy: { type: Boolean, default: false }
   },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
