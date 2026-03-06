@@ -14,7 +14,6 @@ import { VoiceNotesInbox } from './features/debt/components/VoiceNotesInbox';
 import { Potclean } from './features/debt/components/Potclean';
 import { LandingPage } from './features/landing/LandingPage';
 import { WaterDivinationModal } from './features/auth/components/WaterDivinationModal';
-import { HunterExamOverlay } from './features/auth/components/HunterExamOverlay';
 import { AchievementShowcase } from './features/achievements/components/AchievementShowcase';
 import { Arena } from './features/arena/components/Arena';
 import { ShameWall } from './features/shame/components/ShameWall';
@@ -118,7 +117,6 @@ function MainApp({ showToast }) {
       activeTab={activeTab} 
       onTabChange={setActiveTab}
       onAddFriend={() => setModalType('ADD_FRIEND')}
-      className={user && !user.hunterLicense ? 'unlicensed' : ''}
     >
       <Suspense fallback={<div className="loading-screen"><Loader2 className="animate-spin" /></div>}>
         
@@ -277,7 +275,6 @@ function MainApp({ showToast }) {
       />
 
       <WaterDivinationModal />
-      <HunterExamOverlay />
 
       {user && <Potclean friendships={friendships} />}
     </Layout>
