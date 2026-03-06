@@ -2,25 +2,26 @@ const nodemailer = require('nodemailer');
 
 /**
  * Professional Email Service using Brevo SMTP Relay.
- * Robust and stable to prevent server crashes.
+ * Refined for maximum stability on VPS environments.
  */
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false, // Use STARTTLS
+  pool: true,
+  host: "smtp-relay.brevo.com",
+  port: 465,
+  secure: true, // Use SSL
   auth: {
-    user: 'hakoware265@gmail.com', // Your Brevo account email
-    pass: process.env.BREVO_API_KEY,      // Your Brevo API Key
+    user: "hakoware265@gmail.com",
+    pass: process.env.BREVO_API_KEY,
   },
 });
 
 const sendResetPasswordEmail = async (userEmail, resetUrl) => {
   try {
-    // Verify connection before sending
+    // Verify before sending
     await transporter.verify();
-    
+
     const mailOptions = {
-      from: '"HAKOWARE ASSOCIATION" <hakoware265@gmail.com>', // MUST match an authorized sender in Brevo
+      from: '"HAKOWARE ASSOCIATION" <hakoware265@gmail.com>',
       to: userEmail,
       subject: '🔐 RECOVERY PROTOCOL: PASSWORD RESET REQUESTED',
       html: `
@@ -37,12 +38,11 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Recovery Email Dispatched: %s', info.messageId);
+    await transporter.sendMail(mailOptions);
+    console.log(`Recovery link dispatched to ${userEmail}`);
     return true;
   } catch (error) {
-    console.error('SMTP Error (Recovery Email):', error.message);
-    // Detailed error logging for you to see in your VPS logs
+    console.error('Association Email System Failure:', error);
     return false;
   }
 };
