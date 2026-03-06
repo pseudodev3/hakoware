@@ -86,7 +86,49 @@
 .potclean-svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+  filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+  overflow: visible;
+}
+
+.potclean-svg.toritaten {
+  filter: drop-shadow(0 0 20px rgba(255,0,0,0.3));
+}
+
+.eye-pulse {
+  animation: eyePulse 1.5s infinite ease-in-out;
+}
+
+@keyframes eyePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.potclean-ears {
+  transform-origin: center 50px;
+  animation: earFloat 4s infinite ease-in-out;
+}
+
+@keyframes earFloat {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.toritaten-mode .potclean-svg {
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
 }
 
 .aura-glow {
@@ -94,13 +136,15 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80%;
-  height: 80%;
+  width: 90%;
+  height: 90%;
   border-radius: 50%;
-  filter: blur(25px);
-  opacity: 0.15;
+  filter: blur(30px);
+  opacity: 0.2;
   z-index: -1;
+  mix-blend-mode: screen;
 }
+
 
 .potclean-close {
   position: absolute;

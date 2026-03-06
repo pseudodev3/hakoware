@@ -7,6 +7,136 @@ import './Potclean.css';
  * Professional, high-fidelity Potclean Mascot.
  * Tracks user debt visually with a premium HxH aesthetic.
  */
+/**
+ * Redesigned High-Fidelity Potclean Mascot
+ */
+const PotcleanMascot = ({ expression, isBankrupt, totalDebt, getExpressionColor }) => {
+  const color = getExpressionColor();
+  
+  if (isBankrupt) {
+    // Toritaten (Bankrupt Mode) - High Fidelity
+    return (
+      <svg viewBox="0 0 100 120" className="potclean-svg toritaten">
+        <defs>
+          <radialGradient id="toritatenGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#2a0000" />
+            <stop offset="100%" stopColor="#000000" />
+          </radialGradient>
+          <filter id="auraGlow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        
+        {/* Shadow Pod */}
+        <ellipse cx="50" cy="110" rx="30" ry="8" fill="rgba(0,0,0,0.4)" />
+        
+        {/* Main Body */}
+        <path d="M20 70 Q20 30 50 30 Q80 30 80 70 Q80 100 50 105 Q20 100 20 70" fill="url(#toritatenGradient)" stroke="var(--aura-red)" strokeWidth="1.5" />
+        
+        {/* Horns/Ears */}
+        <path d="M30 35 L15 15 L35 32 Z" fill="#000" stroke="var(--aura-red)" strokeWidth="1" />
+        <path d="M70 35 L85 15 L65 32 Z" fill="#000" stroke="var(--aura-red)" strokeWidth="1" />
+        
+        {/* Menacing Eyes */}
+        <g filter="url(#auraGlow)">
+          <path d="M35 55 Q40 50 45 55" fill="none" stroke="var(--aura-red)" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M55 55 Q60 50 65 55" fill="none" stroke="var(--aura-red)" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="40" cy="62" r="3" fill="var(--aura-red)" className="eye-pulse" />
+          <circle cx="60" cy="62" r="3" fill="var(--aura-red)" className="eye-pulse" />
+        </g>
+        
+        {/* Sinister Mouth */}
+        <path d="M35 85 Q50 75 65 85" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+        
+        {/* Debt Tag */}
+        <rect x="35" y="40" width="30" height="10" rx="2" fill="#111" stroke="var(--aura-red)" strokeWidth="0.5" />
+        <text x="50" y="47" textAnchor="middle" fontSize="6" fill="var(--aura-red)" fontWeight="bold">BANKRUPT</text>
+      </svg>
+    );
+  }
+
+  // Normal Potclean - High Fidelity
+  return (
+    <svg viewBox="0 0 100 120" className="potclean-svg">
+      <defs>
+        <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#f0f0f0" />
+        </linearGradient>
+        <radialGradient id="cheekGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffb6c1" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#ffb6c1" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Shadow */}
+      <ellipse cx="50" cy="112" rx="25" ry="6" fill="rgba(0,0,0,0.1)" />
+
+      {/* Ears */}
+      <g className="potclean-ears">
+        <path d="M30 45 Q15 5 35 35 Z" fill="url(#bodyGradient)" stroke="#e0e0e0" strokeWidth="1" />
+        <path d="M70 45 Q85 5 65 35 Z" fill="url(#bodyGradient)" stroke="#e0e0e0" strokeWidth="1" />
+        <path d="M28 38 Q22 20 32 35 Z" fill="#ffdae0" opacity="0.5" />
+        <path d="M72 38 Q78 20 68 35 Z" fill="#ffdae0" opacity="0.5" />
+      </g>
+
+      {/* Main Body */}
+      <circle cx="50" cy="75" r="35" fill="url(#bodyGradient)" stroke="#e0e0e0" strokeWidth="1" />
+      
+      {/* Belly */}
+      <ellipse cx="50" cy="85" rx="20" ry="18" fill="white" />
+
+      {/* Cheeks */}
+      <circle cx="32" cy="78" r="8" fill="url(#cheekGradient)" />
+      <circle cx="68" cy="78" r="8" fill="url(#cheekGradient)" />
+
+      {/* Face Logic */}
+      <g className="potclean-face">
+        {totalDebt === 0 ? (
+          // Sleeping/Dormant
+          <g opacity="0.4">
+            <path d="M38 72 Q43 72 48 72" fill="none" stroke="#666" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M52 72 Q57 72 62 72" fill="none" stroke="#666" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M45 88 L55 88" stroke="#666" strokeWidth="1" />
+          </g>
+        ) : expression === 'angry' ? (
+          <g>
+            <path d="M35 68 L45 73" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M65 68 L55 73" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M40 90 Q50 82 60 90" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        ) : expression === 'happy' ? (
+          <g>
+            <path d="M35 72 Q42 65 50 72" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M50 72 Q58 65 65 72" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M42 85 Q50 95 58 85" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
+          </g>
+        ) : (
+          <g>
+            <circle cx="42" cy="72" r="3.5" fill="black" />
+            <circle cx="58" cy="72" r="3.5" fill="black" />
+            <circle cx="43" cy="70.5" r="1" fill="white" />
+            <circle cx="59" cy="70.5" r="1" fill="white" />
+            <path d="M45 90 L55 90" stroke="black" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        )}
+        
+        {/* Nose */}
+        <ellipse cx="50" cy="78" rx="2.5" ry="1.8" fill="#ffb6c1" />
+      </g>
+
+      {/* Floating APR Display inside body */}
+      <g opacity="0.8">
+        <rect x="35" y="48" width="30" height="12" rx="6" fill="white" stroke={color} strokeWidth="1" />
+        <text x="50" y="56" textAnchor="middle" fontSize="7" fill={color} fontWeight="bold" fontFamily="monospace">
+          {totalDebt}
+        </text>
+      </g>
+    </svg>
+  );
+};
+
 export const Potclean = ({ friendships = [] }) => {
   const { user } = useAuth();
   const [totalDebt, setTotalDebt] = useState(0);
@@ -28,7 +158,7 @@ export const Potclean = ({ friendships = [] }) => {
 
     let bankrupt = false;
     const debt = friendships.reduce((acc, f) => {
-      const isUser1 = f.user1._id === (user?.uid || user?.id) || f.user1 === (user?.uid || user?.id);
+      const isUser1 = f.user1?._id === (user?.uid || user?.id) || f.user1 === (user?.uid || user?.id);
       const perspective = isUser1 ? f.user1Perspective : f.user2Perspective;
       if (!perspective) return acc;
 
@@ -139,56 +269,12 @@ export const Potclean = ({ friendships = [] }) => {
           }}
           transition={{ repeat: Infinity, duration: isBankrupt ? 1 : 3, ease: "easeInOut" }}
         >
-          <svg viewBox="0 0 100 100" className="potclean-svg">
-            {isBankrupt ? (
-              // Toritaten Form
-              <g>
-                <circle cx="50" cy="65" r="30" fill="#111" stroke="var(--aura-red)" strokeWidth="2" />
-                <ellipse cx="50" cy="75" rx="15" ry="10" fill="#222" />
-                <path d="M25 40 L40 50 L35 30 Z" fill="#111" stroke="var(--aura-red)" strokeWidth="2" />
-                <path d="M75 40 L60 50 L65 30 Z" fill="#111" stroke="var(--aura-red)" strokeWidth="2" />
-                <circle cx="40" cy="60" r="4" fill="var(--aura-red)" />
-                <circle cx="60" cy="60" r="4" fill="var(--aura-red)" />
-                <path d="M40 75 Q50 70 60 75" fill="none" stroke="white" strokeWidth="2" />
-              </g>
-            ) : (
-              // Normal Potclean Form
-              <g>
-                <circle cx="50" cy="65" r="30" fill="white" stroke="#ddd" strokeWidth="2" />
-                <ellipse cx="50" cy="75" rx="15" ry="10" fill="#f0f0f0" />
-                <ellipse cx="35" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(-15, 35, 30)" />
-                <ellipse cx="65" cy="30" rx="8" ry="15" fill="white" stroke="#ddd" strokeWidth="2" transform="rotate(15, 65, 30)" />
-                
-                {/* Face */}
-                {totalDebt === 0 ? (
-                  <g>
-                    <line x1="40" y1="58" x2="46" y2="58" stroke="#999" strokeWidth="2" />
-                    <line x1="54" y1="58" x2="60" y2="58" stroke="#999" strokeWidth="2" />
-                    <path d="M45 75 L55 75" stroke="#999" strokeWidth="2" />
-                  </g>
-                ) : expression === 'angry' ? (
-                  <g>
-                    <path d="M40 55 L45 60" stroke="black" strokeWidth="2" />
-                    <path d="M60 55 L55 60" stroke="black" strokeWidth="2" />
-                    <path d="M42 75 Q50 70 58 75" fill="none" stroke="black" strokeWidth="2" />
-                  </g>
-                ) : expression === 'happy' ? (
-                  <g>
-                    <path d="M40 58 Q45 53 50 58" fill="none" stroke="black" strokeWidth="2" />
-                    <path d="M50 58 Q55 53 60 58" fill="none" stroke="black" strokeWidth="2" />
-                    <path d="M42 72 Q50 80 58 72" fill="none" stroke="black" strokeWidth="2" />
-                  </g>
-                ) : (
-                  <g>
-                    <circle cx="43" cy="58" r="3" fill="black" />
-                    <circle cx="57" cy="58" r="3" fill="black" />
-                    <line x1="45" y1="75" x2="55" y2="75" stroke="black" strokeWidth="2" strokeLinecap="round" />
-                  </g>
-                )}
-                <circle cx="50" cy="65" r="2" fill="#ffb6c1" />
-              </g>
-            )}
-          </svg>
+          <PotcleanMascot 
+            expression={expression}
+            isBankrupt={isBankrupt}
+            totalDebt={totalDebt}
+            getExpressionColor={getExpressionColor}
+          />
           {(totalDebt > 0 || isBankrupt) && <div className="aura-glow" style={{ backgroundColor: getExpressionColor() }} />}
         </motion.div>
       </div>
