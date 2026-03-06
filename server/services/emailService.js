@@ -1,14 +1,10 @@
 const nodemailer = require('nodemailer');
 
-/**
- * Professional Email Service using Brevo SMTP Relay.
- * Refined for maximum stability on VPS environments.
- */
 const transporter = nodemailer.createTransport({
   pool: true,
   host: "smtp-relay.brevo.com",
   port: 465,
-  secure: true, // Use SSL
+  secure: true, 
   auth: {
     user: "hakoware265@gmail.com",
     pass: process.env.BREVO_API_KEY,
@@ -42,7 +38,7 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
     console.log(`Recovery link dispatched to ${userEmail}`);
     return true;
   } catch (error) {
-    console.error('Association Email System Failure:', error);
+    console.error('Brevo SMTP Failure:', error);
     return false;
   }
 };

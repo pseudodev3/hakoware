@@ -8,7 +8,6 @@ const auth = require('../middleware/auth');
 const { sendResetPasswordEmail } = require('../services/emailService');
 
 // @route    POST api/auth/signup
-// ... (rest of imports and signup)
 // @desc     Register user
 // @access   Public
 router.post('/signup', async (req, res) => {
@@ -136,13 +135,15 @@ router.post('/forgot-password', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ msg: 'USER NOT REGISTERED' });
 
+    // Generate token
     const resetToken = crypto.randomBytes(20).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
 
     await user.save();
 
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+    // Ensure link uses the correct frontend URL
+    const resetUrl = `https://hakoware.vercel.app/reset-password/${resetToken}`;
     
     const sent = await sendResetPasswordEmail(user.email, resetUrl);
     if (!sent) return res.status(500).json({ msg: 'EMAIL FAILED TO SEND' });
@@ -168,6 +169,7 @@ router.post('/reset-password/:token', async (req, res) => {
 
     if (!user) return res.status(400).json({ msg: 'INVALID OR EXPIRED TOKEN' });
 
+    // Set new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.password, salt);
     user.resetPasswordToken = undefined;
