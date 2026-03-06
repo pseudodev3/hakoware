@@ -7,17 +7,20 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   host: 'smtp-relay.brevo.com',
   port: 587,
-  secure: false, // TLS
+  secure: false, // Use STARTTLS
   auth: {
-    user: 'waaleywaaleywaaley@gmail.com', // Your Brevo authorized login
-    pass: process.env.BREVO_API_KEY,      // Your API key acts as the password
+    user: 'waaleywaaleywaaley@gmail.com', // Your Brevo account email
+    pass: process.env.BREVO_API_KEY,      // Your Brevo API Key
   },
 });
 
 const sendResetPasswordEmail = async (userEmail, resetUrl) => {
   try {
+    // Verify connection before sending
+    await transporter.verify();
+    
     const mailOptions = {
-      from: '"HAKOWARE ASSOCIATION" <system@hakoware.vps>',
+      from: '"HAKOWARE ASSOCIATION" <waaleywaaleywaaley@gmail.com>', // MUST match an authorized sender in Brevo
       to: userEmail,
       subject: '🔐 RECOVERY PROTOCOL: PASSWORD RESET REQUESTED',
       html: `
@@ -38,7 +41,8 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
     console.log('Recovery Email Dispatched: %s', info.messageId);
     return true;
   } catch (error) {
-    console.error('Email Transmission Error:', error);
+    console.error('SMTP Error (Recovery Email):', error.message);
+    // Detailed error logging for you to see in your VPS logs
     return false;
   }
 };
