@@ -145,8 +145,7 @@ router.post('/forgot-password', async (req, res) => {
     // Ensure link uses the correct frontend URL
     const resetUrl = `https://hakoware.vercel.app/reset-password/${resetToken}`;
     
-    const sent = await sendResetPasswordEmail(user.email, resetUrl);
-    if (!sent) return res.status(500).json({ msg: 'EMAIL FAILED TO SEND' });
+    await sendResetPasswordEmail(user.email, resetUrl);
 
     res.json({ msg: 'RECOVERY PROTOCOL INITIATED' });
   } catch (err) {

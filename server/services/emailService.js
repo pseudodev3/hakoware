@@ -39,7 +39,7 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
     return true;
   } catch (error) {
     console.error('Brevo SMTP Failure:', error);
-    return false;
+    throw error; // Throw so the route catch block can capture it
   }
 };
 
