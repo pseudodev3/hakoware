@@ -21,7 +21,7 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
     await transporter.verify();
 
     const mailOptions = {
-      from: `"HAKOWARE ASSOCIATION" <${process.env.SMTP_USER}>`, // Recommended to match login for deliverability
+      from: '"HAKOWARE ASSOCIATION" <hakoware265@gmail.com>', // MUST match your verified sender in Brevo
       to: userEmail,
       subject: '🔐 RECOVERY PROTOCOL: PASSWORD RESET REQUESTED',
       html: `
