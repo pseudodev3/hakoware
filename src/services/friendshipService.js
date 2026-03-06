@@ -17,28 +17,11 @@ export const sendFriendInvitation = async (fromUserId, toEmail, limit) => {
 // Get all friendships for a user
 export const getUserFriendships = async (userId) => {
   try {
-    const friendships = await api.get('/friendships');
-    
-    if (!Array.isArray(friendships)) {
-      console.error('Expected array from /friendships, got:', friendships);
-      return [];
-    }
-    
-    // Map backend data to frontend expected format
-    return friendships.map(f => {
-      const isUser1 = f.user1._id === userId;
-      return {
-        id: f._id,
-        ...f,
-        myPerspective: isUser1 ? 'user1' : 'user2',
-        friend: isUser1 ? f.user2 : f.user1,
-        myData: isUser1 ? f.user1Perspective : f.user2Perspective,
-        friendData: isUser1 ? f.user2Perspective : f.user1Perspective
-      };
-    });
+    const data = await api.get('/friendships');
+    return data; // Return the object with active, pendingReceived, and pendingSent
   } catch (error) {
     console.error('Error getting user friendships:', error);
-    return [];
+    return { active: [], pendingReceived: [], pendingSent: [] };
   }
 };
 
