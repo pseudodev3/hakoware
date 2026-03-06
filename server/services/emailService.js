@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false, // Use STARTTLS
   auth: {
-    user: 'waaleywaaleywaaley@gmail.com', // Your Brevo account email
+    user: 'hakoware265@gmail.com', // Your Brevo account email
     pass: process.env.BREVO_API_KEY,      // Your Brevo API Key
   },
 });
@@ -20,7 +20,7 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
     await transporter.verify();
     
     const mailOptions = {
-      from: '"HAKOWARE ASSOCIATION" <waaleywaaleywaaley@gmail.com>', // MUST match an authorized sender in Brevo
+      from: '"HAKOWARE ASSOCIATION" <hakoware265@gmail.com>', // MUST match an authorized sender in Brevo
       to: userEmail,
       subject: '🔐 RECOVERY PROTOCOL: PASSWORD RESET REQUESTED',
       html: `
