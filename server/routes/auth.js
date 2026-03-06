@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const AuraTransaction = require('../models/AuraTransaction');
 const auth = require('../middleware/auth');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 
@@ -27,8 +28,21 @@ router.post('/signup', async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
+    
+    // Welcome Gift: 100 Aura
+    const initialAura = 100;
+    user.auraBalance = initialAura;
 
     await user.save();
+
+    // Create a transaction record for the welcome gift
+    const welcomeTransaction = new AuraTransaction({
+      userId: user._id,
+      amount: initialAura,
+      type: 'WELCOME_BONUS',
+      description: 'Welcome to Hakoware! Initial Aura gift.'
+    });
+    await welcomeTransaction.save();
 
     // Association Enrollment Email
     sendWelcomeEmail(user.email, user.displayName);
