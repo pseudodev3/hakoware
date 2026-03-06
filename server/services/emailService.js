@@ -1,13 +1,17 @@
 const nodemailer = require('nodemailer');
 
+/**
+ * Professional Email Service using Brevo SMTP Relay.
+ * Credentials loaded securely from .env.
+ */
 const transporter = nodemailer.createTransport({
   pool: true,
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // Use TLS for port 587
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false, // TLS
   auth: {
-    user: "a41d17001@smtp-brevo.com", // Technical login from Brevo SMTP settings
-    pass: process.env.BREVO_API_KEY,   // Your SMTP Key
+    user: process.env.SMTP_USER,
+    pass: process.env.BREVO_API_KEY, // Your SMTP Master Password / Key
   },
 });
 
@@ -17,7 +21,7 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
     await transporter.verify();
 
     const mailOptions = {
-      from: '"HAKOWARE ASSOCIATION" <hakoware265@gmail.com>',
+      from: `"HAKOWARE ASSOCIATION" <${process.env.SMTP_USER}>`, // Recommended to match login for deliverability
       to: userEmail,
       subject: '🔐 RECOVERY PROTOCOL: PASSWORD RESET REQUESTED',
       html: `
@@ -34,12 +38,12 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Recovery link dispatched to ${userEmail}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Recovery link dispatched to ${userEmail}: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error('Brevo SMTP Failure:', error);
-    throw error; // Throw so the route catch block can capture it
+    console.error('Association Email System Failure:', error);
+    throw error;
   }
 };
 
