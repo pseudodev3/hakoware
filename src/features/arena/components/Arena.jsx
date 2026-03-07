@@ -23,15 +23,20 @@ import './Arena.css';
  */
 export const Arena = ({ friendships, showToast }) => {
   const [bounties, setBounties] = useState([]);
+  const [hunterCount, setHunterCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const loadBounties = async () => {
+  const loadArenaData = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/bounties/active');
-      setBounties(res || []);
+      const [bountiesRes, huntersRes] = await Promise.all([
+        api.get('/bounties/active'),
+        api.get('/users/hunters')
+      ]);
+      setBounties(bountiesRes || []);
+      setHunterCount(huntersRes?.count || 0);
     } catch (error) {
       console.error('Failed to load arena data:', error);
     } finally {
@@ -40,7 +45,7 @@ export const Arena = ({ friendships, showToast }) => {
   };
 
   useEffect(() => {
-    loadBounties();
+    loadArenaData();
   }, []);
 
   return (
@@ -67,7 +72,7 @@ export const Arena = ({ friendships, showToast }) => {
           <div className="stat-icon"><Users size={20} color="var(--aura-blue)" /></div>
           <div className="stat-info">
             <span className="label">ACTIVE HUNTERS</span>
-            <span className="value">12</span>
+            <span className="value">{hunterCount}</span>
           </div>
         </div>
       </div>
@@ -149,7 +154,7 @@ export const Arena = ({ friendships, showToast }) => {
                         try {
                           await api.post(`/bounties/${b.id || b._id}/hunt`);
                           showToast(`CONTRACT ACCEPTED: APPREHEND ${b.targetName.toUpperCase()}`, 'SUCCESS');
-                          loadBounties();
+                          loadArenaData();
                         } catch (err) {
                           showToast(err.message || 'FAILED TO CLAIM CONTRACT', 'ERROR');
                         }
@@ -173,7 +178,7 @@ export const Arena = ({ friendships, showToast }) => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         friendships={friendships || []}
-        onRefresh={loadBounties}
+        onRefresh={loadArenaData}
         showToast={showToast}
       />
     </div>

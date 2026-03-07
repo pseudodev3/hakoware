@@ -61,4 +61,17 @@ router.get('/leaderboard', auth, async (req, res) => {
   }
 });
 
+// @route    GET api/users/hunters
+// @desc     Get count of active hunters (users who have set their Nen type)
+// @access   Private
+router.get('/hunters', auth, async (req, res) => {
+  try {
+    const hunterCount = await User.countDocuments({ nenType: { $ne: null } });
+    res.json({ count: hunterCount });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
