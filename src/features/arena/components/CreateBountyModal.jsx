@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Zap, AlertTriangle, Dice5, User } from 'lucide-react';
+import { Target, Zap, AlertTriangle, Dice5, User, Check } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
@@ -100,9 +100,18 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
                     onClick={() => setSelectedFriendship(f)}
                   >
                      <div className="friend-avatar-small">
-                        {friend.displayName[0]}
+                        {isSelected ? <Check size={16} /> : friend.displayName[0]}
                      </div>
                      <span className="friend-name-small">{friend.displayName}</span>
+                     {isSelected && (
+                       <motion.div 
+                         initial={{ scale: 0 }}
+                         animate={{ scale: 1 }}
+                         className="selection-badge"
+                       >
+                         <Check size={10} />
+                       </motion.div>
+                     )}
                   </button>
                 );
               })}

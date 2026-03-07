@@ -41,12 +41,37 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   transition: all 0.2s;
+  position: relative;
+  opacity: 0.7;
+}
+
+.friend-select-card:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .friend-select-card.selected {
   border-color: var(--aura-gold);
-  background: rgba(255, 215, 0, 0.05);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+  border-width: 2px;
+  background: rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+  opacity: 1;
+}
+
+.selection-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--aura-gold);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
 .friend-avatar-small {
