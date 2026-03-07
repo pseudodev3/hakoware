@@ -9,7 +9,8 @@ import {
   Users,
   Search,
   Plus,
-  Zap
+  Zap,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
