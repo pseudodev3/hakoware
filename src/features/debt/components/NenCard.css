@@ -197,3 +197,25 @@
 .nen-card.warning {
   border-color: rgba(255, 215, 0, 0.3);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .nen-card {
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .debt-value {
+    font-size: 2.5rem;
+  }
+
+  .profile-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+}
+

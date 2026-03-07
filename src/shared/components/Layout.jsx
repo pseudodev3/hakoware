@@ -11,7 +11,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Skull
+  Skull,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -27,6 +29,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
   const [collapsed, setCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const navItems = [
@@ -38,8 +41,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
     { id: 'wallet', label: 'Aura Wallet', icon: Wallet },
   ];
 
+  const primaryMobileNav = navItems.filter(item => ['dashboard', 'friends', 'arena', 'wallet'].includes(item.id));
+
   const handleTabClick = (id) => {
     onTabChange(id);
+    setShowMobileMenu(false);
     if (window.innerWidth < 768) setCollapsed(true);
   };
 
@@ -129,23 +135,75 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
 
       {/* Mobile Navigation (Bottom Bar) */}
       <nav className="mobile-nav">
-        {navItems.map((item) => (
+        {primaryMobileNav.map((item) => (
           <button
             key={item.id}
             className={`mobile-nav-item ${activeTab === item.id ? 'active' : ''}`}
-            onClick={() => onTabChange(item.id)}
+            onClick={() => handleTabClick(item.id)}
           >
             <item.icon className="nav-icon" />
             <span>{item.label.split(' ')[0]}</span>
           </button>
         ))}
-        <button className="mobile-nav-item" onClick={() => setShowProfile(true)}>
-           <div className="user-avatar" style={{ width: 20, height: 20, fontSize: '0.6rem' }}>
-             {user?.displayName?.[0] || 'U'}
-           </div>
-           <span>Profile</span>
+        <button 
+          className={`mobile-nav-item ${showMobileMenu ? 'active' : ''}`} 
+          onClick={() => setShowMobileMenu(true)}
+        >
+           <Menu className="nav-icon" />
+           <span>Menu</span>
         </button>
       </nav>
+
+      {/* Mobile Full Screen Menu */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div 
+            className="mobile-full-menu"
+            initial={{ opacity: 0, y: '100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          >
+            <div className="mobile-menu-header">
+              <div className="user-profile" onClick={() => { setShowProfile(true); setShowMobileMenu(false); }}>
+                <div className="user-avatar">{user?.displayName?.[0] || 'U'}</div>
+                <div className="user-info">
+                  <p className="user-name">{user?.displayName}</p>
+                  <p className="user-aura">{user?.auraBalance || 0} AURA</p>
+                </div>
+              </div>
+              <button className="close-menu-btn" onClick={() => setShowMobileMenu(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="mobile-menu-content">
+              {navItems.filter(item => !['dashboard', 'friends', 'arena', 'wallet'].includes(item.id)).map(item => (
+                <button 
+                  key={item.id}
+                  className={`mobile-menu-item ${activeTab === item.id ? 'active' : ''}`}
+                  onClick={() => handleTabClick(item.id)}
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+
+              <div className="mobile-menu-divider" />
+
+              <button className="mobile-menu-item action" onClick={() => { onAddFriend(); setShowMobileMenu(false); }}>
+                <Plus size={20} />
+                <span>Add Friend</span>
+              </button>
+
+              <button className="mobile-menu-item danger" onClick={() => { logout(); setShowMobileMenu(false); }}>
+                <LogOut size={20} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Slide-out Notifications */}
       <NotificationsPanel 

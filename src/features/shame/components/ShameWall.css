@@ -164,3 +164,39 @@
   background: var(--aura-red);
   color: #fff;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .shame-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .shame-card {
+    grid-template-columns: 40px 1fr auto;
+    grid-template-areas: 
+      "rank profile action"
+      ". debt action";
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .rank-indicator { grid-area: rank; }
+  .hunter-profile { grid-area: profile; }
+  .debt-severity { grid-area: debt; }
+  .place-bounty-btn { 
+    grid-area: action; 
+    padding: 8px;
+  }
+  
+  .place-bounty-btn span {
+    display: none; /* Hide text, show only icon on small screens */
+  }
+
+  .header-icon-group {
+    align-items: flex-start;
+  }
+}
+
