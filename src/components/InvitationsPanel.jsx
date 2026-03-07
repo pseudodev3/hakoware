@@ -69,7 +69,7 @@ const InvitationsPanel = ({ onUpdate }) => {
                 Received
               </h4>
               {invitations.received.map((invite) => (
-                <div key={invite.id} style={inviteItemStyle}>
+                <div key={invite._id} style={inviteItemStyle}>
                   <div style={{ 
                     width: '40px', 
                     height: '40px', 
@@ -84,20 +84,20 @@ const InvitationsPanel = ({ onUpdate }) => {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>
-                      {invite.fromUser?.displayName || 'Unknown'}
+                      {invite.user1?.displayName || 'Unknown'}
                     </div>
                     <div style={{ color: '#555', fontSize: '0.8rem' }}>
-                      {invite.fromUser?.email}
+                      {invite.user1?.email}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <IconButton 
-                      onClick={() => handleRespond(invite.id, 'accepted')}
+                      onClick={() => handleRespond(invite._id, 'ACCEPT')}
                       icon={<CheckIcon size={18} color="#00e676" />}
                       hoverColor="rgba(0, 230, 118, 0.1)"
                     />
                     <IconButton 
-                      onClick={() => handleRespond(invite.id, 'declined')}
+                      onClick={() => handleRespond(invite._id, 'DECLINE')}
                       icon={<XIcon size={18} color="#ff4444" />}
                       hoverColor="rgba(255, 68, 68, 0.1)"
                     />
@@ -119,7 +119,7 @@ const InvitationsPanel = ({ onUpdate }) => {
                 Sent
               </h4>
               {invitations.sent.map((invite) => (
-                <div key={invite.id} style={inviteItemStyle}>
+                <div key={invite._id} style={inviteItemStyle}>
                   <div style={{ 
                     width: '40px', 
                     height: '40px', 
@@ -134,10 +134,10 @@ const InvitationsPanel = ({ onUpdate }) => {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>
-                      {invite.toUser?.displayName || invite.toEmail}
+                      {invite.user2?.displayName || invite.user2?.email || 'Hunter'}
                     </div>
                     <div style={{ color: '#555', fontSize: '0.8rem' }}>
-                      {invite.toUser?.email || invite.toEmail}
+                      {invite.user2?.email}
                     </div>
                   </div>
                   <span style={{ 

@@ -38,7 +38,31 @@ export const performCheckin = async (friendshipId) => {
 };
 
 // The following will be implemented as needed in the backend
-export const getPendingInvitations = async () => ({ received: [], sent: [] });
-export const respondToInvitation = async () => ({ success: true });
+// Get pending invitations
+export const getPendingInvitations = async () => {
+  try {
+    const data = await api.get('/friendships');
+    return { 
+      received: data.pendingReceived || [], 
+      sent: data.pendingSent || [] 
+    };
+  } catch (error) {
+    console.error('Error getting pending invitations:', error);
+    return { received: [], sent: [] };
+  }
+};
+
+// Respond to an invitation
+export const respondToInvitation = async (friendshipId, action) => {
+  try {
+    const normalizedAction = action.toUpperCase();
+    const res = await api.put(`/friendships/${friendshipId}/respond`, { action: normalizedAction });
+    if (res.error) return { success: false, error: res.msg || 'FAILED TO RESPOND' };
+    return { success: true, friendship: res };
+  } catch (error) {
+    console.error('Error responding to invitation:', error);
+    return { success: false, error: error.message };
+  }
+};
 export const removeFriendship = async () => ({ success: true });
 export const updateFriendshipLimit = async () => ({ success: true });

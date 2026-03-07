@@ -19,6 +19,7 @@ import {
   deleteNotification,
   NOTIFICATION_TYPES 
 } from '../../../services/notificationService';
+import { respondToInvitation } from '../../../services/friendshipService';
 import { Button } from '../../../shared/components/Button';
 import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
 import './NotificationsPanel.css';
@@ -74,9 +75,13 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
 
   const handleRespond = async (id, action) => {
     try {
-      await api.put(`/friendships/${id}/respond`, { action });
-      showToast(action === 'ACCEPT' ? 'CONTRACT AUTHORIZED' : 'CONTRACT DECLINED', 'SUCCESS');
-      onRefresh();
+      const result = await respondToInvitation(id, action);
+      if (result.success) {
+        showToast(action === 'ACCEPT' ? 'CONTRACT AUTHORIZED' : 'CONTRACT DECLINED', 'SUCCESS');
+        onRefresh();
+      } else {
+        showToast(result.error || 'FAILED TO RESPOND', 'ERROR');
+      }
     } catch (err) {
       showToast('FAILED TO RESPOND', 'ERROR');
     }

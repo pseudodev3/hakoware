@@ -11,10 +11,14 @@ const getHeaders = () => {
 const handleResponse = async (response) => {
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.indexOf("application/json") !== -1) {
-    return response.json();
+    const data = await response.json();
+    if (!response.ok) {
+      return { ...data, status: response.status, error: true };
+    }
+    return data;
   } else {
     // If not JSON (like a 404 HTML page), return an error object
-    return { msg: 'Server error: Not JSON', status: response.status };
+    return { msg: 'Server error: Not JSON', status: response.status, error: true };
   }
 };
 
