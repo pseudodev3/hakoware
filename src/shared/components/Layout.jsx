@@ -127,6 +127,26 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
         </div>
       </main>
 
+      {/* Mobile Navigation (Bottom Bar) */}
+      <nav className="mobile-nav">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            className={`mobile-nav-item ${activeTab === item.id ? 'active' : ''}`}
+            onClick={() => onTabChange(item.id)}
+          >
+            <item.icon className="nav-icon" />
+            <span>{item.label.split(' ')[0]}</span>
+          </button>
+        ))}
+        <button className="mobile-nav-item" onClick={() => setShowProfile(true)}>
+           <div className="user-avatar" style={{ width: 20, height: 20, fontSize: '0.6rem' }}>
+             {user?.displayName?.[0] || 'U'}
+           </div>
+           <span>Profile</span>
+        </button>
+      </nav>
+
       {/* Slide-out Notifications */}
       <NotificationsPanel 
         isOpen={showNotifications} 
