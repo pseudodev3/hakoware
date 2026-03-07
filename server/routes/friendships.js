@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const Bounty = require('../models/Bounty');
+const AuraTransaction = require('../models/AuraTransaction');
 const { sendFriendRequestEmail } = require('../services/emailService');
 
 // @route    POST api/friendships
@@ -165,6 +166,15 @@ router.post('/:id/checkin', auth, async (req, res) => {
         if (hunter) {
           hunter.auraBalance += bounty.amount;
           await hunter.save();
+
+          // Create transaction log for hunter
+          const bountyTx = new AuraTransaction({
+            userId: hunter._id,
+            amount: bounty.amount,
+            type: 'BOUNTY_REWARD',
+            description: `Bounty claimed! Hunted ${bounty.targetName}.`
+          });
+          await bountyTx.save();
         }
       }
     }

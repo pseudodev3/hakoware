@@ -42,25 +42,45 @@
 
 .progress-stat {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.points-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 4px 10px;
+  border-radius: 100px;
+  color: var(--aura-gold);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.count-badge {
+  display: flex;
   align-items: baseline;
   gap: 4px;
 }
 
-.progress-stat .current {
+.count-badge .current {
   font-family: var(--font-mono);
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
-  color: var(--aura-gold);
+  color: var(--text-primary);
   line-height: 1;
 }
 
-.progress-stat .divider, .progress-stat .total {
-  font-size: 1rem;
+.count-badge .divider, .count-badge .total {
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-muted);
 }
 
-.progress-stat .label {
+.count-badge .label {
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -172,6 +192,38 @@
   font-size: 0.75rem;
   color: var(--text-secondary);
   line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.achievement-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rarity-badge {
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rarity-badge.common { color: #888; border: 1px solid rgba(136, 136, 136, 0.2); }
+.rarity-badge.uncommon { color: #00e676; border: 1px solid rgba(0, 230, 118, 0.2); }
+.rarity-badge.rare { color: #33b5e5; border: 1px solid rgba(51, 181, 229, 0.2); }
+.rarity-badge.legendary { color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.2); }
+
+.points-value {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.achievement-card.unlocked .points-value {
+  color: var(--aura-gold);
 }
 
 .lock-label {

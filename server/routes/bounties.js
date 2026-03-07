@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Bounty = require('../models/Bounty');
 const User = require('../models/User');
+const AuraTransaction = require('../models/AuraTransaction');
 
 // @route    POST api/bounties
 // @desc     Create a new bounty
@@ -29,6 +30,15 @@ router.post('/', auth, async (req, res) => {
     // Deduct Aura from sender
     user.auraBalance -= amount;
     await user.save();
+
+    // Create transaction log for bounty creation
+    const bountyTx = new AuraTransaction({
+      userId: user._id,
+      amount: -amount,
+      type: 'BOUNTY_PLACED',
+      description: `Bounty placed on ${targetName}.`
+    });
+    await bountyTx.save();
 
     const bounty = await newBounty.save();
     res.json(bounty);
