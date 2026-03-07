@@ -203,7 +203,14 @@
 
 .status-pill.critical { background: rgba(255, 77, 77, 0.1); color: var(--aura-red); }
 .status-pill.high { background: rgba(255, 215, 0, 0.1); color: var(--aura-gold); }
+.status-pill.hunting { background: rgba(51, 181, 229, 0.1); color: var(--aura-blue); }
 .status-pill.low { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+
+.hunter-name.active {
+  color: var(--aura-gold);
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
 
 .challenge-btn {
   color: var(--text-muted);

@@ -132,18 +132,22 @@ export const Arena = ({ friendships, showToast }) => {
                   <span className="target-name">{b.targetName}</span>
                 </div>
                 <div className="type-cell">
-                  <span className="type-tag">GHOSTING</span>
+                  <span className="type-tag">{b.amount > 100 ? 'LEGENDARY GHOST' : 'GHOSTING'}</span>
                 </div>
                 <div className="reward-cell">
                   <Zap size={12} color="var(--aura-gold)" />
                   <span className="reward-value">{b.amount} AURA</span>
                 </div>
                 <div className="hunter-cell">
-                  <span className="hunter-name">@{b.senderName?.toLowerCase()}</span>
+                  {b.hunterName ? (
+                    <span className="hunter-name active">@{b.hunterName.toLowerCase()}</span>
+                  ) : (
+                    <span className="hunter-name">OPEN CONTRACT</span>
+                  )}
                 </div>
                 <div className="status-cell">
-                  <div className={`status-pill ${b.amount > 50 ? 'critical' : 'high'}`}>
-                    {b.amount > 50 ? 'CRITICAL' : 'HIGH'}
+                  <div className={`status-pill ${b.status === 'HUNTING' ? 'hunting' : b.amount > 50 ? 'critical' : 'high'}`}>
+                    {b.status === 'HUNTING' ? 'HUNTING' : b.amount > 50 ? 'CRITICAL' : 'HIGH'}
                   </div>
                 </div>
                 <div className="action-cell">
@@ -153,7 +157,7 @@ export const Arena = ({ friendships, showToast }) => {
                       onClick={async () => {
                         try {
                           await api.post(`/bounties/${b.id || b._id}/hunt`);
-                          showToast(`CONTRACT ACCEPTED: APPREHEND ${b.targetName.toUpperCase()}`, 'SUCCESS');
+                          showToast(`CONTRACT: APPREHEND ${b.targetName.toUpperCase()}! Reward claimed when target performs check-in.`, 'SUCCESS');
                           loadArenaData();
                         } catch (err) {
                           showToast(err.message || 'FAILED TO CLAIM CONTRACT', 'ERROR');

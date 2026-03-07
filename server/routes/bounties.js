@@ -49,11 +49,13 @@ router.post('/', auth, async (req, res) => {
 });
 
 // @route    GET api/bounties/active
-// @desc     Get all active bounties
+// @desc     Get all bounties on the board (ACTIVE and HUNTING)
 // @access   Private
 router.get('/active', auth, async (req, res) => {
   try {
-    const bounties = await Bounty.find({ status: 'ACTIVE' }).sort({ createdAt: -1 });
+    const bounties = await Bounty.find({ 
+      status: { $in: ['ACTIVE', 'HUNTING'] } 
+    }).sort({ createdAt: -1 });
     res.json(bounties);
   } catch (err) {
     console.error(err.message);
