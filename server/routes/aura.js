@@ -12,6 +12,30 @@ router.get('/:userId', auth, async (req, res) => {
     const user = await User.findById(req.params.userId);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
+    // --- RETROACTIVE WELCOME BONUS CHECK ---
+    const hasWelcomeBonus = await AuraTransaction.findOne({
+      userId: user._id,
+      type: 'WELCOME_BONUS'
+    });
+
+    if (!hasWelcomeBonus) {
+      const welcomeAmount = 100;
+      user.auraBalance = (user.auraBalance || 0) + welcomeAmount;
+      await user.save();
+
+      const welcomeTx = new AuraTransaction({
+        userId: user._id,
+        amount: welcomeAmount,
+        type: 'WELCOME_BONUS',
+        description: 'Welcome to Hakoware! Initial Aura gift (Retroactive).'
+      });
+      await welcomeTx.save();
+      
+      // Update local user object for subsequent calculations in this request
+      user.auraBalance = user.auraBalance; 
+    }
+    // ---------------------------------------
+
     // --- DAILY PASSIVE AURA GENERATION ---
     const now = new Date();
     const lastGeneration = user.updatedAt; // Using updatedAt as a proxy for last visit for now, but we'll check transactions
