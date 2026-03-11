@@ -48,15 +48,24 @@ router.get('/:userId', auth, async (req, res) => {
     if (!lastDailyTx) {
       // 1. Check if user is debt-free (Social Health)
       const Friendship = require('../models/Friendship');
-      const friendships = await Friendship.find({ $or: [{ user1: user._id }, { user2: user._id }] });
+      const friendships = await Friendship.find({ 
+        $or: [{ user1: user._id }, { user2: user._id }],
+        status: 'ACTIVE' 
+      });
       
       let isDebtFree = true;
+      let debtReason = '';
+
       for (const f of friendships) {
         const isU1 = f.user1.toString() === user._id.toString();
         const p = isU1 ? f.user1Perspective : f.user2Perspective;
         const d = Math.floor(Math.max(0, now - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
-        if ((p.baseDebt || 0) + Math.max(0, d - (p.limit || 7)) > 0) {
+        const totalDebt = (p.baseDebt || 0) + Math.max(0, d - (p.limit || 7));
+        
+        if (totalDebt > 0) {
           isDebtFree = false;
+          debtReason = `Debt of ${totalDebt} on friendship with ${isU1 ? f.user2DisplayName : f.user1DisplayName}`;
+          console.log(`User ${user._id} denied DAILY_BONUS: ${debtReason}`);
           break;
         }
       }

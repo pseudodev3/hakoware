@@ -91,6 +91,22 @@ export const AuthProvider = ({ children }) => {
     return { success: true };
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/user');
+      if (!res.msg) {
+        const userWithUid = { ...res, uid: res.id || res._id };
+        setUser(userWithUid);
+        setUserProfile(userWithUid);
+        return { success: true, user: userWithUid };
+      }
+      return { success: false, error: res.msg };
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const setNenType = async (nenType) => {
     try {
       const res = await api.put('/auth/nen-type', { nenType });
@@ -154,6 +170,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     login,
     logout,
+    refreshUser,
     resetPassword,
     resendVerificationEmail,
     updateUserProfile,

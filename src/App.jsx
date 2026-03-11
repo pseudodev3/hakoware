@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { getUserFriendships } from './services/friendshipService';
+import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
 import { NenCard } from './features/debt/components/NenCard';
 import { Button } from './shared/components/Button';
@@ -25,7 +26,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
 function MainApp({ showToast }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [hasEntered, setHasEntered] = useState(() => {
     return localStorage.getItem('hakoware_visited') === 'true';
   });
@@ -50,9 +51,19 @@ function MainApp({ showToast }) {
     
     setLoading(true);
     try {
+      // 1. Fetch friendships
       const data = await getUserFriendships(user.uid || user.id);
       setFriendships(data.active || []);
       setPendingInvitations(data.pendingReceived || []);
+
+      // 2. Trigger Daily Bonus Logic & Sync Aura
+      const oldBalance = user.auraBalance || 0;
+      await getUserAura(user.uid || user.id);
+      const refreshResult = await refreshUser();
+      
+      if (refreshResult.success && refreshResult.user.auraBalance > oldBalance) {
+        showToast(`DAILY BONUS AWARDED: +${refreshResult.user.auraBalance - oldBalance} AURA`, 'SUCCESS');
+      }
     } catch (error) {
       console.error('Failed to load friendships:', error);
       showToast('SYNC ERROR: DATABASE UNREACHABLE', 'ERROR');
@@ -63,7 +74,7 @@ function MainApp({ showToast }) {
 
   useEffect(() => {
     if (isAuthenticated) loadData();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
   const handleAction = (type, friendship) => {
     setSelectedFriendship(friendship);
