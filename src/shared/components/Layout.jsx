@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   LayoutDashboard,
   Users,
@@ -27,6 +27,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
   const [showProfile, setShowProfile] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
 
   const navItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -39,12 +40,36 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
 
   const primaryMobileNav = navItems.filter(item => ['dashboard', 'friends', 'arena', 'wallet'].includes(item.id));
 
+  useEffect(() => {
+    if (!showMobileMenu) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setShowMobileMenu(false);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showMobileMenu]);
+
   const handleTabClick = (id) => {
     onTabChange(id);
     setShowMobileMenu(false);
   };
 
-  const currentLabel = navItems.find(i => i.id === activeTab)?.label || 'Hakoware';
+  const currentLabel = navItems.find(item => item.id === activeTab)?.label || 'Hakoware';
+  const mobileMenuMotion = shouldReduceMotion
+    ? {
+        initial: { opacity: 0, transform: 'translateY(0) scale(1)' },
+        animate: { opacity: 1, transform: 'translateY(0) scale(1)' },
+        exit: { opacity: 0, transform: 'translateY(0) scale(1)' },
+        transition: { duration: .14, ease: [0.2, 0, 0, 1] }
+      }
+    : {
+        initial: { opacity: 0, transform: 'translateY(12px) scale(.985)' },
+        animate: { opacity: 1, transform: 'translateY(0) scale(1)' },
+        exit: { opacity: 0, transform: 'translateY(6px) scale(.99)' },
+        transition: { type: 'spring', duration: .3, bounce: 0 }
+      };
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''} ${className}`}>
@@ -55,7 +80,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
             {!collapsed && <span className="logo-text">Hakoware</span>}
           </div>
           <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {collapsed ? <ChevronRight size={16} strokeWidth={1.8} /> : <ChevronLeft size={16} strokeWidth={1.8} />}
           </button>
         </div>
 
@@ -130,7 +155,12 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
             <span>{item.label.split(' ')[0]}</span>
           </button>
         ))}
-        <button className={`mobile-nav-item ${showMobileMenu ? 'active' : ''}`} onClick={() => setShowMobileMenu(true)}>
+        <button
+          className={`mobile-nav-item ${showMobileMenu ? 'active' : ''}`}
+          onClick={() => setShowMobileMenu(value => !value)}
+          aria-expanded={showMobileMenu}
+          aria-controls="mobile-more-menu"
+        >
           <Menu className="nav-icon" strokeWidth={1.8} />
           <span>More</span>
         </button>
@@ -139,11 +169,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
       <AnimatePresence initial={false}>
         {showMobileMenu && (
           <motion.div
+            id="mobile-more-menu"
             className="mobile-full-menu"
-            initial={{ opacity: 0, y: 16, scale: .985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: .99 }}
-            transition={{ type: 'spring', duration: .3, bounce: 0 }}
+            role="dialog"
+            aria-label="More navigation"
+            {...mobileMenuMotion}
           >
             <div className="mobile-menu-header">
               <button className="mobile-profile" onClick={() => { setShowProfile(true); setShowMobileMenu(false); }}>
@@ -154,7 +184,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
                 </div>
               </button>
               <button className="close-menu-btn" onClick={() => setShowMobileMenu(false)} aria-label="Close menu">
-                <X size={22} />
+                <X size={22} strokeWidth={1.8} />
               </button>
             </div>
 
@@ -167,11 +197,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
               ))}
               <div className="mobile-menu-divider" />
               <button className="mobile-menu-item action" onClick={() => { onAddFriend(); setShowMobileMenu(false); }}>
-                <Plus size={19} />
+                <Plus size={19} strokeWidth={1.8} />
                 <span>New contract</span>
               </button>
               <button className="mobile-menu-item danger" onClick={() => { logout(); setShowMobileMenu(false); }}>
-                <LogOut size={19} />
+                <LogOut size={19} strokeWidth={1.8} />
                 <span>Sign out</span>
               </button>
             </div>
