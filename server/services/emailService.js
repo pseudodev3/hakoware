@@ -3,7 +3,9 @@ const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
 const frontendUrl = String(process.env.FRONTEND_URL || '').replace(/\/$/, '');
 const fromAddress = String(process.env.EMAIL_FROM || '').trim();
 const replyTo = String(process.env.EMAIL_REPLY_TO || '').trim();
-const emailLogoUrl = frontendUrl ? `${frontendUrl}/hakoware-mark.png` : '';
+const emailLogoUrl = String(
+  process.env.EMAIL_LOGO_URL || 'https://raw.githubusercontent.com/pseudodev3/hakoware/main/public/hakoware-mark.png'
+).trim();
 
 const parseMailbox = (value, fallbackName = 'Hakoware') => {
   const input = String(value || '').trim();
