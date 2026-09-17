@@ -1,15 +1,15 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  displayName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // For custom Auth
+  displayName: { type: String, required: true, trim: true, minlength: 2, maxlength: 32 },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  password: { type: String, required: true },
   avatar: { type: String, default: null },
   nenType: { type: String, enum: ['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST', null], default: null },
-  inventory: [{ type: String }], // Array of spell card names
+  inventory: [{ type: String }],
   auraScore: { type: Number, default: 850 },
-  auraBalance: { type: Number, default: 0 },
-  defaultLimit: { type: Number, default: 7 },
+  auraBalance: { type: Number, default: 0, min: 0 },
+  defaultLimit: { type: Number, default: 7, min: 1, max: 30 },
   emailVerified: { type: Boolean, default: false },
   notificationPreferences: {
     email: { type: Boolean, default: true },
@@ -29,9 +29,7 @@ const UserSchema = new mongoose.Schema({
     nenTypeSet: { type: Boolean, default: false },
     friendAdded: { type: Boolean, default: false },
     voiceNoteSent: { type: Boolean, default: false }
-  },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
