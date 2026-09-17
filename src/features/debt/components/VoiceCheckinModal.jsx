@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, StopCircle, Play, Trash2, Zap, AlertCircle, History } from 'lucide-react';
+import { Mic, StopCircle, Play, Pause, Trash2, Zap, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
@@ -8,10 +7,6 @@ import { sendVoiceNote } from '../../../services/voiceNoteService';
 import { useAuth } from '../../../contexts/AuthContext';
 import './VoiceCheckinModal.css';
 
-/**
- * High-fidelity Voice Checkin Modal.
- * Captures audio and resets debt through the HxH protocol.
- */
 export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRefresh, showToast }) => {
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
@@ -20,7 +15,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -29,13 +24,20 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const isUser1 = friendship?.user1?._id === currentUserId || friendship?.user1 === currentUserId;
   const friend = isUser1 ? friendship?.user2 : friendship?.user1;
 
-  // Cleanup
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioUrl) URL.revokeObjectURL(audioUrl);
     };
   }, [audioUrl]);
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(timerRef.current);
+    }
+  };
 
   const startRecording = async () => {
     try {
@@ -44,8 +46,8 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
@@ -61,28 +63,21 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       setRecordingTime(0);
 
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => {
-          if (prev >= 60) {
-            stopRecording();
+        setRecordingTime(previous => {
+          if (previous >= 59) {
+            queueMicrotask(stopRecording);
             return 60;
           }
-          return prev + 1;
+          return previous + 1;
         });
       }, 1000);
     } catch (error) {
-      showToast('MICROPHONE ACCESS DENIED', 'ERROR');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      clearInterval(timerRef.current);
+      showToast?.('MICROPHONE ACCESS DENIED', 'ERROR');
     }
   };
 
   const deleteRecording = () => {
+    audioPlayerRef.current?.pause();
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioBlob(null);
     setAudioUrl(null);
@@ -90,122 +85,129 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     setIsPlaying(false);
   };
 
+  const togglePlayback = async () => {
+    const player = audioPlayerRef.current;
+    if (!player) return;
+
+    try {
+      if (isPlaying) player.pause();
+      else await player.play();
+    } catch (error) {
+      showToast?.('AUDIO PLAYBACK FAILED', 'ERROR');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!audioBlob) return;
     setLoading(true);
-    
+
     try {
       const checkinRes = await performCheckin(friendship.id || friendship._id);
       if (checkinRes.success) {
-        await sendVoiceNote(
+        const voiceResult = await sendVoiceNote(
           friendship.id || friendship._id,
           user.uid || user.id,
           user.displayName,
           friend._id || friend.id,
           audioBlob
         );
-        showToast('VOICE CONTRACT SYNCED', 'SUCCESS');
-        onRefresh();
-        onClose();
+
+        if (!voiceResult.success) throw new Error(voiceResult.error || 'Voice note upload failed');
+
+        showToast?.('VOICE CONTRACT SYNCED', 'SUCCESS');
+        onRefresh?.();
+        onClose?.();
         deleteRecording();
       } else {
-        showToast(checkinRes.error || 'SYNC FAILED', 'ERROR');
+        showToast?.(checkinRes.error || 'SYNC FAILED', 'ERROR');
       }
     } catch (err) {
-      showToast('SYSTEM ERROR DURING TRANSMISSION', 'ERROR');
+      showToast?.(err.message || 'SYSTEM ERROR DURING TRANSMISSION', 'ERROR');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
 
   if (!friendship) return null;
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="VOICE AUTHORIZATION"
-      size="md"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Voice check-in" size="md">
       <div className="voice-modal-content">
         <div className="voice-header">
-           <div className={`mic-status ${isRecording ? 'active' : ''}`}>
-              <Mic size={24} color={isRecording ? 'var(--aura-red)' : 'var(--aura-gold)'} />
-           </div>
-           <p className="voice-description">Recording message for <span>{friend.displayName}</span></p>
+          <div className={`mic-status ${isRecording ? 'active' : ''}`}>
+            <Mic size={22} strokeWidth={1.8} />
+          </div>
+          <p className="voice-description">Recording a check-in for <span>{friend.displayName}</span></p>
         </div>
 
-        <div className="recording-area glass">
-           <div className="waveform">
-              {Array.from({ length: 24 }).map((_, i) => (
-                <motion.div 
-                  key={i}
-                  className="wave-bar"
-                  animate={{ 
-                    height: isRecording ? [10, Math.random() * 40 + 10, 10] : 4 
-                  }}
-                  transition={{ 
-                    repeat: Infinity, 
-                    duration: 0.5, 
-                    delay: i * 0.05 
-                  }}
-                  style={{ 
-                    backgroundColor: isRecording ? 'var(--aura-red)' : audioUrl ? 'var(--aura-gold)' : 'var(--border-subtle)' 
-                  }}
-                />
-              ))}
-           </div>
-           <div className="time-display">{formatTime(recordingTime)}</div>
+        <div className="recording-area">
+          <div className={`waveform ${isRecording ? 'recording' : audioUrl ? 'recorded' : ''}`} aria-hidden="true">
+            {Array.from({ length: 24 }).map((_, index) => (
+              <span
+                key={index}
+                className="wave-bar"
+                style={{
+                  '--bar-scale': 0.35 + ((index * 7) % 10) / 13,
+                  '--bar-delay': `${-(index % 8) * 65}ms`,
+                  '--bar-duration': `${420 + (index % 5) * 55}ms`
+                }}
+              />
+            ))}
+          </div>
+          <div className="time-display">{formatTime(recordingTime)}</div>
         </div>
 
         {audioUrl && (
-          <audio 
-            ref={audioPlayerRef} 
-            src={audioUrl} 
-            onPlay={() => setIsPlaying(true)} 
-            onPause={() => setIsPlaying(false)} 
-            onEnded={() => setIsPlaying(false)} 
+          <audio
+            ref={audioPlayerRef}
+            src={audioUrl}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
             className="hidden"
           />
         )}
 
         <div className="voice-controls">
           {!audioUrl ? (
-            <button 
+            <button
               className={`record-btn ${isRecording ? 'stop' : 'start'}`}
               onClick={isRecording ? stopRecording : startRecording}
+              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
             >
-              {isRecording ? <StopCircle size={40} /> : <Mic size={40} />}
+              {isRecording ? <StopCircle size={34} strokeWidth={1.7} /> : <Mic size={34} strokeWidth={1.7} />}
             </button>
           ) : (
             <div className="playback-group">
-               <button className="trash-btn" onClick={deleteRecording}><Trash2 size={20} /></button>
-               <button className="play-btn" onClick={() => audioPlayerRef.current.play()}>
-                 <Play size={32} />
-               </button>
+              <button className="trash-btn" onClick={deleteRecording} aria-label="Delete recording">
+                <Trash2 size={19} strokeWidth={1.8} />
+              </button>
+              <button className="play-btn" onClick={togglePlayback} aria-label={isPlaying ? 'Pause recording' : 'Play recording'}>
+                {isPlaying ? <Pause size={26} strokeWidth={1.8} /> : <Play size={26} strokeWidth={1.8} className="play-icon" />}
+              </button>
             </div>
           )}
         </div>
 
         <div className="protocol-info">
-           <AlertCircle size={14} color="var(--text-muted)" />
-           <p>Voice messages are encrypted and stored in the Association archives.</p>
+          <AlertCircle size={14} strokeWidth={1.8} />
+          <p>Voice notes are attached to this contract and available to the recipient.</p>
         </div>
 
         <div className="voice-actions">
-           <Button variant="secondary" className="flex-1" onClick={onClose}>ABORT</Button>
-           <Button 
-            variant="aura" 
-            className="flex-1" 
-            icon={Zap} 
-            disabled={!audioUrl} 
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button
+            variant="aura"
+            className="flex-1"
+            icon={Zap}
+            disabled={!audioUrl}
             loading={loading}
             onClick={handleSubmit}
-           >
-             SUBMIT SYNC
-           </Button>
+          >
+            Send check-in
+          </Button>
         </div>
       </div>
     </Modal>
