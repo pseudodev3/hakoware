@@ -2,88 +2,118 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Bounty = require('../models/Bounty');
+const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
+const Notification = require('../models/Notification');
 
-// @route    POST api/bounties
-// @desc     Create a new bounty
-// @access   Private
 router.post('/', auth, async (req, res) => {
-  const { targetId, targetName, friendshipId, amount, message, senderName } = req.body;
-
   try {
-    const user = await User.findById(req.user.id);
-    if (user.auraBalance < amount) {
-      return res.status(400).json({ msg: 'INSUFFICIENT AURA BALANCE' });
+    const amount = Number(req.body.amount);
+    if (!Number.isInteger(amount) || amount < 10 || amount > 500) {
+      return res.status(400).json({ msg: 'Bounty must be between 10 and 500 Aura' });
     }
 
-    const newBounty = new Bounty({
-      senderId: req.user.id,
-      senderName: senderName || user.displayName,
-      targetId,
-      targetName,
-      friendshipId,
+    const friendship = await Friendship.findById(req.body.friendshipId);
+    if (!friendship || friendship.status !== 'ACTIVE') {
+      return res.status(404).json({ msg: 'Active contract not found' });
+    }
+
+    const isUser1 = friendship.user1.toString() === req.user.id;
+    const isUser2 = friendship.user2.toString() === req.user.id;
+    if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
+
+    const targetId = isUser1 ? friendship.user2 : friendship.user1;
+    const [sender, target] = await Promise.all([
+      User.findById(req.user.id),
+      User.findById(targetId)
+    ]);
+    if (!sender || !target) return res.status(404).json({ msg: 'User not found' });
+    if (sender.auraBalance < amount) return res.status(400).json({ msg: 'Not enough Aura' });
+
+    const existing = await Bounty.findOne({
+      senderId: sender._id,
+      targetId: target._id,
+      friendshipId: friendship._id,
+      status: { $in: ['ACTIVE', 'HUNTING'] }
+    });
+    if (existing) return res.status(400).json({ msg: 'You already have an open bounty on this contract' });
+
+    const bounty = await Bounty.create({
+      senderId: sender._id,
+      senderName: sender.displayName,
+      targetId: target._id,
+      targetName: target.displayName,
+      friendshipId: friendship._id,
       amount,
-      message
+      message: String(req.body.message || '').trim().slice(0, 180)
     });
 
-    // Deduct Aura from sender
-    user.auraBalance -= amount;
-    await user.save();
-
-    // Create transaction log for bounty creation
-    const bountyTx = new AuraTransaction({
-      userId: user._id,
+    sender.auraBalance -= amount;
+    await sender.save();
+    await AuraTransaction.create({
+      userId: sender._id,
       amount: -amount,
       type: 'BOUNTY_PLACED',
-      description: `Bounty placed on ${targetName}.`
+      description: `Placed a ${amount} Aura bounty on ${target.displayName}`
     });
-    await bountyTx.save();
+    await Notification.create({
+      toUserId: target._id,
+      fromUserId: sender._id,
+      type: 'BOUNTY_PLACED',
+      title: `${amount} Aura bounty`,
+      message: `${sender.displayName} placed a bounty on your contract. Check in to resolve it.`,
+      friendshipId: friendship._id
+    });
 
-    const bounty = await newBounty.save();
-    res.json(bounty);
+    return res.status(201).json(bounty);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Create bounty failed:', err.message);
+    return res.status(500).json({ msg: 'Could not place bounty' });
   }
 });
 
-// @route    GET api/bounties/active
-// @desc     Get all bounties on the board (ACTIVE and HUNTING)
-// @access   Private
 router.get('/active', auth, async (req, res) => {
   try {
-    const bounties = await Bounty.find({ 
-      status: { $in: ['ACTIVE', 'HUNTING'] } 
-    }).sort({ createdAt: -1 });
-    res.json(bounties);
+    const bounties = await Bounty.find({ status: { $in: ['ACTIVE', 'HUNTING'] } })
+      .sort({ createdAt: -1 })
+      .limit(100);
+    return res.json(bounties);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Load bounties failed:', err.message);
+    return res.status(500).json({ msg: 'Could not load bounties' });
   }
 });
 
-// @route    POST api/bounties/:id/hunt
-// @desc     Accept a bounty contract
-// @access   Private
 router.post('/:id/hunt', auth, async (req, res) => {
   try {
     const bounty = await Bounty.findById(req.params.id);
-    if (!bounty) return res.status(404).json({ msg: 'BOUNTY NOT FOUND' });
-    if (bounty.status !== 'ACTIVE') return res.status(400).json({ msg: 'BOUNTY NO LONGER ACTIVE' });
-    if (bounty.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'CANNOT HUNT YOURSELF' });
+    if (!bounty) return res.status(404).json({ msg: 'Bounty not found' });
+    if (bounty.status !== 'ACTIVE') return res.status(400).json({ msg: 'Bounty is no longer open' });
+    if (bounty.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt your own bounty' });
+    if (bounty.senderId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you placed' });
 
-    const user = await User.findById(req.user.id);
-    
+    const hunter = await User.findById(req.user.id);
+    if (!hunter) return res.status(404).json({ msg: 'User not found' });
+
     bounty.status = 'HUNTING';
-    bounty.hunterId = req.user.id;
-    bounty.hunterName = user.displayName;
-    
+    bounty.hunterId = hunter._id;
+    bounty.hunterName = hunter.displayName;
     await bounty.save();
-    res.json(bounty);
+
+    await Notification.create({
+      toUserId: bounty.targetId,
+      fromUserId: hunter._id,
+      type: 'BOUNTY_HUNTING',
+      title: 'Hunter assigned',
+      message: `${hunter.displayName} picked up the bounty on your contract.`,
+      friendshipId: bounty.friendshipId
+    });
+
+    return res.json(bounty);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Hunt bounty failed:', err.message);
+    return res.status(500).json({ msg: 'Could not hunt bounty' });
   }
 });
 
