@@ -10,6 +10,7 @@ const OPEN_STATUSES = ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'];
 
 const listingFeeFor = (amount) => Math.max(1, Math.min(25, Math.ceil((Number(amount) || 0) * 0.05)));
 const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
+const hunterRepForClaim = (amount) => Math.max(5, Math.min(75, Math.ceil((Number(amount) || 0) * 0.15)));
 
 const hunterRankFromRep = (rep = 0) => {
   const safe = Math.max(0, Number(rep) || 0);
@@ -102,7 +103,8 @@ const payHuntedBounty = async (bounty) => {
   if (!hunter) return refundBounty(bounty, 'Bounty hunter is no longer available');
 
   const now = new Date();
-  const attempt = activeAttempt(bounty, 'CLAIMED', now, 100, now);
+  const repDelta = hunterRepForClaim(bounty.amount);
+  const attempt = activeAttempt(bounty, 'CLAIMED', now, repDelta, now);
   const claimed = await Bounty.findOneAndUpdate(
     { _id: bounty._id, status: 'PRESSURE_SENT', hunterId: bounty.hunterId },
     {
@@ -118,7 +120,7 @@ const payHuntedBounty = async (bounty) => {
     claimed.amount,
     'BOUNTY_REWARD',
     `Proof accepted: ${claimed.targetName} credited your pressure`,
-    { bountyId: claimed._id, friendshipId: claimed.friendshipId }
+    { bountyId: claimed._id, friendshipId: claimed.friendshipId, hunterRep: repDelta }
   );
   await returnHunterBond(claimed, 'proof accepted');
   await recordEvent(claimed.friendshipId, 'BOUNTY_REWARD', {
@@ -129,7 +131,8 @@ const payHuntedBounty = async (bounty) => {
       targetId: claimed.targetId,
       targetName: claimed.targetName,
       hunterId: hunter._id,
-      proof: 'TARGET_CREDIT'
+      proof: 'TARGET_CREDIT',
+      repDelta
     }
   }).catch(() => null);
 
@@ -138,7 +141,7 @@ const payHuntedBounty = async (bounty) => {
       toUserId: hunter._id,
       type: 'BOUNTY_REWARD',
       title: `+${claimed.amount} Aura · proof accepted`,
-      message: `${claimed.targetName} credited your pressure. Hunt closed.`
+      message: `${claimed.targetName} credited your pressure. +${repDelta} Hunter Rep.`
     }).catch(() => null),
     Notification.create({
       toUserId: claimed.senderId,
@@ -148,12 +151,13 @@ const payHuntedBounty = async (bounty) => {
       message: `${hunter.displayName} got ${claimed.targetName} to check in and received ${claimed.amount} Aura.`
     }).catch(() => null)
   ]);
-  return { outcome: 'CLAIMED', bounty: claimed };
+  return { outcome: 'CLAIMED', bounty: claimed, repDelta };
 };
 
 const resolveTargetEscape = async (bounty, reason = 'Target checked in without crediting a hunter') => {
   const now = new Date();
-  const attempt = activeAttempt(bounty, 'TARGET_ESCAPED', now, bounty.pressureSentAt ? 10 : 0);
+  const repDelta = bounty.pressureSentAt ? 2 : 0;
+  const attempt = activeAttempt(bounty, 'TARGET_ESCAPED', now, repDelta);
   const update = {
     $set: { status: 'ESCAPED', resolvedAt: now }
   };
@@ -181,6 +185,7 @@ const resolveTargetEscape = async (bounty, reason = 'Target checked in without c
       amount: closed.amount,
       hunterId: closed.hunterId || null,
       pressureSent: Boolean(closed.pressureSentAt),
+      repDelta,
       reason
     }
   }).catch(() => null);
@@ -196,11 +201,11 @@ const resolveTargetEscape = async (bounty, reason = 'Target checked in without c
       toUserId: closed.hunterId,
       type: 'BOUNTY_REFUND',
       title: 'Target escaped',
-      message: `${closed.targetName} checked in without crediting your pressure. Your bond was returned.`
+      message: `${closed.targetName} checked in without crediting your pressure. Your bond was returned${repDelta ? ` · +${repDelta} Hunter Rep for sending pressure` : ''}.`
     }).catch(() => null) : Promise.resolve()
   ]);
 
-  return { outcome: 'ESCAPED', bounty: closed };
+  return { outcome: 'ESCAPED', bounty: closed, repDelta };
 };
 
 const getBountyDecisionRequirement = async (friendshipId, targetUserId) => {
@@ -248,8 +253,9 @@ const settleBountiesForCheckin = async (friendshipId, targetUserId, creditedBoun
 const reopenExpiredHunt = async (bounty, now = new Date()) => {
   if (!bounty.hunterId) return false;
   const sentPressure = Boolean(bounty.pressureSentAt);
-  const outcome = sentPressure ? 'HUNT_EXPIRED' : 'NO_PRESSURE';
-  const repDelta = sentPressure ? 5 : -10;
+  const legacyHunt = !bounty.huntStartedAt && !bounty.huntExpiresAt && (Number(bounty.hunterBond) || 0) === 0;
+  const outcome = legacyHunt || sentPressure ? 'HUNT_EXPIRED' : 'NO_PRESSURE';
+  const repDelta = legacyHunt ? 0 : sentPressure ? 1 : -5;
   const attempt = activeAttempt(bounty, outcome, now, repDelta);
 
   const reopened = await Bounty.findOneAndUpdate(
@@ -275,19 +281,22 @@ const reopenExpiredHunt = async (bounty, now = new Date()) => {
     await returnHunterBond(bounty, 'hunt window expired after pressure');
   }
 
-  await recordEvent(bounty.friendshipId, sentPressure ? 'BOUNTY_HUNT_EXPIRED' : 'BOUNTY_BOND_BURNED', {
+  const eventType = legacyHunt ? 'BOUNTY_HUNT_MIGRATED' : sentPressure ? 'BOUNTY_HUNT_EXPIRED' : 'BOUNTY_BOND_BURNED';
+  await recordEvent(bounty.friendshipId, eventType, {
     userId: bounty.hunterId,
-    aura: sentPressure ? 0 : -(Number(bounty.hunterBond) || 0),
-    metadata: { bountyId: bounty._id, targetId: bounty.targetId, repDelta }
+    aura: legacyHunt || sentPressure ? 0 : -(Number(bounty.hunterBond) || 0),
+    metadata: { bountyId: bounty._id, targetId: bounty.targetId, repDelta, legacyHunt }
   }).catch(() => null);
 
   await Notification.create({
     toUserId: bounty.hunterId,
     type: 'GAME_EVENT',
-    title: sentPressure ? 'Hunt window closed' : 'Hunter bond burned',
-    message: sentPressure
-      ? `${bounty.targetName} did not convert in time. Your bond was returned and the bounty reopened.`
-      : `You never sent pressure on ${bounty.targetName}. Your ${bounty.hunterBond || 0} Aura bond was burned.`
+    title: legacyHunt ? 'Hunt upgraded' : sentPressure ? 'Hunt window closed' : 'Hunter bond burned',
+    message: legacyHunt
+      ? `${bounty.targetName}'s old hunt was reopened under the new proof rules. No Aura or Hunter Rep was lost.`
+      : sentPressure
+        ? `${bounty.targetName} did not convert in time. Your bond was returned and the bounty reopened. +${repDelta} Hunter Rep.`
+        : `You never sent pressure on ${bounty.targetName}. Your ${bounty.hunterBond || 0} Aura bond was burned and ${Math.abs(repDelta)} Hunter Rep was lost.`
   }).catch(() => null);
   return true;
 };
