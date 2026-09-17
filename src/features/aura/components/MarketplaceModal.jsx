@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ShoppingBag, Zap, Shield, Sparkles, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Zap, Shield, Sparkles } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { useAuth } from '../../../contexts/AuthContext';
 import './MarketplaceModal.css';
 
 const CARDS = [
-  { id: 'STEAL', name: 'THIEF', desc: "Steal 10% of a bankrupt friend's Aura.", cost: 50, icon: Zap, color: '#ff4444' },
-  { id: 'REFLECT', name: 'REFLECT', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#00e5ff' },
-  { id: 'PURIFY', name: 'PURIFY', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#00e676' }
+  { id: 'STEAL', name: 'Thief', desc: "Steal 10% of a bankrupt friend's Aura.", cost: 50, icon: Zap, color: '#ff747b' },
+  { id: 'REFLECT', name: 'Reflect', desc: 'Redirect a bounty placed on you.', cost: 100, icon: Shield, color: '#7aa7ff' },
+  { id: 'PURIFY', name: 'Purify', desc: 'Instantly reset your debt without a voice note.', cost: 200, icon: Sparkles, color: '#62d6a2' }
 ];
 
 export const MarketplaceModal = ({ isOpen, onClose, friendships, showToast }) => {
@@ -17,84 +16,73 @@ export const MarketplaceModal = ({ isOpen, onClose, friendships, showToast }) =>
   const [loading, setLoading] = useState(null);
 
   const handleBuy = async (card) => {
-    // Check if any friendship is bankrupt (Zetsu mode)
-    const isAnyBankrupt = friendships?.some(f => {
-      const isU1 = f.user1._id === (user.uid || user.id) || f.user1 === (user.uid || user.id);
-      const p = isU1 ? f.user1Perspective : f.user2Perspective;
-      if (!p) return false;
-      const daysMissed = Math.floor(Math.max(0, new Date() - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
-      return (p.baseDebt || 0) + Math.max(0, daysMissed - (p.limit || 7)) >= (p.limit || 7) * 2;
+    const isAnyBankrupt = friendships?.some(friendship => {
+      const currentUserId = user.uid || user.id;
+      const isUser1 = friendship.user1._id === currentUserId || friendship.user1 === currentUserId;
+      const perspective = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+      if (!perspective) return false;
+      const daysMissed = Math.floor(Math.max(0, new Date() - new Date(perspective.lastInteraction)) / (1000 * 60 * 60 * 24));
+      return (perspective.baseDebt || 0) + Math.max(0, daysMissed - (perspective.limit || 7)) >= (perspective.limit || 7) * 2;
     });
 
     if (isAnyBankrupt) {
-      showToast('ACCESS DENIED: NEN SEALED', 'ERROR');
+      showToast?.('ACCESS DENIED: NEN SEALED', 'ERROR');
       return;
     }
 
     if (user?.auraBalance < card.cost) {
-      showToast('INSUFFICIENT AURA', 'ERROR');
+      showToast?.('INSUFFICIENT AURA', 'ERROR');
       return;
     }
-    
+
     setLoading(card.id);
     try {
       const result = await buyCard(card);
-      if (result.success) {
-        showToast(`ACQUIRED SPELL CARD: ${card.name}`, 'SUCCESS');
-      } else {
-        showToast(result.error || 'PURCHASE FAILED', 'ERROR');
-      }
+      if (result.success) showToast?.(`ACQUIRED SPELL CARD: ${card.name}`, 'SUCCESS');
+      else showToast?.(result.error || 'PURCHASE FAILED', 'ERROR');
     } catch (err) {
-      showToast('SYSTEM ERROR', 'ERROR');
+      showToast?.('SYSTEM ERROR', 'ERROR');
     } finally {
       setLoading(null);
     }
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="GREED ISLAND MARKET"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Greed Island Market" size="lg">
       <div className="marketplace-container">
-        <div className="market-header glass">
-          <ShoppingBag size={24} color="var(--aura-gold)" />
+        <div className="market-header">
+          <div className="market-icon"><ShoppingBag size={20} strokeWidth={1.8} /></div>
           <div className="market-info">
-            <h3>SPELL CARD SHOP</h3>
-            <p>Trade your Aura for powerful system overrides.</p>
+            <h3>Spell card shop</h3>
+            <p>Trade Aura for system overrides and one-use advantages.</p>
           </div>
           <div className="current-aura">
-             <span>{user?.auraBalance || 0}</span>
-             <span className="unit">AURA</span>
+            <span>{user?.auraBalance || 0}</span>
+            <span className="unit">Aura</span>
           </div>
         </div>
 
         <div className="cards-grid">
-          {CARDS.map(card => (
-            <motion.div 
-              key={card.id}
-              className="spell-card glass"
-              style={{ '--card-color': card.color }}
-              whileHover={{ y: -5, borderColor: card.color, boxShadow: `0 10px 20px -10px ${card.color}` }}
-            >
-              <div className="card-icon-wrapper" style={{ color: card.color }}>
-                <card.icon size={32} />
-              </div>
-              <h4 style={{ color: card.color }}>{card.name}</h4>
-              <p>{card.desc}</p>
-              
-              <Button 
-                variant="secondary" 
-                className="buy-btn"
-                loading={loading === card.id}
-                onClick={() => handleBuy(card)}
-              >
-                BUY • {card.cost} AURA
-              </Button>
-            </motion.div>
-          ))}
+          {CARDS.map(card => {
+            const Icon = card.icon;
+            return (
+              <article key={card.id} className="spell-card" style={{ '--card-color': card.color }}>
+                <div className="card-icon-wrapper">
+                  <Icon size={27} strokeWidth={1.8} />
+                </div>
+                <h4>{card.name}</h4>
+                <p>{card.desc}</p>
+                <Button
+                  variant="secondary"
+                  className="buy-btn"
+                  loading={loading === card.id}
+                  onClick={() => handleBuy(card)}
+                >
+                  Buy · {card.cost} Aura
+                </Button>
+              </article>
+            );
+          })}
         </div>
       </div>
     </Modal>
