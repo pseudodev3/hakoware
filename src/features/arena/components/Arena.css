@@ -29,7 +29,12 @@
   display: grid;
   place-items: center;
   box-shadow: inset 0 0 0 1px var(--border-subtle);
+  color: var(--text-muted);
 }
+
+.stat-icon.gold { color: var(--aura-gold); background: var(--aura-gold-soft); }
+.stat-icon.red { color: var(--aura-red); background: var(--aura-red-glow); }
+.stat-icon.blue { color: var(--aura-blue); background: var(--aura-blue-glow); }
 
 .stat-info {
   min-width: 0;
@@ -73,6 +78,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  color: var(--aura-red);
 }
 
 .board-header h3 {
@@ -194,6 +200,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  color: var(--aura-gold);
 }
 
 .reward-value {
@@ -228,6 +235,16 @@
 .hunter-name.active {
   color: var(--aura-gold);
   font-weight: 620;
+}
+
+.hunter-assigned {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--aura-blue);
+  background: var(--aura-blue-glow);
 }
 
 .challenge-btn {
