@@ -1,21 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Bell, Check, Clock, MessageSquare, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
 import {
-  Bell,
-  X,
-  Check,
-  Trash2,
-  Clock,
-  ShieldAlert,
-  MessageSquare,
-  Sparkles,
-  UserPlus
-} from 'lucide-react';
-import {
-  getUserNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
   deleteNotification,
+  getUserNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
   NOTIFICATION_TYPES
 } from '../../../services/notificationService';
 import { respondToInvitation } from '../../../services/friendshipService';
@@ -29,11 +19,11 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   const shouldReduceMotion = useReducedMotion();
 
   const loadNotifications = async () => {
-    setLoading(true);
     try {
       const data = await getUserNotifications();
-      setNotifications(data || []);
-      onUnreadCountChange?.((data?.filter(n => !n.read).length || 0) + (pendingInvitations?.length || 0));
+      const visible = (data || []).filter((notification) => notification.type !== 'CONTRACT_INVITE');
+      setNotifications(visible);
+      onUnreadCountChange?.(visible.filter((notification) => !notification.read).length);
     } catch (error) {
       console.error('Failed to load notifications:', error);
     } finally {
@@ -42,73 +32,73 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   };
 
   useEffect(() => {
-    if (isOpen) loadNotifications();
-
-    const interval = setInterval(() => {
-      if (isOpen) loadNotifications();
-    }, 30000);
-
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
-  }, [isOpen, pendingInvitations]);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return undefined;
-
+    loadNotifications();
     const onKeyDown = (event) => {
       if (event.key === 'Escape') onClose();
     };
-
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
   const handleMarkAsRead = async (id) => {
     await markNotificationAsRead(id);
-    loadNotifications();
+    await loadNotifications();
   };
 
   const handleMarkAllRead = async () => {
     await markAllNotificationsAsRead();
-    loadNotifications();
+    await loadNotifications();
   };
 
   const handleDelete = async (id) => {
     await deleteNotification(id);
-    loadNotifications();
+    await loadNotifications();
   };
 
   const handleRespond = async (id, action) => {
-    try {
-      const result = await respondToInvitation(id, action);
-      if (result.success) {
-        showToast?.(action === 'ACCEPT' ? 'CONTRACT AUTHORIZED' : 'CONTRACT DECLINED', 'SUCCESS');
-        onRefresh?.();
-      } else {
-        showToast?.(result.error || 'FAILED TO RESPOND', 'ERROR');
-      }
-    } catch (err) {
-      showToast?.('FAILED TO RESPOND', 'ERROR');
+    const result = await respondToInvitation(id, action);
+    if (result.success) {
+      showToast?.(action === 'ACCEPT' ? 'Contract accepted' : 'Contract declined', 'SUCCESS');
+      await onRefresh?.();
+    } else {
+      showToast?.(result.error || 'Could not respond to contract', 'ERROR');
     }
   };
 
   const getIcon = (type) => {
     switch (type) {
       case NOTIFICATION_TYPES.LIMIT_CHANGED: return <Clock size={16} strokeWidth={1.8} />;
-      case NOTIFICATION_TYPES.BAILOUT_RECEIVED: return <ShieldAlert size={16} strokeWidth={1.8} />;
-      case NOTIFICATION_TYPES.MERCY_GRANTED: return <Sparkles size={16} strokeWidth={1.8} />;
-      case NOTIFICATION_TYPES.MERCY_DECLINED: return <X size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.VOICE_NOTE: return <MessageSquare size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.CONTRACT_ACCEPTED: return <UserCheck size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.CONTRACT_DECLINED:
+      case NOTIFICATION_TYPES.CONTRACT_ENDED: return <UserMinus size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.BOUNTY_PLACED:
+      case NOTIFICATION_TYPES.BOUNTY_HUNTING: return <Swords size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.BOUNTY_REWARD: return <Zap size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.BOUNTY_REFUND: return <RotateCcw size={16} strokeWidth={1.8} />;
       default: return <Bell size={16} strokeWidth={1.8} />;
     }
   };
 
   const getTone = (type) => {
     switch (type) {
-      case NOTIFICATION_TYPES.LIMIT_CHANGED: return 'gold';
-      case NOTIFICATION_TYPES.BAILOUT_RECEIVED:
-      case NOTIFICATION_TYPES.VOICE_NOTE: return 'blue';
-      case NOTIFICATION_TYPES.MERCY_GRANTED: return 'green';
-      case NOTIFICATION_TYPES.MERCY_DECLINED: return 'red';
+      case NOTIFICATION_TYPES.BOUNTY_PLACED:
+      case NOTIFICATION_TYPES.CONTRACT_DECLINED:
+      case NOTIFICATION_TYPES.CONTRACT_ENDED: return 'red';
+      case NOTIFICATION_TYPES.VOICE_NOTE:
+      case NOTIFICATION_TYPES.BOUNTY_HUNTING: return 'blue';
+      case NOTIFICATION_TYPES.CONTRACT_ACCEPTED:
+      case NOTIFICATION_TYPES.CHECKIN:
+      case NOTIFICATION_TYPES.BOUNTY_REWARD: return 'green';
+      case NOTIFICATION_TYPES.LIMIT_CHANGED:
+      case NOTIFICATION_TYPES.BOUNTY_REFUND: return 'gold';
       default: return 'neutral';
     }
   };
@@ -116,19 +106,18 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   const formatType = (type = '') => type
     .replace(/_/g, ' ')
     .toLowerCase()
-    .replace(/\b\w/g, char => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diff = (now - date) / 1000;
+    const diff = (new Date() - date) / 1000;
     if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return date.toLocaleDateString();
   };
 
-  const unreadCount = notifications.filter(notification => !notification.read).length;
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
   const panelMotion = shouldReduceMotion
     ? {
         initial: { opacity: 0, transform: 'translateX(0%)' },
@@ -155,23 +144,15 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
             transition={{ duration: .16, ease: [0.2, 0, 0, 1] }}
             onClick={onClose}
           />
-          <motion.aside
-            className="notifications-panel"
-            aria-label="Notifications"
-            {...panelMotion}
-          >
+          <motion.aside className="notifications-panel" aria-label="Notifications" {...panelMotion}>
             <header className="panel-header">
               <div className="panel-heading">
                 <span className="panel-kicker">Activity</span>
                 <h3>Notifications</h3>
               </div>
               <div className="panel-header-actions">
-                {unreadCount > 0 && (
-                  <button className="mark-all-btn" onClick={handleMarkAllRead}>Mark all read</button>
-                )}
-                <button className="close-panel" onClick={onClose} aria-label="Close notifications">
-                  <X size={19} strokeWidth={1.8} />
-                </button>
+                {unreadCount > 0 && <button className="mark-all-btn" onClick={handleMarkAllRead}>Mark all read</button>}
+                <button className="close-panel" onClick={onClose} aria-label="Close notifications"><X size={19} strokeWidth={1.8} /></button>
               </div>
             </header>
 
@@ -183,12 +164,12 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                     <span id="pending-contracts-title">Pending contracts</span>
                   </div>
                   <div className="invitation-list">
-                    {pendingInvitations.map(inv => (
-                      <div key={inv._id} className="invitation-card">
-                        <p><strong>{inv.user1.displayName}</strong> wants to start a contract with you.</p>
+                    {pendingInvitations.map((invitation) => (
+                      <div key={invitation._id} className="invitation-card">
+                        <p><strong>{invitation.user1.displayName}</strong> wants to start a contract with you.</p>
                         <div className="invitation-actions">
-                          <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(inv._id, 'ACCEPT')}>Accept</Button>
-                          <Button variant="secondary" size="sm" onClick={() => handleRespond(inv._id, 'DECLINE')}>Decline</Button>
+                          <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(invitation._id, 'ACCEPT')}>Accept</Button>
+                          <Button variant="secondary" size="sm" onClick={() => handleRespond(invitation._id, 'DECLINE')}>Decline</Button>
                         </div>
                       </div>
                     ))}
@@ -196,30 +177,17 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                 </section>
               )}
 
-              <section className="voice-section">
-                <VoiceNotesInbox />
-              </section>
+              <section className="voice-section"><VoiceNotesInbox /></section>
 
               {loading && notifications.length === 0 ? (
-                <div className="panel-empty" aria-live="polite">
-                  <div className="loading-spinner" />
-                  <p>Syncing notifications…</p>
-                </div>
+                <div className="panel-empty" aria-live="polite"><div className="loading-spinner" /><p>Syncing notifications…</p></div>
               ) : notifications.length === 0 ? (
-                <div className="panel-empty">
-                  <Bell size={34} className="empty-icon" strokeWidth={1.6} />
-                  <p>No notifications yet</p>
-                </div>
+                <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No notifications yet</p></div>
               ) : (
                 <div className="notification-list">
                   {notifications.map((notification) => (
-                    <div
-                      key={notification.id || notification._id}
-                      className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                    >
-                      <div className={`item-icon ${getTone(notification.type)}`}>
-                        {getIcon(notification.type)}
-                      </div>
+                    <div key={notification.id || notification._id} className={`notification-item ${notification.read ? 'read' : 'unread'}`}>
+                      <div className={`item-icon ${getTone(notification.type)}`}>{getIcon(notification.type)}</div>
                       <div className="item-body">
                         <div className="item-header">
                           <span className="item-type">{formatType(notification.type)}</span>
@@ -228,13 +196,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                         <p className="item-msg">{notification.message}</p>
                         <div className="item-actions">
                           {!notification.read && (
-                            <button className="action-link" onClick={() => handleMarkAsRead(notification.id || notification._id)}>
-                              <Check size={13} strokeWidth={1.8} /> Mark read
-                            </button>
+                            <button className="action-link" onClick={() => handleMarkAsRead(notification.id || notification._id)}><Check size={13} strokeWidth={1.8} /> Mark read</button>
                           )}
-                          <button className="action-link delete" onClick={() => handleDelete(notification.id || notification._id)}>
-                            <Trash2 size={13} strokeWidth={1.8} /> Delete
-                          </button>
+                          <button className="action-link delete" onClick={() => handleDelete(notification.id || notification._id)}><Trash2 size={13} strokeWidth={1.8} /> Delete</button>
                         </div>
                       </div>
                     </div>
