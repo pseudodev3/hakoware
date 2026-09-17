@@ -3,24 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import './Modal.css';
 
-/**
- * Premium Modal with backdrop and smooth animations.
- */
-export const Modal = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
-  size = 'md', // 'sm' | 'md' | 'lg' | 'xl'
+export const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
   showClose = true
 }) => {
-  // Lock body scroll when modal is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'auto';
     return () => { document.body.style.overflow = 'auto'; };
   }, [isOpen]);
 
@@ -32,41 +25,38 @@ export const Modal = ({
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {isOpen && (
-        <div className="modal-root">
-          <motion.div 
+        <div className="modal-root" role="presentation">
+          <motion.div
             className="modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: .18, ease: [0.2, 0, 0, 1] }}
             onClick={onClose}
           />
-          
-          <motion.div 
-            className="modal-content glass"
+
+          <motion.div
+            className="modal-content"
             style={sizes[size]}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={typeof title === 'string' ? title : 'Dialog'}
+            initial={{ opacity: 0, scale: .97, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            exit={{ opacity: 0, scale: .985, y: 6 }}
+            transition={{ type: 'spring', duration: .3, bounce: 0 }}
           >
             <header className="modal-header">
-              <div className="modal-title">
-                {typeof title === 'string' ? (
-                  <h3>{title.toUpperCase()}</h3>
-                ) : title}
-              </div>
+              <div className="modal-title">{typeof title === 'string' ? <h3>{title}</h3> : title}</div>
               {showClose && (
-                <button className="modal-close" onClick={onClose}>
-                  <X size={20} />
+                <button className="modal-close" onClick={onClose} aria-label="Close dialog">
+                  <X size={19} strokeWidth={1.8} />
                 </button>
               )}
             </header>
-            
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
           </motion.div>
         </div>
       )}
