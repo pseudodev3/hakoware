@@ -31,11 +31,12 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast }) => {
     const result = await sendFriendInvitation(email, limit);
     if (result.success && result.requiresSignup) {
       setShareInvite(result);
+      await onRefresh?.();
       showToast?.('Invite saved — share Hakoware with them', 'SUCCESS');
     } else if (result.success) {
       showToast?.('Contract request sent', 'SUCCESS');
       reset();
-      await onRefresh();
+      await onRefresh?.();
       onClose();
     } else {
       showToast?.(result.error || 'Could not send contract request', 'ERROR');
