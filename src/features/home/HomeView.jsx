@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, Clock3, Dice5, Flame, Plus, Sparkles, Swords, Trophy, UserPlus, UsersRound } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
-import { NenCard } from '../debt/components/NenCard';
+import { ContractCard } from '../friendship/components/ContractCard';
 import './HomeView.css';
 
 const contractState = (friendship, userId) => {
@@ -129,7 +129,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <button className="text-action" onClick={() => onNavigate('contracts')}>All contracts <ArrowRight size={15} /></button>
         </div>
         <div className="home-contract-list">
-          {visible.map((friendship) => <NenCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
+          {visible.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
         </div>
       </section>
 
