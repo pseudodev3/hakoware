@@ -19,14 +19,17 @@ import { YouView } from './features/profile/YouView';
 import Toast from './components/Toast';
 import './App.css';
 
+const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
+
 function MainApp({ showToast }) {
   const { user, isAuthenticated, refreshUser } = useAuth();
-  const [hasEntered, setHasEntered] = useState(() => localStorage.getItem('hakoware_visited') === 'true');
+  const joining = isJoinLink();
+  const [hasEntered, setHasEntered] = useState(() => joining || localStorage.getItem('hakoware_visited') === 'true');
   const [activeTab, setActiveTab] = useState('home');
   const [friendships, setFriendships] = useState([]);
   const [pendingReceived, setPendingReceived] = useState([]);
   const [pendingSent, setPendingSent] = useState([]);
-  const [showSignup, setShowSignup] = useState(false);
+  const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
 
