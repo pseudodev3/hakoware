@@ -2,8 +2,17 @@ import { api } from './api';
 
 export const sendFriendInvitation = async (toEmail, limit) => {
   try {
-    const friendship = await api.post('/friendships', { friendEmail: toEmail, limit });
-    return { success: true, friendship };
+    const response = await api.post('/friendships', { friendEmail: toEmail, limit });
+    if (response?.requiresSignup) {
+      return {
+        success: true,
+        requiresSignup: true,
+        inviteUrl: response.inviteUrl,
+        recipientEmail: response.recipientEmail,
+        expiresAt: response.expiresAt
+      };
+    }
+    return { success: true, friendship: response };
   } catch (error) {
     return { success: false, error: error.message };
   }
