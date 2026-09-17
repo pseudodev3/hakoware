@@ -77,7 +77,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
           return previous + 1;
         });
       }, 1000);
-    } catch (error) {
+    } catch {
       cleanupStream();
       showToast?.('Allow microphone access to send a voice check-in', 'ERROR');
     }
@@ -115,13 +115,13 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       return;
     }
 
-    const checkin = await performCheckin(contractId);
+    const checkin = await performCheckin(contractId, 'VOICE');
     if (checkin.success) {
-      showToast?.(`Voice check-in sent to ${friend?.displayName || 'your friend'}`, 'SUCCESS');
-    } else if (String(checkin.error || '').toLowerCase().includes('already checked in')) {
-      showToast?.('Voice sent · today’s check-in was already recorded', 'SUCCESS');
+      const xp = checkin.game?.xp;
+      const extra = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
+      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${extra}`, 'SUCCESS');
     } else {
-      showToast?.(`Voice sent, but the check-in was not recorded: ${checkin.error || 'unknown error'}`, 'ERROR');
+      showToast?.(`Voice uploaded, but the check-in was not recorded: ${checkin.error || 'unknown error'}`, 'ERROR');
     }
 
     await onRefresh?.();
@@ -133,12 +133,22 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   if (!friendship || !friend) return null;
 
+  const activeChaos = friendship.chaos?.activeEvent;
+  const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Voice check-in with ${friend.displayName}`} size="md">
       <div className="voice-modal-content">
+        {isChaosTarget && (
+          <div className="voice-chaos-banner">
+            <strong>{activeChaos.name}</strong>
+            <span>{activeChaos.description}</span>
+          </div>
+        )}
+
         <div className="voice-header">
           <div className={`mic-status ${isRecording ? 'active' : ''}`}><Mic size={22} strokeWidth={1.8} /></div>
-          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready to send' : 'Say something real.'}</strong><p>{audioUrl ? 'Listen back or send it.' : 'Up to 60 seconds. Sending it also records today’s check-in when eligible.'}</p></div>
+          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready to send' : 'Say something real.'}</strong><p>{audioUrl ? 'Listen back or send it.' : 'Up to 60 seconds. Voice check-ins earn extra Duo XP.'}</p></div>
         </div>
 
         <div className="recording-area">
