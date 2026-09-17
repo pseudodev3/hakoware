@@ -1,89 +1,151 @@
 const nodemailer = require('nodemailer');
 
+const smtpHost = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
 const smtpPort = Number(process.env.SMTP_PORT) || 587;
-const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
-const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
-const emailConfigured = Boolean(process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.BREVO_API_KEY) && fromAddress);
+const smtpUser = String(process.env.SMTP_USER || '').trim();
+const smtpPass = String(process.env.SMTP_PASS || '').trim();
+const frontendUrl = String(process.env.FRONTEND_URL || '').replace(/\/$/, '');
+const fromAddress = String(process.env.EMAIL_FROM || '').trim();
+const replyTo = String(process.env.EMAIL_REPLY_TO || '').trim();
+
+const emailConfigured = Boolean(smtpUser && smtpPass && fromAddress);
 
 const transporter = emailConfigured ? nodemailer.createTransport({
   pool: true,
-  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  host: smtpHost,
   port: smtpPort,
   secure: smtpPort === 465,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS || process.env.BREVO_API_KEY
-  }
+    user: smtpUser,
+    pass: smtpPass
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000
 }) : null;
 
-const sendResetPasswordEmail = async (userEmail, resetUrl) => {
-  if (!transporter) throw new Error('Email delivery is not configured');
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
 
-  await transporter.sendMail({
-    from: fromAddress,
-    to: userEmail,
-    subject: 'Hakoware password reset',
-    html: `
-      <div style="background:#0a0a0b;color:#f7f4ec;padding:40px;font-family:system-ui,-apple-system,sans-serif;border:1px solid #28271f;border-radius:16px">
-        <h1 style="font-size:20px">Hakoware</h1>
-        <p>A password reset was requested for your account.</p>
-        <p style="color:#a8a399">Use the button below to choose a new password. This link expires in one hour.</p>
-        <div style="margin:32px 0">
-          <a href="${resetUrl}" style="display:inline-block;background:#e7b35a;color:#141009;padding:12px 18px;text-decoration:none;border-radius:10px;font-weight:650">Reset password</a>
-        </div>
-        <p style="font-size:12px;color:#777268">If you did not request this, you can ignore this email.</p>
+const shell = ({ eyebrow, title, body, actionLabel, actionUrl, footnote }) => `
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#0a0a08;color:#f7f4ec;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+    <div style="max-width:560px;margin:0 auto;padding:36px 18px">
+      <div style="padding:32px;border-radius:22px;background:#151510;border:1px solid rgba(247,244,236,.1)">
+        <div style="margin-bottom:28px;color:#e7b35a;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">${eyebrow}</div>
+        <h1 style="margin:0;color:#f7f4ec;font-size:26px;line-height:1.15;font-weight:650;letter-spacing:-.03em">${title}</h1>
+        <div style="margin-top:16px;color:#b8b3a7;font-size:15px;line-height:1.65">${body}</div>
+        ${actionLabel && actionUrl ? `<div style="margin-top:28px"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:12px 17px;border-radius:11px;background:#e7b35a;color:#171009;text-decoration:none;font-size:14px;font-weight:650">${actionLabel}</a></div>` : ''}
+        ${footnote ? `<div style="margin-top:28px;padding-top:18px;border-top:1px solid rgba(247,244,236,.08);color:#777268;font-size:12px;line-height:1.55">${footnote}</div>` : ''}
       </div>
-    `
-  });
-  return true;
-};
+      <div style="padding:14px 4px 0;color:#555149;font-size:11px">Hakoware · Social pressure, Duo progression, mild consequences.</div>
+    </div>
+  </body>
+</html>`;
 
-const sendWelcomeEmail = async (userEmail, userName) => {
-  if (!transporter) return false;
+const send = async ({ to, subject, text, html, required = false }) => {
+  if (!transporter) {
+    const error = new Error('Email delivery is not configured');
+    if (required) throw error;
+    return false;
+  }
+
   try {
     await transporter.sendMail({
       from: fromAddress,
-      to: userEmail,
-      subject: 'Welcome to Hakoware',
-      html: `
-        <div style="background:#0a0a0b;color:#f7f4ec;padding:40px;font-family:system-ui,-apple-system,sans-serif;border:1px solid #28271f;border-radius:16px">
-          <h1 style="font-size:20px">Hakoware</h1>
-          <p>Welcome, <strong>${userName}</strong>.</p>
-          <p style="color:#a8a399">Your account is ready. Create a contract, check in with friends and build Aura.</p>
-        </div>
-      `
+      ...(replyTo ? { replyTo } : {}),
+      to,
+      subject,
+      text,
+      html
     });
     return true;
   } catch (error) {
-    console.error('Welcome email failed:', error.message);
+    if (required) throw error;
+    console.error(`Email delivery failed (${subject}):`, error.message);
     return false;
   }
+};
+
+const getEmailStatus = () => ({
+  configured: emailConfigured,
+  provider: 'brevo-smtp',
+  host: smtpHost,
+  port: smtpPort,
+  from: fromAddress || null
+});
+
+const verifyEmailTransport = async () => {
+  if (!transporter) return { ...getEmailStatus(), verified: false };
+  try {
+    await transporter.verify();
+    return { ...getEmailStatus(), verified: true };
+  } catch (error) {
+    return { ...getEmailStatus(), verified: false, error: error.message };
+  }
+};
+
+const sendResetPasswordEmail = async (userEmail, resetUrl) => send({
+  required: true,
+  to: userEmail,
+  subject: 'Reset your Hakoware password',
+  text: `A password reset was requested for your Hakoware account. Open this link within one hour: ${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+  html: shell({
+    eyebrow: 'Account recovery',
+    title: 'Reset your password.',
+    body: '<p style="margin:0">A password reset was requested for your Hakoware account. This link expires in one hour.</p>',
+    actionLabel: 'Reset password',
+    actionUrl: resetUrl,
+    footnote: 'If you did not request this, you can safely ignore this email.'
+  })
+});
+
+const sendWelcomeEmail = async (userEmail, userName) => {
+  const safeName = escapeHtml(userName);
+  return send({
+    to: userEmail,
+    subject: 'Welcome to Hakoware',
+    text: `Welcome to Hakoware, ${userName}. Your account is ready. Pick one person, start a contract, and survive Season 1.`,
+    html: shell({
+      eyebrow: 'Player registered',
+      title: `Welcome, ${safeName}.`,
+      body: '<p style="margin:0">Your account is ready. Pick one person, choose a contract mode, and let Season 1 start keeping score.</p>',
+      actionLabel: frontendUrl ? 'Enter Hakoware' : null,
+      actionUrl: frontendUrl || null,
+      footnote: 'Check-ins build Duo XP. Silence builds debt. Chaos makes its own rules.'
+    })
+  });
 };
 
 const sendFriendRequestEmail = async (toEmail, fromName, requiresSignup = false) => {
-  if (!transporter) return false;
-  try {
-    const destination = requiresSignup ? `${frontendUrl}/?join=1` : frontendUrl;
-    await transporter.sendMail({
-      from: fromAddress,
-      to: toEmail,
-      subject: `${fromName} sent you a Hakoware contract`,
-      html: `
-        <div style="background:#0a0a0b;color:#f7f4ec;padding:40px;font-family:system-ui,-apple-system,sans-serif;border:1px solid #28271f;border-radius:16px">
-          <h1 style="font-size:20px">Hakoware</h1>
-          <p><strong>${fromName}</strong> sent you a contract request.</p>
-          <p style="color:#a8a399">${requiresSignup ? 'Sign up with this email address and the request will be waiting for you.' : 'Open Hakoware to review the request.'}</p>
-          <div style="margin:32px 0">
-            <a href="${destination}" style="display:inline-block;background:#e7b35a;color:#141009;padding:12px 18px;text-decoration:none;border-radius:10px;font-weight:650">Open contract</a>
-          </div>
-        </div>
-      `
-    });
-    return true;
-  } catch (error) {
-    console.error('Contract email failed:', error.message);
-    return false;
-  }
+  const safeName = escapeHtml(fromName);
+  const destination = requiresSignup ? `${frontendUrl}/?join=1` : frontendUrl;
+  return send({
+    to: toEmail,
+    subject: `${fromName} challenged you on Hakoware`,
+    text: requiresSignup
+      ? `${fromName} sent you a Hakoware contract. Sign up with this email address to claim it: ${destination}`
+      : `${fromName} sent you a Hakoware contract. Open Hakoware to review it: ${destination}`,
+    html: shell({
+      eyebrow: 'Challenge received',
+      title: `${safeName} put you under contract.`,
+      body: `<p style="margin:0">${requiresSignup ? 'Create your Hakoware account with this email address and the challenge will already be waiting for you.' : 'Open Hakoware to review the challenge and decide whether Season 1 starts.'}</p>`,
+      actionLabel: requiresSignup ? 'Claim challenge' : 'Review challenge',
+      actionUrl: destination,
+      footnote: 'Accepting starts the season: Duo XP, Aura, debt and Arena pressure included.'
+    })
+  });
 };
 
-module.exports = { sendResetPasswordEmail, sendWelcomeEmail, sendFriendRequestEmail };
+module.exports = {
+  getEmailStatus,
+  verifyEmailTransport,
+  sendResetPasswordEmail,
+  sendWelcomeEmail,
+  sendFriendRequestEmail
+};
