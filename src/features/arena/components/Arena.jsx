@@ -11,7 +11,6 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
   const [tab, setTab] = useState('bounties');
   const [bounties, setBounties] = useState([]);
   const [shame, setShame] = useState([]);
-  const [hunterCount, setHunterCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -20,13 +19,11 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
   const loadArenaData = async () => {
     setLoading(true);
     try {
-      const [bountiesRes, huntersRes, shameRes] = await Promise.all([
+      const [bountiesRes, shameRes] = await Promise.all([
         api.get('/bounties/active'),
-        api.get('/users/hunters'),
         api.get('/users/leaderboard')
       ]);
       setBounties(bountiesRes || []);
-      setHunterCount(huntersRes?.count || 0);
       setShame(shameRes || []);
     } catch (error) {
       console.error('Failed to load Arena:', error);
@@ -58,7 +55,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         <div>
           <p className="eyebrow">Arena</p>
           <h1>This is where pressure becomes public.</h1>
-          <p>Bounties, hunters, overdue contracts and whatever Chaos started this week.</p>
+          <p>Bounties, overdue contracts and whatever Chaos started this week.</p>
         </div>
         <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={friendships.length === 0}>Place bounty</Button>
       </header>
@@ -73,7 +70,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
 
       <section className="arena-summary">
         <div><small>Open bounties</small><strong>{bounties.length}</strong><span>{bountyPool} Aura escrowed</span></div>
-        <div><small>Hunters</small><strong>{hunterCount}</strong><span>licensed by activity</span></div>
+        <div><small>Shame board</small><strong>{shame.length}</strong><span>{shame.length ? 'bankrupt players visible' : 'nobody exposed'}</span></div>
         <div className={activeAnomalies ? 'hot' : ''}><small>Live anomalies</small><strong>{activeAnomalies}</strong><span>{activeAnomalies ? 'contracts unstable' : 'quiet for now'}</span></div>
       </section>
 
