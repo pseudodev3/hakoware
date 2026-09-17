@@ -12,7 +12,34 @@ const PerspectiveSchema = new mongoose.Schema({
   isBankrupt: { type: Boolean, default: false },
   isInWarningZone: { type: Boolean, default: false },
   daysUntilBankrupt: { type: Number, default: 7 }
-});
+}, { _id: false });
+
+const SeasonSchema = new mongoose.Schema({
+  number: { type: Number, default: 1, min: 1 },
+  status: { type: String, enum: ['PENDING', 'ACTIVE', 'COMPLETE'], default: 'PENDING' },
+  lengthDays: { type: Number, default: 30, min: 1, max: 365 },
+  startedAt: { type: Date, default: null },
+  endsAt: { type: Date, default: null }
+}, { _id: false });
+
+const ChaosEventSchema = new mongoose.Schema({
+  eventId: { type: String, default: null },
+  type: { type: String, default: null },
+  name: { type: String, default: null },
+  description: { type: String, default: null },
+  targetUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  startedAt: { type: Date, default: null },
+  expiresAt: { type: Date, default: null },
+  payload: { type: mongoose.Schema.Types.Mixed, default: {} }
+}, { _id: false });
+
+const ChaosSchema = new mongoose.Schema({
+  level: { type: Number, default: 0, min: 0, max: 5 },
+  nextEventAt: { type: Date, default: null },
+  activeEvent: { type: ChaosEventSchema, default: null },
+  wantedUntil: { type: Date, default: null },
+  lastConsequence: { type: String, default: null }
+}, { _id: false });
 
 const FriendshipSchema = new mongoose.Schema({
   user1: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -20,6 +47,12 @@ const FriendshipSchema = new mongoose.Schema({
   user1DisplayName: String,
   user2DisplayName: String,
   status: { type: String, enum: ['PENDING', 'ACTIVE', 'BLOCKED'], default: 'PENDING' },
+  templateId: { type: String, default: 'DONT_GHOST', index: true },
+  duoXP: { type: Number, default: 0, min: 0 },
+  duoLevel: { type: Number, default: 1, min: 1 },
+  duoTitle: { type: String, default: 'New Contract' },
+  season: { type: SeasonSchema, default: () => ({}) },
+  chaos: { type: ChaosSchema, default: () => ({}) },
   user1Perspective: { type: PerspectiveSchema, default: () => ({}) },
   user2Perspective: { type: PerspectiveSchema, default: () => ({}) }
 }, { timestamps: true });
