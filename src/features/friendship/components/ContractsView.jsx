@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Clock3, Dice5, Mail, Plus, Swords, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
-import { NenCard } from '../../debt/components/NenCard';
+import { ContractCard } from './ContractCard';
 import { respondToInvitation } from '../../../services/friendshipService';
 import './ContractsView.css';
 
@@ -117,7 +117,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
           <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active seasons yet.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Choose a mode</Button></div>
         ) : (
           <div className="contracts-grid">
-            {friendships.map((friendship) => <NenCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
+            {friendships.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
           </div>
         )}
       </section>
