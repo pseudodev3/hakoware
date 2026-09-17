@@ -26,33 +26,40 @@ router.post('/', auth, async (req, res) => {
     if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
 
     const targetId = isUser1 ? friendship.user2 : friendship.user1;
-    const [sender, target] = await Promise.all([
-      User.findById(req.user.id),
-      User.findById(targetId)
-    ]);
-    if (!sender || !target) return res.status(404).json({ msg: 'User not found' });
-    if (sender.auraBalance < amount) return res.status(400).json({ msg: 'Not enough Aura' });
+    const target = await User.findById(targetId).select('_id displayName');
+    if (!target) return res.status(404).json({ msg: 'User not found' });
 
     const existing = await Bounty.findOne({
-      senderId: sender._id,
+      senderId: req.user.id,
       targetId: target._id,
       friendshipId: friendship._id,
       status: { $in: ['ACTIVE', 'HUNTING'] }
     });
     if (existing) return res.status(400).json({ msg: 'You already have an open bounty on this contract' });
 
-    const bounty = await Bounty.create({
-      senderId: sender._id,
-      senderName: sender.displayName,
-      targetId: target._id,
-      targetName: target.displayName,
-      friendshipId: friendship._id,
-      amount,
-      message: String(req.body.message || '').trim().slice(0, 180)
-    });
+    const sender = await User.findOneAndUpdate(
+      { _id: req.user.id, auraBalance: { $gte: amount } },
+      { $inc: { auraBalance: -amount } },
+      { new: true }
+    ).select('_id displayName');
+    if (!sender) return res.status(400).json({ msg: 'Not enough Aura' });
 
-    sender.auraBalance -= amount;
-    await sender.save();
+    let bounty;
+    try {
+      bounty = await Bounty.create({
+        senderId: sender._id,
+        senderName: sender.displayName,
+        targetId: target._id,
+        targetName: target.displayName,
+        friendshipId: friendship._id,
+        amount,
+        message: String(req.body.message || '').trim().slice(0, 180)
+      });
+    } catch (error) {
+      await User.updateOne({ _id: sender._id }, { $inc: { auraBalance: amount } });
+      throw error;
+    }
+
     await AuraTransaction.create({
       userId: sender._id,
       amount: -amount,
