@@ -33,18 +33,13 @@ export const sendVoiceNote = async (friendshipId, audioBlob, duration = 0) => {
 };
 
 export const getMyVoiceNotes = async () => {
-  try {
-    const notes = await api.get('/voice-notes/my-inbox');
-    if (!Array.isArray(notes)) return [];
-    return notes.map((note) => ({
-      ...note,
-      id: note._id,
-      audioUrl: note.filePath?.startsWith('http') ? note.filePath : `${API_BASE_URL}${note.filePath || ''}`
-    }));
-  } catch (error) {
-    console.error('Error getting voice notes:', error);
-    return [];
-  }
+  const notes = await api.get('/voice-notes/my-inbox');
+  if (!Array.isArray(notes)) return [];
+  return notes.map((note) => ({
+    ...note,
+    id: note._id,
+    audioUrl: note.filePath?.startsWith('http') ? note.filePath : `${API_BASE_URL}${note.filePath || ''}`
+  }));
 };
 
 export const fetchVoiceNoteAudio = async (audioUrl) => {
