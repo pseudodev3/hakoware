@@ -280,6 +280,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const key = participantKey(friendship, req.user.id);
     if (!key) return res.status(403).json({ msg: 'Not authorized' });
     const source = String(req.body.source || 'TEXT').toUpperCase() === 'VOICE' ? 'VOICE' : 'TEXT';
+    const bountyCreditId = req.body.bountyCreditId ? String(req.body.bountyCreditId) : null;
     const prepared = await prepareCheckinGame(friendship, req.user.id, source);
 
     const now = new Date();
@@ -295,7 +296,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     friendship[key].isInWarningZone = false;
 
     const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
-    await settleBountiesForCheckin(friendship._id, req.user.id);
+    const bountyResults = await settleBountiesForCheckin(friendship._id, req.user.id, bountyCreditId);
 
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
@@ -308,7 +309,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
       friendshipId: friendship._id
     });
 
-    return res.json({ friendship, game });
+    return res.json({ friendship, game, bounty: bountyResults[0] || null });
   } catch (err) {
     console.error('Check-in failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Could not check in' });
