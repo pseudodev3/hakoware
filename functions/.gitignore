@@ -1,8 +1,0 @@
-# Firebase Functions
-node_modules/
-.firebase/
-*.log
-.env
-.env.local
-runtimeconfig.json
-serviceAccountKey.json
