@@ -10,7 +10,7 @@ const CARD_CATALOG = Object.freeze({
     id: 'PURIFY',
     name: 'Clean Slate',
     cost: 120,
-    description: 'Reset your current contract debt. It does not change your grace periods.'
+    description: 'Reset your debt across every active contract. Grace periods do not change.'
   },
   STEAL: {
     id: 'STEAL',
@@ -117,42 +117,6 @@ router.get('/cards', auth, (req, res) => {
   res.json(Object.values(CARD_CATALOG));
 });
 
-// Kept temporarily for older clients, but it can only read the authenticated account.
-router.get('/:userId', auth, async (req, res) => {
-  try {
-    if (req.params.userId !== req.user.id) return res.status(403).json({ msg: 'Not authorized' });
-    const summary = await buildAuraSummary(req.user.id);
-    if (!summary) return res.status(404).json({ msg: 'User not found' });
-    return res.json(summary);
-  } catch (err) {
-    console.error('Aura summary failed:', err.message);
-    return res.status(500).json({ msg: 'Could not load Aura' });
-  }
-});
-
-router.post('/initialize', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-
-    const exists = await AuraTransaction.exists({ userId: user._id, type: 'WELCOME_BONUS' });
-    if (exists) return res.json({ success: true, balance: user.auraBalance });
-
-    user.auraBalance += 100;
-    await user.save();
-    await AuraTransaction.create({
-      userId: user._id,
-      amount: 100,
-      type: 'WELCOME_BONUS',
-      description: 'Welcome to Hakoware'
-    });
-    return res.json({ success: true, balance: user.auraBalance });
-  } catch (err) {
-    console.error('Aura initialization failed:', err.message);
-    return res.status(500).json({ msg: 'Could not initialize Aura' });
-  }
-});
-
 router.post('/buy-card', auth, async (req, res) => {
   try {
     const card = CARD_CATALOG[String(req.body.cardId || '').toUpperCase()];
@@ -193,7 +157,14 @@ router.post('/use-card', auth, async (req, res) => {
         status: 'ACTIVE'
       });
       const now = new Date();
-      for (const friendship of friendships) {
+      const withDebt = friendships.filter((friendship) => {
+        const isUser1 = friendship.user1.toString() === req.user.id;
+        const perspective = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+        return calculateDebt(perspective, now) > 0;
+      });
+      if (withDebt.length === 0) return res.status(400).json({ msg: 'You do not have any debt to clear' });
+
+      for (const friendship of withDebt) {
         const isUser1 = friendship.user1.toString() === req.user.id;
         const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
         friendship[key].baseDebt = 0;
@@ -224,23 +195,23 @@ router.post('/use-card', auth, async (req, res) => {
       const target = await User.findById(targetId);
       if (!target) return res.status(404).json({ msg: 'Target not found' });
       const amount = Math.floor((target.auraBalance || 0) * 0.1);
-      if (amount > 0) {
-        target.auraBalance -= amount;
-        user.auraBalance += amount;
-        await target.save();
-        await AuraTransaction.create({
-          userId: target._id,
-          amount: -amount,
-          type: 'SPELL_EFFECT',
-          description: `Aura claimed by ${user.displayName}`
-        });
-        await AuraTransaction.create({
-          userId: user._id,
-          amount,
-          type: 'SPELL_EFFECT',
-          description: `Claimed Aura from ${target.displayName}`
-        });
-      }
+      if (amount <= 0) return res.status(400).json({ msg: 'There is no Aura to claim from this partner' });
+
+      target.auraBalance -= amount;
+      user.auraBalance += amount;
+      await target.save();
+      await AuraTransaction.create({
+        userId: target._id,
+        amount: -amount,
+        type: 'SPELL_EFFECT',
+        description: `Aura claimed by ${user.displayName}`
+      });
+      await AuraTransaction.create({
+        userId: user._id,
+        amount,
+        type: 'SPELL_EFFECT',
+        description: `Claimed Aura from ${target.displayName}`
+      });
     }
 
     const cardIndex = user.inventory.indexOf(cardId);
