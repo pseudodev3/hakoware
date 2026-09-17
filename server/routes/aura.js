@@ -4,6 +4,8 @@ const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
+const Notification = require('../models/Notification');
+const { refreshGameState, recordEvent } = require('../services/contractGame');
 
 const CARD_CATALOG = Object.freeze({
   PURIFY: {
@@ -17,6 +19,18 @@ const CARD_CATALOG = Object.freeze({
     name: 'Claim',
     cost: 180,
     description: 'Take 10% Aura from a contract partner who is currently bankrupt.'
+  },
+  SIGNAL_FLARE: {
+    id: 'SIGNAL_FLARE',
+    name: 'Signal Flare',
+    cost: 45,
+    description: 'Send one high-visibility pressure signal to a contract partner.'
+  },
+  CHAOS_TICKET: {
+    id: 'CHAOS_TICKET',
+    name: 'Chaos Ticket',
+    cost: 90,
+    description: 'Force your Chaos Contract to roll for its next anomaly now.'
   }
 });
 
@@ -25,6 +39,22 @@ const calculateDebt = (perspective, now = new Date()) => {
   const lastInteraction = new Date(perspective?.lastInteraction || now);
   const daysMissed = Math.floor(Math.max(0, now - lastInteraction) / 86400000);
   return (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
+};
+
+const auraRankFromEarned = (earned = 0) => {
+  const value = Math.max(0, Number(earned) || 0);
+  const ranks = [
+    { name: 'Spark', floor: 0, next: 250 },
+    { name: 'Charged', floor: 250, next: 750 },
+    { name: 'Radiant', floor: 750, next: 2000 },
+    { name: 'Overflow', floor: 2000, next: 5000 },
+    { name: 'Ascendant', floor: 5000, next: null }
+  ];
+  const rank = [...ranks].reverse().find((item) => value >= item.floor) || ranks[0];
+  const progress = rank.next
+    ? Math.max(0, Math.min(100, Math.round(((value - rank.floor) / (rank.next - rank.floor)) * 100)))
+    : 100;
+  return { name: rank.name, lifetimeEarned: value, nextRankAt: rank.next, progress };
 };
 
 const dayKey = (date = new Date()) => date.toISOString().slice(0, 10);
@@ -158,7 +188,7 @@ const buildAuraSummary = async (userId) => {
   await addDailyBonusIfEligible(user._id);
   user = await User.findById(user._id);
 
-  const [history, earned, spent, count] = await Promise.all([
+  const [history, earned, spent, reputationEarned, count] = await Promise.all([
     AuraTransaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(40),
     AuraTransaction.aggregate([
       { $match: { userId: user._id, amount: { $gt: 0 } } },
@@ -168,14 +198,26 @@ const buildAuraSummary = async (userId) => {
       { $match: { userId: user._id, amount: { $lt: 0 } } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]),
+    AuraTransaction.aggregate([
+      {
+        $match: {
+          userId: user._id,
+          amount: { $gt: 0 },
+          type: { $nin: ['BOUNTY_REFUND', 'HUNTER_BOND_RETURN'] }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]),
     AuraTransaction.countDocuments({ userId: user._id })
   ]);
 
+  const lifetimeEarned = reputationEarned[0]?.total || 0;
   return {
     balance: Number(user.auraBalance) || 0,
     totalEarned: earned[0]?.total || 0,
     totalSpent: Math.abs(spent[0]?.total || 0),
     totalTransactions: count,
+    reputation: auraRankFromEarned(lifetimeEarned),
     history
   };
 };
@@ -294,6 +336,37 @@ router.post('/use-card', auth, async (req, res) => {
         type: 'SPELL_EFFECT',
         description: `Claimed Aura from ${target.displayName}`
       });
+    }
+
+    if (cardId === 'SIGNAL_FLARE') {
+      const friendship = await Friendship.findById(req.body.targetFriendshipId);
+      if (!friendship || friendship.status !== 'ACTIVE') return res.status(404).json({ msg: 'Choose an active contract' });
+      const isUser1 = friendship.user1.toString() === req.user.id;
+      const isUser2 = friendship.user2.toString() === req.user.id;
+      if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
+      const targetId = isUser1 ? friendship.user2 : friendship.user1;
+      await Notification.create({
+        toUserId: targetId,
+        fromUserId: user._id,
+        type: 'GAME_EVENT',
+        title: 'Signal Flare',
+        message: `${user.displayName} spent Aura to make sure you saw this: your contract is waiting.`,
+        friendshipId: friendship._id
+      });
+      await recordEvent(friendship._id, 'SIGNAL_FLARE', { userId: user._id, metadata: { targetId } }).catch(() => null);
+    }
+
+    if (cardId === 'CHAOS_TICKET') {
+      const friendship = await Friendship.findById(req.body.targetFriendshipId);
+      if (!friendship || friendship.status !== 'ACTIVE') return res.status(404).json({ msg: 'Choose an active Chaos Contract' });
+      const participant = [friendship.user1.toString(), friendship.user2.toString()].includes(req.user.id);
+      if (!participant) return res.status(403).json({ msg: 'Not authorized' });
+      if (friendship.templateId !== 'CHAOS') return res.status(400).json({ msg: 'Chaos Ticket only works on a Chaos Contract' });
+      if (friendship.chaos?.activeEvent) return res.status(400).json({ msg: 'This contract already has a live anomaly' });
+      friendship.chaos.nextEventAt = new Date();
+      await friendship.save();
+      await refreshGameState(friendship);
+      await recordEvent(friendship._id, 'CHAOS_TICKET_USED', { userId: user._id }).catch(() => null);
     }
 
     const cardIndex = user.inventory.indexOf(cardId);
