@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Play, Pause, CheckCircle2, Calendar, User, Loader2, RotateCw } from 'lucide-react';
-import { getMyVoiceNotes, markVoiceNoteListened } from '../../../services/voiceNoteService';
+import React, { useEffect, useRef, useState } from 'react';
+import { Calendar, CheckCircle2, Loader2, MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
+import { fetchVoiceNoteAudio, getMyVoiceNotes, markVoiceNoteListened } from '../../../services/voiceNoteService';
 import './VoiceNotesInbox.css';
 
 export const VoiceNotesInbox = () => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeNote, setActiveNote] = useState(null);
+  const [activeNoteId, setActiveNoteId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackError, setPlaybackError] = useState('');
   const audioPlayerRef = useRef(new Audio());
+  const objectUrlRef = useRef(null);
 
   const loadNotes = async () => {
     setLoading(true);
@@ -27,113 +29,128 @@ export const VoiceNotesInbox = () => {
     loadNotes();
 
     const player = audioPlayerRef.current;
-    player.onended = () => {
+    const handleEnded = () => {
       setIsPlaying(false);
-      if (activeNote && !activeNote.listened) {
-        handleMarkListened(activeNote.id);
-      }
+      const note = notes.find(item => item.id === activeNoteId);
+      if (note && !note.listened) handleMarkListened(note.id);
     };
 
+    player.addEventListener('ended', handleEnded);
     return () => {
       player.pause();
+      player.removeEventListener('ended', handleEnded);
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
-  }, [activeNote]);
+  }, [activeNoteId, notes]);
 
   const togglePlay = async (note) => {
     const player = audioPlayerRef.current;
+    setPlaybackError('');
 
-    try {
-      if (activeNote?.id === note.id) {
-        if (isPlaying) {
-          player.pause();
-          setIsPlaying(false);
-        } else {
+    if (activeNoteId === note.id && player.src) {
+      if (isPlaying) {
+        player.pause();
+        setIsPlaying(false);
+      } else {
+        try {
           await player.play();
           setIsPlaying(true);
+        } catch {
+          setPlaybackError('Playback could not start.');
         }
-        return;
       }
+      return;
+    }
 
-      player.src = note.audioUrl;
+    try {
+      player.pause();
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+
+      const blob = await fetchVoiceNoteAudio(note.audioUrl);
+      const objectUrl = URL.createObjectURL(blob);
+      objectUrlRef.current = objectUrl;
+      player.src = objectUrl;
+      setActiveNoteId(note.id);
       await player.play();
-      setActiveNote(note);
       setIsPlaying(true);
     } catch (error) {
-      console.error('Unable to play voice note:', error);
+      console.error('Failed to play voice note:', error);
+      setPlaybackError(error.message || 'Voice note playback failed.');
       setIsPlaying(false);
     }
   };
 
   const handleMarkListened = async (id) => {
-    await markVoiceNoteListened(id);
-    setNotes(prev => prev.map(note => note.id === id ? { ...note, listened: true } : note));
+    const result = await markVoiceNoteListened(id);
+    if (result.success) {
+      setNotes(previous => previous.map(note => note.id === id ? { ...note, listened: true } : note));
+    }
   };
 
   return (
-    <div className="voice-inbox-container">
+    <section className="voice-inbox-container" aria-labelledby="voice-inbox-title">
       <header className="inbox-header">
         <div className="title-group">
-          <MessageSquare className="voice-heading-icon" size={18} strokeWidth={1.8} />
-          <h3>Voice inbox</h3>
+          <MessageSquare size={19} className="inbox-title-icon" aria-hidden="true" />
+          <div>
+            <h3 id="voice-inbox-title">Voice inbox</h3>
+            <p>Private check-ins from your contracts</p>
+          </div>
         </div>
-        <button className="refresh-btn" onClick={loadNotes} disabled={loading} aria-label="Refresh voice notes">
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <RotateCw size={16} strokeWidth={1.8} />}
+        <button className="refresh-btn" onClick={loadNotes} disabled={loading} aria-label="Refresh voice inbox">
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
         </button>
       </header>
 
+      {playbackError && <p className="voice-playback-error" role="status">{playbackError}</p>}
+
       <div className="notes-list">
         {loading && notes.length === 0 ? (
-          <div className="inbox-empty" aria-live="polite">
-            <Loader2 className="animate-spin" size={22} />
+          <div className="inbox-empty">
+            <Loader2 className="animate-spin" aria-hidden="true" />
             <p>Syncing voice notes…</p>
           </div>
         ) : notes.length === 0 ? (
           <div className="inbox-empty">
-            <MessageSquare size={32} className="empty-voice-icon" strokeWidth={1.6} />
-            <p>No voice notes yet</p>
+            <MessageSquare size={36} className="empty-icon" aria-hidden="true" />
+            <p>No voice notes yet.</p>
           </div>
         ) : (
-          notes.map((note) => {
-            const isActive = activeNote?.id === note.id;
-            const playing = isActive && isPlaying;
-
+          notes.map(note => {
+            const active = activeNoteId === note.id;
             return (
-              <div key={note.id} className={`note-card ${note.listened ? 'listened' : 'unread'}`}>
+              <article key={note.id} className={`note-card ${note.listened ? 'listened' : 'unread'}`}>
                 <div className="note-main">
-                  <button
-                    className="play-trigger"
-                    onClick={() => togglePlay(note)}
-                    aria-label={playing ? `Pause voice note from ${note.senderName}` : `Play voice note from ${note.senderName}`}
-                  >
-                    {playing ? <Pause size={18} strokeWidth={1.9} /> : <Play size={18} strokeWidth={1.9} className="play-icon" />}
+                  <button className="play-trigger" onClick={() => togglePlay(note)} aria-label={`${active && isPlaying ? 'Pause' : 'Play'} voice note from ${note.senderName || 'friend'}`}>
+                    {active && isPlaying ? <Pause size={19} /> : <Play size={19} />}
                   </button>
                   <div className="note-info">
                     <div className="sender-row">
-                      <User size={12} strokeWidth={1.8} />
-                      <span className="sender-name">{note.senderName}</span>
+                      <User size={13} aria-hidden="true" />
+                      <span className="sender-name">{note.senderName || 'Friend'}</span>
                       {!note.listened && <span className="unread-tag">New</span>}
                     </div>
                     <div className="date-row">
-                      <Calendar size={12} strokeWidth={1.8} />
-                      <span>{new Date(note.createdAt).toLocaleString()}</span>
+                      <Calendar size={12} aria-hidden="true" />
+                      <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString()}</time>
                     </div>
                   </div>
                 </div>
 
                 <div className="note-actions">
                   {note.listened ? (
-                    <CheckCircle2 size={18} className="listened-icon" strokeWidth={1.8} aria-label="Listened" />
+                    <CheckCircle2 size={18} className="listened-icon" aria-label="Listened" />
                   ) : (
                     <Button variant="ghost" size="sm" onClick={() => handleMarkListened(note.id)}>
                       Mark read
                     </Button>
                   )}
                 </div>
-              </div>
+              </article>
             );
           })
         )}
       </div>
-    </div>
+    </section>
   );
 };
