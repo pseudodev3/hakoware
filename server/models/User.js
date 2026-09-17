@@ -9,6 +9,8 @@ const UserSchema = new mongoose.Schema({
   inventory: [{ type: String }],
   auraScore: { type: Number, default: 850 },
   auraBalance: { type: Number, default: 0, min: 0 },
+  welcomeAuraGranted: { type: Boolean, default: false },
+  lastDailyAuraBonusKey: { type: String, default: null },
   defaultLimit: { type: Number, default: 7, min: 1, max: 30 },
   emailVerified: { type: Boolean, default: false },
   notificationPreferences: {
