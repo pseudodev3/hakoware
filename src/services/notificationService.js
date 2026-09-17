@@ -9,8 +9,10 @@ export const NOTIFICATION_TYPES = {
   CHECKIN: 'CHECKIN',
   BOUNTY_PLACED: 'BOUNTY_PLACED',
   BOUNTY_HUNTING: 'BOUNTY_HUNTING',
+  BOUNTY_PRESSURE: 'BOUNTY_PRESSURE',
   BOUNTY_REWARD: 'BOUNTY_REWARD',
   BOUNTY_REFUND: 'BOUNTY_REFUND',
+  GAME_EVENT: 'GAME_EVENT',
   CHAOS_EVENT: 'CHAOS_EVENT',
   CHAOS_FAILED: 'CHAOS_FAILED',
   CHAOS_SURVIVED: 'CHAOS_SURVIVED',
@@ -41,7 +43,7 @@ export const markAllNotificationsAsRead = async () => {
   try {
     return await api.put('/notifications/read-all');
   } catch (error) {
-    console.error('Error marking all as read:', error);
+    console.error('Error marking all notifications as read:', error);
     return { success: false, error: error.message };
   }
 };
