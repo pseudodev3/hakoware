@@ -8,9 +8,8 @@ const AuraTransaction = require('../models/AuraTransaction');
 const auth = require('../middleware/auth');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 
-// @route    POST api/auth/signup
-// @desc     Register user
-// @access   Public
+const frontendUrl = () => (process.env.FRONTEND_URL || 'https://hakoware.vercel.app').replace(/\/$/, '');
+
 router.post('/signup', async (req, res) => {
   const { displayName, email, password } = req.body;
 
@@ -20,22 +19,16 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    user = new User({
-      displayName,
-      email,
-      password
-    });
+    user = new User({ displayName, email, password });
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
-    
-    // Welcome Gift: 100 Aura
+
     const initialAura = 100;
     user.auraBalance = initialAura;
 
     await user.save();
 
-    // Create a transaction record for the welcome gift
     const welcomeTransaction = new AuraTransaction({
       userId: user._id,
       amount: initialAura,
@@ -44,40 +37,27 @@ router.post('/signup', async (req, res) => {
     });
     await welcomeTransaction.save();
 
-    // Association Enrollment Email
     sendWelcomeEmail(user.email, user.displayName);
 
-    const payload = {
-      user: {
-        id: user.id
-      }
-    };
+    const payload = { user: { id: user.id } };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET || 'hakoware_secret_key',
-      { expiresIn: '7d' },
-      (err, token) => {
-        if (err) throw err;
-        const userResp = user.toObject();
-        delete userResp.password;
-        res.json({ token, user: userResp });
-      }
-    );
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
+      if (err) throw err;
+      const userResp = user.toObject();
+      delete userResp.password;
+      res.json({ token, user: userResp });
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
-// @route    POST api/auth/login
-// @desc     Authenticate user & get token
-// @access   Public
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    let user = await User.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
@@ -87,100 +67,74 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
 
-    const payload = {
-      user: {
-        id: user.id
-      }
-    };
+    const payload = { user: { id: user.id } };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET || 'hakoware_secret_key',
-      { expiresIn: '7d' },
-      (err, token) => {
-        if (err) throw err;
-        const userResp = user.toObject();
-        delete userResp.password;
-        res.json({ token, user: userResp });
-      }
-    );
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
+      if (err) throw err;
+      const userResp = user.toObject();
+      delete userResp.password;
+      res.json({ token, user: userResp });
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
-// @route    GET api/auth/user
-// @desc     Get user by token
-// @access   Private
 router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
-// @route    PUT api/auth/nen-type
-// @desc     Set user's Nen type
-// @access   Private
 router.put('/nen-type', auth, async (req, res) => {
   try {
     const { nenType } = req.body;
     const user = await User.findById(req.user.id);
-    
+
     if (!user) return res.status(404).json({ msg: 'User not found' });
-    
+
     user.nenType = nenType;
     user.examTasks.nenTypeSet = true;
-    
-    // Check if license is complete
+
     if (user.examTasks.friendAdded && user.examTasks.voiceNoteSent) {
       user.hunterLicense = true;
     }
-    
+
     await user.save();
-    
     res.json(user);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
-// @route    POST api/auth/forgot-password
-// @desc     Request password reset
-// @access   Public
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
+
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ msg: 'USER NOT REGISTERED' });
 
-    // Generate token
     const resetToken = crypto.randomBytes(20).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
-
+    user.resetPasswordExpire = Date.now() + 3600000;
     await user.save();
 
-    // Ensure link uses the correct production frontend URL
-    const resetUrl = `https://hakoware.vercel.app/reset-password/${resetToken}`;
-    
+    const resetUrl = `${frontendUrl()}/reset-password/${resetToken}`;
     await sendResetPasswordEmail(user.email, resetUrl);
 
     res.json({ msg: 'RECOVERY PROTOCOL INITIATED' });
   } catch (err) {
     console.error('FORGOT PASSWORD ERROR:', err);
-    res.status(500).json({ msg: 'SERVER ERROR', error: err.message, stack: err.stack });
+    res.status(500).json({ msg: 'SERVER ERROR' });
   }
 });
 
-// @route    POST api/auth/reset-password/:token
-// @desc     Reset password
-// @access   Public
 router.post('/reset-password/:token', async (req, res) => {
   const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
 
@@ -192,7 +146,6 @@ router.post('/reset-password/:token', async (req, res) => {
 
     if (!user) return res.status(400).json({ msg: 'INVALID OR EXPIRED TOKEN' });
 
-    // Set new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.password, salt);
     user.resetPasswordToken = undefined;
@@ -202,7 +155,7 @@ router.post('/reset-password/:token', async (req, res) => {
     res.json({ msg: 'PASSWORD RECOVERY SUCCESSFUL' });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 

@@ -1,4 +1,5 @@
-const API_URL = '/api';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const API_URL = `${API_BASE_URL}/api`;
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -9,24 +10,20 @@ const getHeaders = () => {
 };
 
 const handleResponse = async (response) => {
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.indexOf("application/json") !== -1) {
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
     if (!response.ok) {
       return { ...data, status: response.status, error: true };
     }
     return data;
-  } else {
-    // If not JSON (like a 404 HTML page), return an error object
-    return { msg: 'Server error: Not JSON', status: response.status, error: true };
   }
+  return { msg: 'Server error: Not JSON', status: response.status, error: true };
 };
 
 export const api = {
   get: async (endpoint) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      headers: getHeaders()
-    });
+    const response = await fetch(`${API_URL}${endpoint}`, { headers: getHeaders() });
     return handleResponse(response);
   },
 
