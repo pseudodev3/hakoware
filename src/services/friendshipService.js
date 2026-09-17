@@ -1,14 +1,15 @@
 import { api } from './api';
 
-export const sendFriendInvitation = async (toEmail, limit) => {
+export const sendFriendInvitation = async (toEmail, limit, templateId = 'DONT_GHOST') => {
   try {
-    const response = await api.post('/friendships', { friendEmail: toEmail, limit });
+    const response = await api.post('/friendships', { friendEmail: toEmail, limit, templateId });
     if (response?.requiresSignup) {
       return {
         success: true,
         requiresSignup: true,
         inviteUrl: response.inviteUrl,
         recipientEmail: response.recipientEmail,
+        templateId: response.templateId,
         expiresAt: response.expiresAt
       };
     }
@@ -19,11 +20,14 @@ export const sendFriendInvitation = async (toEmail, limit) => {
 };
 
 export const getUserFriendships = async () => api.get('/friendships');
+export const getContractMeta = async () => api.get('/friendships/meta');
+export const getContractRecap = async (friendshipId) => api.get(`/friendships/${friendshipId}/recap`);
+export const runContractBack = async (friendshipId) => api.post(`/friendships/${friendshipId}/run-it-back`);
 
-export const performCheckin = async (friendshipId) => {
+export const performCheckin = async (friendshipId, source = 'TEXT') => {
   try {
-    const friendship = await api.post(`/friendships/${friendshipId}/checkin`);
-    return { success: true, friendship };
+    const response = await api.post(`/friendships/${friendshipId}/checkin`, { source });
+    return { success: true, friendship: response.friendship || response, game: response.game || null };
   } catch (error) {
     return { success: false, error: error.message };
   }
