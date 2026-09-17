@@ -29,10 +29,18 @@ const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase(
 
 export const YouView = ({ friendships, worldEvent, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
-  const [aura, setAura] = useState({ balance: Number(user.auraBalance) || 0, history: [], totalEarned: 0, totalSpent: 0 });
+  const [aura, setAura] = useState({
+    balance: Number(user.auraBalance) || 0,
+    history: [],
+    totalEarned: 0,
+    totalSpent: 0,
+    reputation: { name: 'Spark', lifetimeEarned: 0, nextRankAt: 250, progress: 0 }
+  });
   const [cards, setCards] = useState([]);
   const [busy, setBusy] = useState(null);
   const [stealTarget, setStealTarget] = useState('');
+  const [signalTarget, setSignalTarget] = useState('');
+  const [chaosTarget, setChaosTarget] = useState('');
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const userId = user.uid || user.id || user._id;
 
@@ -54,6 +62,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
+  const chaosContracts = useMemo(() => friendships.filter((friendship) => friendship.templateId === 'CHAOS' && friendship.status === 'ACTIVE' && !friendship.chaos?.activeEvent), [friendships]);
   const inventory = user.inventory || [];
   const appearsOnShameBoard = !user.privacySettings?.optOutPublicBankruptcy;
   const strongest = useMemo(
@@ -62,6 +71,13 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   );
   const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
   const totalDuoXP = friendships.reduce((sum, item) => sum + (item.duoXP || 0), 0);
+  const reputation = aura.reputation || { name: 'Spark', lifetimeEarned: aura.totalEarned || 0, nextRankAt: null, progress: 0 };
+
+  const partnerName = (friendship) => {
+    const isUser1 = String(friendship.user1?._id || friendship.user1) === String(userId);
+    const friend = isUser1 ? friendship.user2 : friendship.user1;
+    return friend?.displayName || 'Contract partner';
+  };
 
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
@@ -74,9 +90,25 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const useOwnedCard = async (cardId) => {
     if (cardId === 'PURIFY' && !hasDebt) return showToast?.('You do not have any debt to clear', 'ERROR');
     if (cardId === 'STEAL' && !stealTarget) return showToast?.('Choose a bankrupt contract first', 'ERROR');
+    if (cardId === 'SIGNAL_FLARE' && !signalTarget) return showToast?.('Choose a contract for the Signal Flare', 'ERROR');
+    if (cardId === 'CHAOS_TICKET' && !chaosTarget) return showToast?.('Choose a Chaos Contract first', 'ERROR');
+
+    const targetId = cardId === 'STEAL'
+      ? stealTarget
+      : cardId === 'SIGNAL_FLARE'
+        ? signalTarget
+        : cardId === 'CHAOS_TICKET'
+          ? chaosTarget
+          : null;
+
     setBusy(`use-${cardId}`);
-    const result = await useCard(cardId, cardId === 'STEAL' ? stealTarget : null);
+    const result = await useCard(cardId, targetId);
     showToast?.(result.success ? 'Card used' : result.error, result.success ? 'SUCCESS' : 'ERROR');
+    if (result.success) {
+      if (cardId === 'STEAL') setStealTarget('');
+      if (cardId === 'SIGNAL_FLARE') setSignalTarget('');
+      if (cardId === 'CHAOS_TICKET') setChaosTarget('');
+    }
     await refresh();
     setBusy(null);
   };
@@ -111,7 +143,16 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
       {worldEvent && <section className="profile-world-event"><span>LIVE · {worldEvent.theme}</span><strong>{worldEvent.name}</strong><p>{worldEvent.description}</p></section>}
 
       <section className="aura-balance-card">
-        <div><p className="eyebrow">Aura wallet</p><div className="aura-number">{aura.balance}</div><p>Earned {aura.totalEarned} · Spent {aura.totalSpent}</p></div>
+        <div className="aura-wallet-copy">
+          <p className="eyebrow">Aura wallet</p>
+          <div className="aura-number">{aura.balance}</div>
+          <p>Spendable Aura · earned through play</p>
+          <div className="aura-reputation-row">
+            <span><strong>{reputation.name}</strong><small>{reputation.lifetimeEarned} lifetime Aura</small></span>
+            <span className="aura-rank-progress" aria-label={`${reputation.progress || 0}% to next Aura rank`}><i style={{ width: `${reputation.progress || 0}%` }} /></span>
+            <small>{reputation.nextRankAt ? `${reputation.nextRankAt - reputation.lifetimeEarned} to next rank` : 'Top Aura rank'}</small>
+          </div>
+        </div>
         <Zap size={28} strokeWidth={1.6} />
       </section>
 
@@ -122,18 +163,34 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
             {[...new Set(inventory)].map((cardId) => {
               const card = cards.find((item) => item.id === cardId) || { id: cardId, name: typeLabel(cardId), description: '' };
               const count = inventory.filter((item) => item === cardId).length;
-              const disabled = cardId === 'PURIFY' ? !hasDebt : cardId === 'STEAL' ? bankrupt.length === 0 || !stealTarget : false;
+              const disabled = cardId === 'PURIFY'
+                ? !hasDebt
+                : cardId === 'STEAL'
+                  ? bankrupt.length === 0 || !stealTarget
+                  : cardId === 'SIGNAL_FLARE'
+                    ? friendships.length === 0 || !signalTarget
+                    : cardId === 'CHAOS_TICKET'
+                      ? chaosContracts.length === 0 || !chaosTarget
+                      : false;
               return (
                 <article className="inventory-card" key={cardId}>
                   <div className="inventory-copy"><strong>{card.name}</strong><span>{count} owned</span></div>
                   {cardId === 'STEAL' && (
                     <select value={stealTarget} onChange={(event) => setStealTarget(event.target.value)} aria-label="Choose bankrupt contract">
                       <option value="">{bankrupt.length ? 'Choose target' : 'No bankrupt partners'}</option>
-                      {bankrupt.map((friendship) => {
-                        const isUser1 = String(friendship.user1?._id || friendship.user1) === String(userId);
-                        const friend = isUser1 ? friendship.user2 : friendship.user1;
-                        return <option key={friendship._id} value={friendship._id}>{friend?.displayName || 'Contract partner'}</option>;
-                      })}
+                      {bankrupt.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
+                    </select>
+                  )}
+                  {cardId === 'SIGNAL_FLARE' && (
+                    <select value={signalTarget} onChange={(event) => setSignalTarget(event.target.value)} aria-label="Choose contract for Signal Flare">
+                      <option value="">{friendships.length ? 'Choose contract' : 'No active contracts'}</option>
+                      {friendships.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
+                    </select>
+                  )}
+                  {cardId === 'CHAOS_TICKET' && (
+                    <select value={chaosTarget} onChange={(event) => setChaosTarget(event.target.value)} aria-label="Choose Chaos Contract">
+                      <option value="">{chaosContracts.length ? 'Choose Chaos Contract' : 'No ready Chaos Contract'}</option>
+                      {chaosContracts.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
                     </select>
                   )}
                   {cardId === 'PURIFY' && !hasDebt && <span className="inventory-hint">No debt to clear</span>}
