@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 
 const smtpPort = Number(process.env.SMTP_PORT) || 587;
 const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
-const fromAddress = process.env.EMAIL_FROM || '"Hakoware" <hakoware265@gmail.com>';
+const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
 
 const transporter = nodemailer.createTransport({
   pool: true,
