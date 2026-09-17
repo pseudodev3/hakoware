@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Bell, Home, LogOut, Plus, Swords, Users, UserRound } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, Home, LogOut, Moon, Plus, Sun, Swords, Users, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
 import './Layout.css';
@@ -11,12 +11,34 @@ const NAV_ITEMS = [
   { id: 'you', label: 'You', icon: UserRound }
 ];
 
+const initialTheme = () => localStorage.getItem('hakoware_theme') === 'light' ? 'light' : 'dark';
+
+const applyTheme = (nextTheme) => {
+  const root = document.documentElement;
+  const guard = document.createElement('style');
+  guard.dataset.themeTransitionGuard = 'true';
+  guard.textContent = '*,*::before,*::after{transition:none!important}';
+  document.head.appendChild(guard);
+  root.dataset.theme = nextTheme;
+  root.style.colorScheme = nextTheme;
+  localStorage.setItem('hakoware_theme', nextTheme);
+  void root.offsetHeight;
+  requestAnimationFrame(() => requestAnimationFrame(() => guard.remove()));
+};
+
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [theme, setTheme] = useState(initialTheme);
   const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
   const totalBadge = unreadCount + pendingInvitations.length;
+
+  useEffect(() => { applyTheme(theme); }, [theme]);
+
+  const toggleTheme = () => setTheme((current) => current === 'dark' ? 'light' : 'dark');
+  const ThemeIcon = theme === 'dark' ? Sun : Moon;
+  const themeLabel = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
 
   return (
     <div className="app-layout">
@@ -24,6 +46,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         <div className="sidebar-brand">
           <img className="brand-mark" src="/hakoware-mark.svg" alt="" />
           <span>Hakoware</span>
+          <span className="brand-status">LIVE</span>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
@@ -42,7 +65,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
 
         <div className="sidebar-footer">
           <button className="new-contract-btn" onClick={onAddFriend}>
-            <Plus size={18} strokeWidth={1.9} />
+            <Plus size={18} strokeWidth={2} />
             <span>New contract</span>
           </button>
 
@@ -54,10 +77,16 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
             </span>
           </button>
 
-          <button className="logout-btn" onClick={logout} aria-label="Sign out">
-            <LogOut size={17} strokeWidth={1.8} />
-            <span>Sign out</span>
-          </button>
+          <div className="sidebar-utility-row">
+            <button className="utility-btn" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
+              <ThemeIcon size={17} strokeWidth={1.8} />
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            </button>
+            <button className="logout-btn" onClick={logout} aria-label="Sign out">
+              <LogOut size={17} strokeWidth={1.8} />
+              <span>Sign out</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -65,12 +94,17 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         <header className="content-header">
           <div className="mobile-brand">
             <img src="/hakoware-mark.svg" alt="" />
-            <span>{currentLabel}</span>
+            <div><strong>Hakoware</strong><span>{currentLabel}</span></div>
           </div>
-          <button className="notification-btn" onClick={() => setShowNotifications(true)} aria-label="Open notifications">
-            <Bell size={19} strokeWidth={1.8} />
-            {totalBadge > 0 && <span className="notification-badge">{totalBadge > 99 ? '99+' : totalBadge}</span>}
-          </button>
+          <div className="header-actions">
+            <button className="theme-btn" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
+              <ThemeIcon size={18} strokeWidth={1.8} />
+            </button>
+            <button className="notification-btn" onClick={() => setShowNotifications(true)} aria-label="Open notifications">
+              <Bell size={19} strokeWidth={1.8} />
+              {totalBadge > 0 && <span className="notification-badge">{totalBadge > 99 ? '99+' : totalBadge}</span>}
+            </button>
+          </div>
         </header>
 
         <div className="scroll-content">{children}</div>
