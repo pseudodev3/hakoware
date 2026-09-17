@@ -24,7 +24,7 @@ const isJoinLink = () => new URLSearchParams(window.location.search).get('join')
 function MainApp({ showToast }) {
   const { user, isAuthenticated, refreshUser } = useAuth();
   const joining = isJoinLink();
-  const [hasEntered, setHasEntered] = useState(() => joining || localStorage.getItem('hakoware_visited') === 'true');
+  const [hasEntered, setHasEntered] = useState(joining);
   const [activeTab, setActiveTab] = useState('home');
   const [friendships, setFriendships] = useState([]);
   const [pendingReceived, setPendingReceived] = useState([]);
@@ -85,16 +85,17 @@ function MainApp({ showToast }) {
     setSelectedFriendship(null);
   };
 
-  const handleEnter = () => {
-    localStorage.setItem('hakoware_visited', 'true');
-    setHasEntered(true);
+  const handleEnter = () => setHasEntered(true);
+  const handleBackToLanding = () => {
+    setShowSignup(false);
+    setHasEntered(false);
   };
 
   if (!isAuthenticated) {
     if (!hasEntered) return <LandingPage onEnter={handleEnter} />;
     return showSignup
-      ? <Signup onToggle={() => setShowSignup(false)} showToast={showToast} />
-      : <Login onToggle={() => setShowSignup(true)} showToast={showToast} />;
+      ? <Signup onToggle={() => setShowSignup(false)} onBack={handleBackToLanding} showToast={showToast} />
+      : <Login onToggle={() => setShowSignup(true)} onBack={handleBackToLanding} showToast={showToast} />;
   }
 
   return (
