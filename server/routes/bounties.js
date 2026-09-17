@@ -6,9 +6,11 @@ const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
+const { expireStaleBounties } = require('../services/bountyEscrow');
 
 router.post('/', auth, async (req, res) => {
   try {
+    await expireStaleBounties();
     const amount = Number(req.body.amount);
     if (!Number.isInteger(amount) || amount < 10 || amount > 500) {
       return res.status(400).json({ msg: 'Bounty must be between 10 and 500 Aura' });
@@ -75,7 +77,11 @@ router.post('/', auth, async (req, res) => {
 
 router.get('/active', auth, async (req, res) => {
   try {
-    const bounties = await Bounty.find({ status: { $in: ['ACTIVE', 'HUNTING'] } })
+    await expireStaleBounties();
+    const bounties = await Bounty.find({
+      status: { $in: ['ACTIVE', 'HUNTING'] },
+      expiresAt: { $gt: new Date() }
+    })
       .sort({ createdAt: -1 })
       .limit(100);
     return res.json(bounties);
@@ -87,19 +93,22 @@ router.get('/active', auth, async (req, res) => {
 
 router.post('/:id/hunt', auth, async (req, res) => {
   try {
-    const bounty = await Bounty.findById(req.params.id);
-    if (!bounty) return res.status(404).json({ msg: 'Bounty not found' });
-    if (bounty.status !== 'ACTIVE') return res.status(400).json({ msg: 'Bounty is no longer open' });
-    if (bounty.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt your own bounty' });
-    if (bounty.senderId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you placed' });
+    await expireStaleBounties();
+    const existing = await Bounty.findById(req.params.id);
+    if (!existing) return res.status(404).json({ msg: 'Bounty not found' });
+    if (existing.status !== 'ACTIVE') return res.status(400).json({ msg: 'Bounty is no longer open' });
+    if (existing.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty on yourself' });
+    if (existing.senderId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you placed' });
 
-    const hunter = await User.findById(req.user.id);
+    const hunter = await User.findById(req.user.id).select('_id displayName');
     if (!hunter) return res.status(404).json({ msg: 'User not found' });
 
-    bounty.status = 'HUNTING';
-    bounty.hunterId = hunter._id;
-    bounty.hunterName = hunter.displayName;
-    await bounty.save();
+    const bounty = await Bounty.findOneAndUpdate(
+      { _id: existing._id, status: 'ACTIVE', expiresAt: { $gt: new Date() } },
+      { $set: { status: 'HUNTING', hunterId: hunter._id, hunterName: hunter.displayName } },
+      { new: true }
+    );
+    if (!bounty) return res.status(409).json({ msg: 'Another hunter already picked up this bounty' });
 
     await Notification.create({
       toUserId: bounty.targetId,
