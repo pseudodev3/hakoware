@@ -38,15 +38,21 @@ function MainApp({ showToast }) {
     if (!isAuthenticated || !user) return;
 
     try {
-      const oldBalance = user.auraBalance || 0;
-      const [contracts] = await Promise.all([getUserFriendships(), getUserAura()]);
+      const oldBalance = Number(user.auraBalance) || 0;
+      const contracts = await getUserFriendships();
       setFriendships(contracts.active || []);
       setPendingReceived(contracts.pendingReceived || []);
       setPendingSent(contracts.pendingSent || []);
       setPendingExternal(contracts.pendingExternal || []);
 
+      try {
+        await getUserAura();
+      } catch (auraError) {
+        console.error('Aura summary sync failed:', auraError);
+      }
+
       const refreshed = await refreshUser();
-      const nextBalance = refreshed.user?.auraBalance ?? oldBalance;
+      const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
       if (nextBalance > oldBalance) {
         showToast(`+${nextBalance - oldBalance} Aura for keeping your contracts clean`, 'SUCCESS');
       }
