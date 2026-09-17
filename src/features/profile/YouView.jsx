@@ -56,9 +56,12 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
   const inventory = user.inventory || [];
   const appearsOnShameBoard = !user.privacySettings?.optOutPublicBankruptcy;
-  const strongest = useMemo(() => friendships.reduce((best, item) => (item.duoLevel || 1) > (best?.duoLevel || 0) ? item : best, null), [friendships]);
+  const strongest = useMemo(
+    () => friendships.reduce((best, item) => ((item.duoLevel || 1) > (best?.duoLevel || 0) ? item : best), null),
+    [friendships]
+  );
   const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
-  const totalDuoXP = friendships.reduce((sum, item) => sum + (item.duoXP || 0), 0;
+  const totalDuoXP = friendships.reduce((sum, item) => sum + (item.duoXP || 0), 0);
 
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
