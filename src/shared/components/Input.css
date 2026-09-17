@@ -42,8 +42,6 @@
 
 .input-wrapper:has(.input-icon) .input-field { padding-left: 44px; }
 
-.input-field:hover { border-color: var(--border-active); }
-
 .input-field:focus {
   outline: none;
   background: rgba(247,244,236,.05);
@@ -54,3 +52,7 @@
 .input-field::placeholder { color: var(--text-faint); }
 .has-error .input-field { border-color: rgba(255,116,123,.58); }
 .input-error-msg { font-size: .72rem; color: var(--aura-red); font-weight: 550; }
+
+@media (hover: hover) and (pointer: fine) {
+  .input-field:hover { border-color: var(--border-active); }
+}
