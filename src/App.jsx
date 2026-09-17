@@ -96,6 +96,7 @@ function MainApp({ showToast }) {
           user={user}
           friendships={friendships}
           pendingInvitations={pendingReceived}
+          pendingOutboundCount={pendingSent.length + pendingExternal.length}
           onAction={handleAction}
           onAddFriend={() => setModalType('ADD_FRIEND')}
           onNavigate={setActiveTab}
