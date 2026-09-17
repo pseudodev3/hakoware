@@ -24,9 +24,13 @@ export const getContractMeta = async () => api.get('/friendships/meta');
 export const getContractRecap = async (friendshipId) => api.get(`/friendships/${friendshipId}/recap`);
 export const runContractBack = async (friendshipId) => api.post(`/friendships/${friendshipId}/run-it-back`);
 
-export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null) => {
+export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null, bountyDecision = null) => {
   try {
-    const response = await api.post(`/friendships/${friendshipId}/checkin`, { source, bountyCreditId });
+    const response = await api.post(`/friendships/${friendshipId}/checkin`, {
+      source,
+      bountyCreditId,
+      bountyDecision
+    });
     return {
       success: true,
       friendship: response.friendship || response,
