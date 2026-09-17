@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/aura/use-card', { cardId, targetFriendshipId });
       setUser((current) => current ? { ...current, auraBalance: res.balance ?? current.auraBalance, inventory: res.inventory } : current);
-      return { success: true };
+      return { success: true, effect: res.effect || null };
     } catch (error) {
       return { success: false, error: error.message };
     }
