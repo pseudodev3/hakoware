@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lock, Mail, Moon, Sun, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
 import { ForgotPasswordModal } from './components/ForgotPasswordModal';
@@ -16,7 +17,40 @@ const AuthBrand = ({ eyebrow, title, description }) => (
   </div>
 );
 
-export const Login = ({ onToggle, showToast }) => {
+const AuthShell = ({ children, onBack }) => {
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  const ThemeIcon = theme === 'dark' ? Sun : Moon;
+  const themeLabel = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
+
+  return (
+    <div className="auth-container">
+      <div className="auth-orbit" aria-hidden="true" />
+      <div className="auth-toolbar">
+        <button type="button" className="auth-toolbar-button auth-back" onClick={onBack}>
+          <ArrowLeft size={16} strokeWidth={1.8} />
+          <span>Home</span>
+        </button>
+        <button
+          type="button"
+          className="auth-toolbar-button auth-theme-toggle"
+          onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+          aria-label={themeLabel}
+          title={themeLabel}
+        >
+          <ThemeIcon size={17} strokeWidth={1.8} />
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+};
+
+export const Login = ({ onToggle, onBack, showToast }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +65,7 @@ export const Login = ({ onToggle, showToast }) => {
     try {
       const result = await login(email, password);
       if (!result.success) setError(result.error || 'Could not sign you in.');
-    } catch (err) {
+    } catch {
       setError('Hakoware could not reach the server.');
     } finally {
       setLoading(false);
@@ -39,8 +73,7 @@ export const Login = ({ onToggle, showToast }) => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-orbit" aria-hidden="true" />
+    <AuthShell onBack={onBack}>
       <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
         <AuthBrand eyebrow="Hakoware" title="Welcome back" description="Your contracts, Aura and unfinished business are right where you left them." />
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -52,14 +85,14 @@ export const Login = ({ onToggle, showToast }) => {
           </div>
           <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Enter Hakoware</Button>
         </form>
-        <div className="auth-footer"><p>New here? <button onClick={onToggle}>Create an account</button></p></div>
+        <div className="auth-footer"><p>New here? <button type="button" onClick={onToggle}>Create an account</button></p></div>
       </motion.div>
       <ForgotPasswordModal isOpen={showForgot} onClose={() => setShowForgot(false)} showToast={showToast} />
-    </div>
+    </AuthShell>
   );
 };
 
-export const Signup = ({ onToggle }) => {
+export const Signup = ({ onToggle, onBack }) => {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,7 +107,7 @@ export const Signup = ({ onToggle }) => {
     try {
       const result = await signup(email, password, displayName);
       if (!result.success) setError(result.error || 'Could not create your account.');
-    } catch (err) {
+    } catch {
       setError('Hakoware could not complete registration.');
     } finally {
       setLoading(false);
@@ -82,8 +115,7 @@ export const Signup = ({ onToggle }) => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-orbit" aria-hidden="true" />
+    <AuthShell onBack={onBack}>
       <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
         <AuthBrand eyebrow="Create your ID" title="Start a contract" description="Pick a name, bring a friend, then decide how long silence gets to stay free." />
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -93,8 +125,8 @@ export const Signup = ({ onToggle }) => {
           <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
           <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Create account</Button>
         </form>
-        <div className="auth-footer"><p>Already have an account? <button onClick={onToggle}>Log in</button></p></div>
+        <div className="auth-footer"><p>Already have an account? <button type="button" onClick={onToggle}>Log in</button></p></div>
       </motion.div>
-    </div>
+    </AuthShell>
   );
 };
