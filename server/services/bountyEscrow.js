@@ -2,6 +2,7 @@ const Bounty = require('../models/Bounty');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
+const { recordEvent } = require('./contractGame');
 
 const refundBounty = async (bounty, reason) => {
   const closed = await Bounty.findOneAndUpdate(
@@ -18,6 +19,11 @@ const refundBounty = async (bounty, reason) => {
     type: 'BOUNTY_REFUND',
     description: `${reason}: ${closed.targetName}`
   });
+  await recordEvent(closed.friendshipId, 'BOUNTY_REFUND', {
+    userId: closed.senderId,
+    aura: closed.amount,
+    metadata: { amount: closed.amount, targetId: closed.targetId, targetName: closed.targetName, reason }
+  }).catch(() => null);
   await Notification.create({
     toUserId: closed.senderId,
     type: 'BOUNTY_REFUND',
@@ -46,6 +52,11 @@ const payHuntedBounty = async (bounty) => {
     type: 'BOUNTY_REWARD',
     description: `Bounty resolved after ${claimed.targetName} checked in`
   });
+  await recordEvent(claimed.friendshipId, 'BOUNTY_REWARD', {
+    userId: hunter._id,
+    aura: claimed.amount,
+    metadata: { amount: claimed.amount, targetId: claimed.targetId, targetName: claimed.targetName }
+  }).catch(() => null);
   await Notification.create({
     toUserId: hunter._id,
     type: 'BOUNTY_REWARD',
