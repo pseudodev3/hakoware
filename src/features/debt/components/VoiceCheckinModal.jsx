@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, Pause, Play, ShieldCheck, StopCircle, Target, Trash2 } from 'lucide-react';
+import { AlertTriangle, Mic, Pause, Play, ShieldCheck, StopCircle, Target, Trash2 } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
@@ -15,6 +15,8 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bounty, setBounty] = useState(null);
+  const [bountyLoading, setBountyLoading] = useState(false);
+  const [bountySyncError, setBountySyncError] = useState(false);
   const [creditHunter, setCreditHunter] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -41,9 +43,13 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     const loadBounty = async () => {
       if (!isOpen || !friendship) {
         setBounty(null);
+        setBountyLoading(false);
+        setBountySyncError(false);
         setCreditHunter(false);
         return;
       }
+      setBountyLoading(true);
+      setBountySyncError(false);
       try {
         const result = await getContractBounty(friendship._id || friendship.id);
         if (active) {
@@ -51,7 +57,12 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
           setCreditHunter(false);
         }
       } catch {
-        if (active) setBounty(null);
+        if (active) {
+          setBounty(null);
+          setBountySyncError(true);
+        }
+      } finally {
+        if (active) setBountyLoading(false);
       }
     };
     loadBounty();
@@ -130,8 +141,14 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
   const handleSubmit = async () => {
     if (!audioBlob || !friendship) return;
+    if (bountyLoading) return showToast?.('Arena state is still syncing', 'ERROR');
+    if (bountySyncError) return showToast?.('Could not verify the live bounty. Close and reopen this voice check-in.', 'ERROR');
+
     setLoading(true);
     const contractId = friendship._id || friendship.id;
+    const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
+    const bountyCreditId = creditHunter && pressureReady ? bounty._id : null;
+    const bountyDecision = pressureReady ? (creditHunter ? 'CREDIT' : 'ESCAPE') : null;
 
     const voice = await sendVoiceNote(contractId, audioBlob, recordingTime);
     if (!voice.success) {
@@ -140,8 +157,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       return;
     }
 
-    const bountyCreditId = creditHunter && bounty?.status === 'PRESSURE_SENT' ? bounty._id : null;
-    const checkin = await performCheckin(contractId, 'VOICE', bountyCreditId);
+    const checkin = await performCheckin(contractId, 'VOICE', bountyCreditId, bountyDecision);
     if (checkin.success) {
       const xp = checkin.game?.xp;
       const chaos = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
@@ -168,6 +184,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
   const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
   const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
+  const proofBlocked = bountyLoading || bountySyncError;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Voice check-in with ${friend.displayName}`} size="md">
@@ -179,7 +196,14 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
           </div>
         )}
 
-        {hasOpenBounty && (
+        {bountySyncError && (
+          <div className="voice-bounty-proof sync-error">
+            <div className="voice-bounty-icon"><AlertTriangle size={18} /></div>
+            <div className="voice-bounty-copy"><span>ARENA SYNC FAILED</span><strong>Proof state could not be verified.</strong><p>Close and reopen before sending so no hunter credit or escape happens by accident.</p></div>
+          </div>
+        )}
+
+        {hasOpenBounty && !bountySyncError && (
           <div className={`voice-bounty-proof ${pressureReady ? 'pressure-ready' : ''}`}>
             <div className="voice-bounty-icon">{pressureReady ? <ShieldCheck size={18} /> : <Target size={18} />}</div>
             <div className="voice-bounty-copy">
@@ -227,7 +251,9 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
         <div className="voice-actions">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="aura" disabled={!audioBlob} loading={loading} onClick={handleSubmit}>{pressureReady && creditHunter ? `Send & credit ${bounty.hunterName}` : hasOpenBounty ? 'Send & escape bounty' : 'Send voice check-in'}</Button>
+          <Button variant="aura" disabled={!audioBlob || proofBlocked} loading={loading || bountyLoading} onClick={handleSubmit}>
+            {bountyLoading ? 'Syncing Arena…' : pressureReady && creditHunter ? `Send & credit ${bounty.hunterName}` : hasOpenBounty ? 'Send & escape bounty' : 'Send voice check-in'}
+          </Button>
         </div>
       </div>
     </Modal>
