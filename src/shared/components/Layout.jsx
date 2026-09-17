@@ -1,213 +1,94 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import {
-  LayoutDashboard,
-  Users,
-  Award,
-  Trophy,
-  Wallet,
-  Bell,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Skull,
-  Menu,
-  X
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Home, LogOut, Plus, Swords, Users, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
-import { ProfileModal } from './ProfileModal';
 import './Layout.css';
 
-export const Layout = ({ children, activeTab, onTabChange, onAddFriend, className = '', pendingInvitations = [], onRefresh, showToast }) => {
+const NAV_ITEMS = [
+  { id: 'home', label: 'Home', icon: Home },
+  { id: 'contracts', label: 'Contracts', icon: Users },
+  { id: 'arena', label: 'Arena', icon: Swords },
+  { id: 'you', label: 'You', icon: UserRound }
+];
+
+export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
   const { user, logout } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const shouldReduceMotion = useReducedMotion();
-
-  const navItems = [
-    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-    { id: 'friends', label: 'Friends', icon: Users },
-    { id: 'achievements', label: 'Achievements', icon: Award },
-    { id: 'arena', label: 'Arena', icon: Trophy },
-    { id: 'shame', label: 'Shame Board', icon: Skull },
-    { id: 'wallet', label: 'Aura Wallet', icon: Wallet },
-  ];
-
-  const primaryMobileNav = navItems.filter(item => ['dashboard', 'friends', 'arena', 'wallet'].includes(item.id));
-
-  useEffect(() => {
-    if (!showMobileMenu) return undefined;
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setShowMobileMenu(false);
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showMobileMenu]);
-
-  const handleTabClick = (id) => {
-    onTabChange(id);
-    setShowMobileMenu(false);
-  };
-
-  const currentLabel = navItems.find(item => item.id === activeTab)?.label || 'Hakoware';
-  const mobileMenuMotion = shouldReduceMotion
-    ? {
-        initial: { opacity: 0, transform: 'translateY(0) scale(1)' },
-        animate: { opacity: 1, transform: 'translateY(0) scale(1)' },
-        exit: { opacity: 0, transform: 'translateY(0) scale(1)' },
-        transition: { duration: .14, ease: [0.2, 0, 0, 1] }
-      }
-    : {
-        initial: { opacity: 0, transform: 'translateY(12px) scale(.985)' },
-        animate: { opacity: 1, transform: 'translateY(0) scale(1)' },
-        exit: { opacity: 0, transform: 'translateY(6px) scale(.99)' },
-        transition: { type: 'spring', duration: .3, bounce: 0 }
-      };
+  const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
+  const totalBadge = unreadCount + pendingInvitations.length;
 
   return (
-    <div className={`app-layout ${collapsed ? 'collapsed' : ''} ${className}`}>
+    <div className="app-layout">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-container">
-            <img className="brand-mark" src="/hakoware-mark.svg" alt="" />
-            {!collapsed && <span className="logo-text">Hakoware</span>}
-          </div>
-          <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            {collapsed ? <ChevronRight size={16} strokeWidth={1.8} /> : <ChevronLeft size={16} strokeWidth={1.8} />}
-          </button>
+        <div className="sidebar-brand">
+          <img className="brand-mark" src="/hakoware-mark.svg" alt="" />
+          <span>Hakoware</span>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
               className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => handleTabClick(item.id)}
+              onClick={() => onTabChange(item.id)}
               aria-current={activeTab === item.id ? 'page' : undefined}
-              title={collapsed ? item.label : undefined}
             >
-              <item.icon size={19} strokeWidth={1.7} className="nav-icon" />
-              {!collapsed && <span>{item.label}</span>}
-              {activeTab === item.id && <span className="nav-pill" aria-hidden="true" />}
+              <item.icon size={19} strokeWidth={1.8} />
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <button className="add-friend-btn" onClick={onAddFriend} title={collapsed ? 'Add friend' : undefined}>
-            <Plus size={18} strokeWidth={1.8} />
-            {!collapsed && <span>New contract</span>}
+          <button className="new-contract-btn" onClick={onAddFriend}>
+            <Plus size={18} strokeWidth={1.9} />
+            <span>New contract</span>
           </button>
 
-          <div className="user-profile">
-            <button className="profile-trigger" onClick={() => setShowProfile(true)} title={collapsed ? user?.displayName : undefined}>
-              <div className="user-avatar">{user?.displayName?.[0]?.toUpperCase() || 'U'}</div>
-              {!collapsed && (
-                <div className="user-info">
-                  <p className="user-name">{user?.displayName}</p>
-                  <p className="user-aura">{user?.auraBalance || 0} Aura</p>
-                </div>
-              )}
-            </button>
-            {!collapsed && (
-              <button className="logout-btn" onClick={logout} aria-label="Sign out">
-                <LogOut size={16} strokeWidth={1.8} />
-              </button>
-            )}
-          </div>
+          <button className="sidebar-user" onClick={() => onTabChange('you')} aria-label="Open your profile">
+            <span className="sidebar-avatar">{user?.displayName?.[0]?.toUpperCase() || 'U'}</span>
+            <span className="sidebar-user-copy">
+              <strong>{user?.displayName}</strong>
+              <small>{user?.auraBalance || 0} Aura</small>
+            </span>
+          </button>
+
+          <button className="logout-btn" onClick={logout} aria-label="Sign out">
+            <LogOut size={17} strokeWidth={1.8} />
+            <span>Sign out</span>
+          </button>
         </div>
       </aside>
 
       <main className="content-container">
         <header className="content-header">
-          <div className="header-title">
-            <p>Hakoware / active</p>
-            <h2>{currentLabel}</h2>
+          <div className="mobile-brand">
+            <img src="/hakoware-mark.svg" alt="" />
+            <span>{currentLabel}</span>
           </div>
-          <div className="header-actions">
-            <button className="icon-btn" onClick={() => setShowNotifications(true)} aria-label="Open notifications">
-              <Bell size={19} strokeWidth={1.8} />
-              {(unreadCount > 0 || pendingInvitations.length > 0) && (
-                <span className="badge">{unreadCount + pendingInvitations.length}</span>
-              )}
-            </button>
-          </div>
+          <button className="notification-btn" onClick={() => setShowNotifications(true)} aria-label="Open notifications">
+            <Bell size={19} strokeWidth={1.8} />
+            {totalBadge > 0 && <span className="notification-badge">{totalBadge > 99 ? '99+' : totalBadge}</span>}
+          </button>
         </header>
+
         <div className="scroll-content">{children}</div>
       </main>
 
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        {primaryMobileNav.map((item) => (
+      <nav className="mobile-nav" aria-label="Main navigation">
+        {NAV_ITEMS.map((item) => (
           <button
             key={item.id}
             className={`mobile-nav-item ${activeTab === item.id ? 'active' : ''}`}
-            onClick={() => handleTabClick(item.id)}
+            onClick={() => onTabChange(item.id)}
             aria-current={activeTab === item.id ? 'page' : undefined}
           >
-            <item.icon className="nav-icon" strokeWidth={1.8} />
-            <span>{item.label.split(' ')[0]}</span>
+            <item.icon className="nav-icon" size={20} strokeWidth={1.8} />
+            <span>{item.label}</span>
           </button>
         ))}
-        <button
-          className={`mobile-nav-item ${showMobileMenu ? 'active' : ''}`}
-          onClick={() => setShowMobileMenu(value => !value)}
-          aria-expanded={showMobileMenu}
-          aria-controls="mobile-more-menu"
-        >
-          <Menu className="nav-icon" strokeWidth={1.8} />
-          <span>More</span>
-        </button>
       </nav>
-
-      <AnimatePresence initial={false}>
-        {showMobileMenu && (
-          <motion.div
-            id="mobile-more-menu"
-            className="mobile-full-menu"
-            role="dialog"
-            aria-label="More navigation"
-            {...mobileMenuMotion}
-          >
-            <div className="mobile-menu-header">
-              <button className="mobile-profile" onClick={() => { setShowProfile(true); setShowMobileMenu(false); }}>
-                <div className="user-avatar">{user?.displayName?.[0]?.toUpperCase() || 'U'}</div>
-                <div className="user-info">
-                  <p className="user-name">{user?.displayName}</p>
-                  <p className="user-aura">{user?.auraBalance || 0} Aura</p>
-                </div>
-              </button>
-              <button className="close-menu-btn" onClick={() => setShowMobileMenu(false)} aria-label="Close menu">
-                <X size={22} strokeWidth={1.8} />
-              </button>
-            </div>
-
-            <div className="mobile-menu-content">
-              {navItems.filter(item => !['dashboard', 'friends', 'arena', 'wallet'].includes(item.id)).map(item => (
-                <button key={item.id} className={`mobile-menu-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => handleTabClick(item.id)}>
-                  <item.icon size={19} strokeWidth={1.8} />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-              <div className="mobile-menu-divider" />
-              <button className="mobile-menu-item action" onClick={() => { onAddFriend(); setShowMobileMenu(false); }}>
-                <Plus size={19} strokeWidth={1.8} />
-                <span>New contract</span>
-              </button>
-              <button className="mobile-menu-item danger" onClick={() => { logout(); setShowMobileMenu(false); }}>
-                <LogOut size={19} strokeWidth={1.8} />
-                <span>Sign out</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <NotificationsPanel
         isOpen={showNotifications}
@@ -217,8 +98,6 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, classNam
         onRefresh={onRefresh}
         showToast={showToast}
       />
-
-      <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
     </div>
   );
 };
