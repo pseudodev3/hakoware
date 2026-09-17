@@ -12,6 +12,7 @@ export const VoiceNotesInbox = () => {
   const [playbackError, setPlaybackError] = useState('');
   const audioPlayerRef = useRef(new Audio());
   const objectUrlRef = useRef(null);
+  const activeNoteIdRef = useRef(null);
 
   const loadNotes = async () => {
     setLoading(true);
@@ -20,6 +21,7 @@ export const VoiceNotesInbox = () => {
       setNotes(data || []);
     } catch (error) {
       console.error('Failed to load voice notes:', error);
+      setPlaybackError('Could not sync voice notes.');
     } finally {
       setLoading(false);
     }
@@ -29,10 +31,15 @@ export const VoiceNotesInbox = () => {
     loadNotes();
 
     const player = audioPlayerRef.current;
-    const handleEnded = () => {
+    const handleEnded = async () => {
       setIsPlaying(false);
-      const note = notes.find(item => item.id === activeNoteId);
-      if (note && !note.listened) handleMarkListened(note.id);
+      const id = activeNoteIdRef.current;
+      if (!id) return;
+
+      const result = await markVoiceNoteListened(id);
+      if (result.success) {
+        setNotes((previous) => previous.map((note) => note.id === id ? { ...note, listened: true } : note));
+      }
     };
 
     player.addEventListener('ended', handleEnded);
@@ -41,7 +48,7 @@ export const VoiceNotesInbox = () => {
       player.removeEventListener('ended', handleEnded);
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
-  }, [activeNoteId, notes]);
+  }, []);
 
   const togglePlay = async (note) => {
     const player = audioPlayerRef.current;
@@ -70,6 +77,7 @@ export const VoiceNotesInbox = () => {
       const objectUrl = URL.createObjectURL(blob);
       objectUrlRef.current = objectUrl;
       player.src = objectUrl;
+      activeNoteIdRef.current = note.id;
       setActiveNoteId(note.id);
       await player.play();
       setIsPlaying(true);
@@ -83,7 +91,7 @@ export const VoiceNotesInbox = () => {
   const handleMarkListened = async (id) => {
     const result = await markVoiceNoteListened(id);
     if (result.success) {
-      setNotes(previous => previous.map(note => note.id === id ? { ...note, listened: true } : note));
+      setNotes((previous) => previous.map((note) => note.id === id ? { ...note, listened: true } : note));
     }
   };
 
@@ -116,7 +124,7 @@ export const VoiceNotesInbox = () => {
             <p>No voice notes yet.</p>
           </div>
         ) : (
-          notes.map(note => {
+          notes.map((note) => {
             const active = activeNoteId === note.id;
             return (
               <article key={note.id} className={`note-card ${note.listened ? 'listened' : 'unread'}`}>
