@@ -108,22 +108,22 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     setLoading(true);
     const contractId = friendship._id || friendship.id;
 
-    const checkin = await performCheckin(contractId);
-    if (!checkin.success) {
-      showToast?.(checkin.error || 'Could not check in', 'ERROR');
-      setLoading(false);
-      return;
-    }
-
     const voice = await sendVoiceNote(contractId, audioBlob, recordingTime);
     if (!voice.success) {
-      showToast?.(`Check-in saved, but voice upload failed: ${voice.error}`, 'ERROR');
-      await onRefresh?.();
+      showToast?.(voice.error || 'Could not upload the voice check-in', 'ERROR');
       setLoading(false);
       return;
     }
 
-    showToast?.(`Voice check-in sent to ${friend?.displayName || 'your friend'}`, 'SUCCESS');
+    const checkin = await performCheckin(contractId);
+    if (checkin.success) {
+      showToast?.(`Voice check-in sent to ${friend?.displayName || 'your friend'}`, 'SUCCESS');
+    } else if (String(checkin.error || '').toLowerCase().includes('already checked in')) {
+      showToast?.('Voice sent · today’s check-in was already recorded', 'SUCCESS');
+    } else {
+      showToast?.(`Voice sent, but the check-in was not recorded: ${checkin.error || 'unknown error'}`, 'ERROR');
+    }
+
     await onRefresh?.();
     deleteRecording();
     onClose?.();
@@ -138,7 +138,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       <div className="voice-modal-content">
         <div className="voice-header">
           <div className={`mic-status ${isRecording ? 'active' : ''}`}><Mic size={22} strokeWidth={1.8} /></div>
-          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready to send' : 'Say something real.'}</strong><p>{audioUrl ? 'Listen back or send it.' : 'Up to 60 seconds. Sending it also counts as today’s check-in.'}</p></div>
+          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready to send' : 'Say something real.'}</strong><p>{audioUrl ? 'Listen back or send it.' : 'Up to 60 seconds. Sending it also records today’s check-in when eligible.'}</p></div>
         </div>
 
         <div className="recording-area">
