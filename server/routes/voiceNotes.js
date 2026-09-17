@@ -64,13 +64,6 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
       voiceNoteId: voiceNote._id
     });
 
-    const user = await User.findById(req.user.id);
-    if (user) {
-      user.examTasks.voiceNoteSent = true;
-      user.hunterLicense = Boolean(user.examTasks.nenTypeSet && user.examTasks.friendAdded);
-      await user.save();
-    }
-
     return res.status(201).json(voiceNote);
   } catch (err) {
     console.error('Voice note upload failed:', err.message);
