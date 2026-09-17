@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Friendship = require('../models/Friendship');
+const PendingInvite = require('../models/PendingInvite');
 const AuraTransaction = require('../models/AuraTransaction');
 const auth = require('../middleware/auth');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
@@ -43,6 +45,36 @@ router.post('/signup', async (req, res) => {
       type: 'WELCOME_BONUS',
       description: 'Welcome to Hakoware'
     });
+
+    const pendingInvites = await PendingInvite.find({
+      recipientEmail: email,
+      expiresAt: { $gt: new Date() }
+    });
+
+    for (const invite of pendingInvites) {
+      if (invite.inviterId.toString() === user._id.toString()) continue;
+      const inviter = await User.findById(invite.inviterId).select('displayName');
+      if (!inviter) continue;
+
+      const existingFriendship = await Friendship.findOne({
+        $or: [
+          { user1: inviter._id, user2: user._id },
+          { user1: user._id, user2: inviter._id }
+        ]
+      });
+      if (existingFriendship) continue;
+
+      await Friendship.create({
+        user1: inviter._id,
+        user2: user._id,
+        user1DisplayName: inviter.displayName,
+        user2DisplayName: user.displayName,
+        user1Perspective: { limit: invite.limit },
+        user2Perspective: { limit: invite.limit },
+        status: 'PENDING'
+      });
+    }
+    if (pendingInvites.length) await PendingInvite.deleteMany({ recipientEmail: email });
 
     void sendWelcomeEmail(user.email, user.displayName);
     return res.status(201).json({ token: signToken(user), user: publicUser(user) });
@@ -88,8 +120,6 @@ router.put('/nen-type', auth, async (req, res) => {
     if (user.nenType) return res.status(400).json({ msg: 'Nen affinity is already set' });
 
     user.nenType = nenType;
-    user.examTasks.nenTypeSet = true;
-    user.hunterLicense = Boolean(user.examTasks.friendAdded && user.examTasks.voiceNoteSent);
     await user.save();
     return res.json(publicUser(user));
   } catch (err) {
