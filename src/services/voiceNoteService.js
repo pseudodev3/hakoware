@@ -1,26 +1,31 @@
 import { api, API_BASE_URL } from '../lib/api';
 
-export const sendVoiceNote = async (friendshipId, senderId, senderName, recipientId, audioBlob) => {
+const audioExtension = (mimeType = '') => {
+  if (mimeType.includes('mp4') || mimeType.includes('m4a')) return 'm4a';
+  if (mimeType.includes('ogg')) return 'ogg';
+  if (mimeType.includes('mpeg')) return 'mp3';
+  return 'webm';
+};
+
+export const sendVoiceNote = async (friendshipId, audioBlob, duration = 0) => {
   try {
     const formData = new FormData();
-    formData.append('audio', audioBlob, `voice_note_${Date.now()}.webm`);
+    const extension = audioExtension(audioBlob?.type);
+    formData.append('audio', audioBlob, `voice_note_${Date.now()}.${extension}`);
     formData.append('friendshipId', friendshipId);
-    formData.append('senderName', senderName);
-    formData.append('recipientId', recipientId);
+    formData.append('duration', String(duration));
 
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/api/voice-notes/upload`, {
       method: 'POST',
-      headers: {
-        'x-auth-token': token
-      },
+      headers: token ? { 'x-auth-token': token } : {},
       body: formData
     });
 
-    const res = await response.json();
-    if (!response.ok || res.msg) throw new Error(res.msg || 'Voice note upload failed');
-
-    return { success: true, voiceNoteId: res._id };
+    let data = null;
+    try { data = await response.json(); } catch { /* handled below */ }
+    if (!response.ok) throw new Error(data?.msg || 'Voice note upload failed');
+    return { success: true, voiceNoteId: data?._id };
   } catch (error) {
     console.error('Error sending voice note:', error);
     return { success: false, error: error.message };
@@ -31,7 +36,6 @@ export const getMyVoiceNotes = async () => {
   try {
     const notes = await api.get('/voice-notes/my-inbox');
     if (!Array.isArray(notes)) return [];
-
     return notes.map((note) => ({
       ...note,
       id: note._id,
@@ -45,23 +49,12 @@ export const getMyVoiceNotes = async () => {
 
 export const fetchVoiceNoteAudio = async (audioUrl) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(audioUrl, {
-    headers: {
-      'x-auth-token': token
-    }
-  });
-
+  const response = await fetch(audioUrl, { headers: token ? { 'x-auth-token': token } : {} });
   if (!response.ok) {
     let message = 'Voice note playback failed';
-    try {
-      const data = await response.json();
-      message = data.msg || message;
-    } catch {
-      // Ignore non-JSON error bodies.
-    }
+    try { message = (await response.json()).msg || message; } catch { /* keep fallback */ }
     throw new Error(message);
   }
-
   return response.blob();
 };
 
@@ -70,9 +63,8 @@ export const markVoiceNoteListened = async (voiceNoteId) => {
     await api.put(`/voice-notes/${voiceNoteId}/listened`);
     return { success: true };
   } catch (error) {
-    console.error('Error marking voice note as listened:', error);
     return { success: false, error: error.message };
   }
 };
 
-export const getVoiceNotes = async () => getMyVoiceNotes();
+export const getVoiceNotes = getMyVoiceNotes;
