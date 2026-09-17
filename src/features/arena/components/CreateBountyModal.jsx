@@ -7,17 +7,24 @@ import { useAuth } from '../../../contexts/AuthContext';
 import './CreateBountyModal.css';
 
 export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, showToast }) => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [selectedId, setSelectedId] = useState('');
   const [amount, setAmount] = useState(25);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const userId = user.uid || user.id || user._id;
+  const balance = Number(user.auraBalance) || 0;
+  const validAmount = Number.isInteger(amount) && amount >= 10 && amount <= 500;
+  const canAfford = amount <= balance;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!selectedId) {
       showToast?.('Choose a contract first', 'ERROR');
+      return;
+    }
+    if (!validAmount || !canAfford) {
+      showToast?.(canAfford ? 'Bounty must be between 10 and 500 Aura' : 'Not enough Aura for this bounty', 'ERROR');
       return;
     }
 
@@ -30,7 +37,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
       setSelectedId('');
       setAmount(25);
       setMessage('');
-      await onRefresh();
+      await Promise.all([onRefresh(), refreshUser()]);
       onClose();
     }
     setLoading(false);
@@ -41,7 +48,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
       <form className="bounty-form" onSubmit={handleSubmit}>
         <div className="bounty-explainer">
           <Target size={18} strokeWidth={1.8} />
-          <p>Your Aura goes into escrow. A hunter earns it when the target checks in and resolves the bounty.</p>
+          <p>Your Aura goes into escrow. If a hunter takes the bounty, they earn it when the target checks in. Otherwise your Aura is returned.</p>
         </div>
 
         <div className="bounty-field">
@@ -63,25 +70,32 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
         </div>
 
         <div className="bounty-field">
-          <label htmlFor="bounty-amount">Reward</label>
-          <div className="bounty-amount-row">
+          <div className="bounty-field-label-row">
+            <label htmlFor="bounty-amount">Reward</label>
+            <span className={!canAfford ? 'insufficient' : ''}>{balance} Aura available</span>
+          </div>
+          <div className={`bounty-amount-row ${!canAfford ? 'invalid' : ''}`}>
             <Zap size={18} strokeWidth={1.8} />
-            <input id="bounty-amount" type="number" min="10" max="500" step="5" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+            <input id="bounty-amount" type="number" min="10" max="500" step="5" value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
             <span>Aura</span>
           </div>
           <div className="bounty-presets">
-            {[10, 25, 50, 100].map((value) => <button type="button" key={value} className={amount === value ? 'active' : ''} onClick={() => setAmount(value)}>{value}</button>)}
+            {[10, 25, 50, 100].map((value) => (
+              <button type="button" key={value} disabled={value > balance} className={amount === value ? 'active' : ''} onClick={() => setAmount(value)}>{value}</button>
+            ))}
           </div>
         </div>
 
         <div className="bounty-field">
           <label htmlFor="bounty-message">Message <span>optional</span></label>
-          <textarea id="bounty-message" maxLength="180" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Give the Arena some context." />
+          <textarea id="bounty-message" maxLength="180" value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Give the Arena some context." />
         </div>
 
         <div className="bounty-actions">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="danger" loading={loading} disabled={!selectedId || amount < 10 || amount > 500}>Place {amount} Aura</Button>
+          <Button type="submit" variant="danger" loading={loading} disabled={!selectedId || !validAmount || !canAfford}>
+            {!canAfford ? 'Not enough Aura' : `Place ${amount} Aura`}
+          </Button>
         </div>
       </form>
     </Modal>
