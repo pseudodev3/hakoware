@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Trophy, 
-  Target, 
-  Sword, 
-  Skull, 
-  TrendingDown, 
+import {
+  Trophy,
+  Target,
+  Sword,
+  Skull,
   Users,
   Search,
   Plus,
@@ -13,15 +11,10 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
-import { Input } from '../../../shared/components/Input';
 import { CreateBountyModal } from './CreateBountyModal';
 import { api } from '../../../lib/api';
 import './Arena.css';
 
-/**
- * Professional Arena / Bounty Board module.
- * Competitive HxH environment with visual hierarchy.
- */
 export const Arena = ({ friendships, showToast }) => {
   const [bounties, setBounties] = useState([]);
   const [hunterCount, setHunterCount] = useState(0);
@@ -49,137 +42,131 @@ export const Arena = ({ friendships, showToast }) => {
     loadArenaData();
   }, []);
 
+  const filteredBounties = bounties.filter(bounty => bounty.targetName?.toLowerCase().includes(search.toLowerCase()));
+  const bountyPool = bounties.reduce((total, bounty) => total + (bounty.amount || 0), 0);
+
   return (
     <div className="arena-container">
-      {/* Arena Header Stats */}
       <div className="arena-stats">
-        <div className="stat-card glass">
-          <div className="stat-icon"><Trophy size={20} color="var(--aura-gold)" /></div>
+        <div className="stat-card">
+          <div className="stat-icon gold"><Trophy size={19} strokeWidth={1.8} /></div>
           <div className="stat-info">
-            <span className="label">ACTIVE BOUNTIES</span>
+            <span className="label">Active bounties</span>
             <span className="value">{bounties.length}</span>
           </div>
         </div>
-        <div className="stat-card glass">
-          <div className="stat-icon"><Skull size={20} color="var(--aura-red)" /></div>
+        <div className="stat-card">
+          <div className="stat-icon red"><Skull size={19} strokeWidth={1.8} /></div>
           <div className="stat-info">
-            <span className="label">TOTAL BOUNTY POOL</span>
-            <span className="value">
-              {bounties.reduce((acc, b) => acc + (b.amount || 0), 0)} AURA
-            </span>
+            <span className="label">Bounty pool</span>
+            <span className="value">{bountyPool} Aura</span>
           </div>
         </div>
-        <div className="stat-card glass">
-          <div className="stat-icon"><Users size={20} color="var(--aura-blue)" /></div>
+        <div className="stat-card">
+          <div className="stat-icon blue"><Users size={19} strokeWidth={1.8} /></div>
           <div className="stat-info">
-            <span className="label">ACTIVE HUNTERS</span>
+            <span className="label">Active hunters</span>
             <span className="value">{hunterCount}</span>
           </div>
         </div>
       </div>
 
-      {/* Main Board */}
-      <div className="bounty-board glass">
+      <section className="bounty-board" aria-labelledby="blacklist-board-title">
         <header className="board-header">
           <div className="title-group">
-            <Target size={24} color="var(--aura-red)" />
-            <h3>THE BLACKLIST BOARD</h3>
+            <Target size={19} strokeWidth={1.8} />
+            <h3 id="blacklist-board-title">Blacklist board</h3>
           </div>
-          
+
           <div className="board-actions">
-            <div className="search-wrapper">
-              <Search size={16} color="var(--text-muted)" />
-              <input 
-                type="text" 
-                placeholder="SEARCH TARGETS..." 
+            <label className="search-wrapper">
+              <Search size={16} strokeWidth={1.8} />
+              <input
+                type="search"
+                placeholder="Search targets"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => setSearch(event.target.value)}
+                aria-label="Search bounty targets"
               />
-            </div>
-            <Button variant="danger" icon={Plus} size="sm" onClick={() => setShowCreateModal(true)}>PLACE BOUNTY</Button>
+            </label>
+            <Button variant="danger" icon={Plus} size="sm" onClick={() => setShowCreateModal(true)}>Place bounty</Button>
           </div>
         </header>
 
         <div className="bounty-list">
-          <div className="list-header">
-            <span>TARGET</span>
-            <span>TYPE</span>
-            <span>REWARD</span>
-            <span>HUNTER</span>
-            <span>STATUS</span>
+          <div className="list-header" aria-hidden="true">
+            <span>Target</span>
+            <span>Type</span>
+            <span>Reward</span>
+            <span>Hunter</span>
+            <span>Status</span>
           </div>
 
           {loading && bounties.length === 0 ? (
-            <div className="board-loading">
+            <div className="board-loading" aria-live="polite">
               <div className="loading-spinner" />
-              <p>ACCESSING HUNTER ASSOCIATION RECORDS...</p>
+              <p>Loading bounty records…</p>
             </div>
-          ) : bounties.length === 0 ? (
+          ) : filteredBounties.length === 0 ? (
             <div className="board-loading">
-               <p>NO ACTIVE BOUNTIES ON THE BLACKLIST</p>
+              <p>{search ? 'No targets match your search.' : 'No active bounties on the blacklist.'}</p>
             </div>
           ) : (
-            bounties
-              .filter(b => b.targetName?.toLowerCase().includes(search.toLowerCase()))
-              .map((b) => (
-              <motion.div 
-                key={b.id || b._id} 
-                className={`bounty-row ${b.amount > 50 ? 'critical' : 'high'}`}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
+            filteredBounties.map((bounty) => (
+              <div key={bounty.id || bounty._id} className={`bounty-row ${bounty.amount > 50 ? 'critical' : 'high'}`}>
                 <div className="target-cell">
-                  <div className="target-avatar">{b.targetName ? b.targetName[0] : 'T'}</div>
-                  <span className="target-name">{b.targetName}</span>
+                  <div className="target-avatar">{bounty.targetName?.[0]?.toUpperCase() || 'T'}</div>
+                  <span className="target-name">{bounty.targetName}</span>
                 </div>
                 <div className="type-cell">
-                  <span className="type-tag">{b.amount > 100 ? 'LEGENDARY GHOST' : 'GHOSTING'}</span>
+                  <span className="type-tag">{bounty.amount > 100 ? 'Legendary ghost' : 'Ghosting'}</span>
                 </div>
                 <div className="reward-cell">
-                  <Zap size={12} color="var(--aura-gold)" />
-                  <span className="reward-value">{b.amount} AURA</span>
+                  <Zap size={12} strokeWidth={1.8} />
+                  <span className="reward-value">{bounty.amount} Aura</span>
                 </div>
                 <div className="hunter-cell">
-                  {b.hunterName ? (
-                    <span className="hunter-name active">@{b.hunterName.toLowerCase()}</span>
+                  {bounty.hunterName ? (
+                    <span className="hunter-name active">@{bounty.hunterName.toLowerCase()}</span>
                   ) : (
-                    <span className="hunter-name">OPEN CONTRACT</span>
+                    <span className="hunter-name">Open contract</span>
                   )}
                 </div>
                 <div className="status-cell">
-                  <div className={`status-pill ${b.status === 'HUNTING' ? 'hunting' : b.amount > 50 ? 'critical' : 'high'}`}>
-                    {b.status === 'HUNTING' ? 'HUNTING' : b.amount > 50 ? 'CRITICAL' : 'HIGH'}
+                  <div className={`status-pill ${bounty.status === 'HUNTING' ? 'hunting' : bounty.amount > 50 ? 'critical' : 'high'}`}>
+                    {bounty.status === 'HUNTING' ? 'Hunting' : bounty.amount > 50 ? 'Critical' : 'High'}
                   </div>
                 </div>
                 <div className="action-cell">
-                   {b.status === 'ACTIVE' ? (
-                     <button 
+                  {bounty.status === 'ACTIVE' ? (
+                    <button
                       className="challenge-btn"
+                      aria-label={`Hunt bounty for ${bounty.targetName}`}
                       onClick={async () => {
                         try {
-                          await api.post(`/bounties/${b.id || b._id}/hunt`);
-                          showToast(`CONTRACT: APPREHEND ${b.targetName.toUpperCase()}! Reward claimed when target performs check-in.`, 'SUCCESS');
+                          await api.post(`/bounties/${bounty.id || bounty._id}/hunt`);
+                          showToast?.(`CONTRACT: APPREHEND ${bounty.targetName.toUpperCase()}! Reward claimed when target performs check-in.`, 'SUCCESS');
                           loadArenaData();
                         } catch (err) {
-                          showToast(err.message || 'FAILED TO CLAIM CONTRACT', 'ERROR');
+                          showToast?.(err.message || 'FAILED TO CLAIM CONTRACT', 'ERROR');
                         }
                       }}
-                     >
-                       <Sword size={16} />
-                     </button>
-                   ) : (
-                     <div className="hunter-assigned">
-                        <ShieldCheck size={14} color="var(--aura-blue)" />
-                     </div>
-                   )}
+                    >
+                      <Sword size={16} strokeWidth={1.8} />
+                    </button>
+                  ) : (
+                    <div className="hunter-assigned" aria-label="Hunter assigned">
+                      <ShieldCheck size={14} strokeWidth={1.8} />
+                    </div>
+                  )}
                 </div>
-              </motion.div>
+              </div>
             ))
           )}
         </div>
-      </div>
+      </section>
 
-      <CreateBountyModal 
+      <CreateBountyModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         friendships={friendships || []}
