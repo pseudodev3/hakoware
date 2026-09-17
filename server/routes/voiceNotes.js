@@ -3,25 +3,14 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const { randomUUID } = require('crypto');
+const { Readable } = require('stream');
 const VoiceNote = require('../models/VoiceNote');
 const User = require('../models/User');
-
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    const root = req.app.locals.uploadDir || path.join(process.cwd(), 'uploads');
-    const dir = path.join(root, 'voice_notes');
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename(req, file, cb) {
-    const extension = path.extname(file.originalname) || '.webm';
-    cb(null, `${req.user.id}-${Date.now()}${extension}`);
-  }
-});
+const { getObject, putObject } = require('../services/bucketStorage');
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter(req, file, cb) {
     if (!file.mimetype?.startsWith('audio/')) {
@@ -39,16 +28,31 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
       return res.status(400).json({ msg: 'No audio file uploaded' });
     }
 
+    if (!friendshipId || !recipientId) {
+      return res.status(400).json({ msg: 'friendshipId and recipientId are required' });
+    }
+
+    const extension = path.extname(req.file.originalname) || '.webm';
+    const storageKey = `voice_notes/${req.user.id}/${Date.now()}-${randomUUID()}${extension}`;
+
+    await putObject(
+      storageKey,
+      req.file.buffer,
+      req.file.mimetype || 'audio/webm'
+    );
+
     const voiceNote = new VoiceNote({
       friendshipId,
       senderId: req.user.id,
       senderName,
       recipientId,
-      filePath: `/uploads/voice_notes/${req.file.filename}`,
+      filePath: '/pending',
+      storageKey,
       duration: req.body.duration || 0,
       listened: false
     });
 
+    voiceNote.filePath = `/api/voice-notes/${voiceNote._id}/audio`;
     await voiceNote.save();
 
     const user = await User.findById(req.user.id);
@@ -62,8 +66,8 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
 
     res.json(voiceNote);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ msg: 'Server error' });
+    console.error('Voice note upload failed:', err.message);
+    res.status(500).json({ msg: 'Voice note upload failed' });
   }
 });
 
@@ -76,6 +80,41 @@ router.get('/my-inbox', auth, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+router.get('/:id/audio', auth, async (req, res) => {
+  try {
+    const note = await VoiceNote.findById(req.params.id).select('senderId recipientId storageKey');
+    if (!note) return res.status(404).json({ msg: 'Note not found' });
+
+    const userId = req.user.id;
+    const canListen = note.recipientId.toString() === userId || note.senderId.toString() === userId;
+    if (!canListen) {
+      return res.status(403).json({ msg: 'Not authorized' });
+    }
+
+    if (!note.storageKey) {
+      return res.status(410).json({ msg: 'This voice note predates the Railway storage migration' });
+    }
+
+    const object = await getObject(note.storageKey);
+    const contentType = object.headers.get('content-type');
+    const contentLength = object.headers.get('content-length');
+
+    if (contentType) res.setHeader('Content-Type', contentType);
+    if (contentLength) res.setHeader('Content-Length', contentLength);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+
+    if (!object.body) {
+      return res.status(404).end();
+    }
+
+    Readable.fromWeb(object.body).pipe(res);
+  } catch (err) {
+    console.error('Voice note playback failed:', err.message);
+    const status = err.status === 404 ? 404 : 500;
+    res.status(status).json({ msg: status === 404 ? 'Audio not found' : 'Voice note playback failed' });
   }
 });
 
