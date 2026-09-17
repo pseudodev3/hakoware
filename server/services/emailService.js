@@ -19,7 +19,7 @@ const transporter = emailConfigured ? nodemailer.createTransport({
 const sendResetPasswordEmail = async (userEmail, resetUrl) => {
   if (!transporter) throw new Error('Email delivery is not configured');
 
-  const mailOptions = {
+  await transporter.sendMail({
     from: fromAddress,
     to: userEmail,
     subject: 'Hakoware password reset',
@@ -34,8 +34,7 @@ const sendResetPasswordEmail = async (userEmail, resetUrl) => {
         <p style="font-size:12px;color:#777268">If you did not request this, you can ignore this email.</p>
       </div>
     `
-  };
-  await transporter.sendMail(mailOptions);
+  });
   return true;
 };
 
@@ -61,10 +60,10 @@ const sendWelcomeEmail = async (userEmail, userName) => {
   }
 };
 
-const sendFriendRequestEmail = async (toEmail, fromName) => {
+const sendFriendRequestEmail = async (toEmail, fromName, requiresSignup = false) => {
   if (!transporter) return false;
   try {
-    const joinUrl = `${frontendUrl}/?join=1`;
+    const destination = requiresSignup ? `${frontendUrl}/?join=1` : frontendUrl;
     await transporter.sendMail({
       from: fromAddress,
       to: toEmail,
@@ -73,9 +72,9 @@ const sendFriendRequestEmail = async (toEmail, fromName) => {
         <div style="background:#0a0a0b;color:#f7f4ec;padding:40px;font-family:system-ui,-apple-system,sans-serif;border:1px solid #28271f;border-radius:16px">
           <h1 style="font-size:20px">Hakoware</h1>
           <p><strong>${fromName}</strong> sent you a contract request.</p>
-          <p style="color:#a8a399">Open Hakoware with this email address and the request will be waiting for you.</p>
+          <p style="color:#a8a399">${requiresSignup ? 'Sign up with this email address and the request will be waiting for you.' : 'Open Hakoware to review the request.'}</p>
           <div style="margin:32px 0">
-            <a href="${joinUrl}" style="display:inline-block;background:#e7b35a;color:#141009;padding:12px 18px;text-decoration:none;border-radius:10px;font-weight:650">Open contract</a>
+            <a href="${destination}" style="display:inline-block;background:#e7b35a;color:#141009;padding:12px 18px;text-decoration:none;border-radius:10px;font-weight:650">Open contract</a>
           </div>
         </div>
       `
