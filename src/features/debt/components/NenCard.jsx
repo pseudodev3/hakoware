@@ -22,6 +22,7 @@ export const NenCard = ({ friendship, currentUserId, onAction, compact = false }
 
   const status = statusCopy(stats);
   const name = friend.displayName || 'Contract partner';
+  const meterWidth = Math.min(100, (stats.daysMissed / Math.max(1, stats.limit * 2)) * 100);
 
   return (
     <article className={`contract-card ${status.tone} ${compact ? 'compact' : ''}`}>
@@ -42,7 +43,7 @@ export const NenCard = ({ friendship, currentUserId, onAction, compact = false }
       </div>
 
       <div className="contract-meter" aria-hidden="true">
-        <span style={{ width: `${Math.min(100, Math.max(4, (stats.daysMissed / Math.max(1, stats.limit * 2)) * 100))}%` }} />
+        <span style={{ width: `${meterWidth}%` }} />
       </div>
 
       {!compact && (
