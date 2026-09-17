@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Check, Clock3, Plus, X } from 'lucide-react';
+import { Check, Clock3, Mail, Plus, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { NenCard } from '../../debt/components/NenCard';
 import { respondToInvitation } from '../../../services/friendshipService';
 import './ContractsView.css';
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, onAction, onAddFriend, onRefresh, showToast }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], onAction, onAddFriend, onRefresh, showToast }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
+  const waitingOnThem = pendingSent.length + pendingExternal.length;
 
   const respond = async (friendship, action) => {
     const id = friendship._id || friendship.id;
@@ -61,15 +62,22 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         </section>
       )}
 
-      {pendingSent.length > 0 && (
+      {waitingOnThem > 0 && (
         <section className="contract-section compact-section">
-          <div className="contract-section-title"><h2>Waiting on them</h2></div>
+          <div className="contract-section-title"><h2>Waiting on them</h2><span>{waitingOnThem}</span></div>
           <div className="sent-list">
             {pendingSent.map((friendship) => (
               <div className="sent-row" key={friendship._id || friendship.id}>
                 <Clock3 size={15} strokeWidth={1.8} />
                 <span>{friendship.user2?.displayName || friendship.user2DisplayName}</span>
                 <small>Pending</small>
+              </div>
+            ))}
+            {pendingExternal.map((invite) => (
+              <div className="sent-row" key={invite.id}>
+                <Mail size={15} strokeWidth={1.8} />
+                <span>{invite.recipientEmail}</span>
+                <small>Invite sent</small>
               </div>
             ))}
           </div>
