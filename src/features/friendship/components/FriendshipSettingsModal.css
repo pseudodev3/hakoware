@@ -1,0 +1,10 @@
+.contract-settings-content { display: flex; flex-direction: column; gap: 24px; }
+.contract-settings-form { display: flex; flex-direction: column; gap: 16px; }
+.contract-settings-form h3 { font-size: .84rem; font-weight: 620; }
+.contract-settings-form > div > p { margin-top: 4px; color: var(--text-muted); font-size: .7rem; line-height: 1.5; }
+.settings-help { margin-top: -9px; color: var(--text-muted); font-size: .67rem; line-height: 1.45; }
+.contract-danger { padding-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border-subtle); }
+.contract-danger > div { min-width: 0; }
+.contract-danger strong { color: var(--aura-red); font-size: .78rem; font-weight: 620; }
+.contract-danger p { max-width: 360px; margin-top: 4px; color: var(--text-muted); font-size: .68rem; line-height: 1.5; }
+@media (max-width:520px) { .contract-danger { align-items: stretch; flex-direction: column; } .contract-danger .btn { width: 100%; } }
