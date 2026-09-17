@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Mic, Settings } from 'lucide-react';
+import { Check, MessageCircle, Mic, Settings } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
 import './NenCard.css';
@@ -23,6 +23,8 @@ export const NenCard = ({ friendship, currentUserId, onAction, compact = false }
   const status = statusCopy(stats);
   const name = friend.displayName || 'Contract partner';
   const meterWidth = Math.min(100, (stats.daysMissed / Math.max(1, stats.limit * 2)) * 100);
+  const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
+  const checkedInToday = hoursSinceCheckin < 20;
 
   return (
     <article className={`contract-card ${status.tone} ${compact ? 'compact' : ''}`}>
@@ -51,8 +53,13 @@ export const NenCard = ({ friendship, currentUserId, onAction, compact = false }
           <Button variant="secondary" icon={Mic} onClick={() => onAction('VOICE_CHECKIN', friendship)}>
             Voice
           </Button>
-          <Button variant="aura" icon={MessageCircle} onClick={() => onAction('CHECKIN', friendship)}>
-            Check in
+          <Button
+            variant="aura"
+            icon={checkedInToday ? Check : MessageCircle}
+            disabled={checkedInToday}
+            onClick={() => onAction('CHECKIN', friendship)}
+          >
+            {checkedInToday ? 'Checked in' : 'Check in'}
           </Button>
         </div>
       )}
