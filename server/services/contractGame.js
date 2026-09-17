@@ -348,9 +348,13 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
   if (chaosEvent) {
     await recordEvent(friendship._id, 'CHAOS_SURVIVED', {
       userId,
-      xp: Number(chaosEvent.payload?.successXP) || 0,
-      aura: auraBonus,
-      metadata: { type: chaosEvent.type, name: chaosEvent.name, chaosLevel: friendship.chaos.level }
+      metadata: {
+        type: chaosEvent.type,
+        name: chaosEvent.name,
+        chaosLevel: friendship.chaos.level,
+        bonusXP: Number(chaosEvent.payload?.successXP) || 0,
+        auraBonus
+      }
     });
     await notifyBoth(friendship, 'Anomaly survived', `${chaosEvent.name} cleared. Chaos Level ${friendship.chaos.level}.`, 'CHAOS_SURVIVED', userId);
   }
