@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Clock3, ShieldCheck, Sparkles, Target } from 'lucide-react';
+import { AlertTriangle, Check, Clock3, ShieldCheck, Sparkles, Target } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
@@ -11,6 +11,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const [loading, setLoading] = useState(false);
   const [bounty, setBounty] = useState(null);
   const [bountyLoading, setBountyLoading] = useState(false);
+  const [bountySyncError, setBountySyncError] = useState(false);
   const user1Id = friendship?.user1?._id || friendship?.user1;
   const isUser1 = String(user1Id) === String(currentUserId);
   const perspective = isUser1 ? friendship?.user1Perspective : friendship?.user2Perspective;
@@ -22,14 +23,20 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
     const loadBounty = async () => {
       if (!isOpen || !friendship) {
         setBounty(null);
+        setBountySyncError(false);
+        setBountyLoading(false);
         return;
       }
       setBountyLoading(true);
+      setBountySyncError(false);
       try {
         const result = await getContractBounty(friendship._id || friendship.id);
         if (active) setBounty(result || null);
       } catch {
-        if (active) setBounty(null);
+        if (active) {
+          setBounty(null);
+          setBountySyncError(true);
+        }
       } finally {
         if (active) setBountyLoading(false);
       }
@@ -40,10 +47,17 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
   if (!friendship || !friend || !stats) return null;
 
+  const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
+  const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
+
   const handleCheckin = async (creditHunter = false) => {
+    if (bountyLoading) return showToast?.('Arena state is still syncing', 'ERROR');
+    if (bountySyncError) return showToast?.('Could not verify the live bounty. Close and reopen this check-in.', 'ERROR');
+
     setLoading(true);
-    const creditId = creditHunter && bounty?.status === 'PRESSURE_SENT' ? bounty._id : null;
-    const result = await performCheckin(friendship._id || friendship.id, 'TEXT', creditId);
+    const creditId = creditHunter && pressureReady ? bounty._id : null;
+    const bountyDecision = pressureReady ? (creditHunter ? 'CREDIT' : 'ESCAPE') : null;
+    const result = await performCheckin(friendship._id || friendship.id, 'TEXT', creditId, bountyDecision);
     if (result.success) {
       const xp = result.game?.xp;
       const chaos = result.game?.chaosResolved ? ' · anomaly survived' : '';
@@ -64,8 +78,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const lastInteraction = perspective?.lastInteraction ? new Date(perspective.lastInteraction) : null;
   const activeChaos = friendship.chaos?.activeEvent;
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
-  const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
-  const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
+  const checkinBlocked = bountyLoading || bountySyncError;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Check in with ${friend.displayName}`} size="md">
@@ -77,7 +90,14 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
           </div>
         )}
 
-        {hasOpenBounty && (
+        {bountySyncError && (
+          <div className="checkin-bounty-proof sync-error">
+            <div className="checkin-bounty-icon"><AlertTriangle size={18} /></div>
+            <div><span>ARENA SYNC FAILED</span><strong>Proof state could not be verified.</strong><p>Close and reopen this check-in before submitting so no hunter credit or escape can happen by accident.</p></div>
+          </div>
+        )}
+
+        {hasOpenBounty && !bountySyncError && (
           <div className={`checkin-bounty-proof ${pressureReady ? 'pressure-ready' : ''}`}>
             <div className="checkin-bounty-icon">{pressureReady ? <ShieldCheck size={18} /> : <Target size={18} />}</div>
             <div>
@@ -108,14 +128,14 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
         {pressureReady ? (
           <div className="checkin-proof-actions">
-            <Button type="button" variant="secondary" loading={loading && !bountyLoading} onClick={() => handleCheckin(false)}>Check in normally</Button>
-            <Button variant="aura" icon={ShieldCheck} loading={loading} onClick={() => handleCheckin(true)}>Credit {bounty.hunterName}</Button>
+            <Button type="button" variant="secondary" disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(false)}>Check in normally</Button>
+            <Button variant="aura" icon={ShieldCheck} disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(true)}>Credit {bounty.hunterName}</Button>
           </div>
         ) : (
           <div className="checkin-actions">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button variant="aura" icon={Check} loading={loading} onClick={() => handleCheckin(false)}>
-              {hasOpenBounty ? 'Check in & escape' : 'Check in now'}
+            <Button variant="aura" icon={Check} disabled={checkinBlocked} loading={loading || bountyLoading} onClick={() => handleCheckin(false)}>
+              {bountyLoading ? 'Syncing Arena…' : hasOpenBounty ? 'Check in & escape' : 'Check in now'}
             </Button>
           </div>
         )}
