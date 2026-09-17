@@ -42,7 +42,7 @@ router.post('/', auth, async (req, res) => {
         { new: true, upsert: true, setDefaultsOnInsert: true }
       );
 
-      void sendFriendRequestEmail(email, user.displayName);
+      void sendFriendRequestEmail(email, user.displayName, true);
       return res.status(202).json({
         requiresSignup: true,
         inviteUrl: `${frontendUrl()}/?join=1`,
@@ -70,7 +70,7 @@ router.post('/', auth, async (req, res) => {
     });
 
     await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: email });
-    void sendFriendRequestEmail(friend.email, user.displayName);
+    void sendFriendRequestEmail(friend.email, user.displayName, false);
     return res.status(201).json(friendship);
   } catch (err) {
     console.error('Create contract failed:', err.message);
@@ -80,16 +80,31 @@ router.post('/', auth, async (req, res) => {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const friendships = await Friendship.find({
-      $or: [{ user1: req.user.id }, { user2: req.user.id }]
-    })
-      .sort({ updatedAt: -1 })
-      .populate('user1 user2', 'displayName email avatar nenType auraBalance');
+    const [friendships, pendingExternal] = await Promise.all([
+      Friendship.find({ $or: [{ user1: req.user.id }, { user2: req.user.id }] })
+        .sort({ updatedAt: -1 })
+        .populate('user1 user2', 'displayName email avatar nenType auraBalance'),
+      PendingInvite.find({ inviterId: req.user.id, expiresAt: { $gt: new Date() } })
+        .sort({ createdAt: -1 })
+        .lean()
+    ]);
 
-    const active = friendships.filter((f) => f.status === 'ACTIVE');
-    const pendingReceived = friendships.filter((f) => f.status === 'PENDING' && f.user2?._id?.toString() === req.user.id);
-    const pendingSent = friendships.filter((f) => f.status === 'PENDING' && f.user1?._id?.toString() === req.user.id);
-    return res.json({ active, pendingReceived, pendingSent });
+    const active = friendships.filter((friendship) => friendship.status === 'ACTIVE');
+    const pendingReceived = friendships.filter((friendship) => friendship.status === 'PENDING' && friendship.user2?._id?.toString() === req.user.id);
+    const pendingSent = friendships.filter((friendship) => friendship.status === 'PENDING' && friendship.user1?._id?.toString() === req.user.id);
+
+    return res.json({
+      active,
+      pendingReceived,
+      pendingSent,
+      pendingExternal: pendingExternal.map((invite) => ({
+        id: invite._id,
+        recipientEmail: invite.recipientEmail,
+        limit: invite.limit,
+        createdAt: invite.createdAt,
+        expiresAt: invite.expiresAt
+      }))
+    });
   } catch (err) {
     console.error('Load contracts failed:', err.message);
     return res.status(500).json({ msg: 'Could not load contracts' });
@@ -99,9 +114,7 @@ router.get('/', auth, async (req, res) => {
 router.put('/:id/respond', auth, async (req, res) => {
   try {
     const action = String(req.body.action || '').toUpperCase();
-    if (!['ACCEPT', 'DECLINE'].includes(action)) {
-      return res.status(400).json({ msg: 'Response must be ACCEPT or DECLINE' });
-    }
+    if (!['ACCEPT', 'DECLINE'].includes(action)) return res.status(400).json({ msg: 'Response must be ACCEPT or DECLINE' });
 
     const friendship = await Friendship.findById(req.params.id);
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
@@ -168,7 +181,6 @@ router.post('/:id/checkin', auth, async (req, res) => {
     friendship[key].daysMissed = 0;
     friendship[key].isBankrupt = false;
     friendship[key].isInWarningZone = false;
-    friendship.streak += 1;
     await friendship.save();
 
     await settleBountiesForCheckin(friendship._id, req.user.id);
