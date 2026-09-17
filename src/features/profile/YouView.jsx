@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, EyeOff, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAuraCards, getUserAura } from '../../services/auraService';
-import { api } from '../../services/api';
+import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
 import './YouView.css';
 
