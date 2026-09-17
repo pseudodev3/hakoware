@@ -29,6 +29,7 @@ function MainApp({ showToast }) {
   const [friendships, setFriendships] = useState([]);
   const [pendingReceived, setPendingReceived] = useState([]);
   const [pendingSent, setPendingSent] = useState([]);
+  const [pendingExternal, setPendingExternal] = useState([]);
   const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
@@ -42,6 +43,7 @@ function MainApp({ showToast }) {
       setFriendships(contracts.active || []);
       setPendingReceived(contracts.pendingReceived || []);
       setPendingSent(contracts.pendingSent || []);
+      setPendingExternal(contracts.pendingExternal || []);
 
       const refreshed = await refreshUser();
       const nextBalance = refreshed.user?.auraBalance ?? oldBalance;
@@ -106,6 +108,7 @@ function MainApp({ showToast }) {
           friendships={friendships}
           pendingReceived={pendingReceived}
           pendingSent={pendingSent}
+          pendingExternal={pendingExternal}
           onAction={handleAction}
           onAddFriend={() => setModalType('ADD_FRIEND')}
           onRefresh={loadData}
