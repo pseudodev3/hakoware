@@ -1,24 +1,20 @@
 import { api } from './api';
 
 export const getUserAura = async () => {
-  try {
-    const res = await api.get('/aura/me');
-    return {
-      balance: res.balance || 0,
-      totalEarned: res.totalEarned || 0,
-      totalSpent: res.totalSpent || 0,
-      totalTransactions: res.totalTransactions || 0,
-      history: res.history || []
-    };
-  } catch (error) {
-    console.error('Error getting Aura:', error);
-    return { balance: 0, totalEarned: 0, totalSpent: 0, totalTransactions: 0, history: [] };
-  }
+  const res = await api.get('/aura/me');
+  return {
+    balance: Number(res.balance) || 0,
+    totalEarned: Number(res.totalEarned) || 0,
+    totalSpent: Number(res.totalSpent) || 0,
+    totalTransactions: Number(res.totalTransactions) || 0,
+    history: Array.isArray(res.history) ? res.history : []
+  };
 };
 
 export const getAuraCards = async () => {
   try {
-    return await api.get('/aura/cards');
+    const cards = await api.get('/aura/cards');
+    return Array.isArray(cards) ? cards : [];
   } catch (error) {
     console.error('Error loading Aura cards:', error);
     return [];
