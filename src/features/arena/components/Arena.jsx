@@ -1,30 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import { Activity, Dice5, Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Activity, Clock3, Dice5, Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { CreateBountyModal } from './CreateBountyModal';
+import { PressureMoveModal } from './PressureMoveModal';
 import { api } from '../../../lib/api';
+import { getBountyMeta, getHunterProfile, huntBounty, sendBountyPressure } from '../../../services/bountyService';
 import { useAuth } from '../../../contexts/AuthContext';
 import './Arena.css';
 
+const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
+
+const timeLeft = (date) => {
+  if (!date) return null;
+  const ms = new Date(date).getTime() - Date.now();
+  if (ms <= 0) return 'closing';
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.floor((ms % 3600000) / 60000);
+  return hours > 0 ? `${hours}h ${minutes}m left` : `${Math.max(1, minutes)}m left`;
+};
+
 export const Arena = ({ friendships, worldEvent, showToast }) => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [tab, setTab] = useState('bounties');
   const [bounties, setBounties] = useState([]);
   const [shame, setShame] = useState([]);
+  const [hunterProfile, setHunterProfile] = useState({ rep: 0, rank: 'Rookie Hunter', successfulHunts: 0, attempts: 0, conversionRate: 0, auraCollected: 0, activeHunts: 0 });
+  const [meta, setMeta] = useState({ pressureMoves: [], huntWindowHours: 12 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [pressureBounty, setPressureBounty] = useState(null);
+  const [pressureLoading, setPressureLoading] = useState(false);
   const userId = String(user.uid || user.id || user._id);
 
   const loadArenaData = async () => {
     setLoading(true);
     try {
-      const [bountiesRes, shameRes] = await Promise.all([
+      const [bountiesRes, shameRes, profileRes, metaRes] = await Promise.all([
         api.get('/bounties/active'),
-        api.get('/users/leaderboard')
+        api.get('/users/leaderboard'),
+        getHunterProfile(),
+        getBountyMeta()
       ]);
       setBounties(bountiesRes || []);
       setShame(shameRes || []);
+      setHunterProfile(profileRes || {});
+      setMeta(metaRes || { pressureMoves: [], huntWindowHours: 12 });
     } catch (error) {
       console.error('Failed to load Arena:', error);
       showToast?.(error.message || 'Could not load Arena', 'ERROR');
@@ -35,17 +56,37 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
 
   useEffect(() => { loadArenaData(); }, []);
 
-  const filtered = bounties.filter((bounty) => bounty.targetName?.toLowerCase().includes(search.toLowerCase()));
+  const filtered = useMemo(
+    () => bounties.filter((bounty) => bounty.targetName?.toLowerCase().includes(search.toLowerCase())),
+    [bounties, search]
+  );
   const bountyPool = bounties.reduce((total, bounty) => total + (bounty.amount || 0), 0);
   const activeAnomalies = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
+  const openTargets = bounties.filter((bounty) => bounty.status === 'ACTIVE').length;
 
   const hunt = async (bounty) => {
     try {
-      await api.post(`/bounties/${bounty._id || bounty.id}/hunt`);
-      showToast?.(`You picked up ${bounty.targetName}'s bounty`, 'SUCCESS');
+      const result = await huntBounty(bounty._id || bounty.id);
+      const bond = result?.hunterBond || hunterBondFor(bounty.amount);
+      showToast?.(`Hunt started · ${bond} Aura bond staked · send pressure`, 'SUCCESS');
+      await Promise.all([loadArenaData(), refreshUser()]);
+    } catch (error) {
+      showToast?.(error.message || 'Could not start hunt', 'ERROR');
+    }
+  };
+
+  const sendPressure = async (moveId) => {
+    if (!pressureBounty) return;
+    setPressureLoading(true);
+    try {
+      await sendBountyPressure(pressureBounty._id || pressureBounty.id, moveId);
+      showToast?.(`Pressure sent to ${pressureBounty.targetName} · proof armed`, 'SUCCESS');
+      setPressureBounty(null);
       await loadArenaData();
     } catch (error) {
-      showToast?.(error.message || 'Could not pick up bounty', 'ERROR');
+      showToast?.(error.message || 'Could not send pressure', 'ERROR');
+    } finally {
+      setPressureLoading(false);
     }
   };
 
@@ -54,8 +95,8 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
       <header className="arena-hero">
         <div>
           <p className="eyebrow">Arena</p>
-          <h1>This is where pressure becomes public.</h1>
-          <p>Bounties, overdue contracts and whatever Chaos started this week.</p>
+          <h1>Pressure has to earn its payout.</h1>
+          <p>Hunters stake Aura, send one pressure move, and only get paid when the target says it actually worked.</p>
         </div>
         <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={friendships.length === 0}>Place bounty</Button>
       </header>
@@ -68,41 +109,63 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         </section>
       )}
 
+      <section className="hunter-profile-strip">
+        <div className="hunter-profile-mark"><Sword size={20} strokeWidth={1.8} /></div>
+        <div className="hunter-profile-copy"><span>YOUR HUNTER RECORD</span><strong>{hunterProfile.rank || 'Rookie Hunter'}</strong><p>{hunterProfile.rep || 0} Rep · {hunterProfile.successfulHunts || 0} closes · {hunterProfile.conversionRate || 0}% conversion</p></div>
+        <div className="hunter-profile-earned"><small>Aura collected</small><strong>{hunterProfile.auraCollected || 0}</strong></div>
+      </section>
+
       <section className="arena-summary">
-        <div><small>Open bounties</small><strong>{bounties.length}</strong><span>{bountyPool} Aura escrowed</span></div>
-        <div><small>Shame board</small><strong>{shame.length}</strong><span>{shame.length ? 'bankrupt players visible' : 'nobody exposed'}</span></div>
+        <div><small>Open targets</small><strong>{openTargets}</strong><span>{bounties.length - openTargets} currently hunted</span></div>
+        <div><small>Aura in escrow</small><strong>{bountyPool}</strong><span>moves only on proof or escape</span></div>
+        <div><small>Active hunts</small><strong>{hunterProfile.activeHunts || 0}</strong><span>{meta.huntWindowHours || 12}h proof windows</span></div>
         <div className={activeAnomalies ? 'hot' : ''}><small>Live anomalies</small><strong>{activeAnomalies}</strong><span>{activeAnomalies ? 'contracts unstable' : 'quiet for now'}</span></div>
       </section>
 
       <div className="arena-tabs" role="tablist" aria-label="Arena views">
         <button className={tab === 'bounties' ? 'active' : ''} onClick={() => setTab('bounties')} role="tab" aria-selected={tab === 'bounties'}>Bounties</button>
-        <button className={tab === 'shame' ? 'active' : ''} onClick={() => setTab('shame')} role="tab" aria-selected={tab === 'shame'}>Shame board</button>
+        <button className={tab === 'shame' ? 'active' : ''} onClick={() => setTab('shame')} role="tab" aria-selected={tab === 'shame'}>Shame board {shame.length ? `· ${shame.length}` : ''}</button>
       </div>
 
       {tab === 'bounties' ? (
         <section className="arena-panel">
           <div className="arena-panel-head">
-            <div><Target size={18} strokeWidth={1.8} /><strong>Open targets</strong></div>
+            <div><Target size={18} strokeWidth={1.8} /><strong>Live hunts</strong></div>
             <label className="arena-search"><Search size={15} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a target" /></label>
           </div>
           <div className="arena-list">
             {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties. The circle is suspiciously quiet.'}</div> : filtered.map((bounty) => {
               const isTarget = String(bounty.targetId) === userId;
               const isSender = String(bounty.senderId) === userId;
+              const isHunter = String(bounty.hunterId || '') === userId;
+              const proofArmed = bounty.status === 'PRESSURE_SENT';
+              const hunting = bounty.status === 'HUNTING' || proofArmed;
+              const window = timeLeft(bounty.huntExpiresAt);
+              const bond = hunterBondFor(bounty.amount);
+
               return (
-                <article className="bounty-item" key={bounty._id || bounty.id}>
+                <article className={`bounty-item ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''}`} key={bounty._id || bounty.id}>
                   <div className="bounty-avatar">{bounty.targetName?.[0]?.toUpperCase() || '?'}</div>
-                  <div className="bounty-copy"><strong>{bounty.targetName}</strong><span>{bounty.message || 'Check in to close this bounty.'}</span></div>
+                  <div className="bounty-copy">
+                    <div className="bounty-title-row"><strong>{bounty.targetName}</strong><span className={`bounty-status ${proofArmed ? 'proof' : hunting ? 'hunting' : 'open'}`}>{proofArmed ? 'PROOF ARMED' : hunting ? 'HUNTER ASSIGNED' : 'OPEN'}</span></div>
+                    <span>{bounty.message || 'Check in to close this bounty.'}</span>
+                    {hunting && <small className="bounty-hunt-meta"><Clock3 size={12} /> {bounty.hunterName || 'Hunter'} · {window || `${meta.huntWindowHours || 12}h window`}</small>}
+                  </div>
                   <div className="bounty-reward"><Zap size={13} /> {bounty.amount}</div>
-                  {bounty.status === 'HUNTING' ? (
-                    <div className="hunter-lock" title={bounty.hunterName ? `Hunted by ${bounty.hunterName}` : 'Hunter assigned'}><ShieldCheck size={16} /><span>{bounty.hunterName || 'Hunting'}</span></div>
+
+                  {bounty.status === 'ACTIVE' && !isTarget && !isSender ? (
+                    <button className="hunt-button hunt-cta" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName} for ${bounty.amount} Aura`}><Sword size={16} strokeWidth={1.8} /><span>Hunt · {bond} bond</span></button>
+                  ) : isHunter && bounty.status === 'HUNTING' ? (
+                    <button className="pressure-button" onClick={() => setPressureBounty(bounty)}><Target size={15} /><span>Send pressure</span></button>
+                  ) : isHunter && proofArmed ? (
+                    <div className="proof-armed-state"><ShieldCheck size={15} /><span>Waiting for credit</span></div>
                   ) : isTarget ? (
-                    <div className="bounty-owner-state">On you</div>
+                    <div className={`bounty-owner-state ${proofArmed ? 'danger' : ''}`}>{proofArmed ? 'Pressure on you' : hunting ? 'Being hunted' : 'On you'}</div>
                   ) : isSender ? (
                     <div className="bounty-owner-state">Your bounty</div>
-                  ) : (
-                    <button className="hunt-button" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName}`}><Sword size={17} strokeWidth={1.8} /></button>
-                  )}
+                  ) : hunting ? (
+                    <div className="hunter-lock" title={bounty.hunterName ? `Hunted by ${bounty.hunterName}` : 'Hunter assigned'}><ShieldCheck size={16} /><span>{proofArmed ? 'Proof armed' : bounty.hunterName || 'Hunting'}</span></div>
+                  ) : null}
                 </article>
               );
             })}
@@ -125,6 +188,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
       )}
 
       <CreateBountyModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} friendships={friendships} onRefresh={loadArenaData} showToast={showToast} />
+      <PressureMoveModal bounty={pressureBounty} moves={meta.pressureMoves || []} loading={pressureLoading} onClose={() => setPressureBounty(null)} onSend={sendPressure} />
     </div>
   );
 };
