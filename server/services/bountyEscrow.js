@@ -21,15 +21,19 @@ const hunterRankFromRep = (rep = 0) => {
 };
 
 const addAura = async (userId, amount, type, description, metadata = {}) => {
-  if (!amount || amount <= 0) return;
-  await User.updateOne({ _id: userId }, { $inc: { auraBalance: amount } });
+  if (!amount || amount <= 0) return false;
+  const updated = await User.updateOne({ _id: userId }, { $inc: { auraBalance: amount } });
+  if (!updated.matchedCount) return false;
   await AuraTransaction.create({ userId, amount, type, description, metadata });
+  return true;
 };
 
 const returnHunterBond = async (bounty, reason) => {
   const amount = Number(bounty.hunterBond) || 0;
-  if (!bounty.hunterId || amount <= 0) return;
-  await addAura(
+  if (!bounty.hunterId || amount <= 0) return false;
+  const exists = await User.exists({ _id: bounty.hunterId });
+  if (!exists) return false;
+  return addAura(
     bounty.hunterId,
     amount,
     'HUNTER_BOND_RETURN',
@@ -93,6 +97,10 @@ const refundBounty = async (bounty, reason) => {
 
 const payHuntedBounty = async (bounty) => {
   if (!bounty.hunterId || !bounty.pressureSentAt) return false;
+
+  const hunter = await User.findById(bounty.hunterId).select('_id displayName');
+  if (!hunter) return refundBounty(bounty, 'Bounty hunter is no longer available');
+
   const now = new Date();
   const attempt = activeAttempt(bounty, 'CLAIMED', now, 100, now);
   const claimed = await Bounty.findOneAndUpdate(
@@ -104,9 +112,6 @@ const payHuntedBounty = async (bounty) => {
     { new: true }
   );
   if (!claimed) return false;
-
-  const hunter = await User.findById(claimed.hunterId).select('_id displayName');
-  if (!hunter) return refundBounty(claimed, 'Bounty hunter is no longer available');
 
   await addAura(
     hunter._id,
@@ -196,6 +201,26 @@ const resolveTargetEscape = async (bounty, reason = 'Target checked in without c
   ]);
 
   return { outcome: 'ESCAPED', bounty: closed };
+};
+
+const getBountyDecisionRequirement = async (friendshipId, targetUserId) => {
+  await expireStaleBounties();
+  const bounty = await Bounty.findOne({
+    friendshipId,
+    targetId: targetUserId,
+    status: 'PRESSURE_SENT',
+    pressureSentAt: { $ne: null },
+    hunterId: { $ne: null }
+  }).select('_id amount hunterId hunterName huntExpiresAt');
+
+  if (!bounty) return null;
+  return {
+    bountyId: String(bounty._id),
+    amount: bounty.amount,
+    hunterId: String(bounty.hunterId),
+    hunterName: bounty.hunterName || 'Hunter',
+    huntExpiresAt: bounty.huntExpiresAt
+  };
 };
 
 const settleBountiesForCheckin = async (friendshipId, targetUserId, creditedBountyId = null) => {
@@ -332,6 +357,7 @@ module.exports = {
   listingFeeFor,
   hunterBondFor,
   getHunterProfile,
+  getBountyDecisionRequirement,
   expireStaleBounties,
   refundOpenBountiesForFriendship,
   settleBountiesForCheckin
