@@ -16,6 +16,7 @@ const {
 const { recordEvent } = require('../services/contractGame');
 
 const HOUR = 60 * 60 * 1000;
+const BOUNTY_COOLDOWN_HOURS = 24;
 
 const PRESSURE_MOVES = Object.freeze({
   CLOCK: { id: 'CLOCK', label: "Clock's running.", message: "Clock's running. Check in before I collect." },
@@ -28,6 +29,7 @@ router.get('/meta', auth, (req, res) => {
   res.json({
     pressureMoves: Object.values(PRESSURE_MOVES),
     huntWindowHours: HUNT_WINDOW_HOURS,
+    bountyCooldownHours: BOUNTY_COOLDOWN_HOURS,
     listingFeePercent: 5,
     hunterBondPercent: 10
   });
@@ -61,6 +63,20 @@ router.post('/', auth, async (req, res) => {
       status: { $in: ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'] }
     });
     if (existing) return res.status(400).json({ msg: 'You already have an open bounty on this contract' });
+
+    const cooldownCutoff = new Date(Date.now() - BOUNTY_COOLDOWN_HOURS * HOUR);
+    const recentResolved = await Bounty.findOne({
+      senderId: req.user.id,
+      targetId: target._id,
+      friendshipId: friendship._id,
+      status: { $in: ['CLAIMED', 'ESCAPED', 'EXPIRED'] },
+      resolvedAt: { $gte: cooldownCutoff }
+    }).sort({ resolvedAt: -1 }).select('resolvedAt');
+    if (recentResolved) {
+      const availableAt = new Date(new Date(recentResolved.resolvedAt).getTime() + BOUNTY_COOLDOWN_HOURS * HOUR);
+      const hoursLeft = Math.max(1, Math.ceil((availableAt - new Date()) / HOUR));
+      return res.status(429).json({ msg: `This contract is cooling down. You can post another bounty in about ${hoursLeft}h.` });
+    }
 
     const listingFee = listingFeeFor(amount);
     const totalCost = amount + listingFee;
