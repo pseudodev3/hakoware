@@ -7,6 +7,19 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const { refundOpenBountiesForFriendship, settleBountiesForCheckin } = require('../services/bountyEscrow');
+const {
+  TEMPLATES,
+  getTemplate,
+  getWorldEvent,
+  initializeContractGame,
+  activateSeason,
+  refreshGameState,
+  prepareCheckinGame,
+  completeCheckinGame,
+  buildRecap,
+  runItBack,
+  recordEvent
+} = require('../services/contractGame');
 
 const normalizeLimit = (value, fallback = 7) => {
   const parsed = Number(value ?? fallback);
@@ -20,7 +33,16 @@ const participantKey = (friendship, userId) => {
   return null;
 };
 
+const ensureParticipant = (friendship, userId) => Boolean(participantKey(friendship, userId));
 const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+const gameTemplate = (value) => {
+  const id = String(value || 'DONT_GHOST').toUpperCase();
+  return TEMPLATES[id] || null;
+};
+
+router.get('/meta', auth, (req, res) => {
+  res.json({ templates: Object.values(TEMPLATES), worldEvent: getWorldEvent() });
+});
 
 router.post('/', auth, async (req, res) => {
   try {
@@ -28,7 +50,12 @@ router.post('/', auth, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    const limit = normalizeLimit(req.body.limit, user.defaultLimit || 7);
+    const template = gameTemplate(req.body.templateId);
+    if (!template) return res.status(400).json({ msg: 'Choose a valid contract type' });
+    const limit = template.id === 'CUSTOM'
+      ? normalizeLimit(req.body.limit, user.defaultLimit || 7)
+      : template.limit;
+
     if (!email) return res.status(400).json({ msg: 'Friend email is required' });
     if (!limit) return res.status(400).json({ msg: 'Grace period must be between 1 and 30 days' });
     if (email === user.email) return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
@@ -38,7 +65,7 @@ router.post('/', auth, async (req, res) => {
       const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
       const pendingInvite = await PendingInvite.findOneAndUpdate(
         { inviterId: user._id, recipientEmail: email },
-        { $set: { inviterName: user.displayName, limit, expiresAt } },
+        { $set: { inviterName: user.displayName, templateId: template.id, limit, expiresAt } },
         { new: true, upsert: true, setDefaultsOnInsert: true }
       );
 
@@ -47,6 +74,7 @@ router.post('/', auth, async (req, res) => {
         requiresSignup: true,
         inviteUrl: `${frontendUrl()}/?join=1`,
         recipientEmail: pendingInvite.recipientEmail,
+        templateId: pendingInvite.templateId,
         expiresAt: pendingInvite.expiresAt
       });
     }
@@ -59,14 +87,18 @@ router.post('/', auth, async (req, res) => {
     });
     if (existing) return res.status(400).json({ msg: 'A contract with this person already exists' });
 
-    const friendship = await Friendship.create({
+    const friendship = new Friendship({
       user1: req.user.id,
       user2: friend.id,
       user1DisplayName: user.displayName,
       user2DisplayName: friend.displayName,
-      user1Perspective: { limit },
-      user2Perspective: { limit },
       status: 'PENDING'
+    });
+    initializeContractGame(friendship, template.id, limit);
+    await friendship.save();
+    await recordEvent(friendship._id, 'CONTRACT_CREATED', {
+      userId: user._id,
+      metadata: { templateId: template.id, limit }
     });
 
     await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: email });
@@ -81,13 +113,14 @@ router.post('/', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const [friendships, pendingExternal] = await Promise.all([
-      Friendship.find({ $or: [{ user1: req.user.id }, { user2: req.user.id }] })
-        .sort({ updatedAt: -1 })
-        .populate('user1 user2', 'displayName email avatar nenType auraBalance'),
+      Friendship.find({ $or: [{ user1: req.user.id }, { user2: req.user.id }] }).sort({ updatedAt: -1 }),
       PendingInvite.find({ inviterId: req.user.id, expiresAt: { $gt: new Date() } })
         .sort({ createdAt: -1 })
         .lean()
     ]);
+
+    await Promise.all(friendships.filter((friendship) => friendship.status === 'ACTIVE').map((friendship) => refreshGameState(friendship)));
+    await Promise.all(friendships.map((friendship) => friendship.populate('user1 user2', 'displayName email avatar nenType auraBalance')));
 
     const active = friendships.filter((friendship) => friendship.status === 'ACTIVE');
     const pendingReceived = friendships.filter((friendship) => friendship.status === 'PENDING' && friendship.user2?._id?.toString() === req.user.id);
@@ -100,6 +133,7 @@ router.get('/', auth, async (req, res) => {
       pendingExternal: pendingExternal.map((invite) => ({
         id: invite._id,
         recipientEmail: invite.recipientEmail,
+        templateId: invite.templateId || 'DONT_GHOST',
         limit: invite.limit,
         createdAt: invite.createdAt,
         expiresAt: invite.expiresAt
@@ -108,6 +142,41 @@ router.get('/', auth, async (req, res) => {
   } catch (err) {
     console.error('Load contracts failed:', err.message);
     return res.status(500).json({ msg: 'Could not load contracts' });
+  }
+});
+
+router.get('/:id/recap', auth, async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.id).populate('user1 user2', 'displayName avatar');
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const recap = await buildRecap(friendship);
+    return res.json({
+      ...recap,
+      players: [
+        { id: friendship.user1?._id || friendship.user1, displayName: friendship.user1?.displayName || friendship.user1DisplayName },
+        { id: friendship.user2?._id || friendship.user2, displayName: friendship.user2?.displayName || friendship.user2DisplayName }
+      ]
+    });
+  } catch (err) {
+    console.error('Load recap failed:', err.message);
+    return res.status(err.status || 500).json({ msg: err.message || 'Could not load recap' });
+  }
+});
+
+router.post('/:id/run-it-back', auth, async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+    if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+
+    await runItBack(friendship);
+    return res.json(friendship);
+  } catch (err) {
+    console.error('Run it back failed:', err.message);
+    return res.status(err.status || 500).json({ msg: err.message || 'Could not start another season' });
   }
 });
 
@@ -125,6 +194,7 @@ router.put('/:id/respond', auth, async (req, res) => {
     const inviter = await User.findById(friendship.user1);
 
     if (action === 'DECLINE') {
+      await recordEvent(friendship._id, 'CONTRACT_DECLINED', { userId: req.user.id });
       await friendship.deleteOne();
       if (inviter) {
         await Notification.create({
@@ -139,9 +209,7 @@ router.put('/:id/respond', auth, async (req, res) => {
     }
 
     friendship.status = 'ACTIVE';
-    friendship.user1Perspective.lastInteraction = new Date();
-    friendship.user2Perspective.lastInteraction = new Date();
-    await friendship.save();
+    await activateSeason(friendship);
 
     if (inviter) {
       await Notification.create({
@@ -149,7 +217,7 @@ router.put('/:id/respond', auth, async (req, res) => {
         fromUserId: responder?._id,
         type: 'CONTRACT_ACCEPTED',
         title: 'Contract accepted',
-        message: `${responder?.displayName || 'Your invitee'} accepted your contract request.`,
+        message: `${responder?.displayName || 'Your invitee'} accepted your contract request. Season 1 starts now.`,
         friendshipId: friendship._id
       });
     }
@@ -169,6 +237,8 @@ router.post('/:id/checkin', auth, async (req, res) => {
 
     const key = participantKey(friendship, req.user.id);
     if (!key) return res.status(403).json({ msg: 'Not authorized' });
+    const source = String(req.body.source || 'TEXT').toUpperCase() === 'VOICE' ? 'VOICE' : 'TEXT';
+    const prepared = await prepareCheckinGame(friendship, req.user.id, source);
 
     const now = new Date();
     const lastInteraction = new Date(friendship[key].lastInteraction || 0);
@@ -181,8 +251,8 @@ router.post('/:id/checkin', auth, async (req, res) => {
     friendship[key].daysMissed = 0;
     friendship[key].isBankrupt = false;
     friendship[key].isInWarningZone = false;
-    await friendship.save();
 
+    const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
     await settleBountiesForCheckin(friendship._id, req.user.id);
 
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
@@ -191,15 +261,15 @@ router.post('/:id/checkin', auth, async (req, res) => {
       toUserId: otherUserId,
       fromUserId: req.user.id,
       type: 'CHECKIN',
-      title: 'Check-in received',
-      message: `${actor?.displayName || 'Your contract partner'} checked in.`,
+      title: source === 'VOICE' ? 'Voice check-in received' : 'Check-in received',
+      message: `${actor?.displayName || 'Your contract partner'} checked in. +${game.xp} Duo XP.`,
       friendshipId: friendship._id
     });
 
-    return res.json(friendship);
+    return res.json({ friendship, game });
   } catch (err) {
     console.error('Check-in failed:', err.message);
-    return res.status(500).json({ msg: 'Could not check in' });
+    return res.status(err.status || 500).json({ msg: err.message || 'Could not check in' });
   }
 });
 
@@ -212,6 +282,10 @@ router.put('/:id/limit', auth, async (req, res) => {
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     const key = participantKey(friendship, req.user.id);
     if (!key) return res.status(403).json({ msg: 'Not authorized' });
+    if ((friendship.templateId || 'DONT_GHOST') !== 'CUSTOM') {
+      const template = getTemplate(friendship.templateId);
+      return res.status(400).json({ msg: `${template.name} has a fixed ${template.limit}-day rule` });
+    }
 
     friendship[key].limit = limit;
     await friendship.save();
@@ -238,9 +312,10 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const friendship = await Friendship.findById(req.params.id);
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
-    if (!participantKey(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
 
     await refundOpenBountiesForFriendship(friendship._id);
+    await recordEvent(friendship._id, 'CONTRACT_ENDED', { userId: req.user.id });
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
     await Notification.create({
