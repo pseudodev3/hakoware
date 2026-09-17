@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 const { assertBucketConfig } = require('./services/bucketStorage');
+const { getEmailStatus, verifyEmailTransport } = require('./services/emailService');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -59,10 +60,12 @@ app.use('/api/users', require('./routes/users'));
 
 app.get('/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1;
+  const email = getEmailStatus();
   res.status(connected ? 200 : 503).json({
     status: connected ? 'healthy' : 'starting',
     database: connected ? 'connected' : 'disconnected',
     storage: 'railway-bucket',
+    email: email.configured ? email.provider : 'not-configured',
     uptime: Math.round(process.uptime())
   });
 });
@@ -83,6 +86,16 @@ let server;
 async function start() {
   await mongoose.connect(MONGO_URI);
   console.log('Connected to MongoDB');
+
+  const emailStatus = await verifyEmailTransport();
+  if (!emailStatus.configured) {
+    console.warn('Brevo email delivery is not configured');
+  } else if (emailStatus.verified) {
+    console.log(`Brevo email transport verified (${emailStatus.host}:${emailStatus.port})`);
+  } else {
+    console.warn(`Brevo email transport verification failed: ${emailStatus.error || 'unknown error'}`);
+  }
+
   server = app.listen(PORT, '0.0.0.0', () => console.log(`Hakoware API listening on port ${PORT}`));
 }
 

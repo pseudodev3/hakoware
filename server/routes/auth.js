@@ -143,21 +143,34 @@ router.put('/nen-type', auth, async (req, res) => {
 });
 
 router.post('/forgot-password', async (req, res) => {
+  const genericMessage = 'If an account exists for that email, a reset link has been sent.';
+
   try {
     const email = normalizeEmail(req.body.email);
+    if (!/^\S+@\S+\.\S+$/.test(email)) return res.json({ msg: genericMessage });
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ msg: 'No account found for that email' });
+    if (!user) return res.json({ msg: genericMessage });
 
     const resetToken = crypto.randomBytes(20).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpire = Date.now() + 3600000;
     await user.save();
 
-    await sendResetPasswordEmail(user.email, `${frontendUrl()}/reset-password/${resetToken}`);
-    return res.json({ msg: 'Password reset email sent' });
+    try {
+      await sendResetPasswordEmail(user.email, `${frontendUrl()}/reset-password/${resetToken}`);
+    } catch (emailError) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+      console.error('Password reset email delivery failed:', emailError.message);
+      return res.status(503).json({ msg: 'Email delivery is temporarily unavailable. Try again shortly.' });
+    }
+
+    return res.json({ msg: genericMessage });
   } catch (err) {
     console.error('Forgot password failed:', err.message);
-    return res.status(500).json({ msg: 'Could not send reset email' });
+    return res.status(500).json({ msg: 'Could not process password reset' });
   }
 });
 
