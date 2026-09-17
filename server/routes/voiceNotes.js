@@ -10,6 +10,7 @@ const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { getObject, putObject } = require('../services/bucketStorage');
+const { prepareCheckinGame } = require('../services/contractGame');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -31,6 +32,13 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
     const isUser1 = friendship.user1.toString() === req.user.id;
     const isUser2 = friendship.user2.toString() === req.user.id;
     if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
+
+    const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
+    const lastInteraction = new Date(friendship[key].lastInteraction || 0);
+    if ((Date.now() - lastInteraction.getTime()) / 3600000 < 20) {
+      return res.status(400).json({ msg: 'You already checked in today' });
+    }
+    await prepareCheckinGame(friendship, req.user.id, 'VOICE');
 
     const recipientId = isUser1 ? friendship.user2 : friendship.user1;
     const sender = await User.findById(req.user.id).select('displayName');
@@ -54,20 +62,10 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
     voiceNote.filePath = `/api/voice-notes/${voiceNote._id}/audio`;
     await voiceNote.save();
 
-    await Notification.create({
-      toUserId: recipientId,
-      fromUserId: req.user.id,
-      type: 'VOICE_NOTE',
-      title: 'Voice check-in',
-      message: `${sender.displayName} sent you a voice check-in.`,
-      friendshipId: friendship._id,
-      voiceNoteId: voiceNote._id
-    });
-
     return res.status(201).json(voiceNote);
   } catch (err) {
     console.error('Voice note upload failed:', err.message);
-    return res.status(500).json({ msg: 'Voice note upload failed' });
+    return res.status(err.status || 500).json({ msg: err.message || 'Voice note upload failed' });
   }
 });
 

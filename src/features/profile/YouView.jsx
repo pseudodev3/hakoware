@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, Sparkles, Zap } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAuraCards, getUserAura } from '../../services/auraService';
-import { api } from '../../services/api';
+import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
 import './YouView.css';
 
@@ -27,7 +27,7 @@ const partnerIsBankrupt = (friendship, userId) => {
 
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 
-export const YouView = ({ friendships, showToast }) => {
+export const YouView = ({ friendships, worldEvent, showToast }) => {
   const { user, refreshUser, buyCard, useCard } = useAuth();
   const [aura, setAura] = useState({ balance: Number(user.auraBalance) || 0, history: [], totalEarned: 0, totalSpent: 0 });
   const [cards, setCards] = useState([]);
@@ -37,39 +37,31 @@ export const YouView = ({ friendships, showToast }) => {
   const userId = user.uid || user.id || user._id;
 
   const refresh = async ({ silent = false } = {}) => {
-    const [auraResult, cardsResult, userResult] = await Promise.allSettled([
-      getUserAura(),
-      getAuraCards(),
-      refreshUser()
-    ]);
+    const [auraResult, cardsResult, userResult] = await Promise.allSettled([getUserAura(), getAuraCards(), refreshUser()]);
+    const refreshedUser = userResult.status === 'fulfilled' && userResult.value?.success ? userResult.value.user : null;
 
-    const refreshedUser = userResult.status === 'fulfilled' && userResult.value?.success
-      ? userResult.value.user
-      : null;
-
-    if (auraResult.status === 'fulfilled') {
-      setAura(auraResult.value);
-    } else {
+    if (auraResult.status === 'fulfilled') setAura(auraResult.value);
+    else {
       const fallbackBalance = Number(refreshedUser?.auraBalance ?? user.auraBalance) || 0;
       setAura((current) => ({ ...current, balance: fallbackBalance }));
       if (!silent) showToast?.(auraResult.reason?.message || 'Could not refresh Aura activity', 'ERROR');
     }
-
     if (cardsResult.status === 'fulfilled') setCards(cardsResult.value || []);
   };
 
-  useEffect(() => {
-    refresh({ silent: true });
-  }, []);
-
-  useEffect(() => {
-    setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 }));
-  }, [user.auraBalance]);
+  useEffect(() => { refresh({ silent: true }); }, []);
+  useEffect(() => { setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 })); }, [user.auraBalance]);
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
   const inventory = user.inventory || [];
   const appearsOnShameBoard = !user.privacySettings?.optOutPublicBankruptcy;
+  const strongest = useMemo(
+    () => friendships.reduce((best, item) => ((item.duoLevel || 1) > (best?.duoLevel || 0) ? item : best), null),
+    [friendships]
+  );
+  const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
+  const totalDuoXP = friendships.reduce((sum, item) => sum + (item.duoXP || 0), 0);
 
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
@@ -80,15 +72,8 @@ export const YouView = ({ friendships, showToast }) => {
   };
 
   const useOwnedCard = async (cardId) => {
-    if (cardId === 'PURIFY' && !hasDebt) {
-      showToast?.('You do not have any debt to clear', 'ERROR');
-      return;
-    }
-    if (cardId === 'STEAL' && !stealTarget) {
-      showToast?.('Choose a bankrupt contract first', 'ERROR');
-      return;
-    }
-
+    if (cardId === 'PURIFY' && !hasDebt) return showToast?.('You do not have any debt to clear', 'ERROR');
+    if (cardId === 'STEAL' && !stealTarget) return showToast?.('Choose a bankrupt contract first', 'ERROR');
     setBusy(`use-${cardId}`);
     const result = await useCard(cardId, cardId === 'STEAL' ? stealTarget : null);
     showToast?.(result.success ? 'Card used' : result.error, result.success ? 'SUCCESS' : 'ERROR');
@@ -101,7 +86,7 @@ export const YouView = ({ friendships, showToast }) => {
     try {
       await api.patch('/users/preferences', { optOutPublicBankruptcy: appearsOnShameBoard });
       await refreshUser();
-      showToast?.(appearsOnShameBoard ? 'You are hidden from the public Shame Board' : 'You can appear on the public Shame Board', 'SUCCESS');
+      showToast?.(appearsOnShameBoard ? 'Hidden from the public Shame Board' : 'Public Shame Board enabled', 'SUCCESS');
     } catch (error) {
       showToast?.(error.message || 'Could not update privacy', 'ERROR');
     } finally {
@@ -113,28 +98,26 @@ export const YouView = ({ friendships, showToast }) => {
     <div className="you-view">
       <section className="identity-card">
         <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
-        <div className="identity-copy">
-          <p className="eyebrow">You</p>
-          <h1>{user.displayName}</h1>
-          <p>{user.email}</p>
-        </div>
+        <div className="identity-copy"><p className="eyebrow">Player profile</p><h1>{user.displayName}</h1><p>{user.email}</p></div>
         <div className="nen-chip"><Sparkles size={14} strokeWidth={1.8} /> {user.nenType ? typeLabel(user.nenType) : 'No affinity'}</div>
       </section>
 
+      <section className="player-summary-grid">
+        <div className="player-summary-primary"><UsersRound size={18} /><small>Strongest Duo</small><strong>Lv. {strongest?.duoLevel || 1}</strong><span>{strongest?.duoTitle || 'No contract yet'}</span></div>
+        <div><Trophy size={18} /><small>Active seasons</small><strong>{activeSeasons}</strong><span>{friendships.length} total contracts</span></div>
+        <div><Sparkles size={18} /><small>Total Duo XP</small><strong>{totalDuoXP}</strong><span>across your circle</span></div>
+      </section>
+
+      {worldEvent && <section className="profile-world-event"><span>LIVE · {worldEvent.theme}</span><strong>{worldEvent.name}</strong><p>{worldEvent.description}</p></section>}
+
       <section className="aura-balance-card">
-        <div>
-          <p className="eyebrow">Aura</p>
-          <div className="aura-number">{aura.balance}</div>
-          <p>Earned {aura.totalEarned} · Spent {aura.totalSpent}</p>
-        </div>
-        <Zap size={26} strokeWidth={1.6} />
+        <div><p className="eyebrow">Aura wallet</p><div className="aura-number">{aura.balance}</div><p>Earned {aura.totalEarned} · Spent {aura.totalSpent}</p></div>
+        <Zap size={28} strokeWidth={1.6} />
       </section>
 
       {inventory.length > 0 && (
         <section className="you-section">
-          <div className="you-section-heading">
-            <div><p className="eyebrow">Inventory</p><h2>Cards you can use</h2></div>
-          </div>
+          <div className="you-section-heading"><div><p className="eyebrow">Inventory</p><h2>Cards in your pocket</h2></div></div>
           <div className="inventory-list">
             {[...new Set(inventory)].map((cardId) => {
               const card = cards.find((item) => item.id === cardId) || { id: cardId, name: typeLabel(cardId), description: '' };
@@ -163,37 +146,29 @@ export const YouView = ({ friendships, showToast }) => {
       )}
 
       <section className="you-section">
-        <div className="you-section-heading">
-          <div><p className="eyebrow">Aura market</p><h2>Spend Aura, not money.</h2></div>
-        </div>
+        <div className="you-section-heading"><div><p className="eyebrow">Aura market</p><h2>Turn participation into leverage.</h2></div></div>
         <div className="market-grid">
           {cards.map((card) => (
             <article className="market-card" key={card.id}>
               <div className="market-card-top"><strong>{card.name}</strong><span>{card.cost} Aura</span></div>
               <p>{card.description}</p>
-              <Button variant="secondary" size="sm" loading={busy === `buy-${card.id}`} disabled={aura.balance < card.cost} onClick={() => purchase(card)}>
-                {aura.balance < card.cost ? 'Not enough Aura' : 'Buy'}
-              </Button>
+              <Button variant="secondary" size="sm" loading={busy === `buy-${card.id}`} disabled={aura.balance < card.cost} onClick={() => purchase(card)}>{aura.balance < card.cost ? 'Not enough Aura' : 'Buy card'}</Button>
             </article>
           ))}
         </div>
       </section>
 
       <section className="you-section">
-        <div className="you-section-heading">
-          <div><p className="eyebrow">Privacy</p><h2>Public pressure</h2></div>
-        </div>
+        <div className="you-section-heading"><div><p className="eyebrow">Privacy</p><h2>Public pressure</h2></div></div>
         <button className="privacy-row" type="button" onClick={toggleShameBoard} disabled={savingPrivacy} aria-pressed={appearsOnShameBoard}>
           <span className="privacy-icon">{appearsOnShameBoard ? <Eye size={18} /> : <EyeOff size={18} />}</span>
-          <span className="privacy-copy"><strong>Appear on the Shame Board</strong><small>{appearsOnShameBoard ? 'If you become bankrupt, other Hakoware users can see your public debt total.' : 'Your bankruptcy stays out of the public ranking.'}</small></span>
+          <span className="privacy-copy"><strong>Appear on the Shame Board</strong><small>{appearsOnShameBoard ? 'If you become bankrupt, the Arena can show your public debt total.' : 'Your bankruptcy stays out of the public ranking.'}</small></span>
           <span className={`privacy-switch ${appearsOnShameBoard ? 'on' : ''}`} aria-hidden="true"><i /></span>
         </button>
       </section>
 
       <section className="you-section">
-        <div className="you-section-heading">
-          <div><p className="eyebrow">Recent Aura</p><h2>What changed</h2></div>
-        </div>
+        <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Recent movement</h2></div></div>
         <div className="transaction-list">
           {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
             <div className="transaction-row" key={transaction._id}>

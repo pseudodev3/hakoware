@@ -7,7 +7,6 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String, default: null },
   nenType: { type: String, enum: ['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST', null], default: null },
   inventory: [{ type: String }],
-  auraScore: { type: Number, default: 850 },
   auraBalance: { type: Number, default: 0, min: 0 },
   welcomeAuraGranted: { type: Boolean, default: false },
   lastDailyAuraBonusKey: { type: String, default: null },
@@ -20,8 +19,6 @@ const UserSchema = new mongoose.Schema({
     bankruptcyWarnings: { type: Boolean, default: true }
   },
   privacySettings: {
-    hideAuraScore: { type: Boolean, default: false },
-    optOutLeaderboard: { type: Boolean, default: false },
     optOutPublicBankruptcy: { type: Boolean, default: false }
   },
   resetPasswordToken: String,

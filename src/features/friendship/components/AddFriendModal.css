@@ -1,14 +1,47 @@
-.new-contract-form, .invite-share-state { display: flex; flex-direction: column; gap: 20px; }
-.contract-modal-intro { padding: 14px 15px; border-radius: 15px; background: rgba(247,244,236,.025); box-shadow: inset 0 0 0 1px var(--border-subtle); }
-.contract-modal-intro strong, .invite-share-copy strong { display: block; font-size: .8rem; font-weight: 620; }
-.contract-modal-intro p, .invite-share-copy p { margin-top: 5px; color: var(--text-muted); font-size: .72rem; line-height: 1.55; }
-.contract-field-note { margin-top: -12px; color: var(--text-muted); font-size: .68rem; line-height: 1.45; }
-.new-contract-actions { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; padding-top: 4px; }
-.invite-share-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: #07150e; background: var(--aura-green); }
-.invite-share-copy b { color: var(--text-secondary); font-weight: 600; }
-.invite-link { min-height: 48px; padding: 0 13px; display: flex; align-items: center; gap: 10px; border-radius: 14px; color: var(--text-secondary); background: rgba(247,244,236,.035); box-shadow: inset 0 0 0 1px var(--border-subtle); transition: background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.invite-link:active { transform: scale(.98); }
-.invite-link span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: .72rem; }
-.invite-link svg { flex: 0 0 auto; color: var(--aura-gold); }
-@media (hover:hover) and (pointer:fine) { .invite-link:hover { background: rgba(247,244,236,.055); box-shadow: inset 0 0 0 1px var(--border-active); } }
-@media (max-width:480px) { .new-contract-actions { grid-template-columns: 1fr; } }
+.new-contract-form, .invite-share-state { display:flex; flex-direction:column; gap:20px; }
+.mode-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+.mode-intro strong { display:block; margin-top:3px; font-size:.92rem; font-weight:680; letter-spacing:-.02em; }
+.mode-intro > span { color:var(--text-muted); font-size:.66rem; }
+.mode-kicker { color:var(--aura-gold); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.template-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.template-option { min-height:68px; padding:10px 11px; display:flex; align-items:center; gap:10px; position:relative; overflow:hidden; border-radius:16px; color:var(--text-secondary); text-align:left; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.template-option:active { transform:scale(.96); }
+.template-option.active { color:var(--text-primary); background:var(--surface-3); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); }
+.template-option.chaos.active { box-shadow:inset 0 0 0 1px rgba(255,116,123,.32), 0 12px 28px var(--aura-red-glow); }
+.template-icon { width:38px; height:38px; flex:0 0 auto; display:grid; place-items:center; border-radius:12px; color:var(--text-muted); background:var(--surface-soft); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.template-option.active .template-icon { color:var(--aura-gold); background:var(--aura-gold-soft); }
+.template-option.chaos.active .template-icon { color:var(--aura-red); background:var(--aura-red-glow); }
+.template-copy { min-width:0; display:flex; flex-direction:column; }
+.template-copy strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.76rem; font-weight:650; }
+.template-copy small { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.62rem; }
+.chaos-tag { position:absolute; top:6px; right:7px; color:var(--aura-red); font-family:var(--font-mono); font-size:.48rem; font-weight:700; letter-spacing:.06em; }
+.mode-rule-card { padding:16px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; border-radius:18px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--border-subtle), var(--shadow-card); }
+.mode-rule-card.chaos { background:linear-gradient(135deg,var(--surface-2),var(--aura-red-glow)); box-shadow:inset 0 0 0 1px rgba(255,116,123,.2), var(--shadow-card); }
+.mode-rule-card strong { font-size:.82rem; font-weight:680; }
+.mode-rule-card p { max-width:390px; margin-top:4px; color:var(--text-muted); font-size:.69rem; line-height:1.5; }
+.mode-rule-stats { display:flex; align-items:center; gap:12px; }
+.mode-rule-stats span { display:flex; flex-direction:column; color:var(--text-muted); font-size:.57rem; line-height:1.25; }
+.mode-rule-stats b { color:var(--text-primary); font-family:var(--font-mono); font-size:.74rem; font-weight:600; }
+.contract-field-note { margin-top:-12px; color:var(--text-muted); font-size:.68rem; line-height:1.45; }
+.new-contract-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; padding-top:4px; }
+.invite-share-icon { width:44px; height:44px; display:grid; place-items:center; border-radius:14px; color:#07150e; background:var(--aura-green); }
+.invite-share-copy strong { display:block; font-size:.84rem; font-weight:650; }
+.invite-share-copy p { margin-top:5px; color:var(--text-muted); font-size:.72rem; line-height:1.55; }
+.invite-share-copy b { color:var(--text-secondary); font-weight:600; }
+.invite-link { min-height:48px; padding:0 13px; display:flex; align-items:center; gap:10px; border-radius:14px; color:var(--text-secondary); background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); transition:background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.invite-link:active { transform:scale(.96); }
+.invite-link span { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; font-size:.72rem; }
+.invite-link svg { flex:0 0 auto; color:var(--aura-gold); }
+
+@media (hover:hover) and (pointer:fine) {
+  .template-option:hover { color:var(--text-primary); background:var(--surface-3); }
+  .invite-link:hover { background:var(--surface-3); box-shadow:inset 0 0 0 1px var(--border-active); }
+}
+
+@media (max-width:600px) {
+  .mode-intro { align-items:flex-start; flex-direction:column; gap:5px; }
+  .template-grid { grid-template-columns:1fr; }
+  .mode-rule-card { grid-template-columns:1fr; gap:13px; }
+  .mode-rule-stats { justify-content:space-between; }
+  .new-contract-actions { grid-template-columns:1fr; }
+}

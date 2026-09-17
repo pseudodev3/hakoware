@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from '../lib/api';
 
 export const getUserAura = async () => {
   const res = await api.get('/aura/me');

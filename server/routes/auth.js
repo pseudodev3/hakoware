@@ -9,6 +9,7 @@ const PendingInvite = require('../models/PendingInvite');
 const AuraTransaction = require('../models/AuraTransaction');
 const auth = require('../middleware/auth');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
+const { initializeContractGame, recordEvent } = require('../services/contractGame');
 
 const NEN_TYPES = new Set(['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST']);
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -72,14 +73,18 @@ router.post('/signup', async (req, res) => {
       });
       if (existingFriendship) continue;
 
-      await Friendship.create({
+      const friendship = new Friendship({
         user1: inviter._id,
         user2: user._id,
         user1DisplayName: inviter.displayName,
         user2DisplayName: user.displayName,
-        user1Perspective: { limit: invite.limit },
-        user2Perspective: { limit: invite.limit },
         status: 'PENDING'
+      });
+      initializeContractGame(friendship, invite.templateId || 'DONT_GHOST', invite.limit);
+      await friendship.save();
+      await recordEvent(friendship._id, 'CONTRACT_CREATED', {
+        userId: inviter._id,
+        metadata: { templateId: friendship.templateId, convertedFromInvite: true }
       });
     }
     if (pendingInvites.length) await PendingInvite.deleteMany({ recipientEmail: email });

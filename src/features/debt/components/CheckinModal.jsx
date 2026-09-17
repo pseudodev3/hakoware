@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Clock3 } from 'lucide-react';
+import { Check, Clock3, Sparkles } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
@@ -18,9 +18,11 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
   const handleCheckin = async () => {
     setLoading(true);
-    const result = await performCheckin(friendship._id || friendship.id);
+    const result = await performCheckin(friendship._id || friendship.id, 'TEXT');
     if (result.success) {
-      showToast?.(`Checked in with ${friend.displayName}`, 'SUCCESS');
+      const xp = result.game?.xp;
+      const extra = result.game?.chaosResolved ? ' · anomaly survived' : '';
+      showToast?.(`Checked in with ${friend.displayName}${xp ? ` · +${xp} Duo XP` : ''}${extra}`, 'SUCCESS');
       await onRefresh?.();
       onClose?.();
     } else {
@@ -30,10 +32,19 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   };
 
   const lastInteraction = perspective?.lastInteraction ? new Date(perspective.lastInteraction) : null;
+  const activeChaos = friendship.chaos?.activeEvent;
+  const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Check in with ${friend.displayName}`} size="md">
       <div className="checkin-content">
+        {isChaosTarget && (
+          <div className="checkin-chaos">
+            <Sparkles size={17} strokeWidth={1.8} />
+            <div><strong>{activeChaos.name}</strong><p>{activeChaos.description}</p></div>
+          </div>
+        )}
+
         <div className="checkin-state">
           <span className={`checkin-debt ${stats.totalDebt > 0 ? 'has-debt' : ''}`}>{stats.totalDebt}</span>
           <div><strong>Current debt</strong><p>{stats.totalDebt > 0 ? 'Checking in clears your current debt.' : 'You are inside the grace period.'}</p></div>
@@ -44,7 +55,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
           <div><span className="grace-dot" /><span><small>Your grace period</small><strong>{stats.limit} day{stats.limit === 1 ? '' : 's'}</strong></span></div>
         </div>
 
-        <p className="checkin-note">A check-in can be logged once every 20 hours. It resets your side of this contract; your friend keeps their own schedule.</p>
+        <p className="checkin-note">A check-in can be logged once every 20 hours. It resets your side of this contract and grows your Duo level.</p>
 
         <div className="checkin-actions">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

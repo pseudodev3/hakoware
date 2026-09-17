@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { api } from '../services/api';
+import { api } from '../lib/api';
 
 const AuthContext = createContext(null);
 const withUid = (value) => value ? { ...value, uid: value.id || value._id } : null;
@@ -97,7 +97,6 @@ export const AuthProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     user,
-    userProfile: user,
     loading,
     signup,
     login,
