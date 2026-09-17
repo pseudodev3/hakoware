@@ -4,10 +4,9 @@ const auth = require('../middleware/auth');
 const Friendship = require('../models/Friendship');
 const PendingInvite = require('../models/PendingInvite');
 const User = require('../models/User');
-const Bounty = require('../models/Bounty');
-const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { sendFriendRequestEmail } = require('../services/emailService');
+const { refundOpenBountiesForFriendship, settleBountiesForCheckin } = require('../services/bountyEscrow');
 
 const normalizeLimit = (value, fallback = 7) => {
   const parsed = Number(value ?? fallback);
@@ -172,28 +171,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     friendship.streak += 1;
     await friendship.save();
 
-    const huntingBounties = await Bounty.find({ targetId: req.user.id, status: 'HUNTING' });
-    for (const bounty of huntingBounties) {
-      bounty.status = 'CLAIMED';
-      await bounty.save();
-
-      const hunter = bounty.hunterId ? await User.findById(bounty.hunterId) : null;
-      if (!hunter) continue;
-      hunter.auraBalance += bounty.amount;
-      await hunter.save();
-      await AuraTransaction.create({
-        userId: hunter._id,
-        amount: bounty.amount,
-        type: 'BOUNTY_REWARD',
-        description: `Bounty resolved after ${bounty.targetName} checked in.`
-      });
-      await Notification.create({
-        toUserId: hunter._id,
-        type: 'BOUNTY_REWARD',
-        title: `+${bounty.amount} Aura`,
-        message: `${bounty.targetName} checked in and your bounty paid out.`
-      });
-    }
+    await settleBountiesForCheckin(friendship._id, req.user.id);
 
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
@@ -225,6 +203,18 @@ router.put('/:id/limit', auth, async (req, res) => {
 
     friendship[key].limit = limit;
     await friendship.save();
+
+    const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
+    const actor = await User.findById(req.user.id).select('displayName');
+    await Notification.create({
+      toUserId: otherUserId,
+      fromUserId: req.user.id,
+      type: 'LIMIT_CHANGED',
+      title: 'Grace period updated',
+      message: `${actor?.displayName || 'Your contract partner'} changed their grace period to ${limit} day${limit === 1 ? '' : 's'}.`,
+      friendshipId: friendship._id
+    });
+
     return res.json(friendship);
   } catch (err) {
     console.error('Update contract failed:', err.message);
@@ -238,7 +228,16 @@ router.delete('/:id', auth, async (req, res) => {
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (!participantKey(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
 
-    await Bounty.deleteMany({ friendshipId: friendship._id, status: { $in: ['ACTIVE', 'HUNTING'] } });
+    await refundOpenBountiesForFriendship(friendship._id);
+    const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
+    const actor = await User.findById(req.user.id).select('displayName');
+    await Notification.create({
+      toUserId: otherUserId,
+      fromUserId: req.user.id,
+      type: 'CONTRACT_ENDED',
+      title: 'Contract ended',
+      message: `${actor?.displayName || 'Your contract partner'} ended your contract.`
+    });
     await friendship.deleteOne();
     return res.json({ success: true });
   } catch (err) {
