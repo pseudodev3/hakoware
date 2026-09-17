@@ -29,21 +29,42 @@ const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase(
 
 export const YouView = ({ friendships, showToast }) => {
   const { user, refreshUser, buyCard, useCard } = useAuth();
-  const [aura, setAura] = useState({ balance: user.auraBalance || 0, history: [], totalEarned: 0, totalSpent: 0 });
+  const [aura, setAura] = useState({ balance: Number(user.auraBalance) || 0, history: [], totalEarned: 0, totalSpent: 0 });
   const [cards, setCards] = useState([]);
   const [busy, setBusy] = useState(null);
   const [stealTarget, setStealTarget] = useState('');
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const userId = user.uid || user.id || user._id;
 
-  const refresh = async () => {
-    const [nextAura, nextCards] = await Promise.all([getUserAura(), getAuraCards()]);
-    setAura(nextAura);
-    setCards(nextCards);
-    await refreshUser();
+  const refresh = async ({ silent = false } = {}) => {
+    const [auraResult, cardsResult, userResult] = await Promise.allSettled([
+      getUserAura(),
+      getAuraCards(),
+      refreshUser()
+    ]);
+
+    const refreshedUser = userResult.status === 'fulfilled' && userResult.value?.success
+      ? userResult.value.user
+      : null;
+
+    if (auraResult.status === 'fulfilled') {
+      setAura(auraResult.value);
+    } else {
+      const fallbackBalance = Number(refreshedUser?.auraBalance ?? user.auraBalance) || 0;
+      setAura((current) => ({ ...current, balance: fallbackBalance }));
+      if (!silent) showToast?.(auraResult.reason?.message || 'Could not refresh Aura activity', 'ERROR');
+    }
+
+    if (cardsResult.status === 'fulfilled') setCards(cardsResult.value || []);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh({ silent: true });
+  }, []);
+
+  useEffect(() => {
+    setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 }));
+  }, [user.auraBalance]);
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
