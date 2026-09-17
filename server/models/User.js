@@ -23,13 +23,7 @@ const UserSchema = new mongoose.Schema({
     optOutPublicBankruptcy: { type: Boolean, default: false }
   },
   resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  hunterLicense: { type: Boolean, default: false },
-  examTasks: {
-    nenTypeSet: { type: Boolean, default: false },
-    friendAdded: { type: Boolean, default: false },
-    voiceNoteSent: { type: Boolean, default: false }
-  }
+  resetPasswordExpire: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
