@@ -1,30 +1,33 @@
-.voice-modal-content { display: flex; flex-direction: column; gap: 20px; }
-.voice-header { display: flex; align-items: center; gap: 12px; text-align: left; }
-.mic-status { width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 15px; color: var(--aura-gold); background: var(--aura-gold-soft); box-shadow: inset 0 0 0 1px rgba(231,179,90,.15); transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
-.mic-status.active { color: var(--aura-red); background: var(--aura-red-glow); box-shadow: inset 0 0 0 1px rgba(255,116,123,.22); }
-.voice-header > div:last-child { min-width: 0; }
-.voice-header strong { display: block; font-size: .82rem; font-weight: 620; }
-.voice-header p { margin-top: 3px; color: var(--text-muted); font-size: .69rem; line-height: 1.45; }
-.recording-area { padding: 22px 16px; border-radius: 19px; display: flex; flex-direction: column; align-items: center; gap: 14px; background: rgba(247,244,236,.025); box-shadow: inset 0 0 0 1px var(--border-subtle); }
-.waveform { height: 52px; display: flex; align-items: center; justify-content: center; gap: 3px; color: var(--text-faint); }
-.wave-bar { width: 3px; height: 40px; border-radius: 999px; background: currentColor; transform: scaleY(.12); transform-origin: center; }
-.waveform.recording { color: var(--aura-red); }
-.waveform.recorded { color: var(--aura-gold); }
-.waveform.recording .wave-bar { animation: voice-wave var(--bar-duration) var(--ease-in-out) infinite alternate; animation-delay: var(--bar-delay); }
-@keyframes voice-wave { from { transform: scaleY(.18); } to { transform: scaleY(var(--bar-scale)); } }
-.time-display { font-family: var(--font-mono); font-size: 1.65rem; font-weight: 560; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-.voice-controls { min-height: 72px; display: flex; align-items: center; justify-content: center; }
-.record-btn, .play-btn, .trash-btn { display: grid; place-items: center; transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
-.record-btn { width: 70px; height: 70px; border-radius: 50%; box-shadow: 0 12px 28px rgba(0,0,0,.22); }
-.record-btn.start { background: var(--aura-gold); color: #171009; }
-.record-btn.stop { background: var(--aura-red); color: #190809; }
-.record-btn:active, .play-btn:active, .trash-btn:active { transform: scale(.96); }
-.playback-group { display: flex; align-items: center; gap: 14px; }
-.play-btn { width: 62px; height: 62px; border-radius: 50%; background: var(--aura-gold); color: #171009; box-shadow: 0 10px 24px rgba(231,179,90,.13); }
-.play-icon { transform: translateX(1px); }
-.trash-btn { width: 44px; height: 44px; border-radius: 14px; color: var(--text-muted); background: rgba(247,244,236,.03); box-shadow: inset 0 0 0 1px var(--border-subtle); }
-.voice-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
-.hidden { display: none; }
-@media (hover:hover) and (pointer:fine) { .record-btn.start:hover, .play-btn:hover { background: var(--aura-gold-strong); } .record-btn.stop:hover { box-shadow: 0 14px 32px rgba(255,116,123,.14); } .trash-btn:hover { color: var(--aura-red); background: rgba(255,116,123,.06); } }
-@media (prefers-reduced-motion:reduce) { .waveform.recording .wave-bar { animation: none !important; transform: scaleY(var(--bar-scale)); } }
-@media (max-width:440px) { .recording-area { padding-inline: 10px; } .waveform { gap: 2px; } .wave-bar { width: 2px; } .voice-actions { grid-template-columns: 1fr; } }
+.voice-modal-content { display:flex; flex-direction:column; gap:19px; }
+.voice-chaos-banner { padding:13px 14px; display:flex; flex-direction:column; border-radius:16px; background:var(--aura-red-glow); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-red) 24%,transparent); }
+.voice-chaos-banner strong { color:var(--text-primary); font-size:.76rem; font-weight:670; }
+.voice-chaos-banner span { margin-top:3px; color:var(--text-muted); font-size:.64rem; line-height:1.45; }
+.voice-header { display:flex; align-items:center; gap:12px; text-align:left; }
+.mic-status { width:48px; height:48px; flex:0 0 auto; display:grid; place-items:center; border-radius:15px; color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
+.mic-status.active { color:var(--aura-red); background:var(--aura-red-glow); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-red) 28%,transparent); }
+.voice-header > div:last-child { min-width:0; }
+.voice-header strong { display:block; font-size:.8rem; font-weight:650; }
+.voice-header p { margin-top:3px; color:var(--text-muted); font-size:.67rem; line-height:1.45; }
+.recording-area { padding:22px 16px; border-radius:19px; display:flex; flex-direction:column; align-items:center; gap:14px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.waveform { height:52px; display:flex; align-items:center; justify-content:center; gap:3px; color:var(--text-faint); }
+.wave-bar { width:3px; height:40px; border-radius:999px; background:currentColor; transform:scaleY(.12); transform-origin:center; }
+.waveform.recording { color:var(--aura-red); }
+.waveform.recorded { color:var(--aura-gold); }
+.waveform.recording .wave-bar { animation:voice-wave var(--bar-duration) var(--ease-in-out) infinite alternate; animation-delay:var(--bar-delay); }
+@keyframes voice-wave { from { transform:scaleY(.18); } to { transform:scaleY(var(--bar-scale)); } }
+.time-display { font-family:var(--font-mono); font-size:1.65rem; font-weight:580; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+.voice-controls { min-height:72px; display:flex; align-items:center; justify-content:center; }
+.record-btn,.play-btn,.trash-btn { display:grid; place-items:center; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
+.record-btn { width:70px; height:70px; border-radius:50%; box-shadow:0 12px 28px rgba(0,0,0,.16); }
+.record-btn.start { background:var(--aura-gold); color:#171009; }
+.record-btn.stop { background:var(--aura-red); color:#190809; }
+.record-btn:active,.play-btn:active,.trash-btn:active { transform:scale(.96); }
+.playback-group { display:flex; align-items:center; gap:14px; }
+.play-btn { width:62px; height:62px; border-radius:50%; background:var(--aura-gold); color:#171009; box-shadow:0 10px 24px var(--aura-gold-glow); }
+.play-icon { transform:translateX(1px); }
+.trash-btn { width:44px; height:44px; border-radius:14px; color:var(--text-muted); background:var(--surface-soft); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.voice-actions { display:grid; grid-template-columns:1fr 1.4fr; gap:8px; }
+.hidden { display:none; }
+@media (hover:hover) and (pointer:fine) { .record-btn.start:hover,.play-btn:hover { background:var(--aura-gold-strong); } .record-btn.stop:hover { box-shadow:0 14px 32px var(--aura-red-glow); } .trash-btn:hover { color:var(--aura-red); background:var(--aura-red-glow); } }
+@media (prefers-reduced-motion:reduce) { .waveform.recording .wave-bar { animation:none !important; transform:scaleY(var(--bar-scale)); } }
+@media (max-width:440px) { .recording-area { padding-inline:10px; } .waveform { gap:2px; } .wave-bar { width:2px; } .voice-actions { grid-template-columns:1fr; } }
