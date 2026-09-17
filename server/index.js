@@ -6,6 +6,7 @@ const { assertBucketConfig } = require('./services/bucketStorage');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 const PORT = Number(process.env.PORT) || 5001;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
@@ -19,6 +20,11 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
+if (IS_PRODUCTION && !FRONTEND_URL) {
+  console.error('❌ FRONTEND_URL is required in production');
+  process.exit(1);
+}
+
 try {
   assertBucketConfig();
 } catch (error) {
@@ -29,7 +35,7 @@ try {
 const app = express();
 app.set('trust proxy', 1);
 
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+const allowedOrigins = (process.env.CORS_ORIGINS || FRONTEND_URL || '')
   .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
