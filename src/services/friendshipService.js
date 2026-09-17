@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from '../lib/api';
 
 export const sendFriendInvitation = async (toEmail, limit, templateId = 'DONT_GHOST') => {
   try {
