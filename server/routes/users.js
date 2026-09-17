@@ -32,7 +32,7 @@ router.get('/leaderboard', auth, async (req, res) => {
       _id: { $in: bankruptUserIds },
       'privacySettings.optOutPublicBankruptcy': false
     })
-      .select('displayName avatar auraScore nenType')
+      .select('displayName avatar nenType')
       .lean();
 
     const usersWithStats = users
@@ -46,23 +46,13 @@ router.get('/leaderboard', auth, async (req, res) => {
   }
 });
 
-router.get('/hunters', auth, async (req, res) => {
-  try {
-    const hunterCount = await User.countDocuments({ nenType: { $ne: null } });
-    return res.json({ count: hunterCount });
-  } catch (err) {
-    console.error('Hunter count failed:', err.message);
-    return res.status(500).json({ msg: 'Could not load hunter count' });
-  }
-});
-
 router.patch('/preferences', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    for (const key of ['hideAuraScore', 'optOutLeaderboard', 'optOutPublicBankruptcy']) {
-      if (typeof req.body[key] === 'boolean') user.privacySettings[key] = req.body[key];
+    if (typeof req.body.optOutPublicBankruptcy === 'boolean') {
+      user.privacySettings.optOutPublicBankruptcy = req.body.optOutPublicBankruptcy;
     }
     await user.save();
     return res.json({ privacySettings: user.privacySettings });
