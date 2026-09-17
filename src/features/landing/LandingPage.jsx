@@ -1,173 +1,178 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Zap, 
-  ShieldAlert, 
-  Trophy, 
-  Target, 
-  ArrowRight, 
-  Ghost,
-  ShieldCheck,
-  Activity,
-  ChevronDown
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Activity, ArrowRight, Mic, Sparkles, Target, Zap } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import './LandingPage.css';
 
-/**
- * Professional, high-fidelity Landing Page.
- * Implements the "Hunter x Hunter" debt theme with premium animations.
- */
+const features = [
+  {
+    title: 'Debt engine',
+    desc: 'Miss the agreed check-in window and your social debt starts climbing automatically.',
+    icon: Activity,
+  },
+  {
+    title: 'Voice check-ins',
+    desc: 'Close the loop with a real voice note instead of another dry “wyd”.',
+    icon: Mic,
+  },
+  {
+    title: 'Bounty board',
+    desc: 'Turn ghosting into a game with stakes, targets and a little public pressure.',
+    icon: Target,
+  },
+  {
+    title: 'Aura economy',
+    desc: 'Earn Aura for showing up, then spend it across the systems that make Hakoware fun.',
+    icon: Sparkles,
+  },
+];
+
 export const LandingPage = ({ onEnter }) => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => setScrolled(window.scrollY > 28);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const features = [
-    {
-      title: "HAKOWARE PROTOCOL",
-      desc: "Automatic interest accrual for every day of silence. +1 APR compounds daily.",
-      icon: <Zap size={24} color="var(--aura-gold)" />
-    },
-    {
-      title: "BANKRUPTCY LIMIT",
-      desc: "Cross the threshold and face the consequences. Beg for mercy or face the void.",
-      icon: <ShieldAlert size={24} color="var(--aura-red)" />
-    },
-    {
-      title: "BOUNTY BOARD",
-      desc: "Place bounties on ghosting friends. Use Aura to hunt down debt-dodgers.",
-      icon: <Target size={24} color="var(--aura-blue)" />
-    },
-    {
-      title: "HUNTER MEDALS",
-      desc: "Unlock prestigious achievements for your financial disasters and victories.",
-      icon: <Trophy size={24} color="var(--aura-gold)" />
-    }
-  ];
-
   return (
     <div className="landing-root">
-      {/* Navigation Header */}
       <nav className={`landing-nav-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="landing-logo">
-          <div className="logo-box">H</div>
-          <span>HAKOWARE</span>
+          <img src="/hakoware-mark.svg" alt="" />
+          <span>Hakoware</span>
         </div>
         <div className="nav-actions">
-           <Button variant="ghost" size="sm" onClick={onEnter}>LOG IN</Button>
-           <Button variant="aura" size="sm" onClick={onEnter}>GET STARTED</Button>
+          <Button variant="ghost" size="sm" onClick={onEnter}>Log in</Button>
+          <Button variant="aura" size="sm" onClick={onEnter}>Get started</Button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-bg">
-          <div className="glow-1" />
-          <div className="glow-2" />
-        </div>
-        
-        <motion.div 
-          className="hero-content"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="hero-badge">CHAPTER 7: BANKRUPTCY</div>
-          <h1 className="hero-title">
-            THE WORLD'S FIRST <br />
-            <span>ACCOUNTABILITY</span> ENGINE
-          </h1>
-          <p className="hero-subtitle">
-            Bind your friends to the Hakoware interest protocol. <br />
-            No more ghosting. No more silence. Only debt.
-          </p>
-          
-          <div className="hero-btns">
-            <Button variant="aura" size="lg" icon={ArrowRight} onClick={onEnter}>
-              INITIATE PROTOCOL
-            </Button>
-            <Button variant="secondary" size="lg" onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}>
-              LEARN THE RULES
-            </Button>
-          </div>
-          
-          <motion.div 
-            className="scroll-hint"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
-            <ChevronDown size={24} color="var(--text-muted)" />
-          </motion.div>
-        </motion.div>
-      </section>
+      <main>
+        <section className="hero-section">
+          <div className="hero-grid" aria-hidden="true" />
+          <div className="hero-glow" aria-hidden="true" />
 
-      {/* Stats Section */}
-      <section className="stats-strip glass">
-        <div className="stat-box">
-          <span className="stat-val">+1</span>
-          <span className="stat-lbl">DAILY APR</span>
-        </div>
-        <div className="stat-divider" />
-        <div className="stat-box">
-          <span className="stat-val">7</span>
-          <span className="stat-lbl">DAY GRACE PERIOD</span>
-        </div>
-        <div className="stat-divider" />
-        <div className="stat-box">
-          <span className="stat-val">∞</span>
-          <span className="stat-lbl">POTENTIAL SHAME</span>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="features-section">
-        <div className="section-header-centered">
-          <h2 className="section-title">SYSTEM MODULES</h2>
-          <p>TOOLS DESIGNED FOR MAXIMUM COMPLIANCE</p>
-        </div>
-
-        <div className="features-grid-landing">
-          {features.map((f, i) => (
-            <motion.div 
-              key={i}
-              className="feature-landing-card glass"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+          <div className="hero-shell">
+            <motion.div
+              className="hero-copy"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', duration: .55, bounce: 0 }}
             >
-              <div className="feature-icon">{f.icon}</div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
+              <div className="hero-badge"><span /> Social accountability, with teeth</div>
+              <h1>Stay close.<br /><span>Make the gaps count.</span></h1>
+              <p className="hero-subtitle">
+                Hakoware turns missed check-ins into playful debt, Aura, bounties and bragging rights—so staying in touch actually feels like a game.
+              </p>
+              <div className="hero-btns">
+                <Button variant="aura" size="lg" icon={ArrowRight} onClick={onEnter}>Start a contract</Button>
+                <Button variant="secondary" size="lg" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>See how it works</Button>
+              </div>
+              <p className="hero-footnote">Built for friendships, not productivity theater.</p>
             </motion.div>
-          ))}
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="cta-card aura-pulse glass">
-          <h2>READY TO ENTER THE VOID?</h2>
-          <p>The debt collectors are waiting for your first contract.</p>
-          <Button variant="aura" size="lg" icon={ArrowRight} onClick={onEnter}>
-            BEGIN YOUR JOURNEY
-          </Button>
-        </div>
-      </section>
+            <motion.div
+              className="protocol-preview"
+              initial={{ opacity: 0, y: 18, scale: .98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', duration: .6, bounce: 0, delay: .08 }}
+            >
+              <div className="preview-topline">
+                <div className="preview-live"><span /> Live contract</div>
+                <span className="preview-id">HKW / 004</span>
+              </div>
 
-      {/* Footer Ticker */}
-      <footer className="landing-footer-strip">
-        <div className="ticker-wrap">
-          <div className="ticker-move">
-            <span>BANKRUPTCY IS FOREVER • INTEREST COMPOUNDS DAILY • THE HUNTER ASSOCIATION IS WATCHING • CHECK IN OR CHECK OUT • </span>
-            <span>BANKRUPTCY IS FOREVER • INTEREST COMPOUNDS DAILY • THE HUNTER ASSOCIATION IS WATCHING • CHECK IN OR CHECK OUT • </span>
+              <div className="preview-person">
+                <div className="preview-avatar">M</div>
+                <div>
+                  <h3>Maya ↔ You</h3>
+                  <p>Last check-in · 5 days ago</p>
+                </div>
+              </div>
+
+              <div className="preview-debt">
+                <div>
+                  <span className="preview-label">Current debt</span>
+                  <strong>03</strong>
+                </div>
+                <div className="preview-state">
+                  <Zap size={15} /> accumulating
+                </div>
+              </div>
+
+              <div className="preview-meter" aria-hidden="true"><span /></div>
+
+              <div className="preview-grid-cards">
+                <div><span>Grace window</span><strong>7 days</strong></div>
+                <div><span>Aura stake</span><strong>120</strong></div>
+              </div>
+
+              <div className="preview-action">
+                <div>
+                  <span>Suggested move</span>
+                  <strong>Send a voice check-in</strong>
+                </div>
+                <ArrowRight size={18} />
+              </div>
+            </motion.div>
           </div>
-        </div>
+        </section>
+
+        <section className="value-strip" aria-label="Hakoware highlights">
+          <div><strong>+1</strong><span>debt after the window</span></div>
+          <div><strong>Voice</strong><span>check-ins that feel personal</span></div>
+          <div><strong>Aura</strong><span>earned for showing up</span></div>
+        </section>
+
+        <section id="features" className="features-section">
+          <div className="section-heading">
+            <div>
+              <span className="section-kicker">The loop</span>
+              <h2>Enough structure to make it stick.<br />Enough chaos to keep it fun.</h2>
+            </div>
+            <p>Hakoware borrows the energy of game systems without turning your friendships into a spreadsheet.</p>
+          </div>
+
+          <div className="features-grid-landing">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.article
+                  key={feature.title}
+                  className="feature-landing-card"
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ type: 'spring', duration: .45, bounce: 0, delay: index * .05 }}
+                >
+                  <div className="feature-icon"><Icon size={19} strokeWidth={1.8} /></div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.desc}</p>
+                  <span className="feature-index">0{index + 1}</span>
+                </motion.article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="cta-section">
+          <div className="cta-card">
+            <div className="cta-mark"><img src="/hakoware-mark.svg" alt="" /></div>
+            <div>
+              <span className="section-kicker">Hakoware</span>
+              <h2>Keep the loop alive.</h2>
+              <p>Start with one friend, one check-in window and one contract.</p>
+            </div>
+            <Button variant="aura" size="lg" icon={ArrowRight} onClick={onEnter}>Enter Hakoware</Button>
+          </div>
+        </section>
+      </main>
+
+      <footer className="landing-footer">
+        <div className="landing-logo"><img src="/hakoware-mark.svg" alt="" /><span>Hakoware</span></div>
+        <p>Inspired by game-system energy. Built as its own world.</p>
       </footer>
     </div>
   );

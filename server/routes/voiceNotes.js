@@ -5,32 +5,36 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const VoiceNote = require('../models/VoiceNote');
-const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 
-// Configure Multer for audio storage
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = 'uploads/voice_notes';
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir, { recursive: true });
-    }
+  destination(req, file, cb) {
+    const root = req.app.locals.uploadDir || path.join(process.cwd(), 'uploads');
+    const dir = path.join(root, 'voice_notes');
+    fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
-  filename: function (req, file, cb) {
-    cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+  filename(req, file, cb) {
+    const extension = path.extname(file.originalname) || '.webm';
+    cb(null, `${req.user.id}-${Date.now()}${extension}`);
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    if (!file.mimetype?.startsWith('audio/')) {
+      return cb(new Error('Only audio uploads are allowed'));
+    }
+    return cb(null, true);
+  }
+});
 
-// @route    POST api/voice-notes/upload
-// @desc     Upload and send a voice note
-// @access   Private
 router.post('/upload', auth, upload.single('audio'), async (req, res) => {
   try {
     const { friendshipId, senderName, recipientId } = req.body;
-    
+
     if (!req.file) {
       return res.status(400).json({ msg: 'No audio file uploaded' });
     }
@@ -47,7 +51,6 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
 
     await voiceNote.save();
 
-    // Update Hunter Exam Progress
     const user = await User.findById(req.user.id);
     if (user) {
       user.examTasks.voiceNoteSent = true;
@@ -60,13 +63,10 @@ router.post('/upload', auth, upload.single('audio'), async (req, res) => {
     res.json(voiceNote);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
-// @route    GET api/voice-notes/my-inbox
-// @desc     Get all voice notes sent to current user
-// @access   Private
 router.get('/my-inbox', auth, async (req, res) => {
   try {
     const notes = await VoiceNote.find({ recipientId: req.user.id })
@@ -75,20 +75,17 @@ router.get('/my-inbox', auth, async (req, res) => {
     res.json(notes);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
-// @route    PUT api/voice-notes/:id/listened
-// @desc     Mark voice note as listened
-// @access   Private
 router.put('/:id/listened', auth, async (req, res) => {
   try {
     const note = await VoiceNote.findById(req.params.id);
     if (!note) return res.status(404).json({ msg: 'Note not found' });
 
     if (note.recipientId.toString() !== req.user.id) {
-        return res.status(401).json({ msg: 'Not authorized' });
+      return res.status(401).json({ msg: 'Not authorized' });
     }
 
     note.listened = true;
@@ -97,7 +94,7 @@ router.put('/:id/listened', auth, async (req, res) => {
     res.json(note);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 

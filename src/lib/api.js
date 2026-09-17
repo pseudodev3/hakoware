@@ -1,11 +1,9 @@
-const API_URL = '/api';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const API_URL = `${API_BASE_URL}/api`;
 
-/**
- * Handle API responses with robust error detection
- */
 const handleResponse = async (response) => {
-  const contentType = response.headers.get("content-type");
-  const isJson = contentType && contentType.includes("application/json");
+  const contentType = response.headers.get('content-type');
+  const isJson = contentType && contentType.includes('application/json');
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
@@ -16,9 +14,6 @@ const handleResponse = async (response) => {
   return data;
 };
 
-/**
- * Get standard headers with auth token
- */
 const getHeaders = () => {
   const token = localStorage.getItem('token');
   return {
@@ -29,9 +24,7 @@ const getHeaders = () => {
 
 export const api = {
   get: async (endpoint) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      headers: getHeaders()
-    });
+    const response = await fetch(`${API_URL}${endpoint}`, { headers: getHeaders() });
     return handleResponse(response);
   },
 
@@ -60,8 +53,7 @@ export const api = {
     });
     return handleResponse(response);
   },
-  
-  // Helper for file uploads if needed
+
   upload: async (endpoint, formData) => {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}${endpoint}`, {

@@ -1,77 +1,68 @@
 .btn {
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
   border-radius: var(--radius-md);
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  transition: all var(--transition-fast);
   border: 1px solid transparent;
-  text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: .82rem;
+  font-weight: 650;
+  letter-spacing: -.01em;
+  transition-property: transform, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 140ms;
+  transition-timing-function: var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.btn-sm { padding: 8px 12px; font-size: 0.7rem; }
-.btn-md { padding: 12px 20px; }
-.btn-lg { padding: 16px 28px; font-size: 0.85rem; }
+.btn-sm { min-height: 36px; padding: 8px 12px; font-size: .76rem; }
+.btn-md { padding: 11px 17px; }
+.btn-lg { min-height: 50px; padding: 14px 21px; font-size: .9rem; }
+
+.btn:active:not(:disabled) { transform: scale(.96); }
 
 .btn-primary {
   background: var(--text-primary);
-  color: #000;
-  border-color: var(--text-primary);
-}
-
-.btn-primary:hover {
-  background: #fff;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  color: #0b0b09;
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 8px 22px rgba(0,0,0,.18);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(247,244,236,.055);
   color: var(--text-primary);
   border-color: var(--border-subtle);
 }
 
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--border-active);
-}
-
 .btn-danger {
-  background: rgba(255, 77, 77, 0.1);
+  background: var(--aura-red-glow);
   color: var(--aura-red);
-  border-color: rgba(255, 77, 77, 0.2);
-}
-
-.btn-danger:hover {
-  background: var(--aura-red);
-  color: white;
+  border-color: rgba(255,116,123,.18);
 }
 
 .btn-aura {
   background: var(--aura-gold);
-  color: #000;
-  border-color: var(--aura-gold);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  color: #141009;
+  box-shadow: 0 1px 0 rgba(255,255,255,.24) inset, 0 10px 28px rgba(231,179,90,.16);
 }
 
-.btn-aura:hover {
-  background: #ffe135;
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+.btn-ghost { color: var(--text-secondary); }
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover { background: #fffdf7; }
+  .btn-secondary:hover { background: rgba(247,244,236,.09); border-color: var(--border-active); }
+  .btn-danger:hover { background: rgba(255,116,123,.2); }
+  .btn-aura:hover { background: var(--aura-gold-strong); box-shadow: 0 1px 0 rgba(255,255,255,.24) inset, 0 14px 34px rgba(231,179,90,.2); }
+  .btn-ghost:hover { color: var(--text-primary); background: rgba(247,244,236,.05); }
 }
 
-.btn-ghost {
-  color: var(--text-secondary);
-}
+.btn:disabled { opacity: .42; }
 
-.btn-ghost:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(1);
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
 }

@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
 import { ForgotPasswordModal } from './components/ForgotPasswordModal';
 import './Auth.css';
 
-/**
- * Professional, high-fidelity Login page.
- * Implements HxH theme with smooth animations and aura effects.
- */
+const AuthBrand = ({ eyebrow, title, description }) => (
+  <div className="auth-header">
+    <img className="auth-logo" src="/hakoware-mark.svg" alt="" />
+    <span className="auth-eyebrow">{eyebrow}</span>
+    <h1>{title}</h1>
+    <p>{description}</p>
+  </div>
+);
+
 export const Login = ({ onToggle, showToast }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,14 +28,11 @@ export const Login = ({ onToggle, showToast }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
     try {
       const result = await login(email, password);
-      if (!result.success) {
-        setError(result.error || 'INVALID AUTHENTICATION');
-      }
+      if (!result.success) setError(result.error || 'Could not sign you in.');
     } catch (err) {
-      setError('SYSTEM ERROR: UNREACHABLE');
+      setError('Hakoware could not reach the server.');
     } finally {
       setLoading(false);
     }
@@ -38,73 +40,26 @@ export const Login = ({ onToggle, showToast }) => {
 
   return (
     <div className="auth-container">
-      <motion.div 
-        className="auth-card glass"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="auth-header">
-          <div className="auth-logo">H</div>
-          <h1>HAKOWARE</h1>
-          <p>CHAPTER 7 BANKRUPTCY PROTOCOL</p>
-        </div>
-
+      <div className="auth-orbit" aria-hidden="true" />
+      <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
+        <AuthBrand eyebrow="Hakoware" title="Welcome back" description="Your contracts, Aura and unfinished business are right where you left them." />
         <form className="auth-form" onSubmit={handleSubmit}>
-          {error && <div className="auth-error-banner">{error}</div>}
-          
-          <Input 
-            label="EMAIL ADDRESS"
-            type="email"
-            placeholder="hunter@association.org"
-            icon={Mail}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
+          {error && <div className="auth-error-banner" role="alert">{error}</div>}
+          <Input label="Email" type="email" placeholder="you@example.com" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} required />
           <div className="input-with-action-label">
-            <Input 
-              label="SECURITY PIN / PASSWORD"
-              type="password"
-              placeholder="••••••••"
-              icon={Lock}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>
-              FORGOT PIN?
-            </button>
+            <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot?</button>
           </div>
-
-          <Button 
-            variant="primary" 
-            className="w-full" 
-            size="lg"
-            loading={loading}
-            icon={ArrowRight}
-            type="submit"
-          >
-            AUTHORIZE ACCESS
-          </Button>
+          <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Enter Hakoware</Button>
         </form>
-
-        <div className="auth-footer">
-          <p>NEW HUNTER DETECTED? <button onClick={onToggle}>REGISTER CONTRACT</button></p>
-        </div>
+        <div className="auth-footer"><p>New here? <button onClick={onToggle}>Create an account</button></p></div>
       </motion.div>
-
-      <ForgotPasswordModal 
-        isOpen={showForgot} 
-        onClose={() => setShowForgot(false)}
-        showToast={showToast}
-      />
+      <ForgotPasswordModal isOpen={showForgot} onClose={() => setShowForgot(false)} showToast={showToast} />
     </div>
   );
 };
 
-export const Signup = ({ onToggle, showToast }) => {
+export const Signup = ({ onToggle }) => {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,14 +71,11 @@ export const Signup = ({ onToggle, showToast }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
     try {
       const result = await signup(email, password, displayName);
-      if (!result.success) {
-        setError(result.error || 'REGISTRATION FAILED');
-      }
+      if (!result.success) setError(result.error || 'Could not create your account.');
     } catch (err) {
-      setError('SYSTEM ERROR: REGISTRATION FAILED');
+      setError('Hakoware could not complete registration.');
     } finally {
       setLoading(false);
     }
@@ -131,65 +83,17 @@ export const Signup = ({ onToggle, showToast }) => {
 
   return (
     <div className="auth-container">
-      <motion.div 
-        className="auth-card glass"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="auth-header">
-          <div className="auth-logo">H</div>
-          <h1>REGISTER</h1>
-          <p>NEW DEBTOR ENROLLMENT</p>
-        </div>
-
+      <div className="auth-orbit" aria-hidden="true" />
+      <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
+        <AuthBrand eyebrow="Create your ID" title="Start a contract" description="Pick a name, bring a friend, then decide how long silence gets to stay free." />
         <form className="auth-form" onSubmit={handleSubmit}>
-          {error && <div className="auth-error-banner">{error}</div>}
-          
-          <Input 
-            label="DISPLAY NAME"
-            type="text"
-            placeholder="Gon Freecss"
-            icon={User}
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-          />
-
-          <Input 
-            label="EMAIL ADDRESS"
-            type="email"
-            placeholder="hunter@association.org"
-            icon={Mail}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
-          <Input 
-            label="SECURITY PIN / PASSWORD"
-            type="password"
-            placeholder="••••••••"
-            icon={Lock}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          <Button 
-            variant="aura" 
-            className="w-full" 
-            size="lg"
-            loading={loading}
-            icon={ArrowRight}
-            type="submit"
-          >
-            CREATE CONTRACT
-          </Button>
+          {error && <div className="auth-error-banner" role="alert">{error}</div>}
+          <Input label="Display name" type="text" placeholder="How friends know you" icon={User} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+          <Input label="Email" type="email" placeholder="you@example.com" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Create account</Button>
         </form>
-
-        <div className="auth-footer">
-          <p>ALREADY ENROLLED? <button onClick={onToggle}>AUTHORIZE ACCESS</button></p>
-        </div>
+        <div className="auth-footer"><p>Already have an account? <button onClick={onToggle}>Log in</button></p></div>
       </motion.div>
     </div>
   );
