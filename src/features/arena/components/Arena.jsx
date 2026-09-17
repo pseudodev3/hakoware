@@ -3,9 +3,11 @@ import { Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { CreateBountyModal } from './CreateBountyModal';
 import { api } from '../../../lib/api';
+import { useAuth } from '../../../contexts/AuthContext';
 import './Arena.css';
 
 export const Arena = ({ friendships, showToast }) => {
+  const { user } = useAuth();
   const [tab, setTab] = useState('bounties');
   const [bounties, setBounties] = useState([]);
   const [shame, setShame] = useState([]);
@@ -13,6 +15,7 @@ export const Arena = ({ friendships, showToast }) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const userId = String(user.uid || user.id || user._id);
 
   const loadArenaData = async () => {
     setLoading(true);
@@ -68,24 +71,32 @@ export const Arena = ({ friendships, showToast }) => {
         <section className="arena-panel">
           <div className="arena-panel-head">
             <div><Target size={18} strokeWidth={1.8} /><strong>Open contracts</strong></div>
-            <label className="arena-search"><Search size={15} /><input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a target" /></label>
+            <label className="arena-search"><Search size={15} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a target" /></label>
           </div>
           <div className="arena-list">
-            {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties. The circle is quiet.'}</div> : filtered.map((bounty) => (
-              <article className="bounty-item" key={bounty._id || bounty.id}>
-                <div className="bounty-avatar">{bounty.targetName?.[0]?.toUpperCase() || '?'}</div>
-                <div className="bounty-copy">
-                  <strong>{bounty.targetName}</strong>
-                  <span>{bounty.message || 'Check in to close this bounty.'}</span>
-                </div>
-                <div className="bounty-reward"><Zap size={13} /> {bounty.amount}</div>
-                {bounty.status === 'ACTIVE' ? (
-                  <button className="hunt-button" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName}`}><Sword size={17} strokeWidth={1.8} /></button>
-                ) : (
-                  <div className="hunter-lock" title={bounty.hunterName ? `Hunted by ${bounty.hunterName}` : 'Hunter assigned'}><ShieldCheck size={16} /><span>{bounty.hunterName || 'Hunting'}</span></div>
-                )}
-              </article>
-            ))}
+            {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties. The circle is quiet.'}</div> : filtered.map((bounty) => {
+              const isTarget = String(bounty.targetId) === userId;
+              const isSender = String(bounty.senderId) === userId;
+              return (
+                <article className="bounty-item" key={bounty._id || bounty.id}>
+                  <div className="bounty-avatar">{bounty.targetName?.[0]?.toUpperCase() || '?'}</div>
+                  <div className="bounty-copy">
+                    <strong>{bounty.targetName}</strong>
+                    <span>{bounty.message || 'Check in to close this bounty.'}</span>
+                  </div>
+                  <div className="bounty-reward"><Zap size={13} /> {bounty.amount}</div>
+                  {bounty.status === 'HUNTING' ? (
+                    <div className="hunter-lock" title={bounty.hunterName ? `Hunted by ${bounty.hunterName}` : 'Hunter assigned'}><ShieldCheck size={16} /><span>{bounty.hunterName || 'Hunting'}</span></div>
+                  ) : isTarget ? (
+                    <div className="bounty-owner-state">On you</div>
+                  ) : isSender ? (
+                    <div className="bounty-owner-state">Your bounty</div>
+                  ) : (
+                    <button className="hunt-button" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName}`}><Sword size={17} strokeWidth={1.8} /></button>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       ) : (
