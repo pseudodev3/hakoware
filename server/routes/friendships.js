@@ -11,6 +11,7 @@ const {
   TEMPLATES,
   getTemplate,
   getWorldEvent,
+  duoStateFromXP,
   initializeContractGame,
   activateSeason,
   refreshGameState,
@@ -20,6 +21,8 @@ const {
   runItBack,
   recordEvent
 } = require('../services/contractGame');
+
+const DAY = 24 * 60 * 60 * 1000;
 
 const normalizeLimit = (value, fallback = 7) => {
   const parsed = Number(value ?? fallback);
@@ -38,6 +41,44 @@ const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5
 const gameTemplate = (value) => {
   const id = String(value || 'DONT_GHOST').toUpperCase();
   return TEMPLATES[id] || null;
+};
+
+const ensureActiveGameState = async (friendship) => {
+  if (!friendship || friendship.status !== 'ACTIVE') return friendship;
+  const template = getTemplate(friendship.templateId || 'DONT_GHOST');
+  let changed = false;
+
+  if (!friendship.templateId) {
+    friendship.templateId = template.id;
+    changed = true;
+  }
+
+  if (!friendship.season?.startedAt) {
+    const now = new Date();
+    friendship.season = {
+      number: friendship.season?.number || 1,
+      status: 'ACTIVE',
+      lengthDays: friendship.season?.lengthDays || template.seasonDays,
+      startedAt: now,
+      endsAt: new Date(now.getTime() + (friendship.season?.lengthDays || template.seasonDays) * DAY)
+    };
+    changed = true;
+  }
+
+  const duo = duoStateFromXP(friendship.duoXP || 0);
+  if (friendship.duoLevel !== duo.level || friendship.duoTitle !== duo.title) {
+    friendship.duoLevel = duo.level;
+    friendship.duoTitle = duo.title;
+    changed = true;
+  }
+
+  if (changed) {
+    await friendship.save();
+    await recordEvent(friendship._id, 'SEASON_STARTED', {
+      metadata: { season: friendship.season.number, templateId: friendship.templateId, migrated: true }
+    }).catch(() => null);
+  }
+  return refreshGameState(friendship);
 };
 
 router.get('/meta', auth, (req, res) => {
@@ -62,7 +103,7 @@ router.post('/', auth, async (req, res) => {
 
     const friend = await User.findOne({ email });
     if (!friend) {
-      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + 14 * DAY);
       const pendingInvite = await PendingInvite.findOneAndUpdate(
         { inviterId: user._id, recipientEmail: email },
         { $set: { inviterName: user.displayName, templateId: template.id, limit, expiresAt } },
@@ -114,12 +155,10 @@ router.get('/', auth, async (req, res) => {
   try {
     const [friendships, pendingExternal] = await Promise.all([
       Friendship.find({ $or: [{ user1: req.user.id }, { user2: req.user.id }] }).sort({ updatedAt: -1 }),
-      PendingInvite.find({ inviterId: req.user.id, expiresAt: { $gt: new Date() } })
-        .sort({ createdAt: -1 })
-        .lean()
+      PendingInvite.find({ inviterId: req.user.id, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 }).lean()
     ]);
 
-    await Promise.all(friendships.filter((friendship) => friendship.status === 'ACTIVE').map((friendship) => refreshGameState(friendship)));
+    await Promise.all(friendships.filter((friendship) => friendship.status === 'ACTIVE').map(ensureActiveGameState));
     await Promise.all(friendships.map((friendship) => friendship.populate('user1 user2', 'displayName email avatar nenType auraBalance')));
 
     const active = friendships.filter((friendship) => friendship.status === 'ACTIVE');
@@ -147,9 +186,11 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/:id/recap', auth, async (req, res) => {
   try {
-    const friendship = await Friendship.findById(req.params.id).populate('user1 user2', 'displayName avatar');
+    const friendship = await Friendship.findById(req.params.id);
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+    await ensureActiveGameState(friendship);
+    await friendship.populate('user1 user2', 'displayName avatar');
 
     const recap = await buildRecap(friendship);
     return res.json({
@@ -171,7 +212,7 @@ router.post('/:id/run-it-back', auth, async (req, res) => {
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
     if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
-
+    await ensureActiveGameState(friendship);
     await runItBack(friendship);
     return res.json(friendship);
   } catch (err) {
@@ -234,6 +275,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const friendship = await Friendship.findById(req.params.id);
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+    await ensureActiveGameState(friendship);
 
     const key = participantKey(friendship, req.user.id);
     if (!key) return res.status(403).json({ msg: 'Not authorized' });
