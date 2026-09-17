@@ -381,6 +381,8 @@ router.post('/grudges/:friendshipId/revenge', auth, async (req, res) => {
     }
 
     await User.updateOne({ _id: victim._id }, { $inc: { auraBalance: stealAmount } });
+    reserved = false;
+
     await Promise.all([
       AuraTransaction.create({ userId: victim._id, amount: -REVENGE_COST, type: 'REVENGE_FEE', description: `Returned the favor to ${claimant.displayName}` }),
       AuraTransaction.create({ userId: claimant._id, amount: -stealAmount, type: 'REVENGE_LOSS', description: `Aura taken in revenge by ${victim.displayName}` }),
