@@ -19,15 +19,11 @@ const FriendshipSchema = new mongoose.Schema({
   user2: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   user1DisplayName: String,
   user2DisplayName: String,
-  streak: { type: Number, default: 0 },
   status: { type: String, enum: ['PENDING', 'ACTIVE', 'BLOCKED'], default: 'PENDING' },
   user1Perspective: { type: PerspectiveSchema, default: () => ({}) },
-  user2Perspective: { type: PerspectiveSchema, default: () => ({}) },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  user2Perspective: { type: PerspectiveSchema, default: () => ({}) }
 }, { timestamps: true });
 
-// Ensure unique friendship between two users regardless of order
 FriendshipSchema.index({ user1: 1, user2: 1 }, { unique: true });
 
 module.exports = mongoose.model('Friendship', FriendshipSchema);
