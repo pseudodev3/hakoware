@@ -1,47 +1,35 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, AlertCircle, Sparkles, X } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { AlertCircle, CheckCircle2, Sparkles, X } from 'lucide-react';
 import './Toast.css';
 
-/**
- * High-fidelity Toast Notification.
- * Professional HxH aesthetic with motion feedback.
- */
-const Toast = ({ message, type, onClose }) => {
+const Toast = ({ message, type = 'SUCCESS', onClose }) => {
+  const shouldReduceMotion = useReducedMotion();
+  const tone = String(type || 'SUCCESS').toUpperCase();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 4000);
+    const timer = setTimeout(onClose, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const getIcon = () => {
-    switch (type) {
-      case 'ERROR': return <AlertCircle size={18} color="var(--aura-red)" />;
-      case 'MERCY': return <Sparkles size={18} color="var(--aura-gold)" />;
-      default: return <CheckCircle2 size={18} color="var(--aura-green)" />;
-    }
-  };
+  const Icon = tone === 'ERROR' ? AlertCircle : tone === 'MERCY' ? Sparkles : CheckCircle2;
 
   return (
-    <motion.div 
-      className={`toast-root glass ${type?.toLowerCase() || 'success'}`}
-      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+    <motion.div
+      className={`toast-root ${tone.toLowerCase()}`}
+      role={tone === 'ERROR' ? 'alert' : 'status'}
+      aria-live={tone === 'ERROR' ? 'assertive' : 'polite'}
+      initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: .985 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      transition={{ duration: shouldReduceMotion ? .12 : .18, ease: [0.2, 0, 0, 1] }}
     >
-      <div className="toast-content">
-        <div className="toast-icon">
-          {getIcon()}
-        </div>
-        <div className="toast-body">
-          <span className="toast-message">{message}</span>
-        </div>
-        <button className="toast-close" onClick={onClose}>
-          <X size={14} />
-        </button>
-      </div>
-      <div className="toast-progress-bar" />
+      <span className="toast-icon" aria-hidden="true">
+        <Icon size={18} strokeWidth={1.9} />
+      </span>
+      <p className="toast-message">{message}</p>
+      <button className="toast-close" type="button" onClick={onClose} aria-label="Dismiss notification">
+        <X size={16} strokeWidth={1.8} />
+      </button>
     </motion.div>
   );
 };
