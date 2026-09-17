@@ -28,14 +28,18 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioUrl) URL.revokeObjectURL(audioUrl);
+      const recorder = mediaRecorderRef.current;
+      if (recorder?.stream) recorder.stream.getTracks().forEach(track => track.stop());
     };
   }, [audioUrl]);
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    setIsRecording(false);
+    if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
   };
 
