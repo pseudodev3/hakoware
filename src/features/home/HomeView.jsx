@@ -4,19 +4,29 @@ import { Button } from '../../shared/components/Button';
 import { NenCard } from '../debt/components/NenCard';
 import './HomeView.css';
 
-const urgency = (friendship, userId) => {
+const contractState = (friendship, userId) => {
   const user1Id = friendship.user1?._id || friendship.user1;
   const perspective = String(user1Id) === String(userId) ? friendship.user1Perspective : friendship.user2Perspective;
   const limit = Number(perspective?.limit) || 7;
-  const days = Math.floor(Math.max(0, Date.now() - new Date(perspective?.lastInteraction || Date.now())) / 86400000);
-  const debt = (perspective?.baseDebt || 0) + Math.max(0, days - limit);
-  return debt * 100 + days;
+  const daysMissed = Math.floor(Math.max(0, Date.now() - new Date(perspective?.lastInteraction || Date.now())) / 86400000);
+  const debt = (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
+  return { debt, daysLeft: Math.max(0, limit - daysMissed), daysMissed };
+};
+
+const priority = (friendship, userId) => {
+  const state = contractState(friendship, userId);
+  if (state.debt > 0) return 10000 + state.debt * 100 + state.daysMissed;
+  if (state.daysLeft <= 1) return 1000 + (1 - state.daysLeft) * 10;
+  return -state.daysLeft;
 };
 
 export const HomeView = ({ user, friendships, pendingInvitations, onAction, onAddFriend, onNavigate }) => {
   const userId = user.uid || user.id || user._id;
-  const sorted = [...friendships].sort((a, b) => urgency(b, userId) - urgency(a, userId));
-  const needsAttention = sorted.filter((friendship) => urgency(friendship, userId) >= 6).slice(0, 3);
+  const sorted = [...friendships].sort((a, b) => priority(b, userId) - priority(a, userId));
+  const needsAttention = sorted.filter((friendship) => {
+    const state = contractState(friendship, userId);
+    return state.debt > 0 || state.daysLeft <= 1;
+  }).slice(0, 3);
   const visible = needsAttention.length ? needsAttention : sorted.slice(0, 3);
 
   if (friendships.length === 0) {
