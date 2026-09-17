@@ -1,190 +1,36 @@
-.bounty-modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+.bounty-form { display: flex; flex-direction: column; gap: 22px; }
+.bounty-explainer { padding: 14px; display: flex; align-items: flex-start; gap: 10px; border-radius: 14px; color: var(--aura-gold); background: rgba(231,179,90,.055); box-shadow: inset 0 0 0 1px rgba(231,179,90,.14); }
+.bounty-explainer p { color: var(--text-secondary); font-size: .74rem; line-height: 1.55; }
+.bounty-field { display: flex; flex-direction: column; gap: 8px; }
+.bounty-field > label, .bounty-field-label-row label { color: var(--text-secondary); font-size: .72rem; font-weight: 600; }
+.bounty-field > label span { color: var(--text-faint); font-weight: 500; }
+.bounty-field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bounty-field-label-row > span { color: var(--text-muted); font-family: var(--font-mono); font-size: .64rem; font-variant-numeric: tabular-nums; }
+.bounty-field-label-row > span.insufficient { color: var(--aura-red); }
+.bounty-friend-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; max-height: 180px; overflow-y: auto; }
+.bounty-friend { min-height: 54px; padding: 8px 10px; display: flex; align-items: center; gap: 9px; overflow: hidden; border-radius: 13px; color: var(--text-secondary); background: rgba(247,244,236,.025); box-shadow: inset 0 0 0 1px var(--border-subtle); font-size: .75rem; text-align: left; transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.bounty-friend:active { transform: scale(.97); }
+.bounty-friend.selected { color: var(--text-primary); background: rgba(231,179,90,.075); box-shadow: inset 0 0 0 1px rgba(231,179,90,.28); }
+.bounty-friend-avatar { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; color: var(--aura-gold); background: rgba(231,179,90,.07); box-shadow: inset 0 0 0 1px rgba(231,179,90,.12); font-weight: 650; }
+.bounty-friend > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bounty-amount-row { min-height: 58px; padding: 0 14px; display: flex; align-items: center; gap: 9px; border-radius: 14px; color: var(--aura-gold); background: rgba(247,244,236,.03); box-shadow: inset 0 0 0 1px var(--border-subtle); transition: box-shadow 140ms var(--ease-out), background-color 140ms var(--ease-out); }
+.bounty-amount-row:focus-within { box-shadow: inset 0 0 0 1px rgba(231,179,90,.45), 0 0 0 3px rgba(231,179,90,.07); }
+.bounty-amount-row.invalid { background: rgba(255,116,123,.04); box-shadow: inset 0 0 0 1px rgba(255,116,123,.22); }
+.bounty-amount-row input { flex: 1; min-width: 0; border: 0; outline: none; background: none; color: var(--text-primary); font-family: var(--font-mono); font-size: 1.3rem; font-weight: 560; }
+.bounty-amount-row span { color: var(--text-muted); font-size: .68rem; }
+.bounty-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.bounty-presets button { min-height: 38px; border-radius: 10px; color: var(--text-muted); background: rgba(247,244,236,.025); box-shadow: inset 0 0 0 1px var(--border-subtle); font-family: var(--font-mono); font-size: .68rem; transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out), opacity 140ms var(--ease-out); }
+.bounty-presets button:active:not(:disabled) { transform: scale(.97); }
+.bounty-presets button.active { color: #161107; background: var(--aura-gold); }
+.bounty-presets button:disabled { opacity: .3; }
+.bounty-field textarea { min-height: 88px; padding: 12px; resize: vertical; border: 0; outline: none; border-radius: 13px; color: var(--text-primary); background: rgba(247,244,236,.03); box-shadow: inset 0 0 0 1px var(--border-subtle); font-size: .78rem; line-height: 1.5; transition: box-shadow 140ms var(--ease-out), background-color 140ms var(--ease-out); }
+.bounty-field textarea:focus { background: rgba(247,244,236,.04); box-shadow: inset 0 0 0 1px rgba(231,179,90,.45), 0 0 0 3px rgba(231,179,90,.07); }
+.bounty-field textarea::placeholder { color: var(--text-faint); }
+.bounty-actions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; padding-top: 4px; }
+
+@media (hover:hover) and (pointer:fine) {
+  .bounty-friend:hover { color: var(--text-primary); background: rgba(247,244,236,.045); }
+  .bounty-presets button:hover:not(.active):not(:disabled) { color: var(--text-secondary); background: rgba(247,244,236,.05); }
 }
 
-.association-warning {
-  padding: 16px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.friend-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 8px;
-  max-height: 120px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.friend-select-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  transition: all 0.2s;
-  position: relative;
-  opacity: 0.7;
-}
-
-.friend-select-card:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.friend-select-card.selected {
-  border-color: var(--aura-gold);
-  border-width: 2px;
-  background: rgba(255, 215, 0, 0.1);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
-  opacity: 1;
-}
-
-.selection-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--aura-gold);
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--bg-card);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-}
-
-.friend-avatar-small {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--bg-dark);
-  border: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.selected .friend-avatar-small {
-  color: var(--aura-gold);
-  border-color: var(--aura-gold);
-}
-
-.friend-name-small {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-.aura-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 12px 20px;
-}
-
-.aura-amount-input {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--aura-gold);
-  font-family: var(--font-mono);
-  font-size: 2rem;
-  font-weight: 800;
-  width: 100%;
-}
-
-.aura-amount-input:focus { outline: none; }
-
-.aura-input-wrapper .unit {
-  font-weight: 800;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.preset-amounts {
-  display: flex;
-  gap: 8px;
-}
-
-.preset-btn {
-  flex: 1;
-  padding: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 700;
-  transition: all 0.2s;
-}
-
-.preset-btn.active {
-  background: var(--aura-gold);
-  color: #000;
-  border-color: var(--aura-gold);
-}
-
-.label-with-action {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.action-link-small {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--aura-gold);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.bounty-textarea {
-  width: 100%;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-primary);
-  font-family: var(--font-main);
-  font-size: 0.9rem;
-  min-height: 80px;
-  resize: vertical;
-}
-
-.modal-actions-bounty {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-}
+@media (max-width:520px) { .bounty-friend-grid, .bounty-actions { grid-template-columns: 1fr; } }

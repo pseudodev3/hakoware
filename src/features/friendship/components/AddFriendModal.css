@@ -1,0 +1,14 @@
+.new-contract-form, .invite-share-state { display: flex; flex-direction: column; gap: 20px; }
+.contract-modal-intro { padding: 14px 15px; border-radius: 15px; background: rgba(247,244,236,.025); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+.contract-modal-intro strong, .invite-share-copy strong { display: block; font-size: .8rem; font-weight: 620; }
+.contract-modal-intro p, .invite-share-copy p { margin-top: 5px; color: var(--text-muted); font-size: .72rem; line-height: 1.55; }
+.contract-field-note { margin-top: -12px; color: var(--text-muted); font-size: .68rem; line-height: 1.45; }
+.new-contract-actions { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; padding-top: 4px; }
+.invite-share-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: #07150e; background: var(--aura-green); }
+.invite-share-copy b { color: var(--text-secondary); font-weight: 600; }
+.invite-link { min-height: 48px; padding: 0 13px; display: flex; align-items: center; gap: 10px; border-radius: 14px; color: var(--text-secondary); background: rgba(247,244,236,.035); box-shadow: inset 0 0 0 1px var(--border-subtle); transition: background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.invite-link:active { transform: scale(.98); }
+.invite-link span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: .72rem; }
+.invite-link svg { flex: 0 0 auto; color: var(--aura-gold); }
+@media (hover:hover) and (pointer:fine) { .invite-link:hover { background: rgba(247,244,236,.055); box-shadow: inset 0 0 0 1px var(--border-active); } }
+@media (max-width:480px) { .new-contract-actions { grid-template-columns: 1fr; } }

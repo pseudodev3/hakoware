@@ -1,107 +1,29 @@
 import { api } from './api';
 
-/**
- * Get user's aura balance and history
- */
-export const getUserAura = async (userId) => {
+export const getUserAura = async () => {
   try {
-    const res = await api.get(`/aura/${userId}`);
-    if (res.msg) throw new Error(res.msg);
+    const res = await api.get('/aura/me');
     return {
       balance: res.balance || 0,
       totalEarned: res.totalEarned || 0,
       totalSpent: res.totalSpent || 0,
       totalTransactions: res.totalTransactions || 0,
-      earningsByType: res.earningsByType || {},
       history: res.history || []
     };
   } catch (error) {
-    console.error('Error getting aura:', error);
-    return { 
-      balance: 0, 
-      totalEarned: 0, 
-      totalSpent: 0, 
-      totalTransactions: 0, 
-      earningsByType: {}, 
-      history: [] 
-    };
+    console.error('Error getting Aura:', error);
+    return { balance: 0, totalEarned: 0, totalSpent: 0, totalTransactions: 0, history: [] };
   }
 };
 
-/**
- * Get simple aura balance
- */
-export const getAuraBalance = async (userId) => {
-    const aura = await getUserAura(userId);
-    return { balance: aura.balance };
-};
-
-/**
- * Get aura transaction history
- */
-export const getAuraTransactions = async (userId) => {
-    const aura = await getUserAura(userId);
-    return aura.history;
-};
-
-/**
- * Get aura statistics
- */
-export const getAuraStats = async (userId) => {
-    const aura = await getUserAura(userId);
-    return {
-        totalEarned: aura.totalEarned,
-        totalSpent: aura.totalSpent,
-        totalTransactions: aura.totalTransactions,
-        earningsByType: aura.earningsByType,
-        balance: aura.balance
-    };
-};
-
-/**
- * Initialize aura balance for new user
- */
-export const initializeAuraBalance = async (userId) => {
+export const getAuraCards = async () => {
   try {
-    return await api.post('/aura/initialize', { userId });
+    return await api.get('/aura/cards');
   } catch (error) {
-    console.error('Error initializing aura:', error);
-    return { success: false };
-  }
-};
-
-/**
- * Award aura points for an action
- */
-export const awardAura = async (userId, type, amount, data = {}) => {
-  try {
-    return await api.post('/aura/award', { type, amount, data });
-  } catch (error) {
-    console.error('Error awarding aura:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Spend aura points
- */
-export const spendAura = async (userId, amount, action, data = {}) => {
-  try {
-    return await api.post('/aura/spend', { amount, action, data });
-  } catch (error) {
-    console.error('Error spending aura:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Get aura leaderboard
- */
-export const getAuraLeaderboard = async (limit_count = 10) => {
-  try {
-    return await api.get(`/aura/leaderboard?limit=${limit_count}`);
-  } catch (error) {
-    console.error('Error getting aura leaderboard:', error);
+    console.error('Error loading Aura cards:', error);
     return [];
   }
 };
+
+export const buyAuraCard = (cardId) => api.post('/aura/buy-card', { cardId });
+export const useAuraCard = (cardId, targetFriendshipId = null) => api.post('/aura/use-card', { cardId, targetFriendshipId });

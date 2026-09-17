@@ -1,57 +1,40 @@
-.nen-card {
-  position: relative;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow: hidden;
-  border-radius: 22px;
-  background: linear-gradient(155deg, rgba(22,22,17,.94), rgba(13,13,10,.9));
-  box-shadow: inset 0 0 0 1px var(--border-subtle), var(--shadow-card);
-  transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+.contract-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(18,18,15,.88);
+  box-shadow: inset 0 0 0 1px var(--border-subtle), 0 16px 42px rgba(0,0,0,.16);
+  transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background-color 140ms var(--ease-out);
 }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.status-badge { min-height: 26px; padding: 0 9px; display: inline-flex; align-items: center; gap: 7px; border: 0 !important; border-radius: 999px; background: rgba(247,244,236,.04); box-shadow: inset 0 0 0 1px currentColor; font-size: .65rem; font-weight: 600; letter-spacing: .01em; text-transform: none; }
-.status-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
-.settings-trigger { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; color: var(--text-muted); transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.settings-trigger:active { transform: scale(.96); }
-.profile-section { display: flex; align-items: center; gap: 13px; }
-.avatar-aura { width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; position: relative; overflow: hidden; border-radius: 15px; background: #0d0d0b; box-shadow: inset 0 0 0 1px var(--border-active); }
-.avatar { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; outline: 1px solid rgba(255,255,255,.1); outline-offset: -1px; }
-.avatar-placeholder { color: var(--text-muted); }
-.friend-name { color: var(--text-primary); font-size: .96rem; font-weight: 620; letter-spacing: -.02em; }
-.friend-email { margin-top: 2px; color: var(--text-muted); font-size: .72rem; }
-
-.debt-display { padding: 4px 0 2px; text-align: left; }
-.debt-value-container { display: flex; align-items: baseline; justify-content: flex-start; gap: 6px; }
-.debt-value { font-family: var(--font-mono); font-size: 3.25rem; font-weight: 500; line-height: .95; letter-spacing: -.07em; }
-.debt-unit { color: var(--text-muted); font-size: .8rem; font-weight: 550; }
-.debt-label { margin-top: 7px; color: var(--text-muted); font-size: .68rem; font-weight: 540; letter-spacing: 0; }
-.urgency-bar-bg { height: 5px; overflow: hidden; border-radius: 999px; background: rgba(247,244,236,.055); }
-.urgency-bar-fill { height: 100%; border-radius: inherit; }
-.urgency-labels { margin-top: 7px; display: flex; justify-content: space-between; color: var(--text-muted); font-size: .62rem; font-weight: 520; letter-spacing: 0; }
-
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; padding: 1px; overflow: hidden; border-radius: 16px; background: var(--border-subtle); }
-.stat-item { min-height: 62px; padding: 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; background: #12120f; }
-.stat-label { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: .65rem; font-weight: 520; }
-.stat-value { font-family: var(--font-mono); font-size: .86rem; font-weight: 560; }
-.card-actions { display: flex; gap: 8px; }
-.flex-1 { flex: 1; }
-.w-full { width: 100%; }
-
-.nen-card.bankrupt { background: linear-gradient(155deg, rgba(46,20,21,.62), rgba(13,13,10,.94)); box-shadow: inset 0 0 0 1px rgba(255,116,123,.2), var(--shadow-card); }
-.nen-card.warning { box-shadow: inset 0 0 0 1px rgba(231,179,90,.22), var(--shadow-card); }
+.contract-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.contract-avatar { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: #1a1914; box-shadow: inset 0 0 0 1px var(--border-active); color: var(--text-secondary); font-size: .86rem; font-weight: 650; }
+.contract-avatar img { width: 100%; height: 100%; object-fit: cover; outline: 1px solid rgba(255,255,255,.1); outline-offset: -1px; }
+.contract-identity { flex: 1; min-width: 0; }
+.contract-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.contract-name-row h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-size: .95rem; font-weight: 620; letter-spacing: -.02em; }
+.contract-identity p { margin-top: 3px; color: var(--text-muted); font-size: .74rem; }
+.contract-status { flex: 0 0 auto; padding: 3px 7px; border-radius: 999px; font-size: .62rem; font-weight: 650; }
+.contract-status.good { color: var(--aura-green); background: var(--aura-green-glow); }
+.contract-status.due { color: var(--aura-gold); background: var(--aura-gold-soft); }
+.contract-status.overdue,
+.contract-status.critical { color: var(--aura-red); background: var(--aura-red-glow); }
+.contract-settings { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; color: var(--text-muted); transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.contract-settings:active { transform: scale(.96); }
+.contract-meter { height: 3px; margin-top: 14px; overflow: hidden; border-radius: 999px; background: rgba(247,244,236,.055); }
+.contract-meter span { display: block; height: 100%; border-radius: inherit; background: var(--aura-green); transition: width 150ms var(--ease-out), background-color 150ms var(--ease-out); }
+.contract-card.due .contract-meter span { background: var(--aura-gold); }
+.contract-card.overdue .contract-meter span,
+.contract-card.critical .contract-meter span { background: var(--aura-red); }
+.contract-actions { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.contract-card.compact { padding: 15px 16px; }
+.contract-card.compact .contract-meter { margin-top: 12px; }
 
 @media (hover: hover) and (pointer: fine) {
-  .nen-card:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px var(--border-active), 0 22px 56px rgba(0,0,0,.24); }
-  .settings-trigger:hover { color: var(--text-primary); background: rgba(247,244,236,.05); }
+  .contract-card:hover { transform: translateY(-2px); background: rgba(22,22,18,.94); box-shadow: inset 0 0 0 1px var(--border-active), 0 20px 46px rgba(0,0,0,.2); }
+  .contract-settings:hover { color: var(--text-primary); background: rgba(247,244,236,.05); }
 }
 
-@media (max-width: 768px) {
-  .nen-card { padding: 17px; gap: 17px; border-radius: 20px; }
-  .debt-value { font-size: 2.8rem; }
-  .profile-section { flex-direction: row; align-items: center; }
-  .card-actions { flex-direction: row; }
-  .card-actions .btn { min-width: 0; padding-inline: 12px; }
+@media (max-width: 560px) {
+  .contract-card { padding: 16px; border-radius: 18px; }
+  .contract-actions { grid-template-columns: 1fr 1.2fr; }
 }

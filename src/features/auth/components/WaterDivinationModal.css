@@ -1,130 +1,21 @@
-.water-divination-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
+.affinity-overlay { position: fixed; inset: 0; z-index: 5000; padding: 20px; display: grid; place-items: center; overflow-y: auto; background: rgba(4,4,3,.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.affinity-card { width: min(720px,100%); padding: clamp(22px,5vw,36px); border-radius: 28px; background: linear-gradient(155deg,rgba(23,23,17,.98),rgba(12,12,9,.98)); box-shadow: inset 0 0 0 1px var(--border-active), 0 36px 100px rgba(0,0,0,.48); }
+.affinity-header { display: flex; align-items: flex-start; gap: 16px; }
+.affinity-header img { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 14px; outline: 1px solid rgba(255,255,255,.1); outline-offset: -1px; }
+.affinity-kicker { color: var(--aura-gold); font-size: .65rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; }
+.affinity-header h2 { margin-top: 4px; font-size: clamp(1.55rem,4vw,2.35rem); line-height: 1.05; letter-spacing: -.045em; font-weight: 650; }
+.affinity-header > div > p:last-child { max-width: 520px; margin-top: 9px; color: var(--text-secondary); font-size: .82rem; line-height: 1.55; }
+.affinity-grid { margin-top: 26px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.affinity-option { min-height: 88px; padding: 14px; display: flex; align-items: flex-start; gap: 11px; border-radius: 17px; color: var(--text-secondary); background: rgba(247,244,236,.025); box-shadow: inset 0 0 0 1px var(--border-subtle); text-align: left; transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.affinity-option:active { transform: scale(.96); }
+.affinity-option.selected { color: var(--text-primary); background: rgba(231,179,90,.07); box-shadow: inset 0 0 0 1px rgba(231,179,90,.3); }
+.affinity-icon { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; color: var(--aura-gold); background: rgba(231,179,90,.065); box-shadow: inset 0 0 0 1px rgba(231,179,90,.12); }
+.affinity-copy { min-width: 0; display: flex; flex-direction: column; }
+.affinity-copy strong { font-size: .82rem; font-weight: 620; }
+.affinity-copy small { margin-top: 4px; color: var(--text-muted); font-size: .68rem; line-height: 1.45; }
+.affinity-error { margin-top: 14px; color: var(--aura-red); font-size: .72rem; }
+.affinity-footer { margin-top: 24px; padding-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border-subtle); }
+.affinity-footer p { color: var(--text-muted); font-size: .7rem; }
 
-.water-divination-card {
-  width: 100%;
-  max-width: 480px;
-  padding: 48px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-active);
-  text-align: center;
-  box-shadow: 0 0 50px rgba(0, 229, 255, 0.1);
-}
-
-.test-intro {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.test-intro h2 {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: 0.15em;
-  color: var(--text-primary);
-}
-
-.test-intro p {
-  color: var(--text-secondary);
-  line-height: 1.6;
-  font-size: 0.9rem;
-}
-
-.pulse-icon {
-  animation: pulse-slow 2s infinite;
-}
-
-@keyframes pulse-slow {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.test-active {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.water-glass {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(0, 229, 255, 0.1);
-  border: 2px solid rgba(0, 229, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 -20px 40px rgba(0, 229, 255, 0.2);
-}
-
-.test-active h3 {
-  font-size: 1.2rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  color: var(--aura-blue);
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.test-result {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.result-icon-wrapper {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  border: 2px solid;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.result-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 150%;
-  height: 150%;
-  border-radius: 50%;
-  filter: blur(30px);
-  opacity: 0.2;
-  z-index: -1;
-}
-
-.test-result h2 {
-  font-size: 2rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-}
-
-.result-desc {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-}
+@media (hover:hover) and (pointer:fine) { .affinity-option:hover { color: var(--text-primary); background: rgba(247,244,236,.045); } }
+@media (max-width:600px) { .affinity-overlay { align-items: start; padding: max(16px,env(safe-area-inset-top)) 12px 20px; } .affinity-card { border-radius: 24px; } .affinity-header { flex-direction: column; } .affinity-grid { grid-template-columns: 1fr; } .affinity-footer { align-items: stretch; flex-direction: column; } .affinity-footer .btn { width: 100%; } }

@@ -2,296 +2,225 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
+const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
 
-// @route    GET api/aura/:userId
-// @desc     Get aura balance and history
-// @access   Private
-router.get('/:userId', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-
-    // --- RETROACTIVE WELCOME BONUS CHECK ---
-    const hasWelcomeBonus = await AuraTransaction.findOne({
-      userId: user._id,
-      type: 'WELCOME_BONUS'
-    });
-
-    if (!hasWelcomeBonus) {
-      const welcomeAmount = 100;
-      user.auraBalance = (user.auraBalance || 0) + welcomeAmount;
-      await user.save();
-
-      const welcomeTx = new AuraTransaction({
-        userId: user._id,
-        amount: welcomeAmount,
-        type: 'WELCOME_BONUS',
-        description: 'Welcome to Hakoware! Initial Aura gift (Retroactive).'
-      });
-      await welcomeTx.save();
-      
-      // Update local user object for subsequent calculations in this request
-      user.auraBalance = user.auraBalance; 
-    }
-    // ---------------------------------------
-
-    // --- DAILY PASSIVE AURA GENERATION ---
-    const now = new Date();
-    const lastGeneration = user.updatedAt; // Using updatedAt as a proxy for last visit for now, but we'll check transactions
-    const lastDailyTx = await AuraTransaction.findOne({
-      userId: user._id,
-      type: 'DAILY_BONUS',
-      createdAt: { $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) }
-    });
-
-    if (!lastDailyTx) {
-      // 1. Check if user is debt-free (Social Health)
-      const Friendship = require('../models/Friendship');
-      const friendships = await Friendship.find({ 
-        $or: [{ user1: user._id }, { user2: user._id }],
-        status: 'ACTIVE' 
-      });
-      
-      let isDebtFree = true;
-      let debtReason = '';
-
-      for (const f of friendships) {
-        const isU1 = f.user1.toString() === user._id.toString();
-        const p = isU1 ? f.user1Perspective : f.user2Perspective;
-        const d = Math.floor(Math.max(0, now - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
-        const totalDebt = (p.baseDebt || 0) + Math.max(0, d - (p.limit || 7));
-        
-        if (totalDebt > 0) {
-          isDebtFree = false;
-          debtReason = `Debt of ${totalDebt} on friendship with ${isU1 ? f.user2DisplayName : f.user1DisplayName}`;
-          console.log(`User ${user._id} denied DAILY_BONUS: ${debtReason}`);
-          break;
-        }
-      }
-
-      if (isDebtFree) {
-        let dailyAmount = 10; // Base healthy bonus
-        
-        // Nen Affinity Passives
-        if (user.nenType === 'ENHANCER') dailyAmount += 15; // +15 extra for Enhancers
-        if (user.nenType === 'SPECIALIST') dailyAmount += 5; // +5 for Specialists (random factor handled simply)
-
-        user.auraBalance += dailyAmount;
-        await user.save();
-
-        const bonusTx = new AuraTransaction({
-          userId: user._id,
-          amount: dailyAmount,
-          type: 'DAILY_BONUS',
-          description: `Daily Social Health Bonus (${user.nenType || 'HUNTER'})`
-        });
-        await bonusTx.save();
-      }
-    }
-    // ---------------------------------------
-
-    const history = await AuraTransaction.find({ userId: req.params.userId })
-      .sort({ createdAt: -1 })
-      .limit(50);
-
-    // Calculate stats
-    const totalEarned = await AuraTransaction.aggregate([
-      { $match: { userId: user._id, amount: { $gt: 0 } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
-
-    const totalSpent = await AuraTransaction.aggregate([
-      { $match: { userId: user._id, amount: { $lt: 0 } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
-
-    const earningsByType = await AuraTransaction.aggregate([
-      { $match: { userId: user._id, amount: { $gt: 0 } } },
-      { $group: { _id: "$type", total: { $sum: "$amount" } } }
-    ]);
-
-    const stats = {};
-    earningsByType.forEach(item => stats[item._id] = item.total);
-
-    // Calculate weekly change
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const weeklyTransactions = await AuraTransaction.find({
-      userId: user._id,
-      createdAt: { $gte: sevenDaysAgo }
-    });
-
-    const netChange = weeklyTransactions.reduce((acc, tx) => acc + tx.amount, 0);
-    const previousBalance = (user.auraBalance || 0) - netChange;
-    const weeklyChangePercent = previousBalance > 0 
-      ? Math.round((netChange / previousBalance) * 100) 
-      : netChange > 0 ? 100 : 0;
-
-    res.json({
-      balance: user.auraBalance || 0,
-      totalEarned: totalEarned.length > 0 ? totalEarned[0].total : 0,
-      totalSpent: totalSpent.length > 0 ? Math.abs(totalSpent[0].total) : 0,
-      totalTransactions: await AuraTransaction.countDocuments({ userId: user._id }),
-      earningsByType: stats,
-      weeklyChangePercent,
-      history
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+const CARD_CATALOG = Object.freeze({
+  PURIFY: {
+    id: 'PURIFY',
+    name: 'Clean Slate',
+    cost: 120,
+    description: 'Reset your debt across every active contract. Grace periods do not change.'
+  },
+  STEAL: {
+    id: 'STEAL',
+    name: 'Claim',
+    cost: 180,
+    description: 'Take 10% Aura from a contract partner who is currently bankrupt.'
   }
 });
 
-// @route    POST api/aura/initialize
-// @desc     Initialize aura for new user
-// @access   Private
-router.post('/initialize', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
+const calculateDebt = (perspective, now = new Date()) => {
+  const limit = Number(perspective?.limit) || 7;
+  const lastInteraction = new Date(perspective?.lastInteraction || now);
+  const daysMissed = Math.floor(Math.max(0, now - lastInteraction) / 86400000);
+  return (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
+};
 
-    // Check if already initialized (has transactions or non-zero balance)
-    const count = await AuraTransaction.countDocuments({ userId: user._id });
-    if (count > 0) return res.json({ msg: 'Already initialized' });
+const addDailyBonusIfEligible = async (user) => {
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const existing = await AuraTransaction.findOne({
+    userId: user._id,
+    type: 'DAILY_BONUS',
+    createdAt: { $gte: startOfDay }
+  });
+  if (existing) return 0;
 
-    // Initial gift
-    const amount = 100;
-    user.auraBalance = amount;
+  const friendships = await Friendship.find({
+    $or: [{ user1: user._id }, { user2: user._id }],
+    status: 'ACTIVE'
+  });
+  if (friendships.length === 0) return 0;
+
+  const debtFree = friendships.every((friendship) => {
+    const isUser1 = friendship.user1.toString() === user._id.toString();
+    const perspective = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+    return calculateDebt(perspective, now) === 0;
+  });
+  if (!debtFree) return 0;
+
+  const amount = 10;
+  user.auraBalance += amount;
+  await user.save();
+  await AuraTransaction.create({
+    userId: user._id,
+    amount,
+    type: 'DAILY_BONUS',
+    description: 'Daily clean-contract bonus'
+  });
+  return amount;
+};
+
+const buildAuraSummary = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) return null;
+
+  const hasWelcome = await AuraTransaction.exists({ userId: user._id, type: 'WELCOME_BONUS' });
+  if (!hasWelcome) {
+    user.auraBalance += 100;
     await user.save();
-
-    const transaction = new AuraTransaction({
+    await AuraTransaction.create({
       userId: user._id,
-      amount,
+      amount: 100,
       type: 'WELCOME_BONUS',
-      description: 'Welcome to Hakoware! Initial Aura gift.'
+      description: 'Welcome to Hakoware'
     });
+  }
 
-    await transaction.save();
-    res.json({ success: true, balance: user.auraBalance });
+  await addDailyBonusIfEligible(user);
+
+  const [history, earned, spent, count] = await Promise.all([
+    AuraTransaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(40),
+    AuraTransaction.aggregate([
+      { $match: { userId: user._id, amount: { $gt: 0 } } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]),
+    AuraTransaction.aggregate([
+      { $match: { userId: user._id, amount: { $lt: 0 } } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]),
+    AuraTransaction.countDocuments({ userId: user._id })
+  ]);
+
+  return {
+    balance: user.auraBalance || 0,
+    totalEarned: earned[0]?.total || 0,
+    totalSpent: Math.abs(spent[0]?.total || 0),
+    totalTransactions: count,
+    history
+  };
+};
+
+router.get('/me', auth, async (req, res) => {
+  try {
+    const summary = await buildAuraSummary(req.user.id);
+    if (!summary) return res.status(404).json({ msg: 'User not found' });
+    return res.json(summary);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Aura summary failed:', err.message);
+    return res.status(500).json({ msg: 'Could not load Aura' });
   }
 });
 
-// @route    POST api/aura/buy-card
-// @desc     Buy a spell card
-// @access   Private
+router.get('/cards', auth, (req, res) => {
+  res.json(Object.values(CARD_CATALOG));
+});
+
 router.post('/buy-card', auth, async (req, res) => {
-  const { cardId, cardName, cost } = req.body;
   try {
+    const card = CARD_CATALOG[String(req.body.cardId || '').toUpperCase()];
+    if (!card) return res.status(400).json({ msg: 'Unknown card' });
+
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
-    if (user.auraBalance < cost) return res.status(400).json({ msg: 'INSUFFICIENT AURA' });
+    if (user.auraBalance < card.cost) return res.status(400).json({ msg: 'Not enough Aura' });
 
-    user.auraBalance -= cost;
-    user.inventory.push(cardId);
+    user.auraBalance -= card.cost;
+    user.inventory.push(card.id);
     await user.save();
-
-    const transaction = new AuraTransaction({
+    await AuraTransaction.create({
       userId: user._id,
-      amount: -cost,
+      amount: -card.cost,
       type: 'MARKETPLACE_PURCHASE',
-      description: `Purchased spell card: ${cardName}`
+      description: `Purchased ${card.name}`
     });
 
-    await transaction.save();
-    res.json({ success: true, balance: user.auraBalance, inventory: user.inventory });
+    return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, card });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Card purchase failed:', err.message);
+    return res.status(500).json({ msg: 'Could not purchase card' });
   }
 });
 
-// @route    POST api/aura/use-card
-// @desc     Use a spell card
-// @access   Private
 router.post('/use-card', auth, async (req, res) => {
-  const { cardId, index, targetFriendshipId } = req.body;
   try {
+    const cardId = String(req.body.cardId || '').toUpperCase();
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
-    
-    // Check if user has the card
-    if (!user.inventory.includes(cardId)) {
-      return res.status(400).json({ msg: 'CARD NOT FOUND IN INVENTORY' });
-    }
+    if (!CARD_CATALOG[cardId]) return res.status(400).json({ msg: 'Unknown card' });
+    if (!user.inventory.includes(cardId)) return res.status(400).json({ msg: 'Card not found in inventory' });
 
     if (cardId === 'PURIFY') {
-      const Friendship = require('../models/Friendship');
-      // Reset all debts for this user
       const friendships = await Friendship.find({
-        $or: [{ user1: req.user.id }, { user2: req.user.id }]
+        $or: [{ user1: user._id }, { user2: user._id }],
+        status: 'ACTIVE'
       });
+      const now = new Date();
+      const withDebt = friendships.filter((friendship) => {
+        const isUser1 = friendship.user1.toString() === req.user.id;
+        const perspective = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+        return calculateDebt(perspective, now) > 0;
+      });
+      if (withDebt.length === 0) return res.status(400).json({ msg: 'You do not have any debt to clear' });
 
-      for (const f of friendships) {
-        const isUser1 = f.user1.toString() === req.user.id;
-        const pKey = isUser1 ? 'user1Perspective' : 'user2Perspective';
-        f[pKey].baseDebt = 0;
-        f[pKey].lastInteraction = new Date();
-        f[pKey].calculatedDebt = 0;
-        await f.save();
+      for (const friendship of withDebt) {
+        const isUser1 = friendship.user1.toString() === req.user.id;
+        const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
+        friendship[key].baseDebt = 0;
+        friendship[key].lastInteraction = now;
+        friendship[key].calculatedDebt = 0;
+        friendship[key].daysMissed = 0;
+        friendship[key].isBankrupt = false;
+        friendship[key].isInWarningZone = false;
+        await friendship.save();
       }
     }
 
     if (cardId === 'STEAL') {
-      const Friendship = require('../models/Friendship');
-      const targetFriendship = await Friendship.findById(targetFriendshipId);
-      if (!targetFriendship) return res.status(404).json({ msg: 'TARGET NOT FOUND' });
+      const friendship = await Friendship.findById(req.body.targetFriendshipId);
+      if (!friendship || friendship.status !== 'ACTIVE') return res.status(404).json({ msg: 'Contract not found' });
 
-      const isUser1 = targetFriendship.user1.toString() === req.user.id;
-      const targetId = isUser1 ? targetFriendship.user2 : targetFriendship.user1;
-      const targetUser = await User.findById(targetId);
-      
-      if (!targetUser) return res.status(404).json({ msg: 'TARGET USER NOT FOUND' });
+      const isUser1 = friendship.user1.toString() === req.user.id;
+      const isUser2 = friendship.user2.toString() === req.user.id;
+      if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
 
-      // Check if target is actually bankrupt
-      const pKey = isUser1 ? 'user2Perspective' : 'user1Perspective';
-      const p = targetFriendship[pKey];
-      const daysMissed = Math.floor(Math.max(0, new Date() - new Date(p.lastInteraction)) / (1000 * 60 * 60 * 24));
-      const totalDebt = (p.baseDebt || 0) + Math.max(0, daysMissed - (p.limit || 7));
-      
-      if (totalDebt < (p.limit || 7) * 2) {
-        return res.status(400).json({ msg: 'TARGET IS NOT BANKRUPT' });
+      const targetId = isUser1 ? friendship.user2 : friendship.user1;
+      const targetPerspective = isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
+      const targetLimit = Number(targetPerspective.limit) || 7;
+      if (calculateDebt(targetPerspective) < targetLimit * 2) {
+        return res.status(400).json({ msg: 'This contract partner is not bankrupt' });
       }
 
-      const stealAmount = Math.floor(targetUser.auraBalance * 0.1);
-      targetUser.auraBalance -= stealAmount;
-      user.auraBalance += stealAmount;
-      
-      await targetUser.save();
-      
-      const stealTx = new AuraTransaction({
-        userId: targetUser._id,
-        amount: -stealAmount,
-        type: 'SPELL_EFFECT',
-        description: `Aura stolen by ${user.displayName} (THIEF SPELL)`
-      });
-      await stealTx.save();
+      const target = await User.findById(targetId);
+      if (!target) return res.status(404).json({ msg: 'Target not found' });
+      const amount = Math.floor((target.auraBalance || 0) * 0.1);
+      if (amount <= 0) return res.status(400).json({ msg: 'There is no Aura to claim from this partner' });
 
-      const gainTx = new AuraTransaction({
+      target.auraBalance -= amount;
+      user.auraBalance += amount;
+      await target.save();
+      await AuraTransaction.create({
+        userId: target._id,
+        amount: -amount,
+        type: 'SPELL_EFFECT',
+        description: `Aura claimed by ${user.displayName}`
+      });
+      await AuraTransaction.create({
         userId: user._id,
-        amount: stealAmount,
+        amount,
         type: 'SPELL_EFFECT',
-        description: `Stole aura from ${targetUser.displayName} (THIEF SPELL)`
+        description: `Claimed Aura from ${target.displayName}`
       });
-      await gainTx.save();
     }
 
-    // Remove one instance of the card
     const cardIndex = user.inventory.indexOf(cardId);
-    if (cardIndex > -1) {
-      user.inventory.splice(cardIndex, 1);
-    }
-    
+    user.inventory.splice(cardIndex, 1);
     await user.save();
-
-    res.json({ success: true, inventory: user.inventory });
+    return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Use card failed:', err.message);
+    return res.status(500).json({ msg: 'Could not use card' });
   }
 });
 

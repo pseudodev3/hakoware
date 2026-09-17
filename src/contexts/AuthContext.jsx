@@ -1,121 +1,75 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
+const withUid = (value) => value ? { ...value, uid: value.id || value._id } : null;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for token on mount
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const res = await api.get('/auth/user');
-          if (res.msg) {
-            // Token invalid or expired
-            localStorage.removeItem('token');
-            setUser(null);
-          } else {
-            const userWithUid = { ...res, uid: res.id || res._id };
-            setUser(userWithUid);
-            setUserProfile(userWithUid); // For now, profile is same as user object
-          }
-        } catch (error) {
-          console.error('Error loading user:', error);
-          localStorage.removeItem('token');
-          setUser(null);
-        }
+      if (!token) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    };
 
+      try {
+        setUser(withUid(await api.get('/auth/user')));
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        localStorage.removeItem('token');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     loadUser();
   }, []);
 
-  // Sign up new user
-  const signup = async (email, password, displayName) => {
+  const authenticate = async (endpoint, payload) => {
     try {
-      const res = await api.post('/auth/signup', { email, password, displayName });
-      if (res.token) {
-        localStorage.setItem('token', res.token);
-        const userWithUid = { ...res.user, uid: res.user.id || res.user._id };
-        setUser(userWithUid);
-        setUserProfile(userWithUid);
-        return { success: true, user: userWithUid };
-      }
-      return { success: false, error: res.msg || 'Signup failed' };
+      const res = await api.post(endpoint, payload);
+      localStorage.setItem('token', res.token);
+      const nextUser = withUid(res.user);
+      setUser(nextUser);
+      return { success: true, user: nextUser };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
-  // Login existing user
-  const login = async (email, password) => {
-    try {
-      const res = await api.post('/auth/login', { email, password });
-      if (res.token) {
-        localStorage.setItem('token', res.token);
-        const userWithUid = { ...res.user, uid: res.user.id || res.user._id };
-        setUser(userWithUid);
-        setUserProfile(userWithUid);
-        return { success: true, user: userWithUid };
-      }
-      return { success: false, error: res.msg || 'Login failed' };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
+  const signup = (email, password, displayName) => authenticate('/auth/signup', { email, password, displayName });
+  const login = (email, password) => authenticate('/auth/login', { email, password });
 
-  // Logout user
-  const logout = async () => {
+  const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    setUserProfile(null);
-    return { success: true };
-  };
-
-  const updateUserProfile = async (updates) => {
-    // To be implemented in backend
-    return { success: true };
   };
 
   const refreshUser = async () => {
     try {
-      const res = await api.get('/auth/user');
-      if (!res.msg) {
-        const userWithUid = { ...res, uid: res.id || res._id };
-        setUser(userWithUid);
-        setUserProfile(userWithUid);
-        return { success: true, user: userWithUid };
-      }
-      return { success: false, error: res.msg };
+      const nextUser = withUid(await api.get('/auth/user'));
+      setUser(nextUser);
+      return { success: true, user: nextUser };
     } catch (error) {
-      console.error('Error refreshing user:', error);
       return { success: false, error: error.message };
     }
   };
 
   const setNenType = async (nenType) => {
     try {
-      const res = await api.put('/auth/nen-type', { nenType });
-      if (res && (res._id || res.id)) {
-        const userWithUid = { ...res, uid: res.id || res._id };
-        setUser(userWithUid);
-        return { success: true };
-      }
-      return { success: false, error: 'Malformed response from server' };
+      const nextUser = withUid(await api.put('/auth/nen-type', { nenType }));
+      setUser(nextUser);
+      return { success: true, user: nextUser };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -123,16 +77,9 @@ export const AuthProvider = ({ children }) => {
 
   const buyCard = async (card) => {
     try {
-      const res = await api.post('/aura/buy-card', { 
-        cardId: card.id, 
-        cardName: card.name, 
-        cost: card.cost 
-      });
-      if (res.success) {
-        setUser({ ...user, auraBalance: res.balance, inventory: res.inventory });
-        return { success: true };
-      }
-      return { success: false, error: res.msg || 'Purchase failed' };
+      const res = await api.post('/aura/buy-card', { cardId: card.id });
+      setUser((current) => current ? { ...current, auraBalance: res.balance, inventory: res.inventory } : current);
+      return { success: true, card: res.card };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -141,51 +88,28 @@ export const AuthProvider = ({ children }) => {
   const useCard = async (cardId, targetFriendshipId = null) => {
     try {
       const res = await api.post('/aura/use-card', { cardId, targetFriendshipId });
-      if (res.success) {
-        setUser({ ...user, inventory: res.inventory });
-        return { success: true };
-      }
-      return { success: false, error: res.msg || 'Failed to use card' };
+      setUser((current) => current ? { ...current, auraBalance: res.balance ?? current.auraBalance, inventory: res.inventory } : current);
+      return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
-  const resetPassword = async (email) => {
-    return { success: true };
-  };
-
-  const resendVerificationEmail = async () => {
-    return { success: true };
-  };
-
-  const isEmailVerified = () => {
-    return user?.emailVerified ?? true; // Default to true for new system
-  };
-
-  const value = {
+  const value = useMemo(() => ({
     user,
-    userProfile,
+    userProfile: user,
     loading,
     signup,
     login,
     logout,
     refreshUser,
-    resetPassword,
-    resendVerificationEmail,
-    updateUserProfile,
     setNenType,
     buyCard,
     useCard,
-    isEmailVerified,
-    isAuthenticated: !!user
-  };
+    isAuthenticated: Boolean(user)
+  }), [user, loading]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
 
 export default AuthContext;
