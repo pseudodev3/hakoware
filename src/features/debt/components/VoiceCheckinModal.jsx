@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, Pause, Play, StopCircle, Trash2 } from 'lucide-react';
+import { Mic, Pause, Play, ShieldCheck, StopCircle, Target, Trash2 } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
+import { getContractBounty } from '../../../services/bountyService';
 import { sendVoiceNote } from '../../../services/voiceNoteService';
 import './VoiceCheckinModal.css';
 
@@ -13,6 +14,8 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [bounty, setBounty] = useState(null);
+  const [creditHunter, setCreditHunter] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -32,6 +35,28 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     cleanupStream();
   }, [audioUrl]);
+
+  useEffect(() => {
+    let active = true;
+    const loadBounty = async () => {
+      if (!isOpen || !friendship) {
+        setBounty(null);
+        setCreditHunter(false);
+        return;
+      }
+      try {
+        const result = await getContractBounty(friendship._id || friendship.id);
+        if (active) {
+          setBounty(result || null);
+          setCreditHunter(false);
+        }
+      } catch {
+        if (active) setBounty(null);
+      }
+    };
+    loadBounty();
+    return () => { active = false; };
+  }, [isOpen, friendship?._id, friendship?.id]);
 
   const stopRecording = () => {
     const recorder = mediaRecorderRef.current;
@@ -115,11 +140,17 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       return;
     }
 
-    const checkin = await performCheckin(contractId, 'VOICE');
+    const bountyCreditId = creditHunter && bounty?.status === 'PRESSURE_SENT' ? bounty._id : null;
+    const checkin = await performCheckin(contractId, 'VOICE', bountyCreditId);
     if (checkin.success) {
       const xp = checkin.game?.xp;
-      const extra = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
-      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${extra}`, 'SUCCESS');
+      const chaos = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
+      const bountyResult = checkin.bounty?.outcome === 'CLAIMED'
+        ? ` · ${bounty?.hunterName || 'hunter'} credited`
+        : checkin.bounty?.outcome === 'ESCAPED'
+          ? ' · bounty escaped'
+          : '';
+      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}`, 'SUCCESS');
     } else {
       showToast?.(`Voice uploaded, but the check-in was not recorded: ${checkin.error || 'unknown error'}`, 'ERROR');
     }
@@ -135,6 +166,8 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
   const activeChaos = friendship.chaos?.activeEvent;
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
+  const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
+  const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Voice check-in with ${friend.displayName}`} size="md">
@@ -143,6 +176,23 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
           <div className="voice-chaos-banner">
             <strong>{activeChaos.name}</strong>
             <span>{activeChaos.description}</span>
+          </div>
+        )}
+
+        {hasOpenBounty && (
+          <div className={`voice-bounty-proof ${pressureReady ? 'pressure-ready' : ''}`}>
+            <div className="voice-bounty-icon">{pressureReady ? <ShieldCheck size={18} /> : <Target size={18} />}</div>
+            <div className="voice-bounty-copy">
+              <span>{pressureReady ? 'PROOF OF PRESSURE' : 'BOUNTY LIVE'}</span>
+              <strong>{bounty.amount} Aura on this check-in</strong>
+              <p>{pressureReady ? `${bounty.hunterName} sent pressure. Decide whether they actually got you here.` : 'Checking in now closes this bounty without paying a hunter.'}</p>
+              {pressureReady && (
+                <div className="voice-proof-choice" role="group" aria-label="Bounty hunter credit">
+                  <button type="button" className={!creditHunter ? 'active' : ''} onClick={() => setCreditHunter(false)}>No credit · escape</button>
+                  <button type="button" className={creditHunter ? 'active credit' : ''} onClick={() => setCreditHunter(true)}>Credit {bounty.hunterName}</button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -177,7 +227,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
         <div className="voice-actions">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="aura" disabled={!audioBlob} loading={loading} onClick={handleSubmit}>Send voice check-in</Button>
+          <Button variant="aura" disabled={!audioBlob} loading={loading} onClick={handleSubmit}>{pressureReady && creditHunter ? `Send & credit ${bounty.hunterName}` : hasOpenBounty ? 'Send & escape bounty' : 'Send voice check-in'}</Button>
         </div>
       </div>
     </Modal>
