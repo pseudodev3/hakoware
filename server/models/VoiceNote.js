@@ -5,7 +5,8 @@ const VoiceNoteSchema = new mongoose.Schema({
   senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   senderName: String,
   recipientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  filePath: { type: String, required: true }, // Path to the audio file on the server
+  filePath: { type: String, required: true },
+  storageKey: { type: String, default: null },
   duration: Number,
   listened: { type: Boolean, default: false },
   listenedAt: { type: Date, default: null },

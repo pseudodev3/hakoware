@@ -1,13 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
+const { assertBucketConfig } = require('./services/bucketStorage');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 const PORT = Number(process.env.PORT) || 5001;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 if (!MONGO_URI) {
   console.error('❌ MONGO_URI is required');
@@ -19,29 +20,42 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
+if (IS_PRODUCTION && !FRONTEND_URL) {
+  console.error('❌ FRONTEND_URL is required in production');
+  process.exit(1);
+}
+
+try {
+  assertBucketConfig();
+} catch (error) {
+  console.error(`❌ ${error.message}`);
+  process.exit(1);
+}
+
 const app = express();
 app.set('trust proxy', 1);
 
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+const allowedOrigins = (process.env.CORS_ORIGINS || FRONTEND_URL || '')
   .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+
+    if (!IS_PRODUCTION && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
     return callback(new Error('Origin not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'x-auth-token']
 }));
 app.use(express.json({ limit: '1mb' }));
-
-const uploadDir = process.env.UPLOAD_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(process.cwd(), 'uploads');
-fs.mkdirSync(uploadDir, { recursive: true });
-app.locals.uploadDir = uploadDir;
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/friendships', require('./routes/friendships'));
@@ -53,13 +67,12 @@ app.use('/api/bankruptcy', require('./routes/bankruptcy'));
 app.use('/api/bounties', require('./routes/bounties'));
 app.use('/api/users', require('./routes/users'));
 
-app.use('/uploads', express.static(uploadDir));
-
 app.get('/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1;
   res.status(connected ? 200 : 503).json({
     status: connected ? 'healthy' : 'starting',
     database: connected ? 'connected' : 'disconnected',
+    storage: 'railway-bucket',
     uptime: Math.round(process.uptime())
   });
 });
@@ -72,6 +85,11 @@ app.use((err, req, res, next) => {
   if (err?.message === 'Origin not allowed by CORS') {
     return res.status(403).json({ msg: 'Origin not allowed' });
   }
+
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({ msg: 'Invalid JSON body' });
+  }
+
   console.error(err);
   return res.status(500).json({ msg: 'Server error' });
 });
@@ -84,7 +102,7 @@ async function start() {
 
   server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Hakoware API listening on port ${PORT}`);
-    console.log(`📁 Upload storage: ${uploadDir}`);
+    console.log('🪣 Voice notes: Railway Storage Bucket');
   });
 }
 

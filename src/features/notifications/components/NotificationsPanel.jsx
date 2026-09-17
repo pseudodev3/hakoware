@@ -1,45 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bell, 
-  X, 
-  Check, 
-  Trash2, 
-  Clock, 
-  AlertTriangle, 
-  ShieldAlert, 
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import {
+  Bell,
+  X,
+  Check,
+  Trash2,
+  Clock,
+  ShieldAlert,
   MessageSquare,
   Sparkles,
   UserPlus
 } from 'lucide-react';
-import { 
-  getUserNotifications, 
-  markNotificationAsRead, 
+import {
+  getUserNotifications,
+  markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
-  NOTIFICATION_TYPES 
+  NOTIFICATION_TYPES
 } from '../../../services/notificationService';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { Button } from '../../../shared/components/Button';
 import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
 import './NotificationsPanel.css';
 
-/**
- * Premium slide-out notifications panel.
- * Professional HxH aesthetic with motion feedback.
- */
 export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, showToast }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const shouldReduceMotion = useReducedMotion();
 
   const loadNotifications = async () => {
     setLoading(true);
     try {
       const data = await getUserNotifications();
       setNotifications(data || []);
-      if (onUnreadCountChange) {
-        onUnreadCountChange((data?.filter(n => !n.read).length || 0) + (pendingInvitations?.length || 0));
-      }
+      onUnreadCountChange?.((data?.filter(n => !n.read).length || 0) + (pendingInvitations?.length || 0));
     } catch (error) {
       console.error('Failed to load notifications:', error);
     } finally {
@@ -49,14 +43,24 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
 
   useEffect(() => {
     if (isOpen) loadNotifications();
-    
-    // Polling for updates
+
     const interval = setInterval(() => {
       if (isOpen) loadNotifications();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [isOpen, pendingInvitations]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
 
   const handleMarkAsRead = async (id) => {
     await markNotificationAsRead(id);
@@ -77,130 +81,163 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     try {
       const result = await respondToInvitation(id, action);
       if (result.success) {
-        showToast(action === 'ACCEPT' ? 'CONTRACT AUTHORIZED' : 'CONTRACT DECLINED', 'SUCCESS');
-        onRefresh();
+        showToast?.(action === 'ACCEPT' ? 'CONTRACT AUTHORIZED' : 'CONTRACT DECLINED', 'SUCCESS');
+        onRefresh?.();
       } else {
-        showToast(result.error || 'FAILED TO RESPOND', 'ERROR');
+        showToast?.(result.error || 'FAILED TO RESPOND', 'ERROR');
       }
     } catch (err) {
-      showToast('FAILED TO RESPOND', 'ERROR');
+      showToast?.('FAILED TO RESPOND', 'ERROR');
     }
   };
 
   const getIcon = (type) => {
     switch (type) {
-      case NOTIFICATION_TYPES.LIMIT_CHANGED: return <Clock size={16} color="var(--aura-gold)" />;
-      case NOTIFICATION_TYPES.BAILOUT_RECEIVED: return <ShieldAlert size={16} color="var(--aura-blue)" />;
-      case NOTIFICATION_TYPES.MERCY_GRANTED: return <Sparkles size={16} color="var(--aura-green)" />;
-      case NOTIFICATION_TYPES.MERCY_DECLINED: return <X size={16} color="var(--aura-red)" />;
-      case NOTIFICATION_TYPES.VOICE_NOTE: return <MessageSquare size={16} color="var(--aura-blue)" />;
-      default: return <Bell size={16} color="var(--text-muted)" />;
+      case NOTIFICATION_TYPES.LIMIT_CHANGED: return <Clock size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.BAILOUT_RECEIVED: return <ShieldAlert size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.MERCY_GRANTED: return <Sparkles size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.MERCY_DECLINED: return <X size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.VOICE_NOTE: return <MessageSquare size={16} strokeWidth={1.8} />;
+      default: return <Bell size={16} strokeWidth={1.8} />;
     }
   };
+
+  const getTone = (type) => {
+    switch (type) {
+      case NOTIFICATION_TYPES.LIMIT_CHANGED: return 'gold';
+      case NOTIFICATION_TYPES.BAILOUT_RECEIVED:
+      case NOTIFICATION_TYPES.VOICE_NOTE: return 'blue';
+      case NOTIFICATION_TYPES.MERCY_GRANTED: return 'green';
+      case NOTIFICATION_TYPES.MERCY_DECLINED: return 'red';
+      default: return 'neutral';
+    }
+  };
+
+  const formatType = (type = '') => type
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, char => char.toUpperCase());
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = (now - date) / 1000;
-    if (diff < 60) return 'JUST NOW';
-    if (diff < 3600) return `${Math.floor(diff / 60)}M AGO`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}H AGO`;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return date.toLocaleDateString();
   };
 
+  const unreadCount = notifications.filter(notification => !notification.read).length;
+  const panelMotion = shouldReduceMotion
+    ? {
+        initial: { opacity: 0, transform: 'translateX(0%)' },
+        animate: { opacity: 1, transform: 'translateX(0%)' },
+        exit: { opacity: 0, transform: 'translateX(0%)' },
+        transition: { duration: .14, ease: [0.2, 0, 0, 1] }
+      }
+    : {
+        initial: { opacity: 1, transform: 'translateX(100%)' },
+        animate: { opacity: 1, transform: 'translateX(0%)' },
+        exit: { opacity: 1, transform: 'translateX(100%)' },
+        transition: { duration: .24, ease: [0.32, 0.72, 0, 1] }
+      };
+
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {isOpen && (
         <>
-          <motion.div 
+          <motion.div
             className="panel-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: .16, ease: [0.2, 0, 0, 1] }}
             onClick={onClose}
           />
-          <motion.aside 
-            className="notifications-panel glass"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          <motion.aside
+            className="notifications-panel"
+            aria-label="Notifications"
+            {...panelMotion}
           >
             <header className="panel-header">
-              <div className="header-top">
-                <h3>SYSTEM ALERTS</h3>
-                <button className="close-panel" onClick={onClose}>
-                  <X size={20} />
+              <div className="panel-heading">
+                <span className="panel-kicker">Activity</span>
+                <h3>Notifications</h3>
+              </div>
+              <div className="panel-header-actions">
+                {unreadCount > 0 && (
+                  <button className="mark-all-btn" onClick={handleMarkAllRead}>Mark all read</button>
+                )}
+                <button className="close-panel" onClick={onClose} aria-label="Close notifications">
+                  <X size={19} strokeWidth={1.8} />
                 </button>
               </div>
             </header>
 
             <div className="panel-content">
-              {/* INVITATIONS SECTION */}
               {pendingInvitations?.length > 0 && (
-                <div className="invitations-section" style={{ marginBottom: '32px' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                      <UserPlus size={16} color="var(--aura-blue)" />
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>PENDING CONTRACTS</span>
-                   </div>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {pendingInvitations.map(inv => (
-                        <div key={inv._id} className="invitation-card glass" style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                           <p style={{ fontSize: '0.8rem', marginBottom: '12px' }}><strong>{inv.user1.displayName}</strong> requests a binding contract.</p>
-                           <div style={{ display: 'flex', gap: '8px' }}>
-                              <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(inv._id, 'ACCEPT')}>AUTHORIZE</Button>
-                              <Button variant="secondary" size="sm" onClick={() => handleRespond(inv._id, 'DECLINE')}>DECLINE</Button>
-                           </div>
+                <section className="invitations-section" aria-labelledby="pending-contracts-title">
+                  <div className="panel-section-title">
+                    <UserPlus size={16} strokeWidth={1.8} />
+                    <span id="pending-contracts-title">Pending contracts</span>
+                  </div>
+                  <div className="invitation-list">
+                    {pendingInvitations.map(inv => (
+                      <div key={inv._id} className="invitation-card">
+                        <p><strong>{inv.user1.displayName}</strong> wants to start a contract with you.</p>
+                        <div className="invitation-actions">
+                          <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(inv._id, 'ACCEPT')}>Accept</Button>
+                          <Button variant="secondary" size="sm" onClick={() => handleRespond(inv._id, 'DECLINE')}>Decline</Button>
                         </div>
-                      ))}
-                   </div>
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               )}
 
-              <div style={{ marginBottom: '32px' }}>
+              <section className="voice-section">
                 <VoiceNotesInbox />
-              </div>
-              
+              </section>
+
               {loading && notifications.length === 0 ? (
-                <div className="panel-empty">
+                <div className="panel-empty" aria-live="polite">
                   <div className="loading-spinner" />
-                  <p>SYNCING PROTOCOLS...</p>
+                  <p>Syncing notifications…</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="panel-empty">
-                  <Bell size={40} className="empty-icon" />
-                  <p>NO ACTIVE ALERTS</p>
+                  <Bell size={34} className="empty-icon" strokeWidth={1.6} />
+                  <p>No notifications yet</p>
                 </div>
               ) : (
                 <div className="notification-list">
-                  {notifications.map((n) => (
-                    <motion.div 
-                      key={n.id || n._id}
-                      className={`notification-item ${n.read ? 'read' : 'unread'}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id || notification._id}
+                      className={`notification-item ${notification.read ? 'read' : 'unread'}`}
                     >
-                      <div className="item-icon">
-                        {getIcon(n.type)}
+                      <div className={`item-icon ${getTone(notification.type)}`}>
+                        {getIcon(notification.type)}
                       </div>
                       <div className="item-body">
                         <div className="item-header">
-                          <span className="item-type">{n.type?.replace('_', ' ')}</span>
-                          <span className="item-time">{formatTime(n.createdAt)}</span>
+                          <span className="item-type">{formatType(notification.type)}</span>
+                          <span className="item-time">{formatTime(notification.createdAt)}</span>
                         </div>
-                        <p className="item-msg">{n.message}</p>
+                        <p className="item-msg">{notification.message}</p>
                         <div className="item-actions">
-                          {!n.read && (
-                            <button className="action-link" onClick={() => handleMarkAsRead(n.id || n._id)}>
-                              <Check size={12} /> MARK READ
+                          {!notification.read && (
+                            <button className="action-link" onClick={() => handleMarkAsRead(notification.id || notification._id)}>
+                              <Check size={13} strokeWidth={1.8} /> Mark read
                             </button>
                           )}
-                          <button className="action-link delete" onClick={() => handleDelete(n.id || n._id)}>
-                            <Trash2 size={12} /> DELETE
+                          <button className="action-link delete" onClick={() => handleDelete(notification.id || notification._id)}>
+                            <Trash2 size={13} strokeWidth={1.8} /> Delete
                           </button>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               )}

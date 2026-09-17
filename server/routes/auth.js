@@ -8,7 +8,10 @@ const AuraTransaction = require('../models/AuraTransaction');
 const auth = require('../middleware/auth');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 
-const frontendUrl = () => (process.env.FRONTEND_URL || 'https://hakoware.vercel.app').replace(/\/$/, '');
+const frontendUrl = () => {
+  const value = process.env.FRONTEND_URL || 'http://localhost:5173';
+  return value.replace(/\/$/, '');
+};
 
 router.post('/signup', async (req, res) => {
   const { displayName, email, password } = req.body;
