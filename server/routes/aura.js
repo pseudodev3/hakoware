@@ -27,15 +27,95 @@ const calculateDebt = (perspective, now = new Date()) => {
   return (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
 };
 
-const addDailyBonusIfEligible = async (user) => {
+const dayKey = (date = new Date()) => date.toISOString().slice(0, 10);
+
+const ensureWelcomeBonus = async (userId) => {
+  let user = await User.findById(userId);
+  if (!user) return null;
+
+  const existing = await AuraTransaction.findOne({ userId: user._id, type: 'WELCOME_BONUS' });
+  if (existing) {
+    if (!user.welcomeAuraGranted) {
+      await User.updateOne({ _id: user._id }, { $set: { welcomeAuraGranted: true } });
+      user.welcomeAuraGranted = true;
+    }
+    if (!existing.idempotencyKey) {
+      try {
+        existing.idempotencyKey = `welcome:${user._id}`;
+        await existing.save();
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+      }
+    }
+    return user;
+  }
+
+  if (user.welcomeAuraGranted) {
+    try {
+      await AuraTransaction.create({
+        userId: user._id,
+        amount: 100,
+        type: 'WELCOME_BONUS',
+        description: 'Welcome to Hakoware',
+        idempotencyKey: `welcome:${user._id}`
+      });
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+    }
+    return user;
+  }
+
+  const granted = await User.findOneAndUpdate(
+    { _id: user._id, welcomeAuraGranted: { $ne: true } },
+    { $inc: { auraBalance: 100 }, $set: { welcomeAuraGranted: true } },
+    { new: true }
+  );
+
+  if (granted) {
+    try {
+      await AuraTransaction.create({
+        userId: granted._id,
+        amount: 100,
+        type: 'WELCOME_BONUS',
+        description: 'Welcome to Hakoware',
+        idempotencyKey: `welcome:${granted._id}`
+      });
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+    }
+    return granted;
+  }
+
+  return User.findById(userId);
+};
+
+const addDailyBonusIfEligible = async (userId) => {
   const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const key = dayKey(now);
+  const user = await User.findById(userId);
+  if (!user) return 0;
+  if (user.lastDailyAuraBonusKey === key) return 0;
+
+  const startOfDay = new Date(`${key}T00:00:00.000Z`);
+  const endOfDay = new Date(startOfDay.getTime() + 86400000);
   const existing = await AuraTransaction.findOne({
     userId: user._id,
     type: 'DAILY_BONUS',
-    createdAt: { $gte: startOfDay }
+    createdAt: { $gte: startOfDay, $lt: endOfDay }
   });
-  if (existing) return 0;
+
+  if (existing) {
+    await User.updateOne({ _id: user._id }, { $set: { lastDailyAuraBonusKey: key } });
+    if (!existing.idempotencyKey) {
+      try {
+        existing.idempotencyKey = `daily:${user._id}:${key}`;
+        await existing.save();
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+      }
+    }
+    return 0;
+  }
 
   const friendships = await Friendship.find({
     $or: [{ user1: user._id }, { user2: user._id }],
@@ -50,35 +130,33 @@ const addDailyBonusIfEligible = async (user) => {
   });
   if (!debtFree) return 0;
 
-  const amount = 10;
-  user.auraBalance += amount;
-  await user.save();
-  await AuraTransaction.create({
-    userId: user._id,
-    amount,
-    type: 'DAILY_BONUS',
-    description: 'Daily clean-contract bonus'
-  });
-  return amount;
+  const updated = await User.findOneAndUpdate(
+    { _id: user._id, lastDailyAuraBonusKey: { $ne: key } },
+    { $inc: { auraBalance: 10 }, $set: { lastDailyAuraBonusKey: key } },
+    { new: true }
+  );
+  if (!updated) return 0;
+
+  try {
+    await AuraTransaction.create({
+      userId: updated._id,
+      amount: 10,
+      type: 'DAILY_BONUS',
+      description: 'Daily clean-contract bonus',
+      idempotencyKey: `daily:${updated._id}:${key}`
+    });
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+  }
+  return 10;
 };
 
 const buildAuraSummary = async (userId) => {
-  const user = await User.findById(userId);
+  let user = await ensureWelcomeBonus(userId);
   if (!user) return null;
 
-  const hasWelcome = await AuraTransaction.exists({ userId: user._id, type: 'WELCOME_BONUS' });
-  if (!hasWelcome) {
-    user.auraBalance += 100;
-    await user.save();
-    await AuraTransaction.create({
-      userId: user._id,
-      amount: 100,
-      type: 'WELCOME_BONUS',
-      description: 'Welcome to Hakoware'
-    });
-  }
-
-  await addDailyBonusIfEligible(user);
+  await addDailyBonusIfEligible(user._id);
+  user = await User.findById(user._id);
 
   const [history, earned, spent, count] = await Promise.all([
     AuraTransaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(40),
@@ -94,7 +172,7 @@ const buildAuraSummary = async (userId) => {
   ]);
 
   return {
-    balance: user.auraBalance || 0,
+    balance: Number(user.auraBalance) || 0,
     totalEarned: earned[0]?.total || 0,
     totalSpent: Math.abs(spent[0]?.total || 0),
     totalTransactions: count,
@@ -122,13 +200,17 @@ router.post('/buy-card', auth, async (req, res) => {
     const card = CARD_CATALOG[String(req.body.cardId || '').toUpperCase()];
     if (!card) return res.status(400).json({ msg: 'Unknown card' });
 
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    if (user.auraBalance < card.cost) return res.status(400).json({ msg: 'Not enough Aura' });
+    const user = await User.findOneAndUpdate(
+      { _id: req.user.id, auraBalance: { $gte: card.cost } },
+      { $inc: { auraBalance: -card.cost }, $push: { inventory: card.id } },
+      { new: true }
+    );
 
-    user.auraBalance -= card.cost;
-    user.inventory.push(card.id);
-    await user.save();
+    if (!user) {
+      const exists = await User.exists({ _id: req.user.id });
+      return res.status(exists ? 400 : 404).json({ msg: exists ? 'Not enough Aura' : 'User not found' });
+    }
+
     await AuraTransaction.create({
       userId: user._id,
       amount: -card.cost,
