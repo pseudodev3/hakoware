@@ -7,6 +7,7 @@ const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { expireStaleBounties } = require('../services/bountyEscrow');
+const { recordEvent } = require('../services/contractGame');
 
 router.post('/', auth, async (req, res) => {
   try {
@@ -66,6 +67,11 @@ router.post('/', auth, async (req, res) => {
       type: 'BOUNTY_PLACED',
       description: `Placed a ${amount} Aura bounty on ${target.displayName}`
     });
+    await recordEvent(friendship._id, 'BOUNTY_PLACED', {
+      userId: sender._id,
+      aura: -amount,
+      metadata: { amount, targetId: target._id, targetName: target.displayName }
+    });
     await Notification.create({
       toUserId: target._id,
       fromUserId: sender._id,
@@ -117,6 +123,10 @@ router.post('/:id/hunt', auth, async (req, res) => {
     );
     if (!bounty) return res.status(409).json({ msg: 'Another hunter already picked up this bounty' });
 
+    await recordEvent(bounty.friendshipId, 'BOUNTY_HUNTING', {
+      userId: hunter._id,
+      metadata: { amount: bounty.amount, targetId: bounty.targetId, targetName: bounty.targetName }
+    });
     await Notification.create({
       toUserId: bounty.targetId,
       fromUserId: hunter._id,
