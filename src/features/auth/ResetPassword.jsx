@@ -1,25 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lock, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
 import { api } from '../../lib/api';
+import { applyTheme, getInitialTheme } from '../../lib/theme';
 import './Auth.css';
 
 export const ResetPassword = ({ showToast }) => {
   const { token } = useParams();
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(getInitialTheme);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  const ThemeIcon = theme === 'dark' ? Sun : Moon;
+  const themeLabel = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (password !== confirmPassword) {
-      setError('PIN MISMATCH');
+      setError('Passwords do not match.');
       return;
     }
 
@@ -28,10 +37,10 @@ export const ResetPassword = ({ showToast }) => {
     try {
       await api.post(`/auth/reset-password/${token}`, { password });
       setSuccess(true);
-      showToast('SECURITY PIN UPDATED', 'SUCCESS');
-      setTimeout(() => navigate('/'), 3000);
+      showToast('Password updated', 'SUCCESS');
+      setTimeout(() => navigate('/'), 2200);
     } catch (err) {
-      setError(err.message || 'RECOVERY FAILED');
+      setError(err.message || 'Could not reset your password.');
     } finally {
       setLoading(false);
     }
@@ -39,59 +48,79 @@ export const ResetPassword = ({ showToast }) => {
 
   return (
     <div className="auth-container">
-      <motion.div 
-        className="auth-card glass"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div className="auth-orbit" aria-hidden="true" />
+
+      <div className="auth-toolbar">
+        <button type="button" className="auth-toolbar-button auth-back" onClick={() => navigate('/')}>
+          <ArrowLeft size={16} strokeWidth={1.8} />
+          <span>Home</span>
+        </button>
+        <button
+          type="button"
+          className="auth-toolbar-button auth-theme-toggle"
+          onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+          aria-label={themeLabel}
+          title={themeLabel}
+        >
+          <ThemeIcon size={17} strokeWidth={1.8} />
+        </button>
+      </div>
+
+      <motion.div
+        className="auth-card"
+        initial={{ opacity: 0, y: 14, scale: .99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', duration: .45, bounce: 0 }}
       >
         <div className="auth-header">
-          <div className="auth-logo">H</div>
-          <h1>RECOVERY</h1>
-          <p>AUTHORIZING NEW SECURITY PIN</p>
+          <img className="auth-logo" src="/hakoware-mark.svg" alt="Hakoware" />
+          <span className="auth-eyebrow">Account recovery</span>
+          <h1>{success ? 'Password updated' : 'Choose a new password'}</h1>
+          <p>{success ? 'Your account is secured with the new password.' : 'Set a new password for your Hakoware account. Your reset link is single-use and time limited.'}</p>
         </div>
 
         {!success ? (
           <form className="auth-form" onSubmit={handleSubmit}>
-            {error && <div className="auth-error-banner">{error}</div>}
-            
-            <Input 
-              label="NEW SECURITY PIN"
+            {error && <div className="auth-error-banner" role="alert">{error}</div>}
+
+            <Input
+              label="New password"
               type="password"
               placeholder="••••••••"
               icon={Lock}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               required
             />
 
-            <Input 
-              label="CONFIRM NEW PIN"
+            <Input
+              label="Confirm password"
               type="password"
               placeholder="••••••••"
               icon={Lock}
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(event) => setConfirmPassword(event.target.value)}
               required
             />
 
-            <Button 
-              variant="aura" 
-              className="w-full" 
+            <Button
+              variant="aura"
+              className="w-full"
               size="lg"
               loading={loading}
               icon={ArrowRight}
               type="submit"
             >
-              AUTHORIZE PIN
+              Update password
             </Button>
           </form>
         ) : (
-          <div className="success-view" style={{ textAlign: 'center', padding: '20px 0' }}>
-             <ShieldCheck size={48} color="var(--aura-green)" style={{ margin: '0 auto 20px auto' }} />
-             <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>AUTHORIZATION GRANTED</h3>
-             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-               Security pin synchronized. Redirecting...
-             </p>
+          <div className="auth-success" role="status">
+            <span className="auth-success-icon"><ShieldCheck size={26} strokeWidth={1.8} /></span>
+            <div>
+              <strong>Recovery complete</strong>
+              <p>Taking you back to Hakoware…</p>
+            </div>
           </div>
         )}
       </motion.div>
