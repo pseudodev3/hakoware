@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, Home, LogOut, Moon, Plus, Sun, Swords, Users, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
 import './Layout.css';
 
@@ -11,26 +12,11 @@ const NAV_ITEMS = [
   { id: 'you', label: 'You', icon: UserRound }
 ];
 
-const initialTheme = () => localStorage.getItem('hakoware_theme') === 'light' ? 'light' : 'dark';
-
-const applyTheme = (nextTheme) => {
-  const root = document.documentElement;
-  const guard = document.createElement('style');
-  guard.dataset.themeTransitionGuard = 'true';
-  guard.textContent = '*,*::before,*::after{transition:none!important}';
-  document.head.appendChild(guard);
-  root.dataset.theme = nextTheme;
-  root.style.colorScheme = nextTheme;
-  localStorage.setItem('hakoware_theme', nextTheme);
-  void root.offsetHeight;
-  requestAnimationFrame(() => requestAnimationFrame(() => guard.remove()));
-};
-
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [theme, setTheme] = useState(initialTheme);
+  const [theme, setTheme] = useState(getInitialTheme);
   const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
   const totalBadge = unreadCount + pendingInvitations.length;
 
