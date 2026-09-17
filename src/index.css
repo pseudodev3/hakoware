@@ -24,7 +24,7 @@
   --text-muted: #777268;
   --text-faint: #504d46;
 
-  --font-main: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --radius-sm: 10px;
@@ -52,6 +52,7 @@
 html {
   background: var(--bg-dark);
   color-scheme: dark;
+  font-family: var(--font-main);
 }
 
 body {
@@ -61,7 +62,7 @@ body {
     radial-gradient(circle at 86% 0%, rgba(122,167,255,.035), transparent 30rem),
     var(--bg-dark);
   color: var(--text-primary);
-  font-family: var(--font-main);
+  font-family: inherit;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
