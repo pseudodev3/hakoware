@@ -61,5 +61,3 @@ export const markVoiceNoteListened = async (voiceNoteId) => {
     return { success: false, error: error.message };
   }
 };
-
-export const getVoiceNotes = getMyVoiceNotes;
