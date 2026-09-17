@@ -19,6 +19,8 @@ const publicUser = (user) => {
   delete data.password;
   delete data.resetPasswordToken;
   delete data.resetPasswordExpire;
+  delete data.welcomeAuraGranted;
+  delete data.lastDailyAuraBonusKey;
   return data;
 };
 
@@ -37,7 +39,13 @@ router.post('/signup', async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ msg: 'An account with this email already exists' });
 
-    const user = new User({ displayName, email, password: await bcrypt.hash(password, 10), auraBalance: 100 });
+    const user = new User({
+      displayName,
+      email,
+      password: await bcrypt.hash(password, 10),
+      auraBalance: 100,
+      welcomeAuraGranted: true
+    });
     await user.save();
     await AuraTransaction.create({
       userId: user._id,
@@ -101,7 +109,8 @@ router.post('/login', async (req, res) => {
 
 router.get('/user', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password -resetPasswordToken -resetPasswordExpire');
+    const user = await User.findById(req.user.id)
+      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey');
     if (!user) return res.status(404).json({ msg: 'User not found' });
     return res.json(user);
   } catch (err) {
