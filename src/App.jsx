@@ -18,7 +18,6 @@ import { HomeView } from './features/home/HomeView';
 import { Arena } from './features/arena/components/Arena';
 import { YouView } from './features/profile/YouView';
 import Toast from './components/Toast';
-import './App.css';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
 
