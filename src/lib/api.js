@@ -22,29 +22,26 @@ const getHeaders = () => {
   };
 };
 
+const requestWithJson = async (method, endpoint, data) => {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    method,
+    headers: getHeaders(),
+    body: JSON.stringify(data)
+  });
+  return handleResponse(response);
+};
+
 export const api = {
   get: async (endpoint) => {
     const response = await fetch(`${API_URL}${endpoint}`, { headers: getHeaders() });
     return handleResponse(response);
   },
 
-  post: async (endpoint, data) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    return handleResponse(response);
-  },
+  post: (endpoint, data) => requestWithJson('POST', endpoint, data),
 
-  put: async (endpoint, data) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    return handleResponse(response);
-  },
+  put: (endpoint, data) => requestWithJson('PUT', endpoint, data),
+
+  patch: (endpoint, data) => requestWithJson('PATCH', endpoint, data),
 
   delete: async (endpoint) => {
     const response = await fetch(`${API_URL}${endpoint}`, {
