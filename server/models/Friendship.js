@@ -41,6 +41,27 @@ const ChaosSchema = new mongoose.Schema({
   lastConsequence: { type: String, default: null }
 }, { _id: false });
 
+const GrudgeSchema = new mongoose.Schema({
+  active: { type: Boolean, default: false },
+  claimantId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  victimId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  claimantName: { type: String, default: null },
+  victimName: { type: String, default: null },
+  createdAt: { type: Date, default: null },
+  expiresAt: { type: Date, default: null },
+  revengeUsed: { type: Boolean, default: false },
+  originalClaimAmount: { type: Number, default: 0, min: 0 }
+}, { _id: false });
+
+const ClaimStateSchema = new mongoose.Schema({
+  user1WindowKey: { type: Date, default: null },
+  user2WindowKey: { type: Date, default: null },
+  user1LastClaimedAt: { type: Date, default: null },
+  user2LastClaimedAt: { type: Date, default: null },
+  user1LastFlareAt: { type: Date, default: null },
+  user2LastFlareAt: { type: Date, default: null }
+}, { _id: false });
+
 const FriendshipSchema = new mongoose.Schema({
   user1: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   user2: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -53,6 +74,8 @@ const FriendshipSchema = new mongoose.Schema({
   duoTitle: { type: String, default: 'New Contract' },
   season: { type: SeasonSchema, default: () => ({}) },
   chaos: { type: ChaosSchema, default: () => ({}) },
+  grudge: { type: GrudgeSchema, default: () => ({}) },
+  claimState: { type: ClaimStateSchema, default: () => ({}) },
   user1Perspective: { type: PerspectiveSchema, default: () => ({}) },
   user2Perspective: { type: PerspectiveSchema, default: () => ({}) }
 }, { timestamps: true });
