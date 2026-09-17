@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, LogOut, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
+import { Eye, EyeOff, Flame, LogOut, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getAuraCards, getUserAura } from '../../services/auraService';
+import { getAuraCards, getMyGrudges, getUserAura, returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
 import './YouView.css';
@@ -26,6 +26,7 @@ const partnerIsBankrupt = (friendship, userId) => {
 };
 
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
+const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
 export const YouView = ({ friendships, worldEvent, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
@@ -37,6 +38,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
     reputation: { name: 'Spark', lifetimeEarned: 0, nextRankAt: 250, progress: 0 }
   });
   const [cards, setCards] = useState([]);
+  const [grudges, setGrudges] = useState([]);
   const [busy, setBusy] = useState(null);
   const [stealTarget, setStealTarget] = useState('');
   const [signalTarget, setSignalTarget] = useState('');
@@ -45,7 +47,12 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const userId = user.uid || user.id || user._id;
 
   const refresh = async ({ silent = false } = {}) => {
-    const [auraResult, cardsResult, userResult] = await Promise.allSettled([getUserAura(), getAuraCards(), refreshUser()]);
+    const [auraResult, cardsResult, grudgesResult, userResult] = await Promise.allSettled([
+      getUserAura(),
+      getAuraCards(),
+      getMyGrudges(),
+      refreshUser()
+    ]);
     const refreshedUser = userResult.status === 'fulfilled' && userResult.value?.success ? userResult.value.user : null;
 
     if (auraResult.status === 'fulfilled') setAura(auraResult.value);
@@ -55,6 +62,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
       if (!silent) showToast?.(auraResult.reason?.message || 'Could not refresh Aura activity', 'ERROR');
     }
     if (cardsResult.status === 'fulfilled') setCards(cardsResult.value || []);
+    if (grudgesResult.status === 'fulfilled') setGrudges(grudgesResult.value || []);
   };
 
   useEffect(() => { refresh({ silent: true }); }, []);
@@ -73,11 +81,16 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const totalDuoXP = friendships.reduce((sum, item) => sum + (item.duoXP || 0), 0);
   const reputation = aura.reputation || { name: 'Spark', lifetimeEarned: aura.totalEarned || 0, nextRankAt: null, progress: 0 };
 
-  const partnerName = (friendship) => {
+  const partnerFor = (friendship) => {
     const isUser1 = String(friendship.user1?._id || friendship.user1) === String(userId);
-    const friend = isUser1 ? friendship.user2 : friendship.user1;
-    return friend?.displayName || 'Contract partner';
+    return isUser1 ? friendship.user2 : friendship.user1;
   };
+
+  const partnerName = (friendship) => partnerFor(friendship)?.displayName || 'Contract partner';
+  const selectedStealFriendship = bankrupt.find((friendship) => String(friendship._id) === String(stealTarget));
+  const selectedStealPartner = selectedStealFriendship ? partnerFor(selectedStealFriendship) : null;
+  const projectedSteal = Math.floor((Number(selectedStealPartner?.auraBalance) || 0) * 0.1);
+  const claimNet = projectedSteal - 180;
 
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
@@ -103,7 +116,10 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
 
     setBusy(`use-${cardId}`);
     const result = await useCard(cardId, targetId);
-    showToast?.(result.success ? 'Card used' : result.error, result.success ? 'SUCCESS' : 'ERROR');
+    let successMessage = 'Card used';
+    if (cardId === 'STEAL' && result.success) successMessage = `Claimed ${result.effect?.stolen || 0} Aura · Grudge activated 🤣`;
+    if (cardId === 'SIGNAL_FLARE' && result.success) successMessage = 'Signal Flare sent · 48h cooldown started';
+    showToast?.(result.success ? successMessage : result.error, result.success ? 'SUCCESS' : 'ERROR');
     if (result.success) {
       if (cardId === 'STEAL') setStealTarget('');
       if (cardId === 'SIGNAL_FLARE') setSignalTarget('');
@@ -111,6 +127,19 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
     }
     await refresh();
     setBusy(null);
+  };
+
+  const revenge = async (grudge) => {
+    setBusy(`revenge-${grudge.friendshipId}`);
+    try {
+      const result = await returnTheFavor(grudge.friendshipId);
+      showToast?.(`Returned the favor · spent ${result.cost} to take ${result.stolen} Aura 🤣`, 'SUCCESS');
+      await refresh();
+    } catch (error) {
+      showToast?.(error.message || 'Could not return the favor', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
   };
 
   const toggleShameBoard = async () => {
@@ -156,6 +185,44 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
         <Zap size={28} strokeWidth={1.6} />
       </section>
 
+      {grudges.length > 0 && (
+        <section className="you-section">
+          <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h2>Somebody made it personal.</h2></div></div>
+          <div className="market-grid">
+            {grudges.map((grudge) => (
+              <article className="market-card" key={grudge.friendshipId}>
+                <div className="market-card-top">
+                  <strong>{grudge.victimName} vs {grudge.claimantName}</strong>
+                  <span>{daysLeft(grudge.expiresAt)}d left</span>
+                </div>
+                <p>
+                  {grudge.role === 'VICTIM'
+                    ? grudge.revengeReady
+                      ? `${grudge.claimantName} finally went bankrupt. Return the Favor for ${grudge.revengeCost} Aura and take 10% of theirs.`
+                      : `${grudge.claimantName} Claimed you. If they go bankrupt before this expires, your revenge window opens.`
+                    : `${grudge.victimName} has a public Grudge against you. Stay solvent until the timer dies.`}
+                </p>
+                {grudge.role === 'VICTIM' && (
+                  <Button
+                    variant={grudge.revengeReady ? 'danger' : 'secondary'}
+                    size="sm"
+                    loading={busy === `revenge-${grudge.friendshipId}`}
+                    disabled={!grudge.revengeReady || aura.balance < grudge.revengeCost}
+                    onClick={() => revenge(grudge)}
+                  >
+                    {grudge.revengeReady
+                      ? aura.balance < grudge.revengeCost
+                        ? `Need ${grudge.revengeCost} Aura`
+                        : `Return the Favor · ${grudge.revengeCost}`
+                      : 'Waiting for them to slip'}
+                  </Button>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       {inventory.length > 0 && (
         <section className="you-section">
           <div className="you-section-heading"><div><p className="eyebrow">Inventory</p><h2>Cards in your pocket</h2></div></div>
@@ -180,6 +247,9 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
                       <option value="">{bankrupt.length ? 'Choose target' : 'No bankrupt partners'}</option>
                       {bankrupt.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
                     </select>
+                  )}
+                  {cardId === 'STEAL' && stealTarget && (
+                    <span className="inventory-hint">Steal {projectedSteal} Aura · original card cost 180 · math {claimNet >= 0 ? '+' : ''}{claimNet} 🤣</span>
                   )}
                   {cardId === 'SIGNAL_FLARE' && (
                     <select value={signalTarget} onChange={(event) => setSignalTarget(event.target.value)} aria-label="Choose contract for Signal Flare">
