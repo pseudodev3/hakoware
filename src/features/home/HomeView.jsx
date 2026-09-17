@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, Clock3, Plus, Sparkles, UserPlus } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { NenCard } from '../debt/components/NenCard';
 import './HomeView.css';
@@ -20,7 +20,7 @@ const priority = (friendship, userId) => {
   return -state.daysLeft;
 };
 
-export const HomeView = ({ user, friendships, pendingInvitations, onAction, onAddFriend, onNavigate }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, onAction, onAddFriend, onNavigate }) => {
   const userId = user.uid || user.id || user._id;
   const sorted = [...friendships].sort((a, b) => priority(b, userId) - priority(a, userId));
   const needsAttention = sorted.filter((friendship) => {
@@ -28,6 +28,39 @@ export const HomeView = ({ user, friendships, pendingInvitations, onAction, onAd
     return state.debt > 0 || state.daysLeft <= 1;
   }).slice(0, 3);
   const visible = needsAttention.length ? needsAttention : sorted.slice(0, 3);
+
+  if (friendships.length === 0 && pendingInvitations.length > 0) {
+    const inviter = pendingInvitations[0]?.user1?.displayName || 'Someone';
+    return (
+      <div className="home-view">
+        <section className="first-contract-card pending-first-contract">
+          <div className="first-contract-mark pending"><UserPlus size={24} strokeWidth={1.7} /></div>
+          <p className="eyebrow">Contract waiting</p>
+          <h1>{inviter} wants to start something with you.</h1>
+          <p className="first-contract-copy">Review the grace period and decide whether to accept. Nothing starts counting until you do.</p>
+          <Button variant="aura" icon={ArrowRight} onClick={() => onNavigate('contracts')}>Review request</Button>
+          {pendingInvitations.length > 1 && <p className="pending-count-note">+{pendingInvitations.length - 1} more request{pendingInvitations.length === 2 ? '' : 's'} waiting</p>}
+        </section>
+      </div>
+    );
+  }
+
+  if (friendships.length === 0 && pendingOutboundCount > 0) {
+    return (
+      <div className="home-view">
+        <section className="first-contract-card pending-first-contract">
+          <div className="first-contract-mark pending"><Clock3 size={24} strokeWidth={1.7} /></div>
+          <p className="eyebrow">In motion</p>
+          <h1>Your first contract is waiting on them.</h1>
+          <p className="first-contract-copy">The request is saved. Once they accept, the grace period starts and this becomes part of your active circle.</p>
+          <div className="first-contract-actions">
+            <Button variant="secondary" onClick={() => onNavigate('contracts')}>View request</Button>
+            <Button variant="aura" icon={Plus} onClick={onAddFriend}>Invite another</Button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   if (friendships.length === 0) {
     return (
