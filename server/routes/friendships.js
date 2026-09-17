@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Friendship = require('../models/Friendship');
+const PendingInvite = require('../models/PendingInvite');
 const User = require('../models/User');
 const Bounty = require('../models/Bounty');
 const AuraTransaction = require('../models/AuraTransaction');
@@ -20,18 +21,36 @@ const participantKey = (friendship, userId) => {
   return null;
 };
 
+const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+
 router.post('/', auth, async (req, res) => {
   try {
     const email = String(req.body.friendEmail || '').trim().toLowerCase();
     const user = await User.findById(req.user.id);
-    const limit = normalizeLimit(req.body.limit, user?.defaultLimit || 7);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
 
+    const limit = normalizeLimit(req.body.limit, user.defaultLimit || 7);
     if (!email) return res.status(400).json({ msg: 'Friend email is required' });
     if (!limit) return res.status(400).json({ msg: 'Grace period must be between 1 and 30 days' });
+    if (email === user.email) return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
 
     const friend = await User.findOne({ email });
-    if (!friend) return res.status(404).json({ msg: 'That person is not on Hakoware yet' });
-    if (friend.id === req.user.id) return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
+    if (!friend) {
+      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      const pendingInvite = await PendingInvite.findOneAndUpdate(
+        { inviterId: user._id, recipientEmail: email },
+        { $set: { inviterName: user.displayName, limit, expiresAt } },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+
+      void sendFriendRequestEmail(email, user.displayName);
+      return res.status(202).json({
+        requiresSignup: true,
+        inviteUrl: `${frontendUrl()}/?join=1`,
+        recipientEmail: pendingInvite.recipientEmail,
+        expiresAt: pendingInvite.expiresAt
+      });
+    }
 
     const existing = await Friendship.findOne({
       $or: [
@@ -47,19 +66,11 @@ router.post('/', auth, async (req, res) => {
       user1DisplayName: user.displayName,
       user2DisplayName: friend.displayName,
       user1Perspective: { limit },
-      user2Perspective: { limit: normalizeLimit(friend.defaultLimit, 7) || 7 },
+      user2Perspective: { limit },
       status: 'PENDING'
     });
 
-    await Notification.create({
-      toUserId: friend._id,
-      fromUserId: user._id,
-      type: 'CONTRACT_INVITE',
-      title: 'New contract request',
-      message: `${user.displayName} wants to start a Hakoware contract with you.`,
-      friendshipId: friendship._id
-    });
-
+    await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: email });
     void sendFriendRequestEmail(friend.email, user.displayName);
     return res.status(201).json(friendship);
   } catch (err) {
@@ -119,13 +130,6 @@ router.put('/:id/respond', auth, async (req, res) => {
     friendship.user1Perspective.lastInteraction = new Date();
     friendship.user2Perspective.lastInteraction = new Date();
     await friendship.save();
-
-    for (const user of [responder, inviter]) {
-      if (!user) continue;
-      user.examTasks.friendAdded = true;
-      user.hunterLicense = Boolean(user.examTasks.nenTypeSet && user.examTasks.voiceNoteSent);
-      await user.save();
-    }
 
     if (inviter) {
       await Notification.create({
