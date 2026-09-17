@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
+import { Eye, EyeOff, LogOut, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAuraCards, getUserAura } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -28,7 +28,7 @@ const partnerIsBankrupt = (friendship, userId) => {
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 
 export const YouView = ({ friendships, worldEvent, showToast }) => {
-  const { user, refreshUser, buyCard, useCard } = useAuth();
+  const { user, refreshUser, buyCard, useCard, logout } = useAuth();
   const [aura, setAura] = useState({ balance: Number(user.auraBalance) || 0, history: [], totalEarned: 0, totalSpent: 0 });
   const [cards, setCards] = useState([]);
   const [busy, setBusy] = useState(null);
@@ -177,6 +177,15 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="you-section account-section">
+        <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Session</h2></div></div>
+        <button className="account-logout-row" type="button" onClick={logout}>
+          <span className="account-logout-icon"><LogOut size={18} strokeWidth={1.8} /></span>
+          <span className="account-logout-copy"><strong>Sign out of Hakoware</strong><small>Return to the landing page and end this session on this device.</small></span>
+          <span className="account-logout-label">Sign out</span>
+        </button>
       </section>
     </div>
   );

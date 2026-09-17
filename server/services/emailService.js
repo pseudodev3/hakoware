@@ -1,34 +1,25 @@
-const nodemailer = require('nodemailer');
-
-const smtpHost = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-const smtpPort = Number(process.env.SMTP_PORT) || 587;
-const smtpUser = String(process.env.SMTP_USER || '').trim();
-const smtpPass = String(process.env.SMTP_PASS || '').trim();
+const BREVO_BASE_URL = 'https://api.brevo.com/v3';
+const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
 const frontendUrl = String(process.env.FRONTEND_URL || '').replace(/\/$/, '');
 const fromAddress = String(process.env.EMAIL_FROM || '').trim();
 const replyTo = String(process.env.EMAIL_REPLY_TO || '').trim();
 
-const emailConfigured = Boolean(smtpUser && smtpPass && fromAddress);
+const parseMailbox = (value, fallbackName = 'Hakoware') => {
+  const input = String(value || '').trim();
+  const match = input.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (match) return { name: match[1].replace(/^['\"]|['\"]$/g, '').trim() || fallbackName, email: match[2].trim() };
+  return input ? { name: fallbackName, email: input } : null;
+};
 
-const transporter = emailConfigured ? nodemailer.createTransport({
-  pool: true,
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpPort === 465,
-  auth: {
-    user: smtpUser,
-    pass: smtpPass
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000
-}) : null;
+const sender = parseMailbox(fromAddress);
+const replyToMailbox = parseMailbox(replyTo, 'Hakoware');
+const emailConfigured = Boolean(brevoApiKey && sender?.email);
 
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
+  .replace(/\"/g, '&quot;')
   .replace(/'/g, '&#039;');
 
 const shell = ({ eyebrow, title, body, actionLabel, actionUrl, footnote }) => `
@@ -48,21 +39,56 @@ const shell = ({ eyebrow, title, body, actionLabel, actionUrl, footnote }) => `
   </body>
 </html>`;
 
+const brevoRequest = async (path, { method = 'GET', body } = {}) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(`${BREVO_BASE_URL}${path}`, {
+      method,
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        'api-key': brevoApiKey
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: controller.signal
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload.message || payload.code || `Brevo API returned ${response.status}`;
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('Brevo API request timed out');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const send = async ({ to, subject, text, html, required = false }) => {
-  if (!transporter) {
+  if (!emailConfigured) {
     const error = new Error('Email delivery is not configured');
     if (required) throw error;
     return false;
   }
 
   try {
-    await transporter.sendMail({
-      from: fromAddress,
-      ...(replyTo ? { replyTo } : {}),
-      to,
-      subject,
-      text,
-      html
+    await brevoRequest('/smtp/email', {
+      method: 'POST',
+      body: {
+        sender,
+        to: [{ email: to }],
+        subject,
+        textContent: text,
+        htmlContent: html,
+        ...(replyToMailbox?.email ? { replyTo: replyToMailbox } : {})
+      }
     });
     return true;
   } catch (error) {
@@ -74,16 +100,14 @@ const send = async ({ to, subject, text, html, required = false }) => {
 
 const getEmailStatus = () => ({
   configured: emailConfigured,
-  provider: 'brevo-smtp',
-  host: smtpHost,
-  port: smtpPort,
-  from: fromAddress || null
+  provider: 'brevo-api',
+  from: sender?.email || null
 });
 
 const verifyEmailTransport = async () => {
-  if (!transporter) return { ...getEmailStatus(), verified: false };
+  if (!emailConfigured) return { ...getEmailStatus(), verified: false };
   try {
-    await transporter.verify();
+    await brevoRequest('/account');
     return { ...getEmailStatus(), verified: true };
   } catch (error) {
     return { ...getEmailStatus(), verified: false, error: error.message };

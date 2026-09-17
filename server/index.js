@@ -91,9 +91,9 @@ async function start() {
   if (!emailStatus.configured) {
     console.warn('Brevo email delivery is not configured');
   } else if (emailStatus.verified) {
-    console.log(`Brevo email transport verified (${emailStatus.host}:${emailStatus.port})`);
+    console.log(`Brevo API verified (${emailStatus.from})`);
   } else {
-    console.warn(`Brevo email transport verification failed: ${emailStatus.error || 'unknown error'}`);
+    console.warn(`Brevo API verification failed: ${emailStatus.error || 'unknown error'}`);
   }
 
   server = app.listen(PORT, '0.0.0.0', () => console.log(`Hakoware API listening on port ${PORT}`));
