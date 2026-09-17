@@ -24,10 +24,19 @@ export const getContractMeta = async () => api.get('/friendships/meta');
 export const getContractRecap = async (friendshipId) => api.get(`/friendships/${friendshipId}/recap`);
 export const runContractBack = async (friendshipId) => api.post(`/friendships/${friendshipId}/run-it-back`);
 
-export const performCheckin = async (friendshipId, source = 'TEXT') => {
+export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null, bountyDecision = null) => {
   try {
-    const response = await api.post(`/friendships/${friendshipId}/checkin`, { source });
-    return { success: true, friendship: response.friendship || response, game: response.game || null };
+    const response = await api.post(`/friendships/${friendshipId}/checkin`, {
+      source,
+      bountyCreditId,
+      bountyDecision
+    });
+    return {
+      success: true,
+      friendship: response.friendship || response,
+      game: response.game || null,
+      bounty: response.bounty || null
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }

@@ -7,6 +7,7 @@ export const getUserAura = async () => {
     totalEarned: Number(res.totalEarned) || 0,
     totalSpent: Number(res.totalSpent) || 0,
     totalTransactions: Number(res.totalTransactions) || 0,
+    reputation: res.reputation || { name: 'Spark', lifetimeEarned: 0, nextRankAt: 250, progress: 0 },
     history: Array.isArray(res.history) ? res.history : []
   };
 };
@@ -21,5 +22,16 @@ export const getAuraCards = async () => {
   }
 };
 
+export const getPublicGrudges = async () => {
+  const grudges = await api.get('/aura/grudges/public');
+  return Array.isArray(grudges) ? grudges : [];
+};
+
+export const getMyGrudges = async () => {
+  const grudges = await api.get('/aura/grudges/me');
+  return Array.isArray(grudges) ? grudges : [];
+};
+
+export const returnTheFavor = (friendshipId) => api.post(`/aura/grudges/${friendshipId}/revenge`);
 export const buyAuraCard = (cardId) => api.post('/aura/buy-card', { cardId });
 export const useAuraCard = (cardId, targetFriendshipId = null) => api.post('/aura/use-card', { cardId, targetFriendshipId });

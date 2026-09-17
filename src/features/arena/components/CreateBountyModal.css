@@ -23,9 +23,15 @@
 .bounty-presets button:active:not(:disabled) { transform:scale(.96); }
 .bounty-presets button.active { color:#161107; background:var(--aura-gold); }
 .bounty-presets button:disabled { opacity:.3; }
+.bounty-cost-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); overflow:hidden; border-radius:12px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.bounty-cost-breakdown > span { min-height:52px; padding:9px 10px; display:flex; flex-direction:column; justify-content:center; }
+.bounty-cost-breakdown > span + span { border-left:1px solid var(--border-subtle); }
+.bounty-cost-breakdown small { color:var(--text-faint); font-size:.53rem; }
+.bounty-cost-breakdown strong { margin-top:3px; color:var(--text-secondary); font-family:var(--font-mono); font-size:.66rem; font-weight:620; }
+.bounty-cost-breakdown > span:last-child strong { color:var(--aura-gold); }
 .bounty-field textarea { min-height:88px; padding:12px; resize:vertical; border:0; outline:none; border-radius:13px; color:var(--text-primary); background:var(--surface-input); box-shadow:inset 0 0 0 1px var(--border-subtle); font-size:.76rem; line-height:1.5; transition:box-shadow 140ms var(--ease-out), background-color 140ms var(--ease-out); }
 .bounty-field textarea:focus { background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--aura-gold),0 0 0 3px var(--aura-gold-soft); }
 .bounty-field textarea::placeholder { color:var(--text-faint); }
 .bounty-actions { display:grid; grid-template-columns:1fr 1.3fr; gap:8px; padding-top:4px; }
 @media (hover:hover) and (pointer:fine) { .bounty-friend:hover { color:var(--text-primary); background:var(--surface-3); } .bounty-presets button:hover:not(.active):not(:disabled) { color:var(--text-secondary); background:var(--surface-3); } }
-@media (max-width:520px) { .bounty-friend-grid,.bounty-actions { grid-template-columns:1fr; } }
+@media (max-width:520px) { .bounty-friend-grid,.bounty-actions { grid-template-columns:1fr; } .bounty-cost-breakdown { grid-template-columns:1fr; } .bounty-cost-breakdown > span + span { border-left:0; border-top:1px solid var(--border-subtle); } }

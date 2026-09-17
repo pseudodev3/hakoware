@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Check, Target, Zap } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { createBounty } from '../../../services/bountyService';
 import { useAuth } from '../../../contexts/AuthContext';
 import './CreateBountyModal.css';
+
+const listingFeeFor = (amount) => Math.max(1, Math.min(25, Math.ceil((Number(amount) || 0) * 0.05)));
 
 export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, showToast }) => {
   const { user, refreshUser } = useAuth();
@@ -15,7 +17,9 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
   const userId = user.uid || user.id || user._id;
   const balance = Number(user.auraBalance) || 0;
   const validAmount = Number.isInteger(amount) && amount >= 10 && amount <= 500;
-  const canAfford = amount <= balance;
+  const listingFee = useMemo(() => listingFeeFor(amount), [amount]);
+  const totalCost = amount + listingFee;
+  const canAfford = totalCost <= balance;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -24,7 +28,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
       return;
     }
     if (!validAmount || !canAfford) {
-      showToast?.(canAfford ? 'Bounty must be between 10 and 500 Aura' : 'Not enough Aura for this bounty', 'ERROR');
+      showToast?.(canAfford ? 'Bounty must be between 10 and 500 Aura' : `You need ${totalCost} Aura including the Arena fee`, 'ERROR');
       return;
     }
 
@@ -33,7 +37,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
     if (result?.error || result?.success === false) {
       showToast?.(result.error || result.msg || 'Could not place bounty', 'ERROR');
     } else {
-      showToast?.(`${amount} Aura bounty placed`, 'SUCCESS');
+      showToast?.(`${amount} Aura bounty placed · ${listingFee} Aura Arena fee burned`, 'SUCCESS');
       setSelectedId('');
       setAmount(25);
       setMessage('');
@@ -48,7 +52,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
       <form className="bounty-form" onSubmit={handleSubmit}>
         <div className="bounty-explainer">
           <Target size={18} strokeWidth={1.8} />
-          <p>Your Aura goes into escrow. If a hunter takes the bounty, they earn it when the target checks in. Otherwise your Aura is returned.</p>
+          <p>Your reward goes into escrow. Hunters must stake Aura, send a pressure move, and be explicitly credited by the target at check-in to get paid.</p>
         </div>
 
         <div className="bounty-field">
@@ -80,9 +84,15 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
             <span>Aura</span>
           </div>
           <div className="bounty-presets">
-            {[10, 25, 50, 100].map((value) => (
-              <button type="button" key={value} disabled={value > balance} className={amount === value ? 'active' : ''} onClick={() => setAmount(value)}>{value}</button>
-            ))}
+            {[10, 25, 50, 100].map((value) => {
+              const presetCost = value + listingFeeFor(value);
+              return <button type="button" key={value} disabled={presetCost > balance} className={amount === value ? 'active' : ''} onClick={() => setAmount(value)}>{value}</button>;
+            })}
+          </div>
+          <div className="bounty-cost-breakdown">
+            <span><small>Escrow</small><strong>{amount} Aura</strong></span>
+            <span><small>Arena fee · burned</small><strong>{listingFee} Aura</strong></span>
+            <span><small>Total now</small><strong>{totalCost} Aura</strong></span>
           </div>
         </div>
 
@@ -94,7 +104,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
         <div className="bounty-actions">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="danger" loading={loading} disabled={!selectedId || !validAmount || !canAfford}>
-            {!canAfford ? 'Not enough Aura' : `Place ${amount} Aura`}
+            {!canAfford ? 'Not enough Aura' : `Place bounty · ${totalCost}`}
           </Button>
         </div>
       </form>

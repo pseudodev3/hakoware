@@ -8,3 +8,9 @@ export const createBounty = async (bountyData) => {
     return { success: false, error: error.message };
   }
 };
+
+export const getBountyMeta = () => api.get('/bounties/meta');
+export const getHunterProfile = () => api.get('/bounties/hunter-profile');
+export const getContractBounty = (friendshipId) => api.get(`/bounties/contract/${friendshipId}`);
+export const huntBounty = (bountyId) => api.post(`/bounties/${bountyId}/hunt`);
+export const sendBountyPressure = (bountyId, moveId) => api.post(`/bounties/${bountyId}/pressure`, { moveId });
