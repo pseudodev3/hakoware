@@ -1,14 +1,17 @@
 import { api } from '../lib/api';
 
-export const sendFriendInvitation = async (toEmail, limit, templateId = 'DONT_GHOST') => {
+export const sendFriendInvitation = async (friendIdentifier, limit, templateId = 'DONT_GHOST') => {
   try {
-    const response = await api.post('/friendships', { friendEmail: toEmail, limit, templateId });
+    const response = await api.post('/friendships', { friendIdentifier, limit, templateId });
     if (response?.inviteReady || response?.requiresSignup) {
       return {
         success: true,
         inviteReady: true,
         inviteUrl: response.inviteUrl,
-        recipientEmail: response.recipientEmail,
+        recipientEmail: response.recipientEmail || null,
+        recipientUsername: response.recipientUsername || null,
+        recipientLabel: response.recipientLabel || response.recipientEmail || null,
+        requiresSignup: Boolean(response.requiresSignup),
         templateId: response.templateId,
         expiresAt: response.expiresAt
       };
