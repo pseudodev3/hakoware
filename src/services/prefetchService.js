@@ -33,7 +33,7 @@ export const getYouSnapshot = ({ force = false } = {}) => fetchResource(
   RESOURCE_KEYS.you,
   async () => {
     const [aura, cards, grudges] = await Promise.all([
-      getUserAura(),
+      getUserAura({ force }),
       getAuraCards(),
       getMyGrudges()
     ]);
