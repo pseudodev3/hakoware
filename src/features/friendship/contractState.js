@@ -30,6 +30,7 @@ export const getContractSides = (friendship, currentUserId, now = new Date()) =>
 };
 
 export const getBankruptPartner = (friendship, currentUserId, now = new Date()) => {
+  if (friendship?.season?.status !== 'ACTIVE') return null;
   const sides = getContractSides(friendship, currentUserId, now);
   if (!sides.partnerDebt?.isBankrupt) return null;
 
