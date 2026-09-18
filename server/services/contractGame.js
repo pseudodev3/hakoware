@@ -330,6 +330,7 @@ const claimDueChaosEvent = async (friendship, now = new Date()) => {
   const event = pool[Math.floor(Math.random() * pool.length)];
   const activeEvent = buildChaosEvent(friendship, target, event, now);
 
+  const eligibleBefore = new Date(now.getTime() - 20 * HOUR);
   const claimed = await Friendship.findOneAndUpdate(
     {
       _id: friendship._id,
@@ -337,6 +338,7 @@ const claimDueChaosEvent = async (friendship, now = new Date()) => {
       templateId: 'CHAOS',
       'season.status': 'ACTIVE',
       'season.endsAt': { $gt: now },
+      [`${target.key}.lastInteraction`]: { $lte: eligibleBefore },
       'chaos.activeEvent': null,
       'chaos.nextEventAt': { $lte: now }
     },
