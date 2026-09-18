@@ -153,7 +153,7 @@ export const FounderLabPage = ({ showToast }) => {
     return (
       <div className="founder-route founder-route-centered">
         <div className="founder-denied">
-          <img src="/hakoware-mark.png" alt="" />
+          <img src="/hakoware-mark-v2.png" alt="" />
           <span>404</span>
           <h1>Nothing here.</h1>
           <p>This route is private.</p>
@@ -181,7 +181,7 @@ export const FounderLabPage = ({ showToast }) => {
           <ArrowLeft size={16} /> Hakoware
         </button>
         <div className="founder-route-brand">
-          <img src="/hakoware-mark.png" alt="" />
+          <img src="/hakoware-mark-v2.png" alt="" />
           <div><strong>Founder Lab</strong><span>Private simulation route</span></div>
         </div>
         <button
