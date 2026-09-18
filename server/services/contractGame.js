@@ -598,11 +598,7 @@ const refreshGameState = async (friendship, now = new Date()) => {
   }
 
   if (friendship.templateId === 'CHAOS' && friendship.season.status === 'ACTIVE') {
-    if (friendship.chaos?.activeEvent && new Date(friendship.chaos.activeEvent.expiresAt) <= now) {
-      await failActiveChaos(friendship, now);
-    } else if (!friendship.chaos?.activeEvent && friendship.chaos?.nextEventAt && new Date(friendship.chaos.nextEventAt) <= now) {
-      await triggerChaosEvent(friendship, now);
-    }
+    await refreshChaosState(friendship, now);
   }
   return friendship;
 };
@@ -638,16 +634,23 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
   xp = Math.round(xp * (world.xpMultiplier || 1));
 
   let auraBonus = 0;
-  const chaosEvent = prepared.chaosEvent;
+  let chaosEvent = prepared.chaosEvent;
+  let chaosResolved = false;
+
   if (chaosEvent) {
+    const resolutionTime = new Date();
+    chaosResolved = await claimChaosSurvival(friendship, chaosEvent, userId, resolutionTime);
+
+    if (!chaosResolved) {
+      await refreshChaosState(friendship, resolutionTime);
+      chaosEvent = null;
+    }
+  }
+
+  if (chaosResolved && chaosEvent) {
     xp = Math.round(xp * (chaosEvent.payload?.xpMultiplier || 1));
     xp += Number(chaosEvent.payload?.successXP) || 0;
     auraBonus += Number(chaosEvent.payload?.auraBonus) || 0;
-    friendship.chaos.level = Math.min(5, (friendship.chaos.level || 1) + 1);
-    friendship.chaos.activeEvent = null;
-    friendship.chaos.wantedUntil = null;
-    friendship.chaos.lastConsequence = null;
-    scheduleNextChaos(friendship);
   }
 
   const previousLevel = friendship.duoLevel || 1;
@@ -662,7 +665,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
     metadata: { source: voice ? 'VOICE' : 'TEXT', worldEvent: world.id, season: friendship.season?.number }
   });
 
-  if (chaosEvent) {
+  if (chaosResolved && chaosEvent) {
     await recordEvent(friendship._id, 'CHAOS_SURVIVED', {
       userId,
       metadata: {
@@ -692,7 +695,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
     await notifyBoth(friendship, `Duo Level ${duo.level}`, `You unlocked “${duo.title}”.`, 'DUO_LEVEL_UP', userId);
   }
 
-  return { xp, auraBonus, duo, chaosResolved: Boolean(chaosEvent), worldEvent: world };
+  return { xp, auraBonus, duo, chaosResolved, worldEvent: world };
 };
 
 const buildRecap = async (friendship) => {
@@ -786,6 +789,7 @@ module.exports = {
   initializeContractGame,
   activateSeason,
   refreshDebtState,
+  refreshChaosState,
   refreshGameState,
   triggerChaosEvent,
   prepareCheckinGame,
