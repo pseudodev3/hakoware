@@ -11,7 +11,7 @@ const privacySections = [
     <>
       <p>Hakoware processes information you provide or create while using the game, including:</p>
       <ul>
-        <li>account information such as your display name and email address;</li>
+        <li>account information such as your username, display name and email address;</li>
         <li>contract and game activity such as friendships, check-ins, Duo XP, Aura, debt, seasons, bounties, Claims, Grudges, recaps and notifications;</li>
         <li>voice notes and other content you choose to upload;</li>
         <li>email addresses used to send contract invitations;</li>
@@ -33,7 +33,7 @@ const privacySections = [
     </>
   )],
   ['Public and social game information', (
-    <p>Hakoware includes social mechanics. Depending on the feature and your settings, information such as display names, contract status, bounties, Grudges, Wanted state, leaderboard or Shame Board information may be visible to other users. Do not put sensitive personal information into content you expect to be social or shareable.</p>
+    <p>Hakoware includes social mechanics. Your username is a public social identifier, while your account email is used operationally for things such as recovery, invitations and important account messages. Depending on the feature and your settings, usernames, display names, contract status, bounties, Grudges, Wanted state, leaderboard or Shame Board information may be visible to other users. Do not put sensitive personal information into content you expect to be social or shareable.</p>
   )],
   ['Retention and deletion', (
     <p>We keep account and game information for as long as reasonably needed to operate Hakoware, maintain game history, secure the service and meet legal obligations. Provider logs and backups may remain for limited periods after deletion. To request account or personal-data deletion, email us from the address connected to your account.</p>
