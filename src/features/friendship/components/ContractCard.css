@@ -1,6 +1,7 @@
 .contract-card { padding:17px; border-radius:22px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--border-subtle), var(--shadow-card); transition:transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background-color 140ms var(--ease-out); }
 .contract-card.chaos-contract { background:linear-gradient(145deg,var(--surface-2),color-mix(in srgb,var(--aura-red-glow) 58%,transparent)); }
 .contract-card.wanted { box-shadow:inset 0 0 0 1px rgba(255,116,123,.25), var(--shadow-card); }
+.contract-card.partner-bankrupt { box-shadow:inset 0 0 0 1px rgba(255,116,123,.34), var(--shadow-card); }
 .contract-mode-row { min-height:24px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .contract-mode, .season-chip { display:inline-flex; align-items:center; gap:5px; color:var(--text-muted); font-size:.59rem; font-weight:680; }
 .contract-mode { color:var(--aura-gold); letter-spacing:.025em; }
@@ -24,6 +25,13 @@
 .contract-anomaly strong { color:var(--text-primary); font-size:.68rem; font-weight:680; }
 .contract-anomaly span { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.6rem; }
 .contract-wanted { margin-top:12px; min-height:36px; padding:0 11px; display:flex; align-items:center; gap:7px; border-radius:12px; color:var(--aura-red); background:var(--aura-red-glow); font-family:var(--font-mono); font-size:.56rem; font-weight:650; }
+.partner-bankruptcy-alert { margin-top:13px; min-height:52px; padding:9px 10px; display:grid; grid-template-columns:32px minmax(0,1fr) auto; align-items:center; gap:9px; border-radius:14px; background:var(--aura-red-glow); box-shadow:inset 0 0 0 1px rgba(255,116,123,.2); }
+.partner-bankruptcy-icon { width:32px; height:32px; display:grid; place-items:center; border-radius:10px; color:var(--aura-red); background:color-mix(in srgb,var(--aura-red-glow) 72%,var(--surface-2)); }
+.partner-bankruptcy-alert > div { min-width:0; display:flex; flex-direction:column; }
+.partner-bankruptcy-alert strong { color:var(--text-primary); font-size:.69rem; font-weight:720; }
+.partner-bankruptcy-alert span:not(.partner-bankruptcy-icon) { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.59rem; }
+.partner-bankruptcy-alert button { min-height:32px; padding:0 9px; display:inline-flex; align-items:center; gap:4px; border-radius:9px; color:var(--aura-red); background:var(--surface-soft-strong); font-size:.58rem; font-weight:700; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out); }
+.partner-bankruptcy-alert button:active { transform:scale(.96); }
 .contract-game-row { margin-top:15px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .duo-state { min-width:0; display:flex; align-items:center; gap:8px; }
 .game-row-icon { width:28px; height:28px; flex:0 0 auto; display:grid; place-items:center; border-radius:9px; color:var(--aura-gold); background:var(--aura-gold-soft); }
@@ -45,6 +53,7 @@
 @media (hover:hover) and (pointer:fine) {
   .contract-card:hover { transform:translateY(-2px); background:var(--bg-card-hover); box-shadow:inset 0 0 0 1px var(--border-active), 0 20px 46px rgba(0,0,0,.12); }
   .contract-settings:hover { color:var(--text-primary); background:var(--surface-soft-strong); }
+  .partner-bankruptcy-alert button:hover { background:var(--surface-3); }
 }
 
 @media (max-width:560px) {
@@ -53,4 +62,6 @@
   .contract-status { align-self:flex-start; }
   .contract-actions { grid-template-columns:1fr 1fr; }
   .contract-actions .btn:first-child { grid-column:1 / -1; }
+  .partner-bankruptcy-alert { grid-template-columns:32px minmax(0,1fr); }
+  .partner-bankruptcy-alert button { grid-column:1 / -1; justify-content:center; }
 }
