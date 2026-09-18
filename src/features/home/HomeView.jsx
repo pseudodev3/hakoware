@@ -115,7 +115,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <p className="eyebrow">You’re in, {identity}</p>
           <h1>Start with one person.</h1>
-          <p className="first-contract-copy">Pick someone. Set the rules. Start Season 1.</p>
           <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
           <div className="onboarding-rail" aria-label="How your first contract starts">
             <span><b>01</b> Pick a person</span>
