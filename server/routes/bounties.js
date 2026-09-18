@@ -13,7 +13,8 @@ const {
   getHunterProfile,
   expireStaleBounties
 } = require('../services/bountyEscrow');
-const { recordEvent } = require('../services/contractGame');
+const { recordEvent, refreshGameState } = require('../services/contractGame');
+const { syncDebtState } = require('../services/debtState');
 
 const HOUR = 60 * 60 * 1000;
 const BOUNTY_COOLDOWN_HOURS = 24;
@@ -61,9 +62,23 @@ router.post('/', auth, async (req, res) => {
       return res.status(403).json({ msg: 'This test contract belongs to another lab' });
     }
 
+    await refreshGameState(friendship);
+    if (friendship.season?.status === 'COMPLETE') {
+      return res.status(409).json({ msg: 'This season is complete. Run it back before opening another bounty.' });
+    }
+
     const targetId = isUser1 ? friendship.user2 : friendship.user1;
     const target = await User.findById(targetId).select('_id displayName');
     if (!target) return res.status(404).json({ msg: 'User not found' });
+
+    const targetPerspective = isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
+    const targetDebt = syncDebtState(targetPerspective);
+    if (!targetDebt.isBankrupt) {
+      return res.status(409).json({
+        msg: `${target.displayName} is not bankrupt. Bounties unlock only after a contract partner reaches bankruptcy.`
+      });
+    }
+    await friendship.save();
 
     const existing = await Bounty.findOne({
       senderId: req.user.id,
@@ -149,7 +164,7 @@ router.post('/', auth, async (req, res) => {
     return res.status(201).json({ ...bounty.toObject(), economics: { listingFee, totalCost } });
   } catch (err) {
     console.error('Create bounty failed:', err.message);
-    return res.status(500).json({ msg: 'Could not place bounty' });
+    return res.status(err.status || 500).json({ msg: err.message || 'Could not place bounty' });
   }
 });
 

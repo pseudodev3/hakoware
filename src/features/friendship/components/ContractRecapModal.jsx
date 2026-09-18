@@ -220,6 +220,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
                 <div><span>Voice notes</span><strong>{recap.season?.voiceNotes || 0}</strong></div>
                 <div><span>Chaos survived</span><strong>{recap.season?.chaosSurvived || 0}</strong></div>
                 <div><span>Chaos failed</span><strong>{recap.season?.chaosFailed || 0}</strong></div>
+                <div><span>Bankruptcies</span><strong>{recap.season?.bankruptcies || 0}</strong></div>
                 <div><span>XP gained</span><strong>+{recap.season?.xpGained || 0}</strong></div>
               </div>
             </div>

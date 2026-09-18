@@ -25,6 +25,7 @@ const {
   runItBack,
   recordEvent
 } = require('../services/contractGame');
+const { syncDebtState } = require('../services/debtState');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -308,29 +309,83 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const hoursSince = (now - lastInteraction) / 3600000;
     if (hoursSince < 20) return res.status(400).json({ msg: 'You already checked in today' });
 
-    friendship[key].baseDebt = 0;
+    const debtBefore = syncDebtState(friendship[key], now);
+    const recoveryStarted = debtBefore.isBankrupt;
+    const recoveryCompleted = !debtBefore.isBankrupt && Boolean(friendship[key].recoveryRequired);
+
     friendship[key].lastInteraction = now;
-    friendship[key].calculatedDebt = 0;
     friendship[key].daysMissed = 0;
     friendship[key].isBankrupt = false;
-    friendship[key].isInWarningZone = false;
+
+    if (recoveryStarted) {
+      friendship[key].baseDebt = debtBefore.limit;
+      friendship[key].calculatedDebt = debtBefore.limit;
+      friendship[key].isInWarningZone = true;
+      friendship[key].daysUntilBankrupt = debtBefore.limit;
+      friendship[key].recoveryRequired = true;
+      friendship[key].wasBankrupt = true;
+      if (!friendship[key].bankruptAt) friendship[key].bankruptAt = now;
+    } else {
+      friendship[key].baseDebt = 0;
+      friendship[key].calculatedDebt = 0;
+      friendship[key].isInWarningZone = false;
+      friendship[key].daysUntilBankrupt = debtBefore.limit * 2;
+      friendship[key].recoveryRequired = false;
+    }
 
     const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
+
+    if (recoveryStarted) {
+      await recordEvent(friendship._id, 'BANKRUPTCY', {
+        userId: req.user.id,
+        metadata: {
+          previousDebt: debtBefore.totalDebt,
+          recoveryDebt: debtBefore.limit,
+          season: friendship.season?.number
+        }
+      });
+    } else if (recoveryCompleted) {
+      await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERED', {
+        userId: req.user.id,
+        metadata: { season: friendship.season?.number }
+      });
+    }
     const creditedId = bountyDecision === 'CREDIT' ? bountyCreditId : null;
     const bountyResults = await settleBountiesForCheckin(friendship._id, req.user.id, creditedId);
 
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
+    const actorName = actor?.displayName || 'Your contract partner';
+    const recoveryMessage = recoveryStarted
+      ? `${actorName} checked in from bankruptcy. Recovery started — one clean check-in remains. +${game.xp} Duo XP.`
+      : recoveryCompleted
+        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP.`
+        : `${actorName} checked in. +${game.xp} Duo XP.`;
+
     await Notification.create({
       toUserId: otherUserId,
       fromUserId: req.user.id,
-      type: 'CHECKIN',
-      title: source === 'VOICE' ? 'Voice check-in received' : 'Check-in received',
-      message: `${actor?.displayName || 'Your contract partner'} checked in. +${game.xp} Duo XP.`,
+      type: recoveryStarted ? 'BANKRUPTCY_RECOVERY' : 'CHECKIN',
+      title: recoveryStarted
+        ? 'Bankruptcy recovery started'
+        : recoveryCompleted
+          ? 'Recovery complete'
+          : source === 'VOICE' ? 'Voice check-in received' : 'Check-in received',
+      message: recoveryMessage,
       friendshipId: friendship._id
     });
 
-    return res.json({ friendship, game, bounty: bountyResults[0] || null });
+    return res.json({
+      friendship,
+      game,
+      bounty: bountyResults[0] || null,
+      recovery: {
+        started: recoveryStarted,
+        completed: recoveryCompleted,
+        remainingDebt: recoveryStarted ? debtBefore.limit : 0,
+        checkinsRemaining: recoveryStarted ? 1 : 0
+      }
+    });
   } catch (err) {
     console.error('Check-in failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Could not check in' });

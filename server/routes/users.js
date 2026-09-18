@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const auth = require('../middleware/auth');
+const { calculateDebtState } = require('../services/debtState');
 
 router.get('/leaderboard', auth, async (req, res) => {
   try {
@@ -22,13 +23,10 @@ router.get('/leaderboard', auth, async (req, res) => {
       ];
 
       perspectives.forEach(({ userId, perspective }) => {
-        const lastInteraction = new Date(perspective.lastInteraction || 0);
-        const daysMissed = Math.floor(Math.max(0, now - lastInteraction) / 86400000);
-        const limit = perspective.limit || 7;
-        const totalDebt = (perspective.baseDebt || 0) + Math.max(0, daysMissed - limit);
+        const debt = calculateDebtState(perspective, now);
         if (!bankruptStats[userId]) bankruptStats[userId] = { isBankrupt: false, totalDebt: 0 };
-        bankruptStats[userId].totalDebt += totalDebt;
-        if (totalDebt >= limit * 2) bankruptStats[userId].isBankrupt = true;
+        bankruptStats[userId].totalDebt += debt.totalDebt;
+        if (debt.isBankrupt) bankruptStats[userId].isBankrupt = true;
       });
     });
 

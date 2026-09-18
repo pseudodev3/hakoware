@@ -66,7 +66,12 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
         : result.bounty?.outcome === 'ESCAPED'
           ? ' · bounty escaped'
           : '';
-      showToast?.(`Checked in with ${friend.displayName}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}`, 'SUCCESS');
+      const recovery = result.recovery?.started
+        ? ' · recovery started · 1 clean check-in left'
+        : result.recovery?.completed
+          ? ' · bankruptcy recovery complete'
+          : '';
+      showToast?.(`Checked in with ${friend.displayName}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}${recovery}`, 'SUCCESS');
       await onRefresh?.();
       onClose?.();
     } else {
@@ -116,7 +121,18 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
         <div className="checkin-state">
           <span className={`checkin-debt ${stats.totalDebt > 0 ? 'has-debt' : ''}`}>{stats.totalDebt}</span>
-          <div><strong>Current debt</strong><p>{stats.totalDebt > 0 ? 'Checking in clears your current debt.' : 'You are inside the grace period.'}</p></div>
+          <div>
+            <strong>Current debt</strong>
+            <p>
+              {stats.isBankrupt
+                ? `This check-in starts recovery. Debt drops to ${stats.limit}; one more clean check-in gets you back to stable.`
+                : stats.isRecovering
+                  ? 'One more valid check-in completes bankruptcy recovery.'
+                  : stats.totalDebt > 0
+                    ? 'Checking in clears your current debt.'
+                    : 'You are inside the grace period.'}
+            </p>
+          </div>
         </div>
 
         <div className="checkin-meta">
@@ -124,7 +140,11 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
           <div><span className="grace-dot" /><span><small>Your grace period</small><strong>{stats.limit} day{stats.limit === 1 ? '' : 's'}</strong></span></div>
         </div>
 
-        <p className="checkin-note">A check-in can be logged once every 20 hours. It resets your side of this contract and grows your Duo level.</p>
+        <p className="checkin-note">
+          {stats.isBankrupt
+            ? 'Bankruptcy takes two clean check-ins to fully recover. The first stops the spiral; the second clears the recovery debt.'
+            : 'A check-in can be logged once every 20 hours. It resets your side of this contract and grows your Duo level.'}
+        </p>
 
         {pressureReady ? (
           <div className="checkin-proof-actions">

@@ -418,6 +418,7 @@ const buildRecap = async (friendship) => {
     chaosSurvived: items.filter((event) => event.type === 'CHAOS_SURVIVED').length,
     chaosFailed: items.filter((event) => event.type === 'CHAOS_FAILED').length,
     bounties: items.filter((event) => event.type.startsWith('BOUNTY_')).length,
+    bankruptcies: items.filter((event) => event.type === 'BANKRUPTCY').length,
     xpGained: items.reduce((sum, event) => sum + (event.xp || 0), 0),
     auraChanged: items.reduce((sum, event) => sum + (event.aura || 0), 0)
   });
@@ -469,6 +470,7 @@ const runItBack = async (friendship) => {
     friendship[key].daysMissed = 0;
     friendship[key].isBankrupt = false;
     friendship[key].isInWarningZone = false;
+    friendship[key].recoveryRequired = false;
   }
   if (friendship.templateId === 'CHAOS') {
     friendship.chaos.activeEvent = null;

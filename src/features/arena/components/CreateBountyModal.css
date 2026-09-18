@@ -35,3 +35,16 @@
 .bounty-actions { display:grid; grid-template-columns:1fr 1.3fr; gap:8px; padding-top:4px; }
 @media (hover:hover) and (pointer:fine) { .bounty-friend:hover { color:var(--text-primary); background:var(--surface-3); } .bounty-presets button:hover:not(.active):not(:disabled) { color:var(--text-secondary); background:var(--surface-3); } }
 @media (max-width:520px) { .bounty-friend-grid,.bounty-actions { grid-template-columns:1fr; } .bounty-cost-breakdown { grid-template-columns:1fr; } .bounty-cost-breakdown > span + span { border-left:0; border-top:1px solid var(--border-subtle); } }
+
+
+.bounty-empty-targets {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 16px 12px;
+  border-radius: 12px;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  font-size: .62rem;
+  line-height: 1.5;
+  text-align: center;
+}

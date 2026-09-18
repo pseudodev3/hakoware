@@ -16,7 +16,8 @@ const MODE_NAMES = {
 };
 
 const statusCopy = (stats) => {
-  if (stats.isBankrupt) return { label: 'Critical', detail: `${stats.totalDebt} debt`, tone: 'critical' };
+  if (stats.isBankrupt) return { label: 'Bankrupt', detail: `${stats.totalDebt} debt`, tone: 'critical' };
+  if (stats.isRecovering) return { label: 'Recovering', detail: `${stats.totalDebt} debt · 1 clean check-in left`, tone: 'overdue' };
   if (stats.totalDebt > 0) return { label: 'Overdue', detail: `${stats.totalDebt} debt`, tone: 'overdue' };
   const daysLeft = Math.max(0, stats.limit - stats.daysMissed);
   if (daysLeft <= 1) return { label: 'Due soon', detail: daysLeft === 0 ? 'Due today' : '1 day left', tone: 'due' };

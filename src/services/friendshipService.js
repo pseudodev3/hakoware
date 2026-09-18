@@ -35,7 +35,8 @@ export const performCheckin = async (friendshipId, source = 'TEXT', bountyCredit
       success: true,
       friendship: response.friendship || response,
       game: response.game || null,
-      bounty: response.bounty || null
+      bounty: response.bounty || null,
+      recovery: response.recovery || null
     };
   } catch (error) {
     return { success: false, error: error.message };
