@@ -87,7 +87,7 @@ export const Arena = ({ friendships, showToast }) => {
     try {
       const result = await huntBounty(bounty._id || bounty.id);
       const bond = result?.hunterBond || hunterBondFor(bounty.amount);
-      showToast?.(`Hunt started · ${bond} Aura bond staked · send pressure`, 'SUCCESS');
+      showToast?.(`Hunt started · ${bond} Aura staked. Send pressure next.`, 'SUCCESS');
       await Promise.all([loadArenaData({ force: true }), refreshUser()]);
     } catch (error) {
       showToast?.(error.message || 'Could not start hunt', 'ERROR');
@@ -99,7 +99,7 @@ export const Arena = ({ friendships, showToast }) => {
     setPressureLoading(true);
     try {
       await sendBountyPressure(pressureBounty._id || pressureBounty.id, moveId);
-      showToast?.(`Pressure sent to ${pressureBounty.targetName} · proof armed`, 'SUCCESS');
+      showToast?.('Pressure sent · proof armed', 'SUCCESS');
       setPressureBounty(null);
       await loadArenaData({ force: true });
     } catch (error) {
@@ -114,8 +114,8 @@ export const Arena = ({ friendships, showToast }) => {
       <header className="arena-hero">
         <div>
           <p className="eyebrow">Arena</p>
-          <h1>Pressure has to earn its payout.</h1>
-          <p>Bankruptcy opens the Arena. Once a contract partner goes bankrupt, you can post Aura and let a hunter pressure them back into the contract.</p>
+          <h1>Bankruptcy opens the Arena.</h1>
+          <p>Post Aura on a bankrupt partner. Hunters stake a bond, send pressure, and only get paid if the target credits them.</p>
         </div>
         <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={bankruptFriendships.length === 0}>
           {bankruptFriendships.length === 0 ? 'No bankrupt targets' : 'Place bounty'}
@@ -145,7 +145,7 @@ export const Arena = ({ friendships, showToast }) => {
             <label className="arena-search"><Search size={15} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a target" /></label>
           </div>
           <div className="arena-list">
-            {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties. The circle is suspiciously quiet.'}</div> : filtered.map((bounty) => {
+            {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties.'}</div> : filtered.map((bounty) => {
               const isTarget = String(bounty.targetId) === userId;
               const isSender = String(bounty.senderId) === userId;
               const isHunter = String(bounty.hunterId || '') === userId;
@@ -186,12 +186,12 @@ export const Arena = ({ friendships, showToast }) => {
         <section className="arena-panel">
           <div className="arena-panel-head"><div><Flame size={18} strokeWidth={1.8} /><strong>Public grudges</strong></div><span className="arena-privacy-note">Claims are public until settled or expired</span></div>
           <div className="arena-list">
-            {loading ? <div className="arena-empty">Loading beef…</div> : grudges.length === 0 ? <div className="arena-empty">Nobody has public beef right now. Suspiciously mature.</div> : grudges.map((grudge) => (
+            {loading ? <div className="arena-empty">Loading beef…</div> : grudges.length === 0 ? <div className="arena-empty">No public Grudges.</div> : grudges.map((grudge) => (
               <article className="bounty-item proof-armed-item" key={grudge.friendshipId}>
                 <div className="bounty-avatar"><Flame size={17} /></div>
                 <div className="bounty-copy">
                   <div className="bounty-title-row"><strong>{grudge.victimName} vs {grudge.claimantName}</strong><span className="bounty-status proof">GRUDGE</span></div>
-                  <span>{grudge.claimantName} Claimed {grudge.originalClaimAmount} Aura from {grudge.victimName}. Revenge is live if the claimer slips.</span>
+                  <span>{grudge.claimantName} Claimed {grudge.originalClaimAmount} Aura from {grudge.victimName}. Revenge opens if they go bankrupt.</span>
                   <small className="bounty-hunt-meta"><Clock3 size={12} /> {grudgeTimeLeft(grudge.expiresAt)}</small>
                 </div>
                 <div className="bounty-owner-state">Public</div>
