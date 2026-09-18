@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
   AudioLines,
+  BarChart3,
+  CalendarDays,
+  FileText,
   Flame,
+  Gamepad2,
   Moon,
   Share2,
   ShieldAlert,
@@ -100,7 +104,14 @@ export const LandingPage = ({ onEnter }) => {
           <div className="lp-hero-grid" aria-hidden="true" />
           <div className="lp-hero-shell">
             <div className="lp-hero-copy">
-              <div className="lp-live-pill"><span /> Season system live · Chaos included</div>
+              <div className="lp-season-marker" aria-label="Season system live. Chaos included.">
+                <span className="lp-season-rail" aria-hidden="true"><i /></span>
+                <div className="lp-season-copy">
+                  <span>SEASON SYSTEM</span>
+                  <strong>Live now</strong>
+                  <small>Chaos included</small>
+                </div>
+              </div>
               <h1>Turn staying in touch into a game worth surviving.</h1>
               <p>
                 Make a contract with someone you care about. Check in, build Duo XP, earn Aura,
@@ -113,10 +124,10 @@ export const LandingPage = ({ onEnter }) => {
               </div>
 
               <div className="lp-proof-row" aria-label="Hakoware game systems">
-                <span>8 game modes</span>
-                <span>Duo progression</span>
-                <span>30–45 day seasons</span>
-                <span>Shareable recaps</span>
+                <div><Gamepad2 size={18} strokeWidth={1.7} /><span>8 game modes</span></div>
+                <div><BarChart3 size={18} strokeWidth={1.7} /><span>Duo progression</span></div>
+                <div><CalendarDays size={18} strokeWidth={1.7} /><span>30–45 day seasons</span></div>
+                <div><FileText size={18} strokeWidth={1.7} /><span>Shareable recaps</span></div>
               </div>
             </div>
 
