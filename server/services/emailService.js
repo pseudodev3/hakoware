@@ -23,6 +23,11 @@ const sender = parseMailbox(fromAddress);
 const replyToMailbox = parseMailbox(replyTo, 'Hakoware');
 const emailConfigured = Boolean(brevoApiKey && sender?.email);
 
+const safeInlineText = (value = '') => String(value)
+  .replace(/[\r\n\u0000-\u001f\u007f]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -162,14 +167,15 @@ const sendWelcomeEmail = async (userEmail, userName) => {
 };
 
 const sendFriendRequestEmail = async (toEmail, fromName, requiresSignup = false) => {
-  const safeName = escapeHtml(fromName);
+  const cleanName = safeInlineText(fromName) || 'Someone';
+  const safeName = escapeHtml(cleanName);
   const destination = requiresSignup ? `${frontendUrl}/?join=1` : frontendUrl;
   return send({
     to: toEmail,
-    subject: `${fromName} challenged you on Hakoware`,
+    subject: `${cleanName} challenged you on Hakoware`,
     text: requiresSignup
-      ? `${fromName} sent you a Hakoware contract. Sign up with this email address to claim it: ${destination}`
-      : `${fromName} sent you a Hakoware contract. Open Hakoware to review it: ${destination}`,
+      ? `${cleanName} sent you a Hakoware contract. Sign up with this email address to claim it: ${destination}`
+      : `${cleanName} sent you a Hakoware contract. Open Hakoware to review it: ${destination}`,
     html: shell({
       eyebrow: 'Challenge received',
       title: `${safeName} put you under contract.`,
