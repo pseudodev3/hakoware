@@ -215,6 +215,41 @@ const pickEligibleChaosTarget = (friendship, now = new Date()) => {
   return candidates[Math.floor(Math.random() * candidates.length)];
 };
 
+const buildChaosEvent = (friendship, target, event, now = new Date()) => ({
+  eventId: `${event.type}-${now.getTime()}`,
+  type: event.type,
+  name: event.name,
+  description: event.description,
+  targetUserId: target.id,
+  startedAt: now,
+  expiresAt: new Date(now.getTime() + event.durationHours * HOUR),
+  payload: {
+    requiredSource: event.requiredSource || null,
+    xpMultiplier: event.xpMultiplier || 1,
+    successXP: event.successXP || 0,
+    auraBonus: event.auraBonus || 0,
+    failureDebt: event.failureDebt || 0,
+    failureTitle: event.failureTitle
+  }
+});
+
+const syncChaosFromFresh = (friendship, fresh, perspectiveKey = null) => {
+  if (!fresh) return;
+  friendship.set('chaos', fresh.chaos);
+  if (perspectiveKey && fresh[perspectiveKey] && friendship[perspectiveKey]) {
+    friendship[perspectiveKey].baseDebt = fresh[perspectiveKey].baseDebt;
+  }
+};
+
+const reloadChaosState = async (friendship, perspectiveKey = null) => {
+  const selection = perspectiveKey
+    ? `chaos ${perspectiveKey}.baseDebt`
+    : 'chaos';
+  const fresh = await Friendship.findById(friendship._id).select(selection);
+  syncChaosFromFresh(friendship, fresh, perspectiveKey);
+  return fresh;
+};
+
 const triggerChaosEvent = async (friendship, now = new Date(), options = {}) => {
   const forcedTargetId = idString(options.targetUserId);
   let target = null;
@@ -251,52 +286,205 @@ const triggerChaosEvent = async (friendship, now = new Date(), options = {}) => 
     event = pool[Math.floor(Math.random() * pool.length)];
   }
 
-  friendship.chaos.activeEvent = {
-    eventId: `${event.type}-${now.getTime()}`,
-    type: event.type,
-    name: event.name,
-    description: event.description,
-    targetUserId: target.id,
-    startedAt: now,
-    expiresAt: new Date(now.getTime() + event.durationHours * HOUR),
-    payload: {
-      requiredSource: event.requiredSource || null,
-      xpMultiplier: event.xpMultiplier || 1,
-      successXP: event.successXP || 0,
-      auraBonus: event.auraBonus || 0,
-      failureDebt: event.failureDebt || 0,
-      failureTitle: event.failureTitle
-    }
-  };
+  friendship.chaos.activeEvent = buildChaosEvent(friendship, target, event, now);
   friendship.chaos.nextEventAt = null;
   await friendship.save();
   await recordEvent(friendship._id, 'CHAOS_TRIGGERED', {
     userId: target.id,
-    metadata: { type: event.type, name: event.name, expiresAt: friendship.chaos.activeEvent.expiresAt, forced: Boolean(options.type || forcedTargetId) }
+    metadata: {
+      type: event.type,
+      name: event.name,
+      expiresAt: friendship.chaos.activeEvent.expiresAt,
+      forced: Boolean(options.type || forcedTargetId)
+    }
   });
+  await notifyBoth(friendship, 'Anomaly detected', `${event.name}: ${event.description}`, 'CHAOS_EVENT');
+  return friendship.chaos.activeEvent;
+};
+
+const claimDueChaosEvent = async (friendship, now = new Date()) => {
+  const target = pickEligibleChaosTarget(friendship, now);
+
+  if (!target) {
+    const retryAt = new Date(now.getTime() + 6 * HOUR);
+    const rescheduled = await Friendship.findOneAndUpdate(
+      {
+        _id: friendship._id,
+        status: 'ACTIVE',
+        templateId: 'CHAOS',
+        'season.status': 'ACTIVE',
+        'season.endsAt': { $gt: now },
+        'chaos.activeEvent': null,
+        'chaos.nextEventAt': { $lte: now }
+      },
+      { $set: { 'chaos.nextEventAt': retryAt } },
+      { new: true }
+    );
+
+    if (rescheduled) syncChaosFromFresh(friendship, rescheduled);
+    else await reloadChaosState(friendship);
+    return null;
+  }
+
+  const pool = CHAOS_EVENTS.filter((item) => item.minLevel <= (friendship.chaos.level || 1));
+  const event = pool[Math.floor(Math.random() * pool.length)];
+  const activeEvent = buildChaosEvent(friendship, target, event, now);
+
+  const claimed = await Friendship.findOneAndUpdate(
+    {
+      _id: friendship._id,
+      status: 'ACTIVE',
+      templateId: 'CHAOS',
+      'season.status': 'ACTIVE',
+      'season.endsAt': { $gt: now },
+      'chaos.activeEvent': null,
+      'chaos.nextEventAt': { $lte: now }
+    },
+    {
+      $set: {
+        'chaos.activeEvent': activeEvent,
+        'chaos.nextEventAt': null
+      }
+    },
+    { new: true }
+  );
+
+  if (!claimed) {
+    await reloadChaosState(friendship);
+    return null;
+  }
+
+  syncChaosFromFresh(friendship, claimed);
+  await recordEvent(friendship._id, 'CHAOS_TRIGGERED', {
+    userId: target.id,
+    metadata: {
+      type: event.type,
+      name: event.name,
+      expiresAt: activeEvent.expiresAt,
+      forced: false
+    }
+  }).catch((error) => console.error('Could not record Chaos trigger:', error.message));
   await notifyBoth(friendship, 'Anomaly detected', `${event.name}: ${event.description}`, 'CHAOS_EVENT');
   return friendship.chaos.activeEvent;
 };
 
 const failActiveChaos = async (friendship, now = new Date()) => {
   const event = friendship.chaos?.activeEvent;
-  if (!event) return false;
+  if (!event?.eventId) return false;
+
   const targetId = idString(event.targetUserId);
   const key = participantPerspectiveKey(friendship, targetId);
   const debtPenalty = Number(event.payload?.failureDebt) || 0;
-  if (key && debtPenalty > 0) friendship[key].baseDebt = (friendship[key].baseDebt || 0) + debtPenalty;
+  const consequence = event.payload?.failureTitle || 'Wanted';
+  const wantedUntil = new Date(now.getTime() + 48 * HOUR);
+  const nextEventAt = new Date(now.getTime() + chaosCooldownMs(friendship.chaos.level || 1));
+  const update = {
+    $set: {
+      'chaos.wantedUntil': wantedUntil,
+      'chaos.lastConsequence': consequence,
+      'chaos.activeEvent': null,
+      'chaos.nextEventAt': nextEventAt
+    }
+  };
 
-  friendship.chaos.wantedUntil = new Date(now.getTime() + 48 * HOUR);
-  friendship.chaos.lastConsequence = event.payload?.failureTitle || 'Wanted';
-  friendship.chaos.activeEvent = null;
-  scheduleNextChaos(friendship, now);
-  await friendship.save();
+  if (key && debtPenalty > 0) {
+    update.$inc = { [`${key}.baseDebt`]: debtPenalty };
+  }
+
+  const claimed = await Friendship.findOneAndUpdate(
+    {
+      _id: friendship._id,
+      status: 'ACTIVE',
+      templateId: 'CHAOS',
+      'season.status': 'ACTIVE',
+      'season.endsAt': { $gt: now },
+      'chaos.activeEvent.eventId': event.eventId,
+      'chaos.activeEvent.expiresAt': { $lte: now }
+    },
+    update,
+    { new: true }
+  );
+
+  if (!claimed) {
+    await reloadChaosState(friendship, key);
+    return false;
+  }
+
+  syncChaosFromFresh(friendship, claimed, key);
   await recordEvent(friendship._id, 'CHAOS_FAILED', {
     userId: targetId,
-    metadata: { type: event.type, consequence: friendship.chaos.lastConsequence, debtPenalty }
-  });
-  await notifyBoth(friendship, 'Chaos won this round', `${friendship.chaos.lastConsequence}. Wanted status lasts 48 hours.`, 'CHAOS_FAILED');
+    metadata: { type: event.type, consequence, debtPenalty }
+  }).catch((error) => console.error('Could not record Chaos failure:', error.message));
+  await notifyBoth(
+    friendship,
+    'Chaos won this round',
+    `${consequence}. Wanted status lasts 48 hours.`,
+    'CHAOS_FAILED'
+  );
   return true;
+};
+
+const claimChaosSurvival = async (friendship, event, userId, now = new Date()) => {
+  if (!event?.eventId) return false;
+
+  const nextLevel = Math.min(5, (friendship.chaos.level || 1) + 1);
+  const nextEventAt = new Date(now.getTime() + chaosCooldownMs(nextLevel));
+  const claimed = await Friendship.findOneAndUpdate(
+    {
+      _id: friendship._id,
+      status: 'ACTIVE',
+      templateId: 'CHAOS',
+      'season.status': 'ACTIVE',
+      'season.endsAt': { $gt: now },
+      'chaos.activeEvent.eventId': event.eventId,
+      'chaos.activeEvent.targetUserId': userId,
+      'chaos.activeEvent.expiresAt': { $gt: now }
+    },
+    {
+      $set: {
+        'chaos.level': nextLevel,
+        'chaos.activeEvent': null,
+        'chaos.wantedUntil': null,
+        'chaos.lastConsequence': null,
+        'chaos.nextEventAt': nextEventAt
+      }
+    },
+    { new: true }
+  );
+
+  if (!claimed) {
+    await reloadChaosState(friendship);
+    return false;
+  }
+
+  syncChaosFromFresh(friendship, claimed);
+  return true;
+};
+
+const refreshChaosState = async (friendship, now = new Date()) => {
+  if (
+    friendship?.templateId !== 'CHAOS' ||
+    friendship?.status !== 'ACTIVE' ||
+    friendship?.season?.status !== 'ACTIVE'
+  ) {
+    return friendship;
+  }
+
+  if (friendship.season?.endsAt && new Date(friendship.season.endsAt) <= now) {
+    return friendship;
+  }
+
+  if (friendship.chaos?.activeEvent && new Date(friendship.chaos.activeEvent.expiresAt) <= now) {
+    await failActiveChaos(friendship, now);
+  } else if (
+    !friendship.chaos?.activeEvent &&
+    friendship.chaos?.nextEventAt &&
+    new Date(friendship.chaos.nextEventAt) <= now
+  ) {
+    await claimDueChaosEvent(friendship, now);
+  }
+
+  return friendship;
 };
 
 const bankruptcyNoticeKey = (friendship, perspective, state) => {
