@@ -21,7 +21,7 @@ export const beginTestSession = (token) => {
   if (!founderToken) throw new Error('Founder session is missing');
   localStorage.setItem('hakoware_founder_token', founderToken);
   localStorage.setItem('token', token);
-  window.location.reload();
+  window.location.assign('/');
 };
 
 export const returnToFounderSession = () => {
@@ -29,6 +29,6 @@ export const returnToFounderSession = () => {
   if (!founderToken) return false;
   localStorage.setItem('token', founderToken);
   localStorage.removeItem('hakoware_founder_token');
-  window.location.reload();
+  window.location.assign('/founder');
   return true;
 };
