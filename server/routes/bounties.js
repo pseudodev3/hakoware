@@ -11,10 +11,11 @@ const {
   listingFeeFor,
   hunterBondFor,
   getHunterProfile,
-  expireStaleBounties
+  expireStaleBounties,
+  refundOpenBountiesForTarget
 } = require('../services/bountyEscrow');
 const { recordEvent, refreshGameState } = require('../services/contractGame');
-const { syncDebtState } = require('../services/debtState');
+const { calculateDebtState, syncDebtState } = require('../services/debtState');
 
 const HOUR = 60 * 60 * 1000;
 const BOUNTY_COOLDOWN_HOURS = 24;
@@ -247,6 +248,25 @@ router.post('/:id/hunt', auth, async (req, res) => {
 
     if (existing.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty on yourself' });
     if (existing.senderId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you placed' });
+
+    const friendship = await Friendship.findById(existing.friendshipId);
+    if (!friendship || friendship.status !== 'ACTIVE') {
+      await refundOpenBountiesForTarget(existing.friendshipId, existing.targetId, 'Contract is no longer active').catch(() => null);
+      return res.status(409).json({ msg: 'This bounty is no longer huntable' });
+    }
+
+    await refreshGameState(friendship);
+    const targetIsUser1 = String(friendship.user1) === String(existing.targetId);
+    const targetPerspective = targetIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+    const targetDebt = calculateDebtState(targetPerspective);
+    if (!targetDebt.isBankrupt) {
+      await refundOpenBountiesForTarget(
+        friendship._id,
+        existing.targetId,
+        'Target recovered before the hunt started'
+      ).catch(() => null);
+      return res.status(409).json({ msg: existing.targetName + ' already recovered. The bounty was refunded.' });
+    }
 
     const bond = hunterBondFor(existing.amount);
     const hunter = await User.findOneAndUpdate(
