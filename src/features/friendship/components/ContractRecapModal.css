@@ -1,7 +1,7 @@
 .recap-wrap { display:flex; flex-direction:column; gap:16px; }
 .recap-loading { min-height:260px; display:flex; align-items:center; justify-content:center; gap:9px; color:var(--text-muted); font-size:.76rem; }
-.recap-hero { padding:22px; border-radius:22px; background:linear-gradient(145deg,var(--surface-3),var(--surface-1)); box-shadow:inset 0 0 0 1px var(--border-subtle), var(--shadow-card); }
-.recap-hero.chaos { background:linear-gradient(145deg,var(--surface-3),var(--aura-red-glow)); box-shadow:inset 0 0 0 1px rgba(255,116,123,.22), var(--shadow-card); }
+.recap-hero { padding:20px 0 18px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.recap-hero.chaos { border-color:color-mix(in srgb,var(--aura-red) 24%,var(--border-subtle)); }
 .recap-hero-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .recap-label { color:var(--aura-gold); font-family:var(--font-mono); font-size:.58rem; font-weight:700; letter-spacing:.08em; }
 .recap-mode { color:var(--text-muted); font-size:.63rem; font-weight:600; }
@@ -14,35 +14,39 @@
 .duo-level-row strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); font-size:.72rem; font-weight:650; }
 .duo-progress { height:5px; margin-top:9px; overflow:hidden; border-radius:999px; background:var(--surface-soft-strong); }
 .duo-progress span { display:block; height:100%; border-radius:inherit; background:var(--aura-gold); transition:width 150ms var(--ease-out); }
-.recap-tabs { padding:4px; display:grid; grid-template-columns:1fr 1fr; border-radius:13px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.recap-tabs button { min-height:38px; border-radius:9px; color:var(--text-muted); font-size:.72rem; font-weight:620; transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.recap-tabs button:active { transform:scale(.96); }
-.recap-tabs button.active { color:var(--text-primary); background:var(--surface-3); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.recap-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
-.recap-stat-grid > div { min-height:110px; padding:14px; display:flex; flex-direction:column; align-items:flex-start; border-radius:17px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.recap-tabs { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border-subtle); }
+.recap-tabs button { min-height:40px; position:relative; color:var(--text-muted); font-size:.72rem; font-weight:620; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.recap-tabs button:active { transform:scale(.97); }
+.recap-tabs button.active { color:var(--text-primary); }
+.recap-tabs button.active::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--aura-gold); }
+.recap-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.recap-stat-grid > div { min-height:86px; padding:12px 10px; display:flex; flex-direction:column; align-items:flex-start; }
+.recap-stat-grid > div + div { border-left:1px solid var(--border-subtle); }
 .recap-stat-grid svg { color:var(--aura-gold); }
-.recap-stat-grid span { margin-top:auto; padding-top:14px; color:var(--text-muted); font-size:.61rem; }
-.recap-stat-grid strong { margin-top:2px; font-family:var(--font-mono); font-size:1.35rem; line-height:1; font-weight:620; }
-.season-report { display:grid; grid-template-columns:160px minmax(0,1fr); gap:8px; }
-.season-grade { min-height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:19px; color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); }
+.recap-stat-grid span { margin-top:auto; padding-top:10px; color:var(--text-muted); font-size:.59rem; }
+.recap-stat-grid strong { margin-top:2px; font-family:var(--font-mono); font-size:1.15rem; line-height:1; font-weight:620; }
+.season-report { display:grid; grid-template-columns:150px minmax(0,1fr); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.season-grade { min-height:176px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--aura-gold); border-right:1px solid var(--border-subtle); }
 .season-grade span { font-family:var(--font-mono); font-size:.58rem; font-weight:700; letter-spacing:.1em; }
 .season-grade strong { margin-top:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:4rem; line-height:1; font-weight:720; }
-.season-lines { overflow:hidden; border-radius:19px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.season-lines { overflow:hidden; }
 .season-lines > div { min-height:38px; padding:0 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .season-lines > div + div { border-top:1px solid var(--border-subtle); }
 .season-lines span { color:var(--text-muted); font-size:.67rem; }
 .season-lines strong { font-family:var(--font-mono); font-size:.72rem; font-weight:600; }
-.recap-chaos-state { min-height:68px; padding:13px 14px; display:flex; align-items:center; gap:11px; border-radius:17px; color:var(--aura-red); background:var(--aura-red-glow); box-shadow:inset 0 0 0 1px rgba(255,116,123,.16); }
+.recap-chaos-state { min-height:62px; padding:10px 0; display:flex; align-items:center; gap:10px; color:var(--aura-red); border-top:1px solid color-mix(in srgb,var(--aura-red) 22%,var(--border-subtle)); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 22%,var(--border-subtle)); }
 .recap-chaos-state > div { min-width:0; display:flex; flex-direction:column; }
 .recap-chaos-state strong { color:var(--text-primary); font-size:.76rem; font-weight:650; }
 .recap-chaos-state span { margin-top:2px; color:var(--text-muted); font-size:.65rem; }
 .recap-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; }
 
 @media (max-width:640px) {
-  .recap-hero { padding:18px; border-radius:20px; }
+  .recap-hero { padding:16px 0; }
   .recap-hero-top { align-items:flex-start; flex-direction:column; gap:4px; }
   .recap-stat-grid { grid-template-columns:1fr 1fr; }
-  .season-report { grid-template-columns:112px minmax(0,1fr); }
+  .recap-stat-grid > div:nth-child(3) { border-left:0; border-top:1px solid var(--border-subtle); }
+  .recap-stat-grid > div:nth-child(4) { border-top:1px solid var(--border-subtle); }
+  .season-report { grid-template-columns:104px minmax(0,1fr); }
   .season-grade { min-height:184px; }
   .season-grade strong { font-size:3.3rem; }
   .recap-actions { grid-template-columns:1fr; }
