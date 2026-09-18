@@ -26,6 +26,13 @@ export const AuthProvider = ({ children }) => {
         setUser(withUid(await api.get('/auth/user')));
       } catch (error) {
         console.error('Failed to restore session:', error);
+        const founderToken = localStorage.getItem('hakoware_founder_token');
+        if (founderToken) {
+          localStorage.setItem('token', founderToken);
+          localStorage.removeItem('hakoware_founder_token');
+          window.location.assign('/founder');
+          return;
+        }
         localStorage.removeItem('token');
         setUser(null);
       } finally {
@@ -52,6 +59,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('hakoware_founder_token');
     setUser(null);
   };
 

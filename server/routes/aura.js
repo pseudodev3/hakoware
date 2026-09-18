@@ -274,7 +274,14 @@ router.get('/cards', auth, (req, res) => {
 router.get('/grudges/public', auth, async (req, res) => {
   try {
     const now = new Date();
+    const actor = await User.findById(req.user.id).select('isTestAccount testOwnerId');
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+    const scope = actor.isTestAccount
+      ? { isTestData: true, testOwnerId: actor.testOwnerId }
+      : { isTestData: { $ne: true } };
+
     const friendships = await Friendship.find({
+      ...scope,
       status: 'ACTIVE',
       'grudge.active': true,
       'grudge.revengeUsed': { $ne: true },

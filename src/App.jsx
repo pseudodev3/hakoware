@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { getContractMeta, getUserFriendships } from './services/friendshipService';
 import { getUserAura } from './services/auraService';
@@ -17,9 +17,28 @@ import { WaterDivinationModal } from './features/auth/components/WaterDivination
 import { HomeView } from './features/home/HomeView';
 import { Arena } from './features/arena/components/Arena';
 import { YouView } from './features/profile/YouView';
+import { FounderLabPage } from './features/testlab/FounderLabPage';
+import { returnToFounderSession } from './services/testLabService';
 import Toast from './components/Toast';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
+
+function FounderRoute({ showToast }) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (user?.isTestAccount) return <Navigate to="/" replace />;
+  return <FounderLabPage showToast={showToast} />;
+}
+
+const TestSessionBar = ({ user }) => {
+  if (!user?.isTestAccount || !localStorage.getItem('hakoware_founder_token')) return null;
+  return (
+    <div className="test-session-bar">
+      <span><strong>TEST SESSION</strong> · {user.displayName}</span>
+      <button type="button" onClick={returnToFounderSession}>Return to Founder</button>
+    </div>
+  );
+};
 
 function MainApp({ showToast }) {
   const { user, isAuthenticated, refreshUser } = useAuth();
@@ -99,7 +118,9 @@ function MainApp({ showToast }) {
   }
 
   return (
-    <Layout
+    <>
+      <TestSessionBar user={user} />
+      <Layout
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onAddFriend={() => setModalType('ADD_FRIEND')}
@@ -183,7 +204,8 @@ function MainApp({ showToast }) {
       />
 
       <WaterDivinationModal />
-    </Layout>
+      </Layout>
+    </>
   );
 }
 
@@ -195,6 +217,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/reset-password/:token" element={<ResetPassword showToast={showToast} />} />
+        <Route path="/founder" element={<FounderRoute showToast={showToast} />} />
         <Route path="/*" element={<MainApp showToast={showToast} />} />
       </Routes>
       {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

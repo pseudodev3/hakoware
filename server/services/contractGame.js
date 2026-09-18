@@ -213,16 +213,42 @@ const pickEligibleChaosTarget = (friendship, now = new Date()) => {
   return candidates[Math.floor(Math.random() * candidates.length)];
 };
 
-const triggerChaosEvent = async (friendship, now = new Date()) => {
-  const target = pickEligibleChaosTarget(friendship, now);
+const triggerChaosEvent = async (friendship, now = new Date(), options = {}) => {
+  const forcedTargetId = idString(options.targetUserId);
+  let target = null;
+
+  if (forcedTargetId) {
+    const key = participantPerspectiveKey(friendship, forcedTargetId);
+    if (!key) {
+      const error = new Error('Chaos target must be a contract participant');
+      error.status = 400;
+      throw error;
+    }
+    target = { id: forcedTargetId, key };
+  } else {
+    target = pickEligibleChaosTarget(friendship, now);
+  }
+
   if (!target) {
     friendship.chaos.nextEventAt = new Date(now.getTime() + 6 * HOUR);
     await friendship.save();
     return null;
   }
 
-  const pool = CHAOS_EVENTS.filter((event) => event.minLevel <= (friendship.chaos.level || 1));
-  const event = pool[Math.floor(Math.random() * pool.length)];
+  let event;
+  if (options.type) {
+    event = CHAOS_EVENTS.find((item) => item.type === String(options.type).toUpperCase());
+    if (!event) {
+      const error = new Error('Unknown Chaos anomaly');
+      error.status = 400;
+      throw error;
+    }
+    friendship.chaos.level = Math.max(friendship.chaos.level || 1, event.minLevel || 1);
+  } else {
+    const pool = CHAOS_EVENTS.filter((item) => item.minLevel <= (friendship.chaos.level || 1));
+    event = pool[Math.floor(Math.random() * pool.length)];
+  }
+
   friendship.chaos.activeEvent = {
     eventId: `${event.type}-${now.getTime()}`,
     type: event.type,
@@ -244,7 +270,7 @@ const triggerChaosEvent = async (friendship, now = new Date()) => {
   await friendship.save();
   await recordEvent(friendship._id, 'CHAOS_TRIGGERED', {
     userId: target.id,
-    metadata: { type: event.type, name: event.name, expiresAt: friendship.chaos.activeEvent.expiresAt }
+    metadata: { type: event.type, name: event.name, expiresAt: friendship.chaos.activeEvent.expiresAt, forced: Boolean(options.type || forcedTargetId) }
   });
   await notifyBoth(friendship, 'Anomaly detected', `${event.name}: ${event.description}`, 'CHAOS_EVENT');
   return friendship.chaos.activeEvent;
@@ -460,12 +486,14 @@ const runItBack = async (friendship) => {
 
 module.exports = {
   TEMPLATES,
+  CHAOS_EVENTS,
   getTemplate,
   getWorldEvent,
   duoStateFromXP,
   initializeContractGame,
   activateSeason,
   refreshGameState,
+  triggerChaosEvent,
   prepareCheckinGame,
   completeCheckinGame,
   buildRecap,

@@ -1,0 +1,319 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Clock3, FlaskConical, Moon, RotateCcw, Skull, Sparkles, Sun, SwitchCamera, UserPlus, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../../shared/components/Button';
+import { applyTheme, getInitialTheme } from '../../lib/theme';
+import {
+  beginTestSession,
+  completeTestSeason,
+  createTestContract,
+  createTestPlayer,
+  enterTestPlayer,
+  getFounderLab,
+  resetFounderLab,
+  setTestAura,
+  setTestContractState,
+  triggerTestChaos
+} from '../../services/testLabService';
+import './FounderLabPage.css';
+
+const idOf = (value) => String(value?._id || value || '');
+const nameOf = (value) => value?.displayName || 'Test player';
+
+export const FounderLabPage = ({ showToast }) => {
+  const navigate = useNavigate();
+  const [theme, setTheme] = useState(getInitialTheme);
+  const [lab, setLab] = useState(null);
+  const [status, setStatus] = useState('loading');
+  const [busy, setBusy] = useState('');
+  const [name, setName] = useState('Test A');
+  const [user1Id, setUser1Id] = useState('');
+  const [user2Id, setUser2Id] = useState('');
+  const [templateId, setTemplateId] = useState('DONT_GHOST');
+  const [targets, setTargets] = useState({});
+  const [chaosTypes, setChaosTypes] = useState({});
+
+  useEffect(() => { applyTheme(theme); }, [theme]);
+
+  const load = async ({ quiet = false } = {}) => {
+    try {
+      const data = await getFounderLab();
+      setLab(data);
+      setStatus('ready');
+      return data;
+    } catch (error) {
+      if (error.message === 'Founder access only') {
+        setStatus('denied');
+        return null;
+      }
+      setStatus('error');
+      if (!quiet) showToast?.(error.message || 'Could not load Founder Test Lab', 'ERROR');
+      return null;
+    }
+  };
+
+  useEffect(() => { load({ quiet: true }); }, []);
+
+  useEffect(() => {
+    if (!lab?.players?.length) return;
+    setUser1Id((value) => value || idOf(lab.players[0]));
+    setUser2Id((value) => value || idOf(lab.players[1] || lab.players[0]));
+  }, [lab?.players]);
+
+  const playersById = useMemo(
+    () => new Map((lab?.players || []).map((player) => [idOf(player), player])),
+    [lab?.players]
+  );
+
+  const run = async (key, action, successMessage) => {
+    setBusy(key);
+    try {
+      await action();
+      if (successMessage) showToast?.(successMessage, 'SUCCESS');
+      await load({ quiet: true });
+    } catch (error) {
+      showToast?.(error.message || 'Founder Lab action failed', 'ERROR');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const addPlayer = async () => {
+    const displayName = name.trim();
+    if (!displayName) return;
+    await run('create-player', () => createTestPlayer(displayName), displayName + ' spawned');
+    const next = Math.min((lab?.players?.length || 0) + 2, 26);
+    setName('Test ' + String.fromCharCode(64 + next));
+  };
+
+  const addContract = async () => {
+    if (!user1Id || !user2Id || user1Id === user2Id) {
+      showToast?.('Choose two different test players', 'ERROR');
+      return;
+    }
+    await run(
+      'create-contract',
+      () => createTestContract(user1Id, user2Id, templateId),
+      'Test contract started'
+    );
+  };
+
+  const enterPlayer = async (player) => {
+    const key = 'enter-' + idOf(player);
+    setBusy(key);
+    try {
+      const result = await enterTestPlayer(idOf(player));
+      beginTestSession(result.token);
+    } catch (error) {
+      setBusy('');
+      showToast?.(error.message || 'Could not enter test player', 'ERROR');
+    }
+  };
+
+  const targetFor = (contract) => targets[idOf(contract)] || idOf(contract.user1);
+  const chaosFor = (contract) => chaosTypes[idOf(contract)] || lab?.chaosEvents?.[0]?.type || 'VOICE_TAX';
+
+  const changeState = async (contract, state) => {
+    const targetId = targetFor(contract);
+    const who = playersById.get(targetId)?.displayName || 'Player';
+    await run(
+      'state-' + idOf(contract) + '-' + state,
+      () => setTestContractState(idOf(contract), targetId, state),
+      who + ' → ' + state.toLowerCase()
+    );
+  };
+
+  const fireChaos = async (contract) => {
+    const type = chaosFor(contract);
+    await run(
+      'chaos-' + idOf(contract),
+      () => triggerTestChaos(idOf(contract), targetFor(contract), type),
+      type.replaceAll('_', ' ') + ' triggered'
+    );
+  };
+
+  const reset = async () => {
+    if (!window.confirm('Delete every Founder Lab player, contract, bounty, Grudge, notification and test voice note?')) return;
+    await run('reset', resetFounderLab, 'Founder Lab reset');
+    setUser1Id('');
+    setUser2Id('');
+  };
+
+  const ThemeIcon = theme === 'dark' ? Sun : Moon;
+
+  if (status === 'loading') {
+    return (
+      <div className="founder-route founder-route-centered">
+        <div className="founder-route-loader">Opening Founder Lab…</div>
+      </div>
+    );
+  }
+
+  if (status === 'denied') {
+    return (
+      <div className="founder-route founder-route-centered">
+        <div className="founder-denied">
+          <img src="/hakoware-mark.png" alt="" />
+          <span>404</span>
+          <h1>Nothing here.</h1>
+          <p>This route is private.</p>
+          <Button variant="secondary" onClick={() => navigate('/')}>Back to Hakoware</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'error' || !lab) {
+    return (
+      <div className="founder-route founder-route-centered">
+        <div className="founder-denied">
+          <h1>Founder Lab unavailable.</h1>
+          <Button variant="secondary" onClick={() => load()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="founder-route">
+      <header className="founder-route-header">
+        <button type="button" className="founder-route-back" onClick={() => navigate('/')}>
+          <ArrowLeft size={16} /> Hakoware
+        </button>
+        <div className="founder-route-brand">
+          <img src="/hakoware-mark.png" alt="" />
+          <div><strong>Founder Lab</strong><span>Private simulation route</span></div>
+        </div>
+        <button
+          type="button"
+          className="founder-theme"
+          onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')}
+          aria-label="Toggle theme"
+        >
+          <ThemeIcon size={17} />
+        </button>
+      </header>
+
+      <main className="founder-route-main">
+        <section className="founder-hero">
+          <div className="founder-hero-icon"><FlaskConical size={22} /></div>
+          <div>
+            <span>FOUNDER ONLY</span>
+            <h1>Test the real game without waiting for real time.</h1>
+            <p>Spawn disposable players, create actual Hakoware contracts, force debt states and Chaos events, then act as each player on your phone.</p>
+          </div>
+        </section>
+
+        <section className="founder-flow">
+          <strong>Full bounty loop</strong>
+          <span>A posts on B → act as C → Hunt + pressure → act as B → credit the hunter or escape.</span>
+        </section>
+
+        <section className="founder-grid">
+          <article className="founder-panel">
+            <div className="founder-panel-head">
+              <div><span>01</span><strong>Test players</strong></div>
+              <small>{lab.players.length}/8</small>
+            </div>
+
+            <div className="founder-create-row">
+              <input value={name} maxLength={32} onChange={(event) => setName(event.target.value)} placeholder="Test player name" />
+              <Button size="sm" variant="secondary" icon={UserPlus} loading={busy === 'create-player'} onClick={addPlayer}>Spawn</Button>
+            </div>
+
+            <div className="founder-player-list">
+              {lab.players.length === 0 ? (
+                <p className="founder-empty">Spawn A, B and C to test the complete social loop.</p>
+              ) : lab.players.map((player) => (
+                <div className="founder-player" key={idOf(player)}>
+                  <span className="founder-avatar">{player.displayName?.[0]?.toUpperCase()}</span>
+                  <div className="founder-player-copy">
+                    <strong>{player.displayName}</strong>
+                    <small>{player.auraBalance} Aura</small>
+                  </div>
+                  <div className="founder-player-actions">
+                    <button type="button" onClick={() => run('aura-' + idOf(player), () => setTestAura(idOf(player), 1000), player.displayName + ' now has 1000 Aura')}>
+                      <Zap size={13} /> 1000
+                    </button>
+                    <button type="button" className="act-as" onClick={() => enterPlayer(player)} disabled={busy === 'enter-' + idOf(player)}>
+                      <SwitchCamera size={13} /> Act as
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="founder-panel">
+            <div className="founder-panel-head"><div><span>02</span><strong>Create test contract</strong></div></div>
+            <div className="founder-contract-form">
+              <select value={user1Id} onChange={(event) => setUser1Id(event.target.value)}>
+                <option value="">Player A</option>
+                {lab.players.map((player) => <option key={idOf(player)} value={idOf(player)}>{player.displayName}</option>)}
+              </select>
+              <span>×</span>
+              <select value={user2Id} onChange={(event) => setUser2Id(event.target.value)}>
+                <option value="">Player B</option>
+                {lab.players.map((player) => <option key={idOf(player)} value={idOf(player)}>{player.displayName}</option>)}
+              </select>
+              <select className="founder-mode" value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
+                {lab.templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+              </select>
+              <Button variant="aura" size="sm" loading={busy === 'create-contract'} disabled={lab.players.length < 2} onClick={addContract}>Start contract</Button>
+            </div>
+          </article>
+        </section>
+
+        <section className="founder-contracts">
+          <div className="founder-section-head">
+            <div><span>03</span><h2>State controls</h2></div>
+            <button type="button" onClick={reset} disabled={busy === 'reset'}><RotateCcw size={14} /> Reset lab</button>
+          </div>
+
+          {lab.contracts.length === 0 ? (
+            <div className="founder-empty-contract"><Clock3 size={18} /><span>Create a contract above, then move time without waiting days.</span></div>
+          ) : lab.contracts.map((contract) => {
+            const id = idOf(contract);
+            const target = targetFor(contract);
+            const isChaos = contract.templateId === 'CHAOS';
+
+            return (
+              <article className="founder-contract-card" key={id}>
+                <div className="founder-contract-top">
+                  <div><span>{contract.templateId.replaceAll('_', ' ')}</span><strong>{nameOf(contract.user1)} × {nameOf(contract.user2)}</strong></div>
+                  <small>S{contract.season?.number || 1} · {contract.season?.status || 'ACTIVE'}</small>
+                </div>
+
+                <div className="founder-target-row">
+                  <label>Manipulate</label>
+                  <select value={target} onChange={(event) => setTargets((current) => ({ ...current, [id]: event.target.value }))}>
+                    {[contract.user1, contract.user2].map((player) => (
+                      <option key={idOf(player)} value={idOf(player)}>{nameOf(player)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="founder-state-buttons">
+                  <button type="button" onClick={() => changeState(contract, 'CLEAR')}>Clear</button>
+                  <button type="button" onClick={() => changeState(contract, 'READY')}><Clock3 size={13} /> Ready</button>
+                  <button type="button" onClick={() => changeState(contract, 'OVERDUE')}>Overdue</button>
+                  <button type="button" className="danger" onClick={() => changeState(contract, 'BANKRUPT')}><Skull size={13} /> Bankrupt</button>
+                  <button type="button" onClick={() => run('season-' + id, () => completeTestSeason(id), 'Season completed')}>End season</button>
+                </div>
+
+                {isChaos && (
+                  <div className="founder-chaos-row">
+                    <select value={chaosFor(contract)} onChange={(event) => setChaosTypes((current) => ({ ...current, [id]: event.target.value }))}>
+                      {lab.chaosEvents.map((event) => <option key={event.type} value={event.type}>{event.name}</option>)}
+                    </select>
+                    <Button size="sm" variant="secondary" icon={Sparkles} loading={busy === 'chaos-' + id} onClick={() => fireChaos(contract)}>Trigger anomaly</Button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      </main>
+    </div>
+  );
+};

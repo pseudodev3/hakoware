@@ -12,6 +12,8 @@ const UserSchema = new mongoose.Schema({
   lastDailyAuraBonusKey: { type: String, default: null },
   defaultLimit: { type: Number, default: 7, min: 1, max: 30 },
   emailVerified: { type: Boolean, default: false },
+  isTestAccount: { type: Boolean, default: false, index: true },
+  testOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   notificationPreferences: {
     email: { type: Boolean, default: true },
     inApp: { type: Boolean, default: true },

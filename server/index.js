@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const { assertBucketConfig } = require('./services/bucketStorage');
 const { getEmailStatus, verifyEmailTransport } = require('./services/emailService');
@@ -34,6 +35,11 @@ try {
 const app = express();
 app.set('trust proxy', 1);
 
+app.get('/brand/hakoware-mark.jpg', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+  res.sendFile(path.join(__dirname, 'assets', 'hakoware-mark.jpg'));
+});
+
 const allowedOrigins = (process.env.CORS_ORIGINS || FRONTEND_URL || '')
   .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
@@ -57,6 +63,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/aura', require('./routes/aura'));
 app.use('/api/bounties', require('./routes/bounties'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/test-lab', require('./routes/testLab'));
 
 app.get('/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1;

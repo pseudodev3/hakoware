@@ -1,0 +1,21 @@
+{
+  "name": "Hakoware",
+  "short_name": "Hakoware",
+  "description": "Turn staying in touch into a social game with contracts, Duo XP, Aura, bounties and chaos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090907",
+  "theme_color": "#090907",
+  "icons": [
+    {
+      "src": "/hakoware-mark.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/hakoware-mark.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

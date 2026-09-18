@@ -118,12 +118,25 @@ async function getObject(key) {
   return response;
 }
 
+async function deleteObject(key) {
+  const config = getConfig();
+  const url = buildObjectUrl(key, config);
+  const headers = signRequest('DELETE', url, Buffer.alloc(0), config);
+  const response = await fetch(url, { method: 'DELETE', headers });
+
+  if (!response.ok && response.status !== 404) {
+    const details = await response.text();
+    throw new Error(`Bucket delete failed (${response.status}): ${details.slice(0, 240)}`);
+  }
+}
+
 function assertBucketConfig() {
   getConfig();
 }
 
 module.exports = {
   assertBucketConfig,
+  deleteObject,
   getObject,
   putObject
 };

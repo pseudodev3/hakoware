@@ -6,7 +6,12 @@ const auth = require('../middleware/auth');
 
 router.get('/leaderboard', auth, async (req, res) => {
   try {
-    const allFriendships = await Friendship.find({ status: 'ACTIVE' });
+    const actor = await User.findById(req.user.id).select('isTestAccount testOwnerId');
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+    const friendshipScope = actor.isTestAccount
+      ? { status: 'ACTIVE', isTestData: true, testOwnerId: actor.testOwnerId }
+      : { status: 'ACTIVE', isTestData: { $ne: true } };
+    const allFriendships = await Friendship.find(friendshipScope);
     const bankruptStats = {};
     const now = new Date();
 
@@ -30,6 +35,9 @@ router.get('/leaderboard', auth, async (req, res) => {
     const bankruptUserIds = Object.keys(bankruptStats).filter((userId) => bankruptStats[userId].isBankrupt);
     const users = await User.find({
       _id: { $in: bankruptUserIds },
+      ...(actor.isTestAccount
+        ? { isTestAccount: true, testOwnerId: actor.testOwnerId }
+        : { isTestAccount: { $ne: true } }),
       'privacySettings.optOutPublicBankruptcy': false
     })
       .select('displayName avatar nenType')

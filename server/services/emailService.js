@@ -3,8 +3,13 @@ const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
 const frontendUrl = String(process.env.FRONTEND_URL || '').replace(/\/$/, '');
 const fromAddress = String(process.env.EMAIL_FROM || '').trim();
 const replyTo = String(process.env.EMAIL_REPLY_TO || '').trim();
+const railwayPublicDomain = String(process.env.RAILWAY_PUBLIC_DOMAIN || '').trim();
+const publicApiUrl = String(
+  process.env.PUBLIC_API_URL || (railwayPublicDomain ? `https://${railwayPublicDomain}` : '')
+).replace(/\/$/, '');
 const emailLogoUrl = String(
-  process.env.EMAIL_LOGO_URL || 'https://raw.githubusercontent.com/pseudodev3/hakoware/main/public/hakoware-mark.png'
+  process.env.EMAIL_LOGO_URL ||
+  (publicApiUrl ? `${publicApiUrl}/brand/hakoware-mark.jpg` : `${frontendUrl}/hakoware-mark.jpg`)
 ).trim();
 
 const parseMailbox = (value, fallbackName = 'Hakoware') => {
