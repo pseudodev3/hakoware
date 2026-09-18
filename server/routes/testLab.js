@@ -304,9 +304,9 @@ router.post('/players/:id/impersonate', async (req, res) => {
     if (!player) return res.status(404).json({ msg: 'Test player not found' });
 
     const token = jwt.sign(
-      { user: { id: player.id } },
+      { user: { id: player.id, v: Number(player.authVersion) || 0 } },
       process.env.JWT_SECRET,
-      { expiresIn: '2h' }
+      { expiresIn: '30m' }
     );
     return res.json({ token, user: playerView(player) });
   } catch (error) {
