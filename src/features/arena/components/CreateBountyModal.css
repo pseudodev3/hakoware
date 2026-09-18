@@ -1,5 +1,5 @@
 .bounty-form { display:flex; flex-direction:column; gap:21px; }
-.bounty-explainer { padding:14px; display:flex; align-items:flex-start; gap:10px; border-radius:14px; color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); }
+.bounty-explainer { padding:10px 0; display:flex; align-items:flex-start; gap:9px; color:var(--aura-gold); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .bounty-explainer p { color:var(--text-secondary); font-size:.72rem; line-height:1.55; }
 .bounty-field { display:flex; flex-direction:column; gap:8px; }
 .bounty-field > label,.bounty-field-label-row label { color:var(--text-secondary); font-size:.7rem; font-weight:620; }
@@ -7,11 +7,12 @@
 .bounty-field-label-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .bounty-field-label-row > span { color:var(--text-muted); font-family:var(--font-mono); font-size:.62rem; font-variant-numeric:tabular-nums; }
 .bounty-field-label-row > span.insufficient { color:var(--aura-red); }
-.bounty-friend-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:180px; overflow-y:auto; }
-.bounty-friend { min-height:54px; padding:8px 10px; display:flex; align-items:center; gap:9px; overflow:hidden; border-radius:13px; color:var(--text-secondary); background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); font-size:.73rem; text-align:left; transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.bounty-friend-grid { max-height:180px; overflow-y:auto; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.bounty-friend { width:100%; min-height:52px; padding:7px 2px; display:flex; align-items:center; gap:9px; overflow:hidden; color:var(--text-secondary); background:transparent; font-size:.73rem; text-align:left; transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.bounty-friend + .bounty-friend { border-top:1px solid var(--border-subtle); }
 .bounty-friend:active { transform:scale(.96); }
-.bounty-friend.selected { color:var(--text-primary); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); }
-.bounty-friend-avatar { width:34px; height:34px; flex:0 0 auto; display:grid; place-items:center; border-radius:10px; color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); font-weight:650; }
+.bounty-friend.selected { color:var(--text-primary); background:color-mix(in srgb,var(--aura-gold-soft) 62%,transparent); }
+.bounty-friend-avatar { width:30px; height:30px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; color:var(--aura-gold); background:var(--surface-soft); font-weight:650; }
 .bounty-friend > span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bounty-amount-row { min-height:58px; padding:0 14px; display:flex; align-items:center; gap:9px; border-radius:14px; color:var(--aura-gold); background:var(--surface-input); box-shadow:inset 0 0 0 1px var(--border-subtle); transition:box-shadow 140ms var(--ease-out), background-color 140ms var(--ease-out); }
 .bounty-amount-row:focus-within { box-shadow:inset 0 0 0 1px var(--aura-gold),0 0 0 3px var(--aura-gold-soft); }
@@ -23,7 +24,7 @@
 .bounty-presets button:active:not(:disabled) { transform:scale(.96); }
 .bounty-presets button.active { color:#161107; background:var(--aura-gold); }
 .bounty-presets button:disabled { opacity:.3; }
-.bounty-cost-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); overflow:hidden; border-radius:12px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.bounty-cost-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); overflow:hidden; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .bounty-cost-breakdown > span { min-height:52px; padding:9px 10px; display:flex; flex-direction:column; justify-content:center; }
 .bounty-cost-breakdown > span + span { border-left:1px solid var(--border-subtle); }
 .bounty-cost-breakdown small { color:var(--text-faint); font-size:.53rem; }
@@ -34,16 +35,13 @@
 .bounty-field textarea::placeholder { color:var(--text-faint); }
 .bounty-actions { display:grid; grid-template-columns:1fr 1.3fr; gap:8px; padding-top:4px; }
 @media (hover:hover) and (pointer:fine) { .bounty-friend:hover { color:var(--text-primary); background:var(--surface-3); } .bounty-presets button:hover:not(.active):not(:disabled) { color:var(--text-secondary); background:var(--surface-3); } }
-@media (max-width:520px) { .bounty-friend-grid,.bounty-actions { grid-template-columns:1fr; } .bounty-cost-breakdown { grid-template-columns:1fr; } .bounty-cost-breakdown > span + span { border-left:0; border-top:1px solid var(--border-subtle); } }
+@media (max-width:520px) { .bounty-actions { grid-template-columns:1fr; } .bounty-cost-breakdown { grid-template-columns:1fr; } .bounty-cost-breakdown > span + span { border-left:0; border-top:1px solid var(--border-subtle); } }
 
 
 .bounty-empty-targets {
-  grid-column: 1 / -1;
   margin: 0;
-  padding: 16px 12px;
-  border-radius: 12px;
+  padding: 16px 2px;
   color: var(--text-muted);
-  background: var(--surface-soft);
   font-size: .62rem;
   line-height: 1.5;
   text-align: center;
