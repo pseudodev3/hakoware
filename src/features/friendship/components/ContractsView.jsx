@@ -83,7 +83,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
                   <div className="invite-avatar">{chaos ? <Dice5 size={18} /> : inviter?.displayName?.[0]?.toUpperCase() || '?'}</div>
                   <div className="invite-copy">
                     <strong>{inviter?.displayName || 'Someone'}</strong>
-                    <span>{modeName(friendship.templateId)} · {friendship.user2Perspective?.limit || 7}-day rule</span>
+                    <span>{inviter?.username ? `@${inviter.username} · ` : ''}{modeName(friendship.templateId)} · {friendship.user2Perspective?.limit || 7}-day rule</span>
                   </div>
                   <div className="invite-actions">
                     <button className="invite-action decline" disabled={respondingId === id} onClick={() => respond(friendship, 'DECLINE')} aria-label="Decline contract"><X size={17} /></button>
@@ -103,7 +103,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
             {pendingSent.map((friendship) => (
               <div className="sent-row" key={friendship._id || friendship.id}>
                 <Clock3 size={15} strokeWidth={1.8} />
-                <div><span>{friendship.user2?.displayName || friendship.user2DisplayName}</span><small>{modeName(friendship.templateId)}</small></div>
+                <div><span>{friendship.user2?.displayName || friendship.user2DisplayName}</span><small>{friendship.user2?.username ? `@${friendship.user2.username} · ` : ''}{modeName(friendship.templateId)}</small></div>
                 <b>Pending</b>
               </div>
             ))}
