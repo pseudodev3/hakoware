@@ -77,7 +77,6 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         <div>
           <p className="eyebrow">Contracts</p>
           <h1>Your roster.</h1>
-          <p>Every contract, one place.</p>
         </div>
         <Button variant="aura" icon={Plus} onClick={onAddFriend}>New contract</Button>
       </header>
