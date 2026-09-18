@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
+import { WorldEventBanner } from '../../shared/components/WorldEventBanner';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
@@ -240,7 +241,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
         <div><Sparkles size={18} /><small>Total Duo XP</small><strong>{totalDuoXP}</strong><span>across your circle</span></div>
       </section>
 
-      {worldEvent && <section className="profile-world-event"><span>LIVE · {worldEvent.theme}</span><strong>{worldEvent.name}</strong><p>{worldEvent.description}</p></section>}
+      <WorldEventBanner event={worldEvent} compact />
 
       {strongest && (
         <section className="duo-share-strip">
