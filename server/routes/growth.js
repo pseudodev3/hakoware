@@ -24,6 +24,10 @@ const safeRate = (numerator, denominator) => (
 
 router.post('/share', auth, async (req, res) => {
   try {
+    const actor = await User.findById(req.user.id).select('isTestAccount');
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+    if (actor.isTestAccount) return res.status(201).json({ success: true, tracked: false });
+
     const source = String(req.body.source || 'GENERAL').trim().toUpperCase();
     if (!SHARE_SOURCES.has(source)) {
       return res.status(400).json({ msg: 'Unknown share source' });
