@@ -5,7 +5,6 @@ import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
 import { WorldEventBanner } from '../../shared/components/WorldEventBanner';
-import { WaterDivinationModal } from '../auth/components/WaterDivinationModal';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
@@ -60,7 +59,6 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const [chaosTarget, setChaosTarget] = useState('');
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [plusInterested, setPlusInterestedState] = useState(Boolean(user.plusInterestAt));
-  const [showAffinity, setShowAffinity] = useState(false);
   const userId = user.uid || user.id || user._id;
 
   const refresh = async ({ silent = false, refreshAccount = true, force = true } = {}) => {
@@ -234,13 +232,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
       <section className="identity-card">
         <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
         <div className="identity-copy"><p className="eyebrow">Player profile</p><h1>{user.displayName}</h1><p>{user.username ? `@${user.username}` : 'Hakoware player'}</p></div>
-        {user.nenType ? (
-          <div className="nen-chip"><Sparkles size={14} strokeWidth={1.8} /> {typeLabel(user.nenType)}</div>
-        ) : (
-          <button type="button" className="nen-chip nen-chip-action" onClick={() => setShowAffinity(true)}>
-            <Sparkles size={14} strokeWidth={1.8} /> Choose affinity
-          </button>
-        )}
+
       </section>
 
       <section className="player-summary-grid">
@@ -441,7 +433,6 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
           <span className="account-logout-label">Sign out</span>
         </button>
       </section>
-      <WaterDivinationModal isOpen={showAffinity} onClose={() => setShowAffinity(false)} />
     </div>
   );
 };
