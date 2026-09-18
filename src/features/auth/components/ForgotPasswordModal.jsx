@@ -16,9 +16,9 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
     try {
       await api.post('/auth/forgot-password', { email });
       setSubmitted(true);
-      showToast('RECOVERY PROTOCOL INITIATED', 'SUCCESS');
+      showToast('Password reset email sent', 'SUCCESS');
     } catch (err) {
-      showToast(err.message || 'RECOVERY FAILED', 'ERROR');
+      showToast(err.message || 'Could not send reset email', 'ERROR');
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
             }}>
               <AlertCircle size={20} color="var(--aura-gold)" />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                Provide your registered email address to receive a recovery link from the Association.
+                Enter the email address connected to your Hakoware account and we will send you a password reset link.
               </p>
             </div>
 
@@ -53,23 +53,23 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
               <Input 
                 label="EMAIL ADDRESS"
                 type="email"
-                placeholder="hunter@association.org"
+                placeholder="you@example.com"
                 icon={Mail}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <Button variant="aura" type="submit" loading={loading} icon={ArrowRight} className="w-full">
-                SEND RECOVERY LINK
+                SEND RESET LINK
               </Button>
             </form>
           </>
         ) : (
           <div className="success-view" style={{ textAlign: 'center', padding: '20px 0' }}>
              <ShieldCheck size={48} color="var(--aura-green)" style={{ margin: '0 auto 20px auto' }} />
-             <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>TRANSMISSION SUCCESSFUL</h3>
+             <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>CHECK YOUR EMAIL</h3>
              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-               The Association has dispatched a recovery protocol to <strong>{email}</strong>.
+               We sent a password reset link to <strong>{email}</strong>.
              </p>
              <Button variant="secondary" onClick={onClose} style={{ marginTop: '32px' }} className="w-full">
                RETURN TO LOGIN
