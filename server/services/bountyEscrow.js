@@ -306,6 +306,15 @@ const refundOpenBountiesForFriendship = async (friendshipId, reason = 'Contract 
   for (const bounty of bounties) await refundBounty(bounty, reason);
 };
 
+const refundOpenBountiesForTarget = async (friendshipId, targetUserId, reason = 'Target recovered') => {
+  const bounties = await Bounty.find({
+    friendshipId,
+    targetId: targetUserId,
+    status: { $in: OPEN_STATUSES }
+  });
+  for (const bounty of bounties) await refundBounty(bounty, reason);
+};
+
 const expireStaleBounties = async () => {
   const now = new Date();
   const staleHunts = await Bounty.find({
@@ -369,5 +378,6 @@ module.exports = {
   getBountyDecisionRequirement,
   expireStaleBounties,
   refundOpenBountiesForFriendship,
+  refundOpenBountiesForTarget,
   settleBountiesForCheckin
 };
