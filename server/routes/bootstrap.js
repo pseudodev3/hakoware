@@ -26,6 +26,10 @@ router.get('/', auth, async (req, res) => {
 
     if (!user || !aura) return res.status(404).json({ msg: 'User not found' });
 
+    const visibleNotifications = notifications.filter(
+      (notification) => notification.type !== 'CONTRACT_INVITE'
+    );
+
     return res.json({
       generatedAt: new Date(),
       user,
@@ -36,8 +40,8 @@ router.get('/', auth, async (req, res) => {
       },
       aura,
       notifications: {
-        items: notifications,
-        unreadCount: notifications.filter((notification) => !notification.read).length
+        items: visibleNotifications,
+        unreadCount: visibleNotifications.filter((notification) => !notification.read).length
       }
     });
   } catch (error) {
