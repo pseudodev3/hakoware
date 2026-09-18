@@ -8,13 +8,13 @@
   "theme_color": "#090907",
   "icons": [
     {
-      "src": "/hakoware-mark.png",
+      "src": "/hakoware-mark-v2.png",
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "/hakoware-mark.jpg",
-      "sizes": "512x512",
+      "src": "/hakoware-mark-v2.jpg",
+      "sizes": "256x256",
       "type": "image/jpeg"
     }
   ]
