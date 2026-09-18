@@ -1,7 +1,8 @@
 import React from 'react';
-import { BarChart3, Check, Clock3, Dice5, Flame, MessageCircle, Mic, Settings, Trophy, UsersRound } from 'lucide-react';
+import { ArrowRight, BarChart3, Check, Clock3, Dice5, Flame, MessageCircle, Mic, Settings, TriangleAlert, Trophy, UsersRound } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
+import { getContractSides } from '../contractState';
 import './ContractCard.css';
 
 const MODE_NAMES = {
@@ -46,10 +47,7 @@ const formatTimeLeft = (date) => {
 };
 
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
-  const user1Id = friendship.user1?._id || friendship.user1;
-  const isUser1 = String(user1Id) === String(currentUserId);
-  const perspective = isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
-  const friend = isUser1 ? friendship.user2 : friendship.user1;
+  const { partner: friend, ownPerspective: perspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
   if (!stats || !friend) return null;
 
@@ -64,9 +62,10 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   const wanted = friendship.chaos?.wantedUntil && new Date(friendship.chaos.wantedUntil).getTime() > Date.now();
   const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
   const checkedInToday = hoursSinceCheckin < 20;
+  const partnerBankrupt = Boolean(partnerDebt?.isBankrupt) && !seasonDone;
 
   return (
-    <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${wanted ? 'wanted' : ''} ${compact ? 'compact' : ''}`}>
+    <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
       <div className="contract-mode-row">
         <span className="contract-mode">{friendship.templateId === 'CHAOS' && <Dice5 size={12} strokeWidth={2} />} {mode}</span>
         <span className="season-chip">S{season.number || 1} · {seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now())}</span>
@@ -87,6 +86,19 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
           <Settings size={17} strokeWidth={1.8} />
         </button>
       </div>
+
+      {partnerBankrupt && (
+        <div className="partner-bankruptcy-alert">
+          <span className="partner-bankruptcy-icon"><TriangleAlert size={17} strokeWidth={2} /></span>
+          <div>
+            <strong>{name} is bankrupt</strong>
+            <span>{partnerDebt.totalDebt} debt · Bounties + Claim unlocked</span>
+          </div>
+          <button type="button" onClick={() => onAction('ARENA', friendship)}>
+            Arena <ArrowRight size={13} strokeWidth={2} />
+          </button>
+        </div>
+      )}
 
       {activeChaos && (
         <div className="contract-anomaly">
