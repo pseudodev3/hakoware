@@ -196,12 +196,26 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                           <span className="item-time">{formatTime(notification.createdAt)}</span>
                         </div>
                         <p className="item-msg">{notification.message}</p>
-                        <div className="item-actions">
-                          {!notification.read && (
-                            <button className="action-link" onClick={() => handleMarkAsRead(notification.id || notification._id)}><Check size={13} strokeWidth={1.8} /> Mark read</button>
-                          )}
-                          <button className="action-link delete" onClick={() => handleDelete(notification.id || notification._id)}><Trash2 size={13} strokeWidth={1.8} /> Delete</button>
-                        </div>
+                      </div>
+                      <div className="item-actions">
+                        {!notification.read && (
+                          <button
+                            className="action-icon"
+                            onClick={() => handleMarkAsRead(notification.id || notification._id)}
+                            aria-label="Mark notification as read"
+                            title="Mark read"
+                          >
+                            <Check size={14} strokeWidth={1.9} />
+                          </button>
+                        )}
+                        <button
+                          className="action-icon delete"
+                          onClick={() => handleDelete(notification.id || notification._id)}
+                          aria-label="Delete notification"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} strokeWidth={1.9} />
+                        </button>
                       </div>
                     </div>
                   ))}
