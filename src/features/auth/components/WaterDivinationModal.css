@@ -1,5 +1,7 @@
 .affinity-overlay { position: fixed; inset: 0; z-index: 5000; padding: 20px; display: grid; place-items: center; overflow-y: auto; background: rgba(4,4,3,.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-.affinity-card { width: min(720px,100%); padding: clamp(22px,5vw,36px); border-radius: 28px; background: linear-gradient(155deg,rgba(23,23,17,.98),rgba(12,12,9,.98)); box-shadow: inset 0 0 0 1px var(--border-active), 0 36px 100px rgba(0,0,0,.48); }
+.affinity-card { position:relative; width: min(720px,100%); padding: clamp(22px,5vw,36px); border-radius: 28px; background: linear-gradient(155deg,rgba(23,23,17,.98),rgba(12,12,9,.98)); box-shadow: inset 0 0 0 1px var(--border-active), 0 36px 100px rgba(0,0,0,.48); }
+.affinity-close { position:absolute; top:14px; right:14px; width:38px; height:38px; display:grid; place-items:center; border-radius:11px; color:var(--text-muted); background:var(--surface-soft); box-shadow:inset 0 0 0 1px var(--border-subtle); transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.affinity-close:active { transform:scale(.96); }
 .affinity-header { display: flex; align-items: flex-start; gap: 16px; }
 .affinity-header img { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 14px; outline: 1px solid rgba(255,255,255,.1); outline-offset: -1px; }
 .affinity-kicker { color: var(--aura-gold); font-size: .65rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; }
@@ -17,5 +19,5 @@
 .affinity-footer { margin-top: 24px; padding-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border-subtle); }
 .affinity-footer p { color: var(--text-muted); font-size: .7rem; }
 
-@media (hover:hover) and (pointer:fine) { .affinity-option:hover { color: var(--text-primary); background: rgba(247,244,236,.045); } }
+@media (hover:hover) and (pointer:fine) { .affinity-option:hover { color: var(--text-primary); background: rgba(247,244,236,.045); } .affinity-close:hover { color:var(--text-primary); background:var(--surface-soft-strong); } }
 @media (max-width:600px) { .affinity-overlay { align-items: start; padding: max(16px,env(safe-area-inset-top)) 12px 20px; } .affinity-card { border-radius: 24px; } .affinity-header { flex-direction: column; } .affinity-grid { grid-template-columns: 1fr; } .affinity-footer { align-items: stretch; flex-direction: column; } .affinity-footer .btn { width: 100%; } }
