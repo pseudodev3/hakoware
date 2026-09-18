@@ -1,7 +1,7 @@
 const User = require('../models/User');
 
 const founderEmails = () => new Set(
-  String(process.env.FOUNDER_EMAILS || 'hakoware265@gmail.com')
+  String(process.env.FOUNDER_EMAILS || '')
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
