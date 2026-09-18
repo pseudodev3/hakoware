@@ -30,7 +30,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
     <div className="app-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img className="brand-mark" src="/hakoware-mark.png" alt="" />
+          <img className="brand-mark" src="/hakoware-mark-v2.png" alt="" />
           <span>Hakoware</span>
           <span className="brand-status">LIVE</span>
         </div>
@@ -79,7 +79,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
       <main className="content-container">
         <header className="content-header">
           <div className="mobile-brand">
-            <img src="/hakoware-mark.png" alt="" />
+            <img src="/hakoware-mark-v2.png" alt="" />
             <div><strong>Hakoware</strong><span>{currentLabel}</span></div>
           </div>
           <div className="header-actions">
