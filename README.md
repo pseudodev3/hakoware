@@ -19,3 +19,8 @@ You can deploy your new Vite project with a single command from your terminal us
 ```shell
 $ vercel
 ```
+
+
+## Project continuity
+
+For the current product state, gameplay rules, deployment notes, Founder Lab setup, known caveats, and next steps, read [HANDOFF.md](./HANDOFF.md) before continuing development.
