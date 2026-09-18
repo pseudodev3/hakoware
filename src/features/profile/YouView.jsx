@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, Flame, LogOut, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
+import { BarChart3, Crown, Eye, EyeOff, History, LogOut, Palette, Share2, SlidersHorizontal, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
+import { setPlusInterest } from '../../services/growthService';
+import { shareHakoware } from '../../lib/share';
 import './YouView.css';
 
 const perspectiveFor = (friendship, userId, mine = true) => {
@@ -29,6 +31,14 @@ const partnerIsBankrupt = (friendship, userId) => {
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
+const PLUS_FEATURES = [
+  { icon: History, title: 'Full season archive', copy: 'Keep the complete story across every season.' },
+  { icon: BarChart3, title: 'Deeper Duo stats', copy: 'Patterns, streaks and relationship-level trends.' },
+  { icon: SlidersHorizontal, title: 'Advanced custom contracts', copy: 'More control over the rules you make together.' },
+  { icon: Palette, title: 'Premium recap styles', copy: 'More ways to turn a season into something worth sharing.' },
+  { icon: Crown, title: 'Duo cosmetics', copy: 'Themes, profile treatments and visual identity for your Duo.' }
+];
+
 export const YouView = ({ friendships, worldEvent, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
   const cachedYou = peekYouSnapshot();
@@ -46,6 +56,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const [signalTarget, setSignalTarget] = useState('');
   const [chaosTarget, setChaosTarget] = useState('');
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [plusInterested, setPlusInterestedState] = useState(Boolean(user.plusInterestAt));
   const userId = user.uid || user.id || user._id;
 
   const refresh = async ({ silent = false, refreshAccount = true, force = true } = {}) => {
@@ -71,6 +82,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
     void refresh({ silent: warm, refreshAccount: false, force: warm });
   }, []);
   useEffect(() => { setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 })); }, [user.auraBalance]);
+  useEffect(() => { setPlusInterestedState(Boolean(user.plusInterestAt)); }, [user.plusInterestAt]);
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
@@ -146,6 +158,39 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
     }
   };
 
+  const shareStrongestDuo = async () => {
+    if (!strongest) return showToast?.('Start a contract first — then you have something to brag about', 'ERROR');
+    const partner = partnerName(strongest);
+    const result = await shareHakoware({
+      source: 'DUO',
+      title: 'Hakoware Duo',
+      text: `${user.displayName} × ${partner} are Duo Lv. ${strongest.duoLevel || 1} · ${strongest.duoTitle || 'New Contract'} on Hakoware.`,
+      url: window.location.origin
+    });
+
+    if (result.cancelled) return;
+    if (result.success && result.method === 'CLIPBOARD') {
+      showToast?.('Duo brag copied — post it anywhere', 'SUCCESS');
+    } else if (!result.success) {
+      showToast?.(result.error || 'Could not share your Duo', 'ERROR');
+    }
+  };
+
+  const joinPlusInterest = async () => {
+    if (plusInterested) return;
+    setBusy('plus-interest');
+    try {
+      await setPlusInterest(true);
+      setPlusInterestedState(true);
+      await refreshUser();
+      showToast?.('Hakoware+ interest saved · you are early', 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not save Hakoware+ interest', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const toggleShameBoard = async () => {
     setSavingPrivacy(true);
     try {
@@ -174,6 +219,53 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
       </section>
 
       {worldEvent && <section className="profile-world-event"><span>LIVE · {worldEvent.theme}</span><strong>{worldEvent.name}</strong><p>{worldEvent.description}</p></section>}
+
+      {strongest && (
+        <section className="duo-share-strip">
+          <div className="duo-share-copy">
+            <Share2 size={17} strokeWidth={1.8} />
+            <div>
+              <span>SHARE A MOMENT</span>
+              <strong>{partnerName(strongest)} · Duo Lv. {strongest.duoLevel || 1}</strong>
+              <small>{strongest.duoTitle || 'New Contract'} · {strongest.duoXP || 0} XP</small>
+            </div>
+          </div>
+          <Button variant="secondary" size="sm" icon={Share2} onClick={shareStrongestDuo}>Share Duo</Button>
+        </section>
+      )}
+
+      <section className="plus-preview">
+        <div className="plus-preview-head">
+          <div className="plus-preview-mark"><Crown size={18} strokeWidth={1.8} /></div>
+          <div>
+            <span>EARLY PREVIEW · NO CHARGE</span>
+            <h2>Hakoware+</h2>
+            <p>The game stays free. Plus is for people who want more history, customization and identity around the relationships they already built here.</p>
+          </div>
+        </div>
+
+        <div className="plus-feature-grid">
+          {PLUS_FEATURES.map(({ icon: Icon, title, copy }) => (
+            <div className="plus-feature" key={title}>
+              <Icon size={16} strokeWidth={1.7} />
+              <div><strong>{title}</strong><span>{copy}</span></div>
+            </div>
+          ))}
+        </div>
+
+        <div className="plus-preview-foot">
+          <span>{plusInterested ? 'Interest saved. No payment, no commitment.' : 'Help decide whether we build this.'}</span>
+          <Button
+            variant={plusInterested ? 'secondary' : 'aura'}
+            size="sm"
+            loading={busy === 'plus-interest'}
+            disabled={plusInterested}
+            onClick={joinPlusInterest}
+          >
+            {plusInterested ? 'You are on the early list' : "I'm interested"}
+          </Button>
+        </div>
+      </section>
 
       <section className="aura-balance-card">
         <div className="aura-wallet-copy">

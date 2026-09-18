@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Clock3, FlaskConical, Moon, RotateCcw, Skull, Sparkles, Sun, SwitchCamera, UserPlus, Zap } from 'lucide-react';
+import { ArrowLeft, BarChart3, Clock3, Crown, FlaskConical, Moon, Repeat2, RotateCcw, Share2, Skull, Sparkles, Sun, SwitchCamera, Target, UserPlus, UsersRound, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../shared/components/Button';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
@@ -15,6 +15,7 @@ import {
   setTestContractState,
   triggerTestChaos
 } from '../../services/testLabService';
+import { getGrowthMetrics } from '../../services/growthService';
 import './FounderLabPage.css';
 
 const idOf = (value) => String(value?._id || value || '');
@@ -33,6 +34,7 @@ export const FounderLabPage = ({ showToast }) => {
   const [templateId, setTemplateId] = useState('DONT_GHOST');
   const [targets, setTargets] = useState({});
   const [chaosTypes, setChaosTypes] = useState({});
+  const [growth, setGrowth] = useState(null);
 
   useEffect(() => { applyTheme(theme); }, [theme]);
 
@@ -63,6 +65,11 @@ export const FounderLabPage = ({ showToast }) => {
   };
 
   useEffect(() => { load({ quiet: true }); }, []);
+  useEffect(() => {
+    getGrowthMetrics().then(setGrowth).catch((error) => {
+      console.warn('Could not load growth metrics:', error.message);
+    });
+  }, []);
 
   useEffect(() => {
     if (!lab?.players?.length) return;
@@ -221,6 +228,40 @@ export const FounderLabPage = ({ showToast }) => {
           <strong>Full bounty loop</strong>
           <span>A posts on B → act as C → Hunt + pressure → act as B → credit the hunter or escape.</span>
         </section>
+
+        {growth && (
+          <section className="founder-growth">
+            <div className="founder-growth-head">
+              <div>
+                <span>REAL PRODUCT SIGNALS</span>
+                <h2>First 20 activated Duos</h2>
+              </div>
+              <div className="founder-growth-goal">
+                <Target size={15} />
+                <strong>{growth.duos.activated}/20</strong>
+                <span>{growth.goals.activatedDuosProgress}%</span>
+              </div>
+            </div>
+
+            <div className="founder-growth-track" aria-label={`${growth.goals.activatedDuosProgress}% of first 20 Duo goal`}>
+              <i style={{ width: `${growth.goals.activatedDuosProgress}%` }} />
+            </div>
+
+            <div className="founder-growth-grid">
+              <div><UsersRound size={15} /><span>Users</span><strong>{growth.users.total}</strong><small>+{growth.users.new7d} in 7d</small></div>
+              <div><BarChart3 size={15} /><span>Activated Duos</span><strong>{growth.duos.activated}</strong><small>{growth.duos.activationRate}% of active</small></div>
+              <div><Sparkles size={15} /><span>7d active Duos</span><strong>{growth.duos.active7d}</strong><small>{growth.duos.active} active total</small></div>
+              <div><Repeat2 size={15} /><span>Run It Back</span><strong>{growth.seasons.runItBacks}</strong><small>{growth.seasons.runItBackRate}% of completions</small></div>
+              <div><Share2 size={15} /><span>Shares</span><strong>{growth.sharing.total}</strong><small>{growth.sharing.bySource[0] ? `${growth.sharing.bySource[0].source.toLowerCase()} leads` : 'waiting for first share'}</small></div>
+              <div><Crown size={15} /><span>Plus interest</span><strong>{growth.users.plusInterest}</strong><small>{growth.users.plusInterestRate}% of users</small></div>
+            </div>
+
+            <div className="founder-growth-foot">
+              <span>{growth.duos.contractsCreated} contracts created · {growth.duos.pendingExternalInvites} external invites pending</span>
+              <span>{growth.seasons.completed} seasons completed</span>
+            </div>
+          </section>
+        )}
 
         <section className="founder-grid">
           <article className="founder-panel">

@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
   auraBalance: { type: Number, default: 0, min: 0 },
   welcomeAuraGranted: { type: Boolean, default: false },
   lastDailyAuraBonusKey: { type: String, default: null },
+  plusInterestAt: { type: Date, default: null },
   defaultLimit: { type: Number, default: 7, min: 1, max: 30 },
   emailVerified: { type: Boolean, default: false },
   isTestAccount: { type: Boolean, default: false, index: true },

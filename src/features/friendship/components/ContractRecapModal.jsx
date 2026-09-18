@@ -3,6 +3,7 @@ import { CalendarDays, Flame, Mic, RefreshCw, Share2, Sparkles, Trophy, UsersRou
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { getContractRecap, runContractBack } from '../../../services/friendshipService';
+import { shareHakoware } from '../../../lib/share';
 import './ContractRecapModal.css';
 
 const formatTemplate = (value = '') => value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -152,14 +153,22 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
     try {
       const blob = await buildShareImage(recap);
       const file = new File([blob], 'hakoware-weekly-recap.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ title: 'Hakoware weekly recap', text: recap.weekly?.line, files: [file] });
-      } else {
-        await navigator.clipboard.writeText(recapText(recap));
+      const result = await shareHakoware({
+        source: recap.season?.status === 'COMPLETE' ? 'SEASON_COMPLETE' : 'RECAP',
+        title: 'Hakoware recap',
+        text: recapText(recap),
+        url: window.location.origin,
+        files: [file]
+      });
+
+      if (result.cancelled) return;
+      if (result.success && result.method === 'CLIPBOARD') {
         showToast?.('Recap copied — share it anywhere', 'SUCCESS');
+      } else if (!result.success) {
+        showToast?.(result.error || 'Could not share recap', 'ERROR');
       }
     } catch (error) {
-      if (error?.name !== 'AbortError') showToast?.(error.message || 'Could not share recap', 'ERROR');
+      showToast?.(error.message || 'Could not share recap', 'ERROR');
     } finally {
       setBusy(false);
     }

@@ -14,7 +14,8 @@ const privacySections = [
         <li>account information such as your display name and email address;</li>
         <li>contract and game activity such as friendships, check-ins, Duo XP, Aura, debt, seasons, bounties, Claims, Grudges, recaps and notifications;</li>
         <li>voice notes and other content you choose to upload;</li>
-        <li>email addresses used to send contract invitations; and</li>
+        <li>email addresses used to send contract invitations;</li>
+        <li>limited first-party product signals, such as when you successfully share a Hakoware moment or mark interest in an upcoming Hakoware+ feature; and</li>
         <li>basic technical and security information needed to run the service. Our hosting providers may also process request metadata such as IP address, browser or device information in their logs.</li>
       </ul>
     </>
@@ -23,7 +24,7 @@ const privacySections = [
     <p>We use this information to operate contracts and game mechanics, authenticate accounts, deliver invitations and transactional messages, store voice notes, show recaps and social game state, prevent abuse, troubleshoot problems, secure the service and improve reliability.</p>
   )],
   ['Browser storage', (
-    <p>Hakoware uses browser storage for things such as your signed-in session and interface preferences. We do not currently run advertising trackers or third-party behavioral analytics on the site.</p>
+    <p>Hakoware uses browser storage for things such as your signed-in session and interface preferences. We use limited first-party product signals to understand whether core game loops are being used. We do not currently run advertising trackers or third-party behavioral analytics on the site.</p>
   )],
   ['When information is shared', (
     <>
