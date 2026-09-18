@@ -347,7 +347,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const actor = await User.findById(req.user.id).select('displayName');
     const actorName = actor?.displayName || 'Your contract partner';
     const recoveryMessage = recoveryStarted
-      ? `${actorName} checked in from bankruptcy. Recovery started — one clean check-in remains. +${game.xp} Duo XP.`
+      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP.`
       : recoveryCompleted
         ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP.`
         : `${actorName} checked in. +${game.xp} Duo XP.`;
