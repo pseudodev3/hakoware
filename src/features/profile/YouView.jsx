@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, EyeOff, Flame, LogOut, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getAuraCards, getMyGrudges, getUserAura, returnTheFavor } from '../../services/auraService';
+import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
+import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import './YouView.css';
 
 const perspectiveFor = (friendship, userId, mine = true) => {
@@ -30,15 +31,16 @@ const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Dat
 
 export const YouView = ({ friendships, worldEvent, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
-  const [aura, setAura] = useState({
+  const cachedYou = peekYouSnapshot();
+  const [aura, setAura] = useState(cachedYou?.aura || {
     balance: Number(user.auraBalance) || 0,
     history: [],
     totalEarned: 0,
     totalSpent: 0,
     reputation: { name: 'Spark', lifetimeEarned: 0, nextRankAt: 250, progress: 0 }
   });
-  const [cards, setCards] = useState([]);
-  const [grudges, setGrudges] = useState([]);
+  const [cards, setCards] = useState(cachedYou?.cards || []);
+  const [grudges, setGrudges] = useState(cachedYou?.grudges || []);
   const [busy, setBusy] = useState(null);
   const [stealTarget, setStealTarget] = useState('');
   const [signalTarget, setSignalTarget] = useState('');
@@ -46,26 +48,28 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const userId = user.uid || user.id || user._id;
 
-  const refresh = async ({ silent = false } = {}) => {
-    const [auraResult, cardsResult, grudgesResult, userResult] = await Promise.allSettled([
-      getUserAura(),
-      getAuraCards(),
-      getMyGrudges(),
-      refreshUser()
+  const refresh = async ({ silent = false, refreshAccount = true, force = true } = {}) => {
+    const [snapshotResult, userResult] = await Promise.allSettled([
+      getYouSnapshot({ force }),
+      refreshAccount ? refreshUser() : Promise.resolve(null)
     ]);
     const refreshedUser = userResult.status === 'fulfilled' && userResult.value?.success ? userResult.value.user : null;
 
-    if (auraResult.status === 'fulfilled') setAura(auraResult.value);
-    else {
+    if (snapshotResult.status === 'fulfilled') {
+      setAura(snapshotResult.value.aura);
+      setCards(snapshotResult.value.cards || []);
+      setGrudges(snapshotResult.value.grudges || []);
+    } else {
       const fallbackBalance = Number(refreshedUser?.auraBalance ?? user.auraBalance) || 0;
       setAura((current) => ({ ...current, balance: fallbackBalance }));
-      if (!silent) showToast?.(auraResult.reason?.message || 'Could not refresh Aura activity', 'ERROR');
+      if (!silent) showToast?.(snapshotResult.reason?.message || 'Could not refresh profile data', 'ERROR');
     }
-    if (cardsResult.status === 'fulfilled') setCards(cardsResult.value || []);
-    if (grudgesResult.status === 'fulfilled') setGrudges(grudgesResult.value || []);
   };
 
-  useEffect(() => { refresh({ silent: true }); }, []);
+  useEffect(() => {
+    const warm = Boolean(peekYouSnapshot());
+    void refresh({ silent: warm, refreshAccount: false, force: warm });
+  }, []);
   useEffect(() => { setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 })); }, [user.auraBalance]);
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);

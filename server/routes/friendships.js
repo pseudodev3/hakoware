@@ -15,7 +15,6 @@ const {
   TEMPLATES,
   getTemplate,
   getWorldEvent,
-  duoStateFromXP,
   initializeContractGame,
   activateSeason,
   refreshGameState,
@@ -26,6 +25,7 @@ const {
   recordEvent
 } = require('../services/contractGame');
 const { syncDebtState } = require('../services/debtState');
+const { ensureActiveGameState, loadContractsForUser } = require('../services/contractQueries');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -46,44 +46,6 @@ const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5
 const gameTemplate = (value) => {
   const id = String(value || 'DONT_GHOST').toUpperCase();
   return TEMPLATES[id] || null;
-};
-
-const ensureActiveGameState = async (friendship) => {
-  if (!friendship || friendship.status !== 'ACTIVE') return friendship;
-  const template = getTemplate(friendship.templateId || 'DONT_GHOST');
-  let changed = false;
-
-  if (!friendship.templateId) {
-    friendship.templateId = template.id;
-    changed = true;
-  }
-
-  if (!friendship.season?.startedAt) {
-    const now = new Date();
-    friendship.season = {
-      number: friendship.season?.number || 1,
-      status: 'ACTIVE',
-      lengthDays: friendship.season?.lengthDays || template.seasonDays,
-      startedAt: now,
-      endsAt: new Date(now.getTime() + (friendship.season?.lengthDays || template.seasonDays) * DAY)
-    };
-    changed = true;
-  }
-
-  const duo = duoStateFromXP(friendship.duoXP || 0);
-  if (friendship.duoLevel !== duo.level || friendship.duoTitle !== duo.title) {
-    friendship.duoLevel = duo.level;
-    friendship.duoTitle = duo.title;
-    changed = true;
-  }
-
-  if (changed) {
-    await friendship.save();
-    await recordEvent(friendship._id, 'SEASON_STARTED', {
-      metadata: { season: friendship.season.number, templateId: friendship.templateId, migrated: true }
-    }).catch(() => null);
-  }
-  return refreshGameState(friendship);
 };
 
 router.get('/meta', auth, (req, res) => {
@@ -158,31 +120,7 @@ router.post('/', auth, async (req, res) => {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const [friendships, pendingExternal] = await Promise.all([
-      Friendship.find({ $or: [{ user1: req.user.id }, { user2: req.user.id }] }).sort({ updatedAt: -1 }),
-      PendingInvite.find({ inviterId: req.user.id, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 }).lean()
-    ]);
-
-    await Promise.all(friendships.filter((friendship) => friendship.status === 'ACTIVE').map(ensureActiveGameState));
-    await Promise.all(friendships.map((friendship) => friendship.populate('user1 user2', 'displayName email avatar nenType auraBalance')));
-
-    const active = friendships.filter((friendship) => friendship.status === 'ACTIVE');
-    const pendingReceived = friendships.filter((friendship) => friendship.status === 'PENDING' && friendship.user2?._id?.toString() === req.user.id);
-    const pendingSent = friendships.filter((friendship) => friendship.status === 'PENDING' && friendship.user1?._id?.toString() === req.user.id);
-
-    return res.json({
-      active,
-      pendingReceived,
-      pendingSent,
-      pendingExternal: pendingExternal.map((invite) => ({
-        id: invite._id,
-        recipientEmail: invite.recipientEmail,
-        templateId: invite.templateId || 'DONT_GHOST',
-        limit: invite.limit,
-        createdAt: invite.createdAt,
-        expiresAt: invite.expiresAt
-      }))
-    });
+    return res.json(await loadContractsForUser(req.user.id));
   } catch (err) {
     console.error('Load contracts failed:', err.message);
     return res.status(500).json({ msg: 'Could not load contracts' });

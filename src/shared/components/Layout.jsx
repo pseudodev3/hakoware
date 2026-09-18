@@ -13,14 +13,19 @@ const NAV_ITEMS = [
 ];
 
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, bootstrapData } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(bootstrapData?.notifications?.unreadCount || 0);
   const [theme, setTheme] = useState(getInitialTheme);
   const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
   const totalBadge = unreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => {
+    if (bootstrapData?.notifications) {
+      setUnreadCount(bootstrapData.notifications.unreadCount || 0);
+    }
+  }, [bootstrapData?.notifications?.unreadCount]);
 
   const toggleTheme = () => setTheme((current) => current === 'dark' ? 'light' : 'dark');
   const ThemeIcon = theme === 'dark' ? Sun : Moon;

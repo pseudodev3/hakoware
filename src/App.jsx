@@ -19,6 +19,7 @@ import { Arena } from './features/arena/components/Arena';
 import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
 import { returnToFounderSession } from './services/testLabService';
+import { prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
@@ -41,49 +42,67 @@ const TestSessionBar = ({ user }) => {
 };
 
 function MainApp({ showToast }) {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, bootstrapData, refreshBootstrap, refreshUser } = useAuth();
   const joining = isJoinLink();
   const [hasEntered, setHasEntered] = useState(joining);
   const [activeTab, setActiveTab] = useState('home');
-  const [friendships, setFriendships] = useState([]);
-  const [pendingReceived, setPendingReceived] = useState([]);
-  const [pendingSent, setPendingSent] = useState([]);
-  const [pendingExternal, setPendingExternal] = useState([]);
-  const [contractMeta, setContractMeta] = useState({ templates: [], worldEvent: null });
+  const [friendships, setFriendships] = useState(bootstrapData?.contracts?.active || []);
+  const [pendingReceived, setPendingReceived] = useState(bootstrapData?.contracts?.pendingReceived || []);
+  const [pendingSent, setPendingSent] = useState(bootstrapData?.contracts?.pendingSent || []);
+  const [pendingExternal, setPendingExternal] = useState(bootstrapData?.contracts?.pendingExternal || []);
+  const [contractMeta, setContractMeta] = useState(bootstrapData?.meta || { templates: [], worldEvent: null });
   const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
+
+  const applyBootstrap = (payload) => {
+    if (!payload) return;
+    const contracts = payload.contracts || {};
+    setFriendships(contracts.active || []);
+    setPendingReceived(contracts.pendingReceived || []);
+    setPendingSent(contracts.pendingSent || []);
+    setPendingExternal(contracts.pendingExternal || []);
+    if (payload.meta) setContractMeta(payload.meta);
+  };
 
   const loadData = async () => {
     if (!isAuthenticated || !user) return;
 
     try {
       const oldBalance = Number(user.auraBalance) || 0;
+      const refreshed = await refreshBootstrap();
+
+      if (refreshed.success) {
+        applyBootstrap(refreshed.data);
+        const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
+        if (nextBalance > oldBalance) {
+          showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
+        }
+        return;
+      }
+
+      console.warn('Bootstrap sync failed, using legacy data endpoints:', refreshed.error);
       const [contracts, meta] = await Promise.all([
         getUserFriendships(),
-        getContractMeta().catch((error) => {
-          console.error('Contract meta sync failed:', error);
-          return null;
-        })
+        getContractMeta()
       ]);
 
       setFriendships(contracts.active || []);
       setPendingReceived(contracts.pendingReceived || []);
       setPendingSent(contracts.pendingSent || []);
       setPendingExternal(contracts.pendingExternal || []);
-      if (meta) setContractMeta(meta);
+      setContractMeta(meta || { templates: [], worldEvent: null });
 
-      try {
-        await getUserAura();
-      } catch (auraError) {
-        console.error('Aura summary sync failed:', auraError);
-      }
+      await getUserAura({ force: true }).catch((auraError) => {
+        console.error('Fallback Aura sync failed:', auraError);
+      });
 
-      const refreshed = await refreshUser();
-      const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
+      const userResult = await refreshUser();
+      const nextBalance = Number(userResult.user?.auraBalance ?? oldBalance) || 0;
       if (nextBalance > oldBalance) {
         showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
       }
+      prefetchWarmTabs();
     } catch (error) {
       console.error('Failed to sync Hakoware:', error);
       showToast(error.message || 'Could not sync Hakoware', 'ERROR');
@@ -91,8 +110,16 @@ function MainApp({ showToast }) {
   };
 
   useEffect(() => {
-    if (isAuthenticated) loadData();
-  }, [isAuthenticated]);
+    if (!isAuthenticated) return undefined;
+
+    if (bootstrapData) {
+      applyBootstrap(bootstrapData);
+      return prefetchWarmTabs();
+    }
+
+    void loadData();
+    return undefined;
+  }, [isAuthenticated, bootstrapData?.generatedAt]);
 
   const handleAction = (type, friendship) => {
     if (type === 'ARENA') {

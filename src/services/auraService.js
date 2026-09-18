@@ -1,7 +1,14 @@
 import { api } from '../lib/api';
+import { fetchResource } from '../lib/resourceCache';
+import { RESOURCE_KEYS } from './bootstrapService';
 
-export const getUserAura = async () => {
-  const res = await api.get('/aura/me');
+export const getUserAura = async ({ force = false } = {}) => {
+  const res = await fetchResource(
+    RESOURCE_KEYS.aura,
+    () => api.get('/aura/me'),
+    { ttl: 15000, force }
+  );
+
   return {
     balance: Number(res.balance) || 0,
     totalEarned: Number(res.totalEarned) || 0,
