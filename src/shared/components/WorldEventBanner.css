@@ -10,19 +10,12 @@
   box-shadow:inset 0 0 0 1px var(--border-active), var(--shadow-card);
 }
 
-.world-event-banner::before {
-  content:'';
-  position:absolute;
-  inset:0 auto 0 0;
-  width:3px;
-  background:var(--aura-gold);
-}
 
 .world-event-signal {
   display:flex;
   align-items:center;
   gap:7px;
-  color:var(--aura-gold);
+  color:var(--aura-red);
   font-family:var(--font-mono);
   font-size:.52rem;
   font-weight:750;
