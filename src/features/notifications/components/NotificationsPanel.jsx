@@ -183,7 +183,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
               {loading && notifications.length === 0 ? (
                 <div className="panel-empty" aria-live="polite"><div className="loading-spinner" /><p>Syncing…</p></div>
               ) : notifications.length === 0 ? (
-                <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No new activity.</p></div>
+                <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No notifications.</p></div>
               ) : (
                 <div className="notification-list">
                   {notifications.map((notification) => (
