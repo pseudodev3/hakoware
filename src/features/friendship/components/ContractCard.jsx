@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, BarChart3, Check, Clock3, Dice5, Flame, MessageCircle, Mic, Settings, Share2, TriangleAlert, Trophy, UsersRound } from 'lucide-react';
+import { ArrowRight, BarChart3, Check, Dice5, Flame, MessageCircle, Mic, Settings, Share2, TriangleAlert, Trophy } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
 import { getContractSides } from '../contractState';
@@ -30,13 +30,6 @@ const duoProgress = (xp = 0, level = 1) => {
   const floor = 50 * Math.pow(Math.max(0, level - 1), 2);
   const next = 50 * Math.pow(level, 2);
   return Math.max(0, Math.min(100, Math.round(((xp - floor) / Math.max(1, next - floor)) * 100)));
-};
-
-const seasonProgress = (season) => {
-  if (!season?.startedAt || !season?.endsAt) return 0;
-  const start = new Date(season.startedAt).getTime();
-  const end = new Date(season.endsAt).getTime();
-  return Math.max(0, Math.min(100, ((Date.now() - start) / Math.max(1, end - start)) * 100));
 };
 
 const formatTimeLeft = (date) => {
@@ -84,30 +77,28 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
   return (
     <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
-      <div className="contract-mode-row">
-        <span className="contract-mode">{friendship.templateId === 'CHAOS' && <Dice5 size={12} strokeWidth={2} />} {mode}</span>
-        <span className="season-chip">S{season.number || 1} · {seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now())}</span>
-      </div>
-
       <div className="contract-main">
         <div className="contract-avatar" aria-hidden="true">
           {friend.avatar ? <img src={friend.avatar} alt="" /> : <span>{name[0]?.toUpperCase()}</span>}
         </div>
         <div className="contract-identity">
-          <div className="contract-name-row">
-            <h3>{name}</h3>
-            <span className={`contract-status ${status.tone}`}>{seasonDone ? 'Season clear' : status.label}</span>
-          </div>
-          <p>{handle ? `${handle} · ` : ''}{seasonDone ? 'Final report ready' : `${status.detail} · ${stats.limit}-day rule`}</p>
+          <h3>{name}</h3>
+          <p>{handle || mode}</p>
         </div>
         <button className="contract-settings" onClick={() => onAction('SETTINGS', friendship)} aria-label={`Contract settings for ${name}`}>
-          <Settings size={17} strokeWidth={1.8} />
+          <Settings size={16} strokeWidth={1.8} />
         </button>
+      </div>
+
+      <div className="contract-meta-line">
+        <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{friendship.templateId === 'CHAOS' && <Dice5 size={11} strokeWidth={2} />} {mode}</span>
+        <span>Season {season.number || 1}</span>
+        <span>{seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now())}</span>
       </div>
 
       {partnerBankrupt && (
         <div className="partner-bankruptcy-alert">
-          <span className="partner-bankruptcy-icon"><TriangleAlert size={17} strokeWidth={2} /></span>
+          <TriangleAlert size={16} strokeWidth={2} />
           <div>
             <strong>{name} is bankrupt</strong>
             <span>{partnerDebt.totalDebt} debt · Bounties + Claim unlocked</span>
@@ -120,48 +111,48 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
       {activeChaos && (
         <div className="contract-anomaly">
-          <Flame size={16} strokeWidth={1.9} />
+          <Flame size={15} strokeWidth={1.9} />
           <div><strong>{activeChaos.name}</strong><span>{formatTimeLeft(activeChaos.expiresAt)} · {activeChaos.description}</span></div>
           <button type="button" className="contract-anomaly-share" onClick={shareChaos}>
-            <Share2 size={13} strokeWidth={1.9} /> {chaosShared ? 'Copied' : 'Share'}
+            <Share2 size={12} strokeWidth={1.9} /> {chaosShared ? 'Copied' : 'Share'}
           </button>
         </div>
       )}
 
       {wanted && !activeChaos && (
         <div className="contract-wanted">
-          <Flame size={15} strokeWidth={1.9} />
+          <Flame size={14} strokeWidth={1.9} />
           <span>WANTED · {friendship.chaos?.lastConsequence || 'Chaos consequence'} · {formatTimeLeft(friendship.chaos.wantedUntil)}</span>
         </div>
       )}
 
-      <div className="contract-game-row">
-        <div className="duo-state">
-          <span className="game-row-icon"><UsersRound size={14} strokeWidth={1.9} /></span>
-          <div><span>Duo Lv. {level}</span><strong>{friendship.duoTitle || 'New Contract'}</strong></div>
+      <div className="contract-state-row">
+        <div className="contract-state-copy">
+          <strong className={`contract-status ${status.tone}`}>{seasonDone ? 'Season complete' : status.label}</strong>
+          <span>{seasonDone ? 'Final report ready' : `${status.detail} · ${stats.limit}-day rule`}</span>
         </div>
-        <div className="duo-xp"><b>{friendship.duoXP || 0}</b> XP</div>
+        <div className="duo-summary">
+          <strong>Lv. {level}</strong>
+          <span>{friendship.duoTitle || 'New Contract'} · {friendship.duoXP || 0} XP</span>
+        </div>
       </div>
-      <div className="duo-meter" aria-label={`Duo level progress ${xpProgress}%`}><span style={{ width: `${xpProgress}%` }} /></div>
 
-      <div className="season-meter-row">
-        <span><Clock3 size={12} /> Season {season.number || 1}</span>
-        <span>{Math.round(seasonProgress(season))}%</span>
-      </div>
-      <div className="season-meter"><span style={{ width: `${seasonProgress(season)}%` }} /></div>
+      <div className="duo-meter" aria-label={`Duo level progress ${xpProgress}%`}><span style={{ width: `${xpProgress}%` }} /></div>
 
       {!compact && (
         <div className="contract-actions">
-          <Button variant="ghost" icon={BarChart3} onClick={() => onAction('RECAP', friendship)}>Report</Button>
+          <button type="button" className="contract-report-link" onClick={() => onAction('RECAP', friendship)}>
+            <BarChart3 size={14} strokeWidth={1.8} /> {seasonDone ? 'View report' : 'Report'}
+          </button>
           {seasonDone ? (
             <Button variant="aura" icon={Trophy} onClick={() => onAction('RECAP', friendship)}>Season recap</Button>
           ) : (
-            <>
+            <div className="contract-primary-actions">
               <Button variant="secondary" icon={Mic} disabled={checkedInToday} onClick={() => onAction('VOICE_CHECKIN', friendship)}>Voice</Button>
               <Button variant="aura" icon={checkedInToday ? Check : MessageCircle} disabled={checkedInToday} onClick={() => onAction('CHECKIN', friendship)}>
                 {checkedInToday ? 'Checked in' : 'Check in'}
               </Button>
-            </>
+            </div>
           )}
         </div>
       )}

@@ -8,7 +8,7 @@
 .home-world-rule span { text-transform:uppercase; letter-spacing:.07em; }
 .home-world-rule strong { color:var(--text-muted); font-weight:650; }
 .home-world-rule b { color:var(--text-secondary); font-weight:600; }
-.aura-chip { min-height:44px; padding:0 14px; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; border-radius:12px; color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); font-size:.72rem; font-weight:650; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out); }
+.aura-chip { min-height:40px; padding:0 4px; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; color:var(--aura-gold); background:transparent; font-size:.72rem; font-weight:650; transition:transform 140ms var(--ease-out), color 140ms var(--ease-out); }
 .aura-chip span { color:var(--text-primary); font-family:var(--font-mono); font-size:.9rem; font-variant-numeric:tabular-nums; }
 .aura-chip:active { transform:scale(.96); }
 .season-start-briefing { min-height:78px; padding:12px 13px; display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; gap:10px; border-radius:15px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--border-subtle); }
@@ -31,23 +31,19 @@
 .bankruptcy-alert-copy strong { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); font-size:.82rem; font-weight:700; }
 .bankruptcy-alert-copy > span { margin-top:2px; color:var(--text-muted); font-size:.63rem; }
 .bankruptcy-alert-strip > svg { color:var(--aura-red); }
-.home-game-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); overflow:hidden; border-radius:18px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.home-game-summary > div { min-height:112px; padding:16px; position:relative; display:flex; flex-direction:column; }
-.home-game-summary > div + div { border-left:1px solid var(--border-subtle); }
-.home-game-summary > div.hot { background:var(--aura-red-glow); }
-.summary-icon { position:absolute; top:15px; right:15px; color:var(--text-faint); }
-.home-game-summary small { color:var(--text-muted); font-size:.6rem; font-weight:650; }
-.home-game-summary strong { margin-top:auto; padding-top:12px; font-family:var(--font-mono); font-size:1.25rem; line-height:1; font-weight:650; }
-.home-game-summary p { margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.62rem; }
+.home-context-line { padding:10px 0; display:flex; align-items:center; flex-wrap:wrap; gap:7px 16px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:.65rem; }
+.home-context-line span { display:inline-flex; align-items:center; gap:4px; }
+.home-context-line b { color:var(--text-secondary); font-weight:650; }
+.home-context-line .danger, .home-context-line .danger b { color:var(--aura-red); }
 .home-section { display:flex; flex-direction:column; gap:13px; }
 .section-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; }
 .section-heading h2 { margin-top:3px; font-size:1.17rem; font-weight:660; letter-spacing:-.035em; }
 .text-action { min-height:40px; display:inline-flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:.72rem; font-weight:600; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .text-action:active { transform:scale(.96); }
-.home-contract-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.home-contract-list > :first-child:nth-last-child(1) { grid-column:1 / -1; }
-.home-footer-action { min-height:92px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:18px; border-radius:18px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.home-footer-action h3 { margin-top:3px; font-size:.96rem; font-weight:650; letter-spacing:-.025em; }
+.home-contract-list { display:flex; flex-direction:column; }
+.home-footer-action { padding:12px 0 2px; display:flex; align-items:center; justify-content:space-between; gap:18px; border-top:1px solid var(--border-subtle); color:var(--text-muted); font-size:.7rem; }
+.home-footer-action button { min-height:38px; padding:0 4px; display:inline-flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:.68rem; font-weight:640; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.home-footer-action button:active { transform:scale(.97); }
 .first-contract-card { max-width:760px; margin:5vh auto 0; padding:clamp(28px,6vw,54px); border-radius:26px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--border-subtle), var(--shadow-card); }
 .first-contract-mark { width:56px; height:56px; margin-bottom:30px; display:grid; place-items:center; border-radius:17px; overflow:hidden; outline:1px solid var(--image-outline); outline-offset:-1px; color:var(--aura-gold); background:var(--aura-gold-soft); }
 .first-contract-mark.pending { outline-color:var(--aura-gold-glow); }
@@ -65,7 +61,9 @@
 .home-note strong { color:var(--text-secondary); }
 
 @media (hover:hover) and (pointer:fine) {
-  .aura-chip:hover, .pending-banner:hover { background:var(--aura-gold-glow); }
+  .aura-chip:hover { color:var(--aura-gold-strong); }
+  .pending-banner:hover { background:var(--aura-gold-glow); }
+  .home-footer-action button:hover { color:var(--text-primary); }
   .bankruptcy-alert-strip:hover { background:color-mix(in srgb,var(--aura-red-glow) 78%,var(--surface-2)); }
   .text-action:hover { color:var(--text-primary); }
   .season-start-dismiss:hover { color:var(--text-primary); background:var(--surface-soft-strong); }
@@ -80,14 +78,10 @@
   .season-start-briefing { grid-template-columns:34px minmax(0,1fr) auto; align-items:start; padding:11px; }
   .season-start-mark { width:34px; height:34px; }
   .home-hero .home-world-rule { font-size:.55rem; gap:4px; }
-  .home-game-summary { grid-template-columns:1fr; }
-  .home-game-summary > div { min-height:86px; }
-  .home-game-summary > div + div { border-left:0; border-top:1px solid var(--border-subtle); }
-  .home-contract-list { grid-template-columns:1fr; }
   .section-heading { align-items:center; }
   .section-heading h2 { font-size:1.04rem; }
   .text-action { font-size:.68rem; }
-  .home-footer-action { align-items:flex-start; flex-direction:column; }
+  .home-footer-action { align-items:flex-start; flex-direction:column; gap:6px; }
   .first-contract-card { margin-top:1vh; border-radius:22px; }
   .first-contract-actions { align-items:stretch; flex-direction:column; }
   .first-contract-actions .btn { width:100%; }

@@ -2,26 +2,23 @@
 .contracts-header { padding:12px 0 2px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
 .contracts-header h1 { margin-top:4px; font-size:clamp(2rem,5vw,3.35rem); line-height:1; letter-spacing:-.058em; font-weight:720; }
 .contracts-header p:not(.eyebrow) { max-width:650px; margin-top:9px; color:var(--text-secondary); font-size:.82rem; line-height:1.55; }
-.contracts-overview { display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden; border-radius:18px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.contracts-overview > div { min-height:96px; padding:15px 17px; display:flex; flex-direction:column; }
-.contracts-overview > div + div { border-left:1px solid var(--border-subtle); }
-.contracts-overview > div.bankrupt { background:var(--aura-red-glow); }
-.contracts-overview > div.chaos { background:var(--aura-red-glow); }
-.contracts-overview small { color:var(--text-muted); font-size:.59rem; font-weight:650; }
-.contracts-overview strong { margin-top:auto; font-family:var(--font-mono); font-size:1.4rem; line-height:1; font-weight:650; }
-.contracts-overview span { margin-top:4px; color:var(--text-muted); font-size:.61rem; }
+.contracts-meta { padding:9px 0; display:flex; align-items:center; flex-wrap:wrap; gap:7px 16px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:.65rem; }
+.contracts-meta span { display:inline-flex; align-items:center; gap:4px; }
+.contracts-meta b { color:var(--text-secondary); font-family:var(--font-mono); font-weight:650; }
+.contracts-meta .danger, .contracts-meta .danger b { color:var(--aura-red); }
 .contract-section { display:flex; flex-direction:column; gap:11px; }
 .priority-invites { padding:5px 0 1px; }
 .priority-invites .contract-section-title h2 { color:var(--text-primary); font-size:.8rem; }
-.priority-invites .contract-section-title > span { color:var(--aura-gold); background:var(--aura-gold-soft); }
+.priority-invites .contract-section-title > span { color:var(--aura-gold); }
 .contract-section-title { display:flex; align-items:center; gap:8px; }
 .contract-section-title h2 { color:var(--text-secondary); font-size:.76rem; font-weight:650; }
-.contract-section-title > span { min-width:22px; height:22px; padding:0 6px; display:grid; place-items:center; border-radius:999px; color:var(--text-muted); background:var(--surface-soft); font-size:.6rem; font-family:var(--font-mono); }
-.contracts-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.invite-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.invite-card { min-height:78px; padding:12px; display:flex; align-items:center; gap:11px; border-radius:18px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--aura-gold-glow), var(--shadow-card); }
-.invite-card.chaos { box-shadow:inset 0 0 0 1px rgba(255,116,123,.24), var(--shadow-card); }
-.invite-avatar { width:42px; height:42px; flex:0 0 auto; display:grid; place-items:center; border-radius:13px; background:var(--aura-gold-soft); color:var(--aura-gold); font-weight:680; }
+.contract-section-title > span { color:var(--text-faint); font-size:.6rem; font-family:var(--font-mono); }
+.contracts-grid { display:flex; flex-direction:column; }
+.invite-list { overflow:hidden; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.invite-card { min-height:72px; padding:10px 2px; display:flex; align-items:center; gap:11px; background:transparent; }
+.invite-card + .invite-card { border-top:1px solid var(--border-subtle); }
+.invite-card.chaos { background:color-mix(in srgb,var(--aura-red-glow) 22%,transparent); }
+.invite-avatar { width:38px; height:38px; flex:0 0 auto; display:grid; place-items:center; border-radius:11px; background:var(--surface-soft); color:var(--aura-gold); font-weight:680; }
 .invite-card.chaos .invite-avatar { color:var(--aura-red); background:var(--aura-red-glow); }
 .invite-copy { min-width:0; flex:1; display:flex; flex-direction:column; }
 .invite-copy strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.83rem; font-weight:650; }
@@ -33,7 +30,7 @@
 .invite-action.decline { color:var(--text-muted); background:var(--surface-soft); }
 .invite-action.accept { color:#07150e; background:var(--aura-green); }
 .compact-section { gap:8px; }
-.sent-list { overflow:hidden; border-radius:16px; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.sent-list { overflow:hidden; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .sent-row { min-height:54px; padding:0 14px; display:flex; align-items:center; gap:9px; color:var(--text-secondary); }
 .sent-row + .sent-row { border-top:1px solid var(--border-subtle); }
 .sent-row svg { color:var(--text-muted); }
@@ -41,7 +38,7 @@
 .sent-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.73rem; }
 .sent-row small { margin-top:2px; color:var(--text-muted); font-size:.59rem; }
 .sent-row b { flex:0 0 auto; color:var(--aura-gold); font-size:.59rem; font-weight:620; }
-.contracts-empty { min-height:190px; padding:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; border-radius:20px; color:var(--text-muted); background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); font-size:.76rem; }
+.contracts-empty { min-height:170px; padding:28px 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:.76rem; }
 
 @media (hover:hover) and (pointer:fine) { .invite-action.decline:hover { color:var(--text-primary); background:var(--surface-soft-strong); } }
 
@@ -49,8 +46,4 @@
   .contracts-view { gap:22px; }
   .contracts-header { align-items:flex-start; flex-direction:column; padding-top:5px; }
   .contracts-header .btn { width:100%; }
-  .contracts-overview { grid-template-columns:1fr; }
-  .contracts-overview > div { min-height:76px; }
-  .contracts-overview > div + div { border-left:0; border-top:1px solid var(--border-subtle); }
-  .contracts-grid, .invite-list { grid-template-columns:1fr; }
 }
