@@ -74,7 +74,13 @@ const stopDebtWorker = async () => {
   stopped = true;
   if (timer) clearTimeout(timer);
   timer = null;
-  if (currentSweep) await currentSweep;
+  if (currentSweep) {
+    try {
+      await currentSweep;
+    } catch (error) {
+      console.error('Debt worker stopped after a failed sweep:', error.message);
+    }
+  }
 };
 
 module.exports = {
