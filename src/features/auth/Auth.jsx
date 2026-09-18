@@ -81,7 +81,7 @@ export const Login = ({ onToggle, onBack, showToast }) => {
           <Input label="Email" type="email" placeholder="you@example.com" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} required />
           <div className="input-with-action-label">
             <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot?</button>
+            <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot password</button>
           </div>
           <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Enter Hakoware</Button>
         </form>
