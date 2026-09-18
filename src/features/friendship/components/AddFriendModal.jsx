@@ -4,6 +4,7 @@ import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
 import { sendFriendInvitation } from '../../../services/friendshipService';
+import { shareHakoware } from '../../../lib/share';
 import './AddFriendModal.css';
 
 const FALLBACK_TEMPLATES = [
@@ -90,15 +91,20 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
   const share = async () => {
     if (!shareInvite) return;
     const text = `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Sign up with ${shareInvite.recipientEmail} and it will already be waiting for you.`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Hakoware contract', text, url: shareInvite.inviteUrl });
-        return;
-      } catch (error) {
-        if (error?.name === 'AbortError') return;
-      }
+    const result = await shareHakoware({
+      source: 'INVITE',
+      title: 'Hakoware contract',
+      text,
+      url: shareInvite.inviteUrl
+    });
+
+    if (result.cancelled) return;
+    if (result.success && result.method === 'CLIPBOARD') {
+      setCopied(true);
+      showToast?.('Invite copied — send it anywhere', 'SUCCESS');
+    } else if (!result.success) {
+      showToast?.(result.error || 'Could not share the invite', 'ERROR');
     }
-    await copyInvite();
   };
 
   return (
