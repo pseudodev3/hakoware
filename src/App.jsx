@@ -4,7 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import { getContractMeta, getUserFriendships } from './services/friendshipService';
 import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
-import { Login, Signup } from './features/auth/Auth';
+import { ClaimUsername, Login, Signup } from './features/auth/Auth';
 import { ResetPassword } from './features/auth/ResetPassword';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { FriendshipSettingsModal } from './features/friendship/components/FriendshipSettingsModal';
@@ -29,6 +29,7 @@ function FounderRoute({ showToast }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (user?.isTestAccount) return <Navigate to="/" replace />;
+  if (user && !user.username) return <ClaimUsername />;
   return <FounderLabPage showToast={showToast} />;
 }
 
@@ -141,6 +142,10 @@ function MainApp({ showToast }) {
     setShowSignup(false);
     setHasEntered(false);
   };
+
+  if (isAuthenticated && user && !user.username && !user.isTestAccount) {
+    return <ClaimUsername />;
+  }
 
   if (!isAuthenticated) {
     if (!hasEntered) return <LandingPage onEnter={handleEnter} />;
