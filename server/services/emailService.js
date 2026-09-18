@@ -8,7 +8,7 @@ const publicApiUrl = String(
   process.env.PUBLIC_API_URL || (railwayPublicDomain ? `https://${railwayPublicDomain}` : '')
 ).replace(/\/$/, '');
 const emailLogoUrl = String(
-  process.env.EMAIL_LOGO_URL ||
+  process.env.EMAIL_LOGO_URL_V2 ||
   (publicApiUrl ? `${publicApiUrl}/brand/hakoware-mark-v2.jpg` : `${frontendUrl}/hakoware-mark-v2.jpg`)
 ).trim();
 
