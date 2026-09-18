@@ -6,6 +6,8 @@ const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { refreshGameState, recordEvent } = require('../services/contractGame');
+const { calculateDebtState } = require('../services/debtState');
+const { refundOpenBountiesForTarget } = require('../services/bountyEscrow');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -40,17 +42,8 @@ const CARD_CATALOG = Object.freeze({
   }
 });
 
-const calculateDebt = (perspective, now = new Date()) => {
-  const limit = Number(perspective?.limit) || 7;
-  const lastInteraction = new Date(perspective?.lastInteraction || now);
-  const daysMissed = Math.floor(Math.max(0, now - lastInteraction) / DAY);
-  return (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
-};
-
-const isBankruptPerspective = (perspective, now = new Date()) => {
-  const limit = Number(perspective?.limit) || 7;
-  return calculateDebt(perspective, now) >= limit * 2;
-};
+const calculateDebt = (perspective, now = new Date()) => calculateDebtState(perspective, now).totalDebt;
+const isBankruptPerspective = (perspective, now = new Date()) => calculateDebtState(perspective, now).isBankrupt;
 
 const activeGrudge = (grudge, now = new Date()) => Boolean(
   grudge?.active &&
@@ -305,6 +298,8 @@ router.get('/grudges/me', auth, async (req, res) => {
       'grudge.expiresAt': { $gt: now }
     }).sort({ 'grudge.createdAt': -1 });
 
+    await Promise.all(friendships.map((friendship) => refreshGameState(friendship)));
+
     return res.json(friendships.map((friendship) => {
       const isVictim = String(friendship.grudge.victimId) === String(req.user.id);
       const claimantIsUser1 = String(friendship.grudge.claimantId) === String(friendship.user1);
@@ -312,7 +307,7 @@ router.get('/grudges/me', auth, async (req, res) => {
       return {
         ...publicGrudge(friendship),
         role: isVictim ? 'VICTIM' : 'CLAIMANT',
-        revengeReady: isVictim && isBankruptPerspective(claimantPerspective, now),
+        revengeReady: isVictim && friendship.season?.status === 'ACTIVE' && Boolean(claimantPerspective?.isBankrupt),
         revengeCost: REVENGE_COST
       };
     }));
@@ -336,10 +331,15 @@ router.post('/grudges/:friendshipId/revenge', auth, async (req, res) => {
     });
     if (!friendship) return res.status(404).json({ msg: 'No active revenge window on this contract' });
 
+    await refreshGameState(friendship);
+    if (friendship.season?.status !== 'ACTIVE') {
+      return res.status(409).json({ msg: 'Revenge is paused until this contract starts another season' });
+    }
+
     const claimantId = friendship.grudge.claimantId;
     const claimantIsUser1 = String(claimantId) === String(friendship.user1);
     const claimantPerspective = claimantIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
-    if (!isBankruptPerspective(claimantPerspective, now)) {
+    if (!claimantPerspective?.isBankrupt) {
       return res.status(400).json({ msg: `${friendship.grudge.claimantName || 'They'} have not gone bankrupt yet` });
     }
 
@@ -488,13 +488,30 @@ router.post('/use-card', auth, async (req, res) => {
       for (const friendship of withDebt) {
         const isUser1 = friendship.user1.toString() === req.user.id;
         const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
+        const wasBankrupt = isBankruptPerspective(friendship[key], now);
+        const limit = Math.max(1, Number(friendship[key].limit) || 7);
+
         friendship[key].baseDebt = 0;
         friendship[key].lastInteraction = now;
         friendship[key].calculatedDebt = 0;
         friendship[key].daysMissed = 0;
         friendship[key].isBankrupt = false;
         friendship[key].isInWarningZone = false;
+        friendship[key].daysUntilBankrupt = limit * 2;
+        friendship[key].recoveryRequired = false;
         await friendship.save();
+
+        if (wasBankrupt) {
+          await refundOpenBountiesForTarget(
+            friendship._id,
+            user._id,
+            'Target used Clean Slate and recovered'
+          ).catch(() => null);
+          await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERED', {
+            userId: user._id,
+            metadata: { season: friendship.season?.number, via: 'PURIFY' }
+          }).catch(() => null);
+        }
       }
       effect = { clearedContracts: withDebt.length };
     }
@@ -506,11 +523,16 @@ router.post('/use-card', auth, async (req, res) => {
       const isUser1 = friendship.user1.toString() === req.user.id;
       const isUser2 = friendship.user2.toString() === req.user.id;
       if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
+
+      await refreshGameState(friendship);
+      if (friendship.season?.status !== 'ACTIVE') {
+        return res.status(409).json({ msg: 'Claim only works during an active season' });
+      }
       if (activeGrudge(friendship.grudge)) return res.status(400).json({ msg: 'This contract already has an active Grudge. Settle that beef first.' });
 
       const targetId = isUser1 ? friendship.user2 : friendship.user1;
       const targetPerspective = isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
-      if (!isBankruptPerspective(targetPerspective)) {
+      if (!targetPerspective?.isBankrupt) {
         return res.status(400).json({ msg: 'This contract partner is not bankrupt' });
       }
 

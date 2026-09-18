@@ -2,6 +2,7 @@ const ContractEvent = require('../models/ContractEvent');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
+const { syncDebtState } = require('./debtState');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -299,6 +300,72 @@ const failActiveChaos = async (friendship, now = new Date()) => {
 
 const refreshGameState = async (friendship, now = new Date()) => {
   if (!friendship?.season) return friendship;
+
+  const bankruptcyEvents = [];
+  let debtChanged = false;
+  const seasonEnd = friendship.season?.endsAt ? new Date(friendship.season.endsAt) : null;
+  const debtClock = seasonEnd && seasonEnd < now ? seasonEnd : now;
+
+  for (const [key, userId, displayName] of [
+    ['user1Perspective', friendship.user1, friendship.user1DisplayName],
+    ['user2Perspective', friendship.user2, friendship.user2DisplayName]
+  ]) {
+    const perspective = friendship[key];
+    if (!perspective) continue;
+
+    const before = {
+      calculatedDebt: Number(perspective.calculatedDebt) || 0,
+      daysMissed: Number(perspective.daysMissed) || 0,
+      isBankrupt: Boolean(perspective.isBankrupt),
+      isInWarningZone: Boolean(perspective.isInWarningZone),
+      daysUntilBankrupt: Number(perspective.daysUntilBankrupt) || 0,
+      wasBankrupt: Boolean(perspective.wasBankrupt),
+      bankruptAt: perspective.bankruptAt ? new Date(perspective.bankruptAt).getTime() : null
+    };
+
+    const state = syncDebtState(perspective, debtClock);
+    const afterBankruptAt = perspective.bankruptAt ? new Date(perspective.bankruptAt).getTime() : null;
+    const changed =
+      before.calculatedDebt !== state.totalDebt ||
+      before.daysMissed !== state.daysMissed ||
+      before.isBankrupt !== state.isBankrupt ||
+      before.isInWarningZone !== state.isInWarningZone ||
+      before.daysUntilBankrupt !== state.daysUntilBankrupt ||
+      before.wasBankrupt !== Boolean(perspective.wasBankrupt) ||
+      before.bankruptAt !== afterBankruptAt;
+
+    if (changed) debtChanged = true;
+
+    if (state.isBankrupt && !before.isBankrupt) {
+      bankruptcyEvents.push({
+        userId: idString(userId),
+        displayName: displayName || 'A contract partner',
+        debt: state.totalDebt,
+        limit: state.limit
+      });
+    }
+  }
+
+  if (debtChanged) await friendship.save();
+
+  for (const event of bankruptcyEvents) {
+    await recordEvent(friendship._id, 'BANKRUPTCY', {
+      userId: event.userId,
+      metadata: {
+        debt: event.debt,
+        limit: event.limit,
+        season: friendship.season?.number
+      }
+    });
+    await notifyBoth(
+      friendship,
+      'Bankruptcy triggered',
+      `${event.displayName} hit ${event.debt} debt. Bounties are now unlocked until they check in.`,
+      'BANKRUPTCY',
+      event.userId
+    );
+  }
+
   if (friendship.season.status === 'ACTIVE' && friendship.season.endsAt && new Date(friendship.season.endsAt) <= now) {
     friendship.season.status = 'COMPLETE';
     await friendship.save();

@@ -5,6 +5,7 @@ import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
 import { getContractBounty } from '../../../services/bountyService';
 import { sendVoiceNote } from '../../../services/voiceNoteService';
+import { useDebt } from '../../../hooks/useDebt';
 import './VoiceCheckinModal.css';
 
 export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRefresh, showToast }) => {
@@ -25,7 +26,9 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
   const user1Id = friendship?.user1?._id || friendship?.user1;
   const isUser1 = String(user1Id) === String(currentUserId);
+  const perspective = isUser1 ? friendship?.user1Perspective : friendship?.user2Perspective;
   const friend = isUser1 ? friendship?.user2 : friendship?.user1;
+  const stats = useDebt(perspective);
 
   const cleanupStream = () => {
     const recorder = mediaRecorderRef.current;
@@ -205,6 +208,22 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
           <div className="voice-bounty-proof sync-error">
             <div className="voice-bounty-icon"><AlertTriangle size={18} /></div>
             <div className="voice-bounty-copy"><span>ARENA SYNC FAILED</span><strong>Proof state could not be verified.</strong><p>Close and reopen before sending so no hunter credit or escape happens by accident.</p></div>
+          </div>
+        )}
+
+        {stats?.isBankrupt && (
+          <div className="voice-recovery-banner">
+            <span>BANKRUPTCY RECOVERY</span>
+            <strong>This voice check-in starts the comeback.</strong>
+            <p>Debt drops to {stats.limit}. You will still be recovering until one more valid check-in at least 20 hours later.</p>
+          </div>
+        )}
+
+        {stats?.isRecovering && !stats?.isBankrupt && (
+          <div className="voice-recovery-banner recovering">
+            <span>RECOVERING</span>
+            <strong>One clean check-in left.</strong>
+            <p>This voice check-in completes bankruptcy recovery and returns this side of the contract to stable.</p>
           </div>
         )}
 
