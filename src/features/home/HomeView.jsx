@@ -1,7 +1,8 @@
 import React from 'react';
-import { ArrowRight, Clock3, Dice5, Flame, Plus, Sparkles, Swords, Trophy, UserPlus, UsersRound } from 'lucide-react';
+import { ArrowRight, Clock3, Dice5, Flame, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { ContractCard } from '../friendship/components/ContractCard';
+import { getBankruptPartner } from '../friendship/contractState';
 import './HomeView.css';
 
 const contractState = (friendship, userId) => {
@@ -14,6 +15,7 @@ const contractState = (friendship, userId) => {
 };
 
 const priority = (friendship, userId) => {
+  if (getBankruptPartner(friendship, userId)) return 60000;
   if (friendship.chaos?.activeEvent) return 50000;
   if (friendship.season?.status === 'COMPLETE') return 40000;
   const state = contractState(friendship, userId);
@@ -27,9 +29,10 @@ const worldIcon = (worldEvent) => worldEvent?.id === 'ANOMALY_SEASON' ? Dice5 : 
 export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate }) => {
   const userId = user.uid || user.id || user._id;
   const sorted = [...friendships].sort((a, b) => priority(b, userId) - priority(a, userId));
+  const bankruptPartners = friendships.map((friendship) => getBankruptPartner(friendship, userId)).filter(Boolean);
   const hot = sorted.filter((friendship) => {
     const state = contractState(friendship, userId);
-    return friendship.chaos?.activeEvent || friendship.season?.status === 'COMPLETE' || state.debt > 0 || state.daysLeft <= 1;
+    return getBankruptPartner(friendship, userId) || friendship.chaos?.activeEvent || friendship.season?.status === 'COMPLETE' || state.debt > 0 || state.daysLeft <= 1;
   });
   const visible = (hot.length ? hot : sorted).slice(0, 3);
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
@@ -101,6 +104,31 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </div>
         <button className="aura-chip" onClick={() => onNavigate('you')} aria-label={`${user.auraBalance || 0} Aura, open profile`}><span>{user.auraBalance || 0}</span> Aura</button>
       </header>
+
+      {bankruptPartners.length > 0 && (() => {
+        const visibleNames = bankruptPartners
+          .slice(0, 2)
+          .map(({ partner }) => partner?.displayName || 'Contract partner');
+        const remaining = bankruptPartners.length - visibleNames.length;
+        const names = `${visibleNames.join(', ')}${remaining > 0 ? ` +${remaining}` : ''}`;
+        const one = bankruptPartners.length === 1;
+
+        return (
+          <button
+            className="bankruptcy-alert-strip"
+            type="button"
+            onClick={() => onNavigate(one ? 'arena' : 'contracts')}
+          >
+            <span className="bankruptcy-alert-icon"><TriangleAlert size={19} strokeWidth={2} /></span>
+            <span className="bankruptcy-alert-copy">
+              <small>{one ? 'Partner bankrupt' : `${bankruptPartners.length} partners bankrupt`}</small>
+              <strong>{names}</strong>
+              <span>{one ? 'Bounties and Claim are unlocked.' : 'Open Contracts to choose who to pressure.'}</span>
+            </span>
+            <ArrowRight size={17} strokeWidth={2} />
+          </button>
+        );
+      })()}
 
       {worldEvent && (
         <section className="world-event-card">

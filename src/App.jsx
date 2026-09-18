@@ -95,6 +95,10 @@ function MainApp({ showToast }) {
   }, [isAuthenticated]);
 
   const handleAction = (type, friendship) => {
+    if (type === 'ARENA') {
+      setActiveTab('arena');
+      return;
+    }
     setSelectedFriendship(friendship);
     if (['CHECKIN', 'VOICE_CHECKIN', 'SETTINGS', 'RECAP'].includes(type)) setModalType(type);
   };

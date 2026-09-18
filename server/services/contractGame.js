@@ -1,4 +1,5 @@
 const ContractEvent = require('../models/ContractEvent');
+const Friendship = require('../models/Friendship');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
@@ -298,10 +299,16 @@ const failActiveChaos = async (friendship, now = new Date()) => {
   return true;
 };
 
-const refreshGameState = async (friendship, now = new Date()) => {
+const bankruptcyNoticeKey = (friendship, perspective, state) => {
+  const seasonNumber = Number(friendship.season?.number) || 1;
+  const lastInteraction = new Date(perspective?.lastInteraction || 0).getTime();
+  return `${seasonNumber}:${lastInteraction}:${state.limit}`;
+};
+
+const refreshDebtState = async (friendship, now = new Date()) => {
   if (!friendship?.season) return friendship;
 
-  const bankruptcyEvents = [];
+  const bankruptParticipants = [];
   let debtChanged = false;
   const seasonEnd = friendship.season?.endsAt ? new Date(friendship.season.endsAt) : null;
   const debtClock = seasonEnd && seasonEnd < now ? seasonEnd : now;
@@ -336,35 +343,64 @@ const refreshGameState = async (friendship, now = new Date()) => {
 
     if (changed) debtChanged = true;
 
-    if (state.isBankrupt && !before.isBankrupt) {
-      bankruptcyEvents.push({
+    if (state.isBankrupt) {
+      bankruptParticipants.push({
+        key,
         userId: idString(userId),
         displayName: displayName || 'A contract partner',
         debt: state.totalDebt,
-        limit: state.limit
+        limit: state.limit,
+        becameBankrupt: !before.isBankrupt,
+        noticeKey: bankruptcyNoticeKey(friendship, perspective, state)
       });
     }
   }
 
   if (debtChanged) await friendship.save();
 
-  for (const event of bankruptcyEvents) {
-    await recordEvent(friendship._id, 'BANKRUPTCY', {
-      userId: event.userId,
-      metadata: {
-        debt: event.debt,
-        limit: event.limit,
-        season: friendship.season?.number
+  for (const participant of bankruptParticipants) {
+    const noticeClaim = await Friendship.updateOne(
+      {
+        _id: friendship._id,
+        [`${participant.key}.bankruptcyNoticeKey`]: { $ne: participant.noticeKey }
+      },
+      {
+        $set: { [`${participant.key}.bankruptcyNoticeKey`]: participant.noticeKey }
       }
-    });
+    );
+
+    // Keep this document safe for any later save in the same request.
+    friendship[participant.key].bankruptcyNoticeKey = participant.noticeKey;
+
+    if (noticeClaim.modifiedCount === 0) continue;
+
+    if (participant.becameBankrupt) {
+      await recordEvent(friendship._id, 'BANKRUPTCY', {
+        userId: participant.userId,
+        metadata: {
+          debt: participant.debt,
+          limit: participant.limit,
+          season: friendship.season?.number
+        }
+      }).catch((error) => console.error('Could not record bankruptcy event:', error.message));
+    }
+
     await notifyBoth(
       friendship,
       'Bankruptcy triggered',
-      `${event.displayName} hit ${event.debt} debt. Bounties are now unlocked until they check in.`,
+      `${participant.displayName} hit ${participant.debt} debt. Bounties and Claim are now unlocked until they recover.`,
       'BANKRUPTCY',
-      event.userId
+      participant.userId
     );
   }
+
+  return friendship;
+};
+
+const refreshGameState = async (friendship, now = new Date()) => {
+  if (!friendship?.season) return friendship;
+
+  await refreshDebtState(friendship, now);
 
   if (friendship.season.status === 'ACTIVE' && friendship.season.endsAt && new Date(friendship.season.endsAt) <= now) {
     friendship.season.status = 'COMPLETE';
@@ -561,6 +597,7 @@ module.exports = {
   duoStateFromXP,
   initializeContractGame,
   activateSeason,
+  refreshDebtState,
   refreshGameState,
   triggerChaosEvent,
   prepareCheckinGame,

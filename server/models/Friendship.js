@@ -6,6 +6,7 @@ const PerspectiveSchema = new mongoose.Schema({
   lastInteraction: { type: Date, default: Date.now },
   wasBankrupt: { type: Boolean, default: false },
   bankruptAt: { type: Date, default: null },
+  bankruptcyNoticeKey: { type: String, default: null },
   recoveryRequired: { type: Boolean, default: false },
   calculatedDebt: { type: Number, default: 0 },
   calculatedAt: { type: Date, default: Date.now },
