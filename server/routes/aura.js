@@ -7,7 +7,7 @@ const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { refreshGameState, recordEvent } = require('../services/contractGame');
 const { calculateDebtState } = require('../services/debtState');
-const { refundOpenBountiesForFriendship } = require('../services/bountyEscrow');
+const { refundOpenBountiesForTarget } = require('../services/bountyEscrow');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -495,7 +495,7 @@ router.post('/use-card', auth, async (req, res) => {
         await friendship.save();
 
         if (wasBankrupt) {
-          await refundOpenBountiesForFriendship(friendship._id, 'Target used Clean Slate and recovered').catch(() => null);
+          await refundOpenBountiesForTarget(friendship._id, user._id, 'Target used Clean Slate and recovered').catch(() => null);
           await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERED', {
             userId: user._id,
             metadata: { season: friendship.season?.number, via: 'PURIFY' }
