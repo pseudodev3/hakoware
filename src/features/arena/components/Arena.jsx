@@ -3,11 +3,10 @@ import { Activity, Clock3, Dice5, Flame, Plus, Search, ShieldCheck, Sword, Targe
 import { Button } from '../../../shared/components/Button';
 import { CreateBountyModal } from './CreateBountyModal';
 import { PressureMoveModal } from './PressureMoveModal';
-import { api } from '../../../lib/api';
-import { getBountyMeta, getHunterProfile, huntBounty, sendBountyPressure } from '../../../services/bountyService';
-import { getPublicGrudges } from '../../../services/auraService';
+import { huntBounty, sendBountyPressure } from '../../../services/bountyService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { calculateDebt } from '../../../hooks/useDebt';
+import { getArenaSnapshot, peekArenaSnapshot } from '../../../services/prefetchService';
 import './Arena.css';
 
 const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
@@ -31,43 +30,41 @@ const grudgeTimeLeft = (date) => {
 
 export const Arena = ({ friendships, worldEvent, showToast }) => {
   const { user, refreshUser } = useAuth();
+  const cachedArena = peekArenaSnapshot();
   const [tab, setTab] = useState('bounties');
-  const [bounties, setBounties] = useState([]);
-  const [shame, setShame] = useState([]);
-  const [grudges, setGrudges] = useState([]);
-  const [hunterProfile, setHunterProfile] = useState({ rep: 0, rank: 'Rookie Hunter', successfulHunts: 0, attempts: 0, conversionRate: 0, auraCollected: 0, activeHunts: 0 });
-  const [meta, setMeta] = useState({ pressureMoves: [], huntWindowHours: 12 });
-  const [loading, setLoading] = useState(true);
+  const [bounties, setBounties] = useState(cachedArena?.bounties || []);
+  const [shame, setShame] = useState(cachedArena?.shame || []);
+  const [grudges, setGrudges] = useState(cachedArena?.grudges || []);
+  const [hunterProfile, setHunterProfile] = useState(cachedArena?.hunterProfile || { rep: 0, rank: 'Rookie Hunter', successfulHunts: 0, attempts: 0, conversionRate: 0, auraCollected: 0, activeHunts: 0 });
+  const [meta, setMeta] = useState(cachedArena?.meta || { pressureMoves: [], huntWindowHours: 12 });
+  const [loading, setLoading] = useState(!cachedArena);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [pressureBounty, setPressureBounty] = useState(null);
   const [pressureLoading, setPressureLoading] = useState(false);
   const userId = String(user.uid || user.id || user._id);
 
-  const loadArenaData = async () => {
-    setLoading(true);
+  const loadArenaData = async ({ force = true, silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
-      const [bountiesRes, shameRes, profileRes, metaRes, grudgesRes] = await Promise.all([
-        api.get('/bounties/active'),
-        api.get('/users/leaderboard'),
-        getHunterProfile(),
-        getBountyMeta(),
-        getPublicGrudges()
-      ]);
-      setBounties(bountiesRes || []);
-      setShame(shameRes || []);
-      setHunterProfile(profileRes || {});
-      setMeta(metaRes || { pressureMoves: [], huntWindowHours: 12 });
-      setGrudges(grudgesRes || []);
+      const snapshot = await getArenaSnapshot({ force });
+      setBounties(snapshot.bounties || []);
+      setShame(snapshot.shame || []);
+      setHunterProfile(snapshot.hunterProfile || {});
+      setMeta(snapshot.meta || { pressureMoves: [], huntWindowHours: 12 });
+      setGrudges(snapshot.grudges || []);
     } catch (error) {
       console.error('Failed to load Arena:', error);
-      showToast?.(error.message || 'Could not load Arena', 'ERROR');
+      if (!silent) showToast?.(error.message || 'Could not load Arena', 'ERROR');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadArenaData(); }, []);
+  useEffect(() => {
+    const warm = Boolean(peekArenaSnapshot());
+    void loadArenaData({ force: warm, silent: warm });
+  }, []);
 
   const filtered = useMemo(
     () => bounties.filter((bounty) => bounty.targetName?.toLowerCase().includes(search.toLowerCase())),
@@ -91,7 +88,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
       const result = await huntBounty(bounty._id || bounty.id);
       const bond = result?.hunterBond || hunterBondFor(bounty.amount);
       showToast?.(`Hunt started · ${bond} Aura bond staked · send pressure`, 'SUCCESS');
-      await Promise.all([loadArenaData(), refreshUser()]);
+      await Promise.all([loadArenaData({ force: true }), refreshUser()]);
     } catch (error) {
       showToast?.(error.message || 'Could not start hunt', 'ERROR');
     }
@@ -104,7 +101,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
       await sendBountyPressure(pressureBounty._id || pressureBounty.id, moveId);
       showToast?.(`Pressure sent to ${pressureBounty.targetName} · proof armed`, 'SUCCESS');
       setPressureBounty(null);
-      await loadArenaData();
+      await loadArenaData({ force: true });
     } catch (error) {
       showToast?.(error.message || 'Could not send pressure', 'ERROR');
     } finally {
