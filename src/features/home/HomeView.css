@@ -40,8 +40,7 @@
 .section-heading h2 { margin-top:3px; font-size:1.17rem; font-weight:660; letter-spacing:-.035em; }
 .text-action { min-height:40px; display:inline-flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:.72rem; font-weight:600; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .text-action:active { transform:scale(.96); }
-.home-contract-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.home-contract-list > :first-child:nth-last-child(1) { grid-column:1 / -1; }
+.home-contract-list { display:flex; flex-direction:column; }
 .home-footer-action { padding:12px 0 2px; display:flex; align-items:center; justify-content:space-between; gap:18px; border-top:1px solid var(--border-subtle); color:var(--text-muted); font-size:.7rem; }
 .home-footer-action button { min-height:38px; padding:0 4px; display:inline-flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:.68rem; font-weight:640; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .home-footer-action button:active { transform:scale(.97); }
@@ -79,7 +78,6 @@
   .season-start-briefing { grid-template-columns:34px minmax(0,1fr) auto; align-items:start; padding:11px; }
   .season-start-mark { width:34px; height:34px; }
   .home-hero .home-world-rule { font-size:.55rem; gap:4px; }
-  .home-contract-list { grid-template-columns:1fr; }
   .section-heading { align-items:center; }
   .section-heading h2 { font-size:1.04rem; }
   .text-action { font-size:.68rem; }
