@@ -14,6 +14,33 @@ jobs:
           node-version: 20
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
+      - name: Audit frontend production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Reject tracked env files and obvious secrets
+        run: |
+          bad_env="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example      - name: Build frontend
+        run: npm run build
+      - name: Install backend dependencies
+        working-directory: server
+        run: npm ci --no-audit --no-fund
+      - name: Audit backend production dependencies
+        working-directory: server
+        run: npm audit --omit=dev --audit-level=high
+      - name: Check backend syntax
+        working-directory: server
+        run: |
+          node --check index.js
+          find routes services middleware models -name '*.js' -print0 | xargs -0 -n1 node --check
+ || true)"
+          if [ -n "$bad_env" ]; then
+            echo "Tracked environment file(s) found:"
+            echo "$bad_env"
+            exit 1
+          fi
+          if git grep -I -nE 'mongodb(\+srv)?://[^[:space:]]+:[^@[:space:]]+@|xkeysib-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' -- .; then
+            echo "Potential committed secret detected."
+            exit 1
+          fi
       - name: Build frontend
         run: npm run build
       - name: Install backend dependencies
