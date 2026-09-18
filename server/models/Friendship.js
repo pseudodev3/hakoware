@@ -85,5 +85,7 @@ const FriendshipSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 FriendshipSchema.index({ user1: 1, user2: 1 }, { unique: true });
+FriendshipSchema.index({ templateId: 1, status: 1, 'season.status': 1, 'chaos.nextEventAt': 1 });
+FriendshipSchema.index({ templateId: 1, status: 1, 'season.status': 1, 'chaos.activeEvent.expiresAt': 1 });
 
 module.exports = mongoose.model('Friendship', FriendshipSchema);

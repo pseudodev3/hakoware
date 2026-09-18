@@ -6,6 +6,7 @@ require('dotenv').config();
 const { assertBucketConfig } = require('./services/bucketStorage');
 const { getEmailStatus, verifyEmailTransport } = require('./services/emailService');
 const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
+const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -114,13 +115,14 @@ async function start() {
 
   server = app.listen(PORT, '0.0.0.0', () => console.log(`Hakoware API listening on port ${PORT}`));
   startDebtWorker();
+  startChaosWorker();
 }
 
 async function shutdown(signal) {
   console.log(`${signal} received, shutting down gracefully`);
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-  await stopDebtWorker();
+  await Promise.all([stopDebtWorker(), stopChaosWorker()]);
   if (server) await new Promise((resolve) => server.close(resolve));
   await mongoose.connection.close();
   process.exit(0);
