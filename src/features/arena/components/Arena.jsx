@@ -211,7 +211,7 @@ export const Arena = ({ friendships, showToast }) => {
               <article className="shame-item-new" key={person._id}>
                 <span className="shame-rank">{String(index + 1).padStart(2, '0')}</span>
                 <div className="bounty-avatar">{person.displayName?.[0]?.toUpperCase() || '?'}</div>
-                <div className="bounty-copy"><strong>{person.displayName}</strong><span>{person.username ? `@${person.username} · ` : ''}{person.nenType ? person.nenType.toLowerCase() : 'No affinity'}</span></div>
+                <div className="bounty-copy"><strong>{person.displayName}</strong><span>{person.username ? `@${person.username}` : 'Hakoware player'}</span></div>
                 <strong className="shame-debt">{person.totalDebt} debt</strong>
               </article>
             ))}
