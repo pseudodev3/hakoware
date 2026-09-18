@@ -6,6 +6,8 @@ const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { refreshGameState, recordEvent } = require('../services/contractGame');
+const { calculateDebtState } = require('../services/debtState');
+const { refundOpenBountiesForTarget } = require('../services/bountyEscrow');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -40,17 +42,8 @@ const CARD_CATALOG = Object.freeze({
   }
 });
 
-const calculateDebt = (perspective, now = new Date()) => {
-  const limit = Number(perspective?.limit) || 7;
-  const lastInteraction = new Date(perspective?.lastInteraction || now);
-  const daysMissed = Math.floor(Math.max(0, now - lastInteraction) / DAY);
-  return (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
-};
-
-const isBankruptPerspective = (perspective, now = new Date()) => {
-  const limit = Number(perspective?.limit) || 7;
-  return calculateDebt(perspective, now) >= limit * 2;
-};
+const calculateDebt = (perspective, now = new Date()) => calculateDebtState(perspective, now).totalDebt;
+const isBankruptPerspective = (perspective, now = new Date()) => calculateDebtState(perspective, now).isBankrupt;
 
 const activeGrudge = (grudge, now = new Date()) => Boolean(
   grudge?.active &&
@@ -488,13 +481,30 @@ router.post('/use-card', auth, async (req, res) => {
       for (const friendship of withDebt) {
         const isUser1 = friendship.user1.toString() === req.user.id;
         const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
+        const wasBankrupt = isBankruptPerspective(friendship[key], now);
+        const limit = Math.max(1, Number(friendship[key].limit) || 7);
+
         friendship[key].baseDebt = 0;
         friendship[key].lastInteraction = now;
         friendship[key].calculatedDebt = 0;
         friendship[key].daysMissed = 0;
         friendship[key].isBankrupt = false;
         friendship[key].isInWarningZone = false;
+        friendship[key].daysUntilBankrupt = limit * 2;
+        friendship[key].recoveryRequired = false;
         await friendship.save();
+
+        if (wasBankrupt) {
+          await refundOpenBountiesForTarget(
+            friendship._id,
+            user._id,
+            'Target used Clean Slate and recovered'
+          ).catch(() => null);
+          await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERED', {
+            userId: user._id,
+            metadata: { season: friendship.season?.number, via: 'PURIFY' }
+          }).catch(() => null);
+        }
       }
       effect = { clearedContracts: withDebt.length };
     }
