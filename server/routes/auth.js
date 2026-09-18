@@ -8,13 +8,14 @@ const Friendship = require('../models/Friendship');
 const PendingInvite = require('../models/PendingInvite');
 const AuraTransaction = require('../models/AuraTransaction');
 const auth = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 const { initializeContractGame, recordEvent } = require('../services/contractGame');
 
 const NEN_TYPES = new Set(['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST']);
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-const signToken = (user) => jwt.sign({ user: { id: user.id } }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const signToken = (user) => jwt.sign({ user: { id: user.id, v: Number(user.authVersion) || 0 } }, process.env.JWT_SECRET, { expiresIn: '7d' });
 const publicUser = (user) => {
   const data = user.toObject();
   delete data.password;
@@ -22,10 +23,36 @@ const publicUser = (user) => {
   delete data.resetPasswordExpire;
   delete data.welcomeAuraGranted;
   delete data.lastDailyAuraBonusKey;
+  delete data.authVersion;
   return data;
 };
+const signupLimiter = createRateLimiter({
+  name: 'auth-signup',
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: 'Too many signup attempts. Try again later.'
+});
+const loginLimiter = createRateLimiter({
+  name: 'auth-login',
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many sign-in attempts. Try again later.'
+});
+const forgotLimiter = createRateLimiter({
+  name: 'auth-forgot',
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  message: 'Too many password-reset attempts. Try again later.'
+});
+const resetLimiter = createRateLimiter({
+  name: 'auth-reset',
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many reset attempts. Try again later.'
+});
 
-router.post('/signup', async (req, res) => {
+
+router.post('/signup', signupLimiter, async (req, res) => {
   try {
     const displayName = String(req.body.displayName || '').trim();
     const email = normalizeEmail(req.body.email);
@@ -97,7 +124,7 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const email = normalizeEmail(req.body.email);
     const password = String(req.body.password || '');
@@ -115,7 +142,7 @@ router.post('/login', async (req, res) => {
 router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey');
+      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion');
     if (!user) return res.status(404).json({ msg: 'User not found' });
     return res.json(user);
   } catch (err) {
@@ -142,7 +169,7 @@ router.put('/nen-type', auth, async (req, res) => {
   }
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', forgotLimiter, async (req, res) => {
   const genericMessage = 'If an account exists for that email, a reset link has been sent.';
 
   try {
@@ -164,7 +191,6 @@ router.post('/forgot-password', async (req, res) => {
       user.resetPasswordExpire = undefined;
       await user.save();
       console.error('Password reset email delivery failed:', emailError.message);
-      return res.status(503).json({ msg: 'Email delivery is temporarily unavailable. Try again shortly.' });
     }
 
     return res.json({ msg: genericMessage });
@@ -174,7 +200,7 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password/:token', resetLimiter, async (req, res) => {
   try {
     const password = String(req.body.password || '');
     if (password.length < 8) return res.status(400).json({ msg: 'Password must be at least 8 characters' });
@@ -187,6 +213,7 @@ router.post('/reset-password/:token', async (req, res) => {
     if (!user) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
 
     user.password = await bcrypt.hash(password, 10);
+    user.authVersion = (Number(user.authVersion) || 0) + 1;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
