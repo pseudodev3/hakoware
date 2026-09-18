@@ -51,8 +51,8 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
 
   const handleCheckin = async (creditHunter = false) => {
-    if (bountyLoading) return showToast?.('Arena state is still syncing', 'ERROR');
-    if (bountySyncError) return showToast?.('Could not verify the live bounty. Close and reopen this check-in.', 'ERROR');
+    if (bountyLoading) return showToast?.('Arena is still syncing', 'ERROR');
+    if (bountySyncError) return showToast?.('Could not verify the bounty. Reopen this check-in.', 'ERROR');
 
     setLoading(true);
     const creditId = creditHunter && pressureReady ? bounty._id : null;
@@ -98,7 +98,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
         {bountySyncError && (
           <div className="checkin-bounty-proof sync-error">
             <div className="checkin-bounty-icon"><AlertTriangle size={18} /></div>
-            <div><span>ARENA SYNC FAILED</span><strong>Proof state could not be verified.</strong><p>Close and reopen this check-in before submitting so no hunter credit or escape can happen by accident.</p></div>
+            <div><span>ARENA SYNC FAILED</span><strong>Bounty not verified.</strong><p>Reopen this check-in before submitting.</p></div>
           </div>
         )}
 
@@ -110,10 +110,10 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
               <strong>{bounty.amount} Aura on this check-in</strong>
               <p>
                 {pressureReady
-                  ? `${bounty.hunterName} sent pressure. Credit them only if they actually got you back here; checking in normally lets you escape.`
+                  ? `Credit ${bounty.hunterName} only if their pressure brought you back. Otherwise, escape.`
                   : bounty.status === 'HUNTING'
-                    ? `${bounty.hunterName || 'A hunter'} picked this up but has not sent pressure yet. Check in now to escape.`
-                    : 'No hunter has earned proof yet. Check in now to close the bounty and return the escrow.'}
+                    ? `${bounty.hunterName || 'A hunter'} picked this up. Check in to escape.`
+                    : 'No proof yet. Check in to close the bounty and return escrow.'}
               </p>
             </div>
           </div>
@@ -125,37 +125,37 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
             <strong>Current debt</strong>
             <p>
               {stats.isBankrupt
-                ? `This check-in starts recovery. Debt drops to ${stats.limit}; one more clean check-in gets you back to stable.`
+                ? `Recovery starts now. Debt drops to ${stats.limit}; one more clean check-in to stabilize.`
                 : stats.isRecovering
-                  ? 'One more valid check-in completes bankruptcy recovery.'
+                  ? 'One more check-in completes recovery.'
                   : stats.totalDebt > 0
-                    ? 'Checking in clears your current debt.'
-                    : 'You are inside the grace period.'}
+                    ? 'This clears your debt.'
+                    : 'Inside grace period.'}
             </p>
           </div>
         </div>
 
         <div className="checkin-meta">
           <div><Clock3 size={15} strokeWidth={1.8} /><span><small>Last check-in</small><strong>{lastInteraction ? lastInteraction.toLocaleDateString() : 'Never'}</strong></span></div>
-          <div><span className="grace-dot" /><span><small>Your grace period</small><strong>{stats.limit} day{stats.limit === 1 ? '' : 's'}</strong></span></div>
+          <div><span className="grace-dot" /><span><small>Grace</small><strong>{stats.limit} day{stats.limit === 1 ? '' : 's'}</strong></span></div>
         </div>
 
         <p className="checkin-note">
           {stats.isBankrupt
-            ? 'Bankruptcy takes two clean check-ins to fully recover. The first stops the spiral; the second clears the recovery debt.'
-            : 'A check-in can be logged once every 20 hours. It resets your side of this contract and grows your Duo level.'}
+            ? 'Recovery takes two clean check-ins, at least 20h apart.'
+            : 'One check-in every 20h. Resets your side + earns Duo XP.'}
         </p>
 
         {pressureReady ? (
           <div className="checkin-proof-actions">
-            <Button type="button" variant="secondary" disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(false)}>Check in normally</Button>
+            <Button type="button" variant="secondary" disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(false)}>Escape</Button>
             <Button variant="aura" icon={ShieldCheck} disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(true)}>Credit {bounty.hunterName}</Button>
           </div>
         ) : (
           <div className="checkin-actions">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
             <Button variant="aura" icon={Check} disabled={checkinBlocked} loading={loading || bountyLoading} onClick={() => handleCheckin(false)}>
-              {bountyLoading ? 'Syncing Arena…' : hasOpenBounty ? 'Check in & escape' : 'Check in now'}
+              {bountyLoading ? 'Syncing Arena…' : hasOpenBounty ? 'Check in & escape' : 'Check in'}
             </Button>
           </div>
         )}
