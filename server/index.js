@@ -119,7 +119,7 @@ async function shutdown(signal) {
   console.log(`${signal} received, shutting down gracefully`);
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-  stopDebtWorker();
+  await stopDebtWorker();
   if (server) await new Promise((resolve) => server.close(resolve));
   await mongoose.connection.close();
   process.exit(0);
