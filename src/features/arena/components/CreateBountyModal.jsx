@@ -52,12 +52,13 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
       <form className="bounty-form" onSubmit={handleSubmit}>
         <div className="bounty-explainer">
           <Target size={18} strokeWidth={1.8} />
-          <p>Your reward goes into escrow. Hunters must stake Aura, send a pressure move, and be explicitly credited by the target at check-in to get paid.</p>
+          <p>Bounties unlock only after a contract partner goes bankrupt. Your reward goes into escrow; hunters must stake Aura, send pressure, and earn target credit to get paid.</p>
         </div>
 
         <div className="bounty-field">
           <label>Contract</label>
           <div className="bounty-friend-grid">
+            {friendships.length === 0 && <p className="bounty-empty-targets">Nobody on your contracts is bankrupt right now.</p>}
             {friendships.map((friendship) => {
               const id = friendship._id || friendship.id;
               const isUser1 = String(friendship.user1?._id || friendship.user1) === String(userId);
