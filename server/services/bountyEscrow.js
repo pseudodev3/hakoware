@@ -301,9 +301,9 @@ const reopenExpiredHunt = async (bounty, now = new Date()) => {
   return true;
 };
 
-const refundOpenBountiesForFriendship = async (friendshipId) => {
+const refundOpenBountiesForFriendship = async (friendshipId, reason = 'Contract ended') => {
   const bounties = await Bounty.find({ friendshipId, status: { $in: OPEN_STATUSES } });
-  for (const bounty of bounties) await refundBounty(bounty, 'Contract ended');
+  for (const bounty of bounties) await refundBounty(bounty, reason);
 };
 
 const expireStaleBounties = async () => {
