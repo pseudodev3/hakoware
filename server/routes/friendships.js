@@ -336,7 +336,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
 
     if (recoveryStarted) {
-      await recordEvent(friendship._id, 'BANKRUPTCY', {
+      await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERY_STARTED', {
         userId: req.user.id,
         metadata: {
           previousDebt: debtBefore.totalDebt,
