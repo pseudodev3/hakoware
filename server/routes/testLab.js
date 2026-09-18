@@ -154,7 +154,9 @@ router.post('/contracts', async (req, res) => {
       user2: user2._id,
       user1DisplayName: user1.displayName,
       user2DisplayName: user2.displayName,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      isTestData: true,
+      testOwnerId: req.user.id
     });
     initializeContractGame(friendship, templateId, req.body.limit);
     await friendship.save();
