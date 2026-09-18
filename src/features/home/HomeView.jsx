@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, CheckCircle2, Clock3, Dice5, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
-import { WorldEventBanner } from '../../shared/components/WorldEventBanner';
 import { ContractCard } from '../friendship/components/ContractCard';
 import { getBankruptPartner } from '../friendship/contractState';
 import './HomeView.css';
@@ -23,6 +22,13 @@ const perspectiveFor = (friendship, userId) => {
 const partnerFor = (friendship, userId) => {
   const user1Id = friendship.user1?._id || friendship.user1;
   return String(user1Id) === String(userId) ? friendship.user2 : friendship.user1;
+};
+
+const WORLD_RULE_COPY = {
+  DUO_RUSH: '+25% Duo XP',
+  OPEN_MIC: 'Voice check-ins +10 XP',
+  CLEAN_SWEEP: 'Check-ins +5 XP',
+  ANOMALY_SEASON: 'Chaos cycles faster'
 };
 
 const priority = (friendship, userId) => {
@@ -126,6 +132,13 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <p className="eyebrow">Your circle</p>
           <h1>{hot.length ? 'Something is happening.' : 'Everybody survived.'}</h1>
           <p>{hot.length ? `${hot.length} contract${hot.length === 1 ? '' : 's'} need attention right now.` : `${friendships.length} active contract${friendships.length === 1 ? '' : 's'} · no immediate fires.`}</p>
+          {worldEvent && (
+            <p className="home-world-rule">
+              <span>Weekly rule</span>
+              <strong>{worldEvent.name}</strong>
+              <b>{WORLD_RULE_COPY[worldEvent.id] || worldEvent.description}</b>
+            </p>
+          )}
         </div>
         <button className="aura-chip" onClick={() => onNavigate('you')} aria-label={`${user.auraBalance || 0} Aura, open profile`}><span>{user.auraBalance || 0}</span> Aura</button>
       </header>
@@ -172,7 +185,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         );
       })()}
 
-      <WorldEventBanner event={worldEvent} />
 
       {pendingInvitations.length > 0 && (
         <button className="pending-banner" onClick={() => onNavigate('contracts')}>
