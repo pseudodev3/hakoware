@@ -203,6 +203,7 @@ router.patch('/contracts/:id/state', async (req, res) => {
     perspective.isBankrupt = debt >= limit * 2;
     perspective.isInWarningZone = debt > 0 && !perspective.isBankrupt;
     perspective.daysUntilBankrupt = Math.max(0, (limit * 2) - debt);
+    perspective.recoveryRequired = false;
     perspective.wasBankrupt = perspective.isBankrupt;
     perspective.bankruptAt = perspective.isBankrupt ? now : null;
     await friendship.save();
