@@ -37,7 +37,6 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         <div className="sidebar-brand">
           <img className="brand-mark" src="/hakoware-mark-v2.png" alt="" />
           <span>Hakoware</span>
-          <span className="brand-status">LIVE</span>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
