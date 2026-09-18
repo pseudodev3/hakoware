@@ -18,6 +18,7 @@ import { HomeView } from './features/home/HomeView';
 import { Arena } from './features/arena/components/Arena';
 import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
+import { LegalPage } from './features/legal/LegalPage';
 import { returnToFounderSession } from './services/testLabService';
 import { prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
@@ -249,6 +250,10 @@ function App() {
       <Routes>
         <Route path="/reset-password/:token" element={<ResetPassword showToast={showToast} />} />
         <Route path="/founder" element={<FounderRoute showToast={showToast} />} />
+        <Route path="/privacy" element={<LegalPage type="privacy" />} />
+        <Route path="/terms" element={<LegalPage type="terms" />} />
+        <Route path="/community" element={<LegalPage type="community" />} />
+        <Route path="/contact" element={<LegalPage type="contact" />} />
         <Route path="/*" element={<MainApp showToast={showToast} />} />
       </Routes>
       {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
