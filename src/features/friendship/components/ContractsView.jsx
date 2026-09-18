@@ -48,26 +48,8 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
 
   return (
     <div className="contracts-view">
-      <header className="contracts-header">
-        <div>
-          <p className="eyebrow">Contracts</p>
-          <h1>Your roster.</h1>
-          <p>Every relationship is its own season. Build Duo XP, survive the rules, and keep the report respectable.</p>
-        </div>
-        <Button variant="aura" icon={Plus} onClick={onAddFriend}>New contract</Button>
-      </header>
-
-      <section className="contracts-overview">
-        <div><small>Active</small><strong>{friendships.length}</strong><span>contracts in play</span></div>
-        <div><small>Reports ready</small><strong>{completeSeasons}</strong><span>seasons complete</span></div>
-        <div className={bankruptPartners ? 'bankrupt' : ''}><small>Bankrupt partners</small><strong>{bankruptPartners}</strong><span>{bankruptPartners ? 'pressure is unlocked' : 'nobody underwater'}</span></div>
-        <div className={chaosContracts ? 'chaos' : ''}><small>Chaos</small><strong>{chaosContracts}</strong><span>{chaosContracts ? 'unstable contracts' : 'none active'}</span></div>
-      </section>
-
-      <WorldEventBanner event={worldEvent} compact />
-
       {pendingReceived.length > 0 && (
-        <section className="contract-section">
+        <section className="contract-section priority-invites">
           <div className="contract-section-title"><h2>Challenges waiting for you</h2><span>{pendingReceived.length}</span></div>
           <div className="invite-list">
             {pendingReceived.map((friendship) => {
@@ -91,6 +73,24 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
           </div>
         </section>
       )}
+
+      <header className="contracts-header">
+        <div>
+          <p className="eyebrow">Contracts</p>
+          <h1>Your roster.</h1>
+          <p>Every relationship is its own season. Build Duo XP, survive the rules, and keep the report respectable.</p>
+        </div>
+        <Button variant="aura" icon={Plus} onClick={onAddFriend}>New contract</Button>
+      </header>
+
+      <section className="contracts-overview">
+        <div><small>Active</small><strong>{friendships.length}</strong><span>contracts in play</span></div>
+        <div><small>Reports ready</small><strong>{completeSeasons}</strong><span>seasons complete</span></div>
+        <div className={bankruptPartners ? 'bankrupt' : ''}><small>Bankrupt partners</small><strong>{bankruptPartners}</strong><span>{bankruptPartners ? 'pressure is unlocked' : 'nobody underwater'}</span></div>
+        <div className={chaosContracts ? 'chaos' : ''}><small>Chaos</small><strong>{chaosContracts}</strong><span>{chaosContracts ? 'unstable contracts' : 'none active'}</span></div>
+      </section>
+
+      <WorldEventBanner event={worldEvent} compact />
 
       {waitingOnThem > 0 && (
         <section className="contract-section compact-section">
