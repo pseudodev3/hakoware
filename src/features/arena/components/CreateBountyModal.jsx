@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Target, Zap } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
@@ -20,6 +20,12 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
   const listingFee = useMemo(() => listingFeeFor(amount), [amount]);
   const totalCost = amount + listingFee;
   const canAfford = totalCost <= balance;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const validIds = new Set(friendships.map((friendship) => String(friendship._id || friendship.id)));
+    if (selectedId && !validIds.has(String(selectedId))) setSelectedId('');
+  }, [isOpen, friendships, selectedId]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
