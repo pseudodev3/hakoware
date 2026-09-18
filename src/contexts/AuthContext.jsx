@@ -120,15 +120,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const setNenType = async (nenType) => {
-    try {
-      const nextUser = withUid(await api.put('/auth/nen-type', { nenType }));
-      setUser(nextUser);
-      return { success: true, user: nextUser };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
 
   const buyCard = async (card) => {
     try {
@@ -160,7 +151,6 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshUser,
     refreshBootstrap,
-    setNenType,
     buyCard,
     useCard,
     isAuthenticated: Boolean(user)
