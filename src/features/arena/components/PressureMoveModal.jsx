@@ -12,8 +12,8 @@ export const PressureMoveModal = ({ bounty, moves = [], loading, onClose, onSend
         <div className="pressure-proof-explainer">
           <ShieldCheck size={19} strokeWidth={1.8} />
           <div>
-            <strong>This creates the proof trail.</strong>
-            <p>You get one pressure move. The target still chooses whether you actually deserve credit when they check in.</p>
+            <strong>Arm the proof.</strong>
+            <p>One pressure move. The target decides whether you earned credit when they check in.</p>
           </div>
         </div>
 
@@ -33,7 +33,7 @@ export const PressureMoveModal = ({ bounty, moves = [], loading, onClose, onSend
         </div>
 
         <div className="pressure-footer">
-          <p>No custom messages here: pressure stays game-like and bounded, not harassment.</p>
+          <p>No custom messages. Pressure stays game-like and bounded.</p>
           <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
         </div>
       </div>
