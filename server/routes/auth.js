@@ -185,7 +185,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     await user.save();
 
     try {
-      await sendResetPasswordEmail(user.email, `${frontendUrl()}/reset-password/${resetToken}`);
+      await sendResetPasswordEmail(user.email, `${frontendUrl()}/reset-password#token=${encodeURIComponent(resetToken)}`);
     } catch (emailError) {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
@@ -200,12 +200,15 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
   }
 });
 
-router.post('/reset-password/:token', resetLimiter, async (req, res) => {
+const resetPasswordHandler = async (req, res) => {
   try {
     const password = String(req.body.password || '');
     if (password.length < 8) return res.status(400).json({ msg: 'Password must be at least 8 characters' });
 
-    const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    const rawToken = String(req.body.token || req.params.token || '');
+    if (!rawToken) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
+
+    const resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() }
@@ -222,6 +225,10 @@ router.post('/reset-password/:token', resetLimiter, async (req, res) => {
     console.error('Reset password failed:', err.message);
     return res.status(500).json({ msg: 'Could not reset password' });
   }
-});
+};
+
+router.post('/reset-password', resetLimiter, resetPasswordHandler);
+// Temporary compatibility for reset links issued before fragment-based reset URLs.
+router.post('/reset-password/:token', resetLimiter, resetPasswordHandler);
 
 module.exports = router;
