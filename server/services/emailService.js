@@ -41,13 +41,15 @@ const shell = ({ eyebrow, title, body, actionLabel, actionUrl, footnote }) => `
   <body style="margin:0;padding:0;background:#0a0a08;color:#f7f4ec;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
     <div style="max-width:560px;margin:0 auto;padding:36px 18px">
       <div style="padding:32px;border-radius:22px;background:#151510;border:1px solid rgba(247,244,236,.1)">
-        <div style="margin-bottom:26px;display:flex;align-items:center;gap:12px">
-          ${emailLogoUrl ? `<img src="${escapeHtml(emailLogoUrl)}" width="48" height="48" alt="Hakoware" style="display:block;width:48px;height:48px;border:0;border-radius:13px" />` : ''}
-          <div>
-            <div style="color:#f7f4ec;font-size:15px;font-weight:650;line-height:1.1">Hakoware</div>
-            <div style="margin-top:4px;color:#777268;font-size:11px;line-height:1.1">social game</div>
-          </div>
-        </div>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px 0;border-collapse:collapse">
+          <tr>
+            ${emailLogoUrl ? `<td valign="middle" style="padding:0 12px 0 0"><img src="${escapeHtml(emailLogoUrl)}" width="48" height="48" alt="Hakoware" style="display:block;width:48px;height:48px;border:0;border-radius:13px" /></td>` : ''}
+            <td valign="middle" style="padding:0;vertical-align:middle">
+              <div style="margin:0;color:#f7f4ec;font-size:15px;font-weight:650;line-height:18px">Hakoware</div>
+              <div style="margin:3px 0 0 0;color:#777268;font-size:11px;line-height:14px">social game</div>
+            </td>
+          </tr>
+        </table>
         <div style="margin-bottom:12px;color:#e7b35a;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">${eyebrow}</div>
         <h1 style="margin:0;color:#f7f4ec;font-size:26px;line-height:1.15;font-weight:650;letter-spacing:-.03em">${title}</h1>
         <div style="margin-top:16px;color:#b8b3a7;font-size:15px;line-height:1.65">${body}</div>
