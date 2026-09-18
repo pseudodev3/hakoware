@@ -13,7 +13,6 @@ import { ContractRecapModal } from './features/friendship/components/ContractRec
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { LandingPage } from './features/landing/LandingPage';
-import { WaterDivinationModal } from './features/auth/components/WaterDivinationModal';
 import { HomeView } from './features/home/HomeView';
 import { Arena } from './features/arena/components/Arena';
 import { YouView } from './features/profile/YouView';
@@ -240,7 +239,6 @@ function MainApp({ showToast }) {
         showToast={showToast}
       />
 
-      <WaterDivinationModal />
       </Layout>
     </>
   );
