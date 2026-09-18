@@ -89,7 +89,7 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
 
       void sendFriendRequestEmail(email, user.displayName, true);
       return res.status(202).json({
-        requiresSignup: true,
+        inviteReady: true,
         inviteUrl: `${frontendUrl()}/?join=1`,
         recipientEmail: pendingInvite.recipientEmail,
         templateId: pendingInvite.templateId,
@@ -121,7 +121,13 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
 
     await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: email });
     void sendFriendRequestEmail(friend.email, user.displayName, false);
-    return res.status(201).json(friendship);
+    return res.status(202).json({
+      inviteReady: true,
+      inviteUrl: `${frontendUrl()}/?join=1`,
+      recipientEmail: email,
+      templateId: friendship.templateId,
+      expiresAt: null
+    });
   } catch (err) {
     console.error('Create contract failed:', err.message);
     return res.status(500).json({ msg: 'Could not create contract' });
