@@ -203,6 +203,8 @@ Do not say these skills are installed unless the environment confirms that. If t
 
 The UI cleanup exposed that some screens were visually clean but too wordy.
 
+Canonical voice guide: `docs/VOICE.md`
+
 The current copy direction is:
 
 **state first, action second, explanation only when needed.**
