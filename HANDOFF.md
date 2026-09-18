@@ -9,7 +9,7 @@
 > Transactional email: Brevo  
 > Last updated: **2026-09-19**
 >
-> Current main baseline: **`a7c3db710f9703b8f15c0287fd74988eece61f69`**
+> Current main baseline: **`b6c70ae893f7badc9502540cc6651e006262715a`**
 >
 > The fastest safe resume prompt is:
 >
@@ -17,7 +17,7 @@
 
 ## 1. Current status
 
-Current `main` already includes the recent UI simplification, responsive polish, and core microcopy compression.
+Current `main` includes the recent UI simplification, responsive polish, core microcopy compression, the secondary signed-in copy pass, and the canonical voice guide.
 
 Latest relevant commits:
 
@@ -26,6 +26,7 @@ Latest relevant commits:
 - `01581b64734ca98151eac635b924a4309c4218d4` - responsive spacing and typography pass
 - `f0d623858516cc6f6da970a369b830c756bdff18` - compress core Hakoware microcopy
 - `a7c3db710f9703b8f15c0287fd74988eece61f69` - finish core microcopy compression
+- `b6c70ae893f7badc9502540cc6651e006262715a` - compress secondary UI copy and add voice guide
 
 At handoff time:
 
@@ -771,37 +772,34 @@ Keep real iPhone screenshots as a primary UX signal.
 
 ## 25. What to do next
 
-The current next product/design direction is:
+The broad signed-in copy-compression pass is complete on `main`.
 
-### Continue copy compression beyond core screens
+It now covers:
 
-Core high-traffic copy is already compressed on `main`.
-
-Next candidates:
-
+- Home;
+- Contracts and contract creation;
+- check-in/settings flows;
 - Arena;
 - You;
-- Notifications;
-- recap copy;
-- lower-frequency modal copy;
-- toasts and empty states.
+- Notifications and voice inbox;
+- recaps;
+- bounty/pressure modals;
+- key toasts and empty states.
 
-Before changing copy, preserve explicit consequences for destructive/high-stakes actions.
+The canonical copy standard is `docs/VOICE.md`.
 
-### Write a short Hakoware voice guide
+### Next copy work should be evidence-led
 
-A useful next artifact would be a short section/file defining:
+Do not start another broad rewrite by default.
 
-- sentence length;
-- tone;
-- what words Hakoware uses consistently;
-- what copy patterns are banned;
-- examples for state/action/error/success/danger;
-- how funny the product can be without sounding childish.
+Use real iPhone screenshots and actual gameplay to find:
 
-Suggested principle:
+- text that wraps badly;
+- copy that became too terse to understand;
+- backend-generated notification messages that still sound verbose;
+- high-stakes actions whose consequences need clearer wording.
 
-**short, specific, slightly mischievous, never corporate, never over-explain.**
+Preserve the current short voice and only expand copy when clarity or consequences require it.
 
 ## 26. Resume checklist for a new chat
 
