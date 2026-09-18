@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Clock3, Dice5, Mail, Plus, Swords, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
+import { WorldEventBanner } from '../../../shared/components/WorldEventBanner';
 import { ContractCard } from './ContractCard';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { getBankruptPartner } from '../contractState';
@@ -62,13 +63,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         <div className={chaosContracts ? 'chaos' : ''}><small>Chaos</small><strong>{chaosContracts}</strong><span>{chaosContracts ? 'unstable contracts' : 'none active'}</span></div>
       </section>
 
-      {worldEvent && (
-        <div className="contracts-world-strip">
-          <Swords size={15} strokeWidth={1.9} />
-          <span><strong>{worldEvent.name}</strong> · {worldEvent.description}</span>
-          <b>{worldEvent.theme}</b>
-        </div>
-      )}
+      <WorldEventBanner event={worldEvent} compact />
 
       {pendingReceived.length > 0 && (
         <section className="contract-section">
