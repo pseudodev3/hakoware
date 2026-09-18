@@ -20,7 +20,7 @@ export const VoiceNotesInbox = () => {
       setNotes(data || []);
     } catch (error) {
       console.error('Failed to load voice notes:', error);
-      setPlaybackError('Could not sync voice notes.');
+      setPlaybackError('Voice notes could not sync.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export const VoiceNotesInbox = () => {
           await player.play();
           setIsPlaying(true);
         } catch {
-          setPlaybackError('Playback could not start.');
+          setPlaybackError('Could not play voice note.');
         }
       }
       return;
@@ -122,12 +122,12 @@ export const VoiceNotesInbox = () => {
         {loading && notes.length === 0 ? (
           <div className="inbox-empty">
             <Loader2 className="animate-spin" aria-hidden="true" />
-            <p>Syncing voice notes…</p>
+            <p>Syncing…</p>
           </div>
         ) : notes.length === 0 ? (
           <div className="inbox-empty">
             <MessageSquare size={36} className="empty-icon" aria-hidden="true" />
-            <p>No voice notes yet.</p>
+            <p>No voice notes.</p>
           </div>
         ) : (
           notes.map((note) => {
