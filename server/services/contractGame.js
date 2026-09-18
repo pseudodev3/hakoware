@@ -303,16 +303,40 @@ const refreshGameState = async (friendship, now = new Date()) => {
 
   const bankruptcyEvents = [];
   let debtChanged = false;
+  const seasonEnd = friendship.season?.endsAt ? new Date(friendship.season.endsAt) : null;
+  const debtClock = seasonEnd && seasonEnd < now ? seasonEnd : now;
+
   for (const [key, userId, displayName] of [
     ['user1Perspective', friendship.user1, friendship.user1DisplayName],
     ['user2Perspective', friendship.user2, friendship.user2DisplayName]
   ]) {
     const perspective = friendship[key];
     if (!perspective) continue;
-    const wasBankrupt = Boolean(perspective.isBankrupt);
-    const state = syncDebtState(perspective, now);
-    debtChanged = true;
-    if (state.isBankrupt && !wasBankrupt) {
+
+    const before = {
+      calculatedDebt: Number(perspective.calculatedDebt) || 0,
+      daysMissed: Number(perspective.daysMissed) || 0,
+      isBankrupt: Boolean(perspective.isBankrupt),
+      isInWarningZone: Boolean(perspective.isInWarningZone),
+      daysUntilBankrupt: Number(perspective.daysUntilBankrupt) || 0,
+      wasBankrupt: Boolean(perspective.wasBankrupt),
+      bankruptAt: perspective.bankruptAt ? new Date(perspective.bankruptAt).getTime() : null
+    };
+
+    const state = syncDebtState(perspective, debtClock);
+    const afterBankruptAt = perspective.bankruptAt ? new Date(perspective.bankruptAt).getTime() : null;
+    const changed =
+      before.calculatedDebt !== state.totalDebt ||
+      before.daysMissed !== state.daysMissed ||
+      before.isBankrupt !== state.isBankrupt ||
+      before.isInWarningZone !== state.isInWarningZone ||
+      before.daysUntilBankrupt !== state.daysUntilBankrupt ||
+      before.wasBankrupt !== Boolean(perspective.wasBankrupt) ||
+      before.bankruptAt !== afterBankruptAt;
+
+    if (changed) debtChanged = true;
+
+    if (state.isBankrupt && !before.isBankrupt) {
       bankruptcyEvents.push({
         userId: idString(userId),
         displayName: displayName || 'A contract partner',
