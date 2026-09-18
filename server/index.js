@@ -2,9 +2,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const VoiceNote = require('./models/VoiceNote');
 require('dotenv').config();
 const { assertBucketConfig } = require('./services/bucketStorage');
-const { getEmailStatus, verifyEmailTransport } = require('./services/emailService');
+const { verifyEmailTransport } = require('./services/emailService');
 const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
 const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
@@ -101,6 +102,14 @@ let server;
 async function start() {
   await mongoose.connect(MONGO_URI);
   console.log('Connected to MongoDB');
+
+  const legacyVoiceMigration = await VoiceNote.updateMany(
+    { status: { $exists: false } },
+    { $set: { status: 'COMMITTED', expiresAt: null } }
+  );
+  if (legacyVoiceMigration.modifiedCount > 0) {
+    console.log('Migrated legacy voice notes:', legacyVoiceMigration.modifiedCount);
+  }
 
   const emailStatus = await verifyEmailTransport();
   if (!emailStatus.configured) {
