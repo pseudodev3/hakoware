@@ -166,7 +166,12 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
         : checkin.bounty?.outcome === 'ESCAPED'
           ? ' · bounty escaped'
           : '';
-      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}`, 'SUCCESS');
+      const recovery = checkin.recovery?.started
+        ? ' · recovery started · 1 clean check-in left'
+        : checkin.recovery?.completed
+          ? ' · bankruptcy recovery complete'
+          : '';
+      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}${recovery}`, 'SUCCESS');
     } else {
       showToast?.(`Voice uploaded, but the check-in was not recorded: ${checkin.error || 'unknown error'}`, 'ERROR');
     }
