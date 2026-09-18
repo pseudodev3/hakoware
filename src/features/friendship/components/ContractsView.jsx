@@ -82,12 +82,12 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         <Button variant="aura" icon={Plus} onClick={onAddFriend}>New contract</Button>
       </header>
 
-      <section className="contracts-overview">
-        <div><small>Active</small><strong>{friendships.length}</strong><span>contracts in play</span></div>
-        <div><small>Reports ready</small><strong>{completeSeasons}</strong><span>seasons complete</span></div>
-        <div className={bankruptPartners ? 'bankrupt' : ''}><small>Bankrupt partners</small><strong>{bankruptPartners}</strong><span>{bankruptPartners ? 'pressure is unlocked' : 'nobody underwater'}</span></div>
-        <div className={chaosContracts ? 'chaos' : ''}><small>Chaos</small><strong>{chaosContracts}</strong><span>{chaosContracts ? 'unstable contracts' : 'none active'}</span></div>
-      </section>
+      <div className="contracts-meta" aria-label="Contract summary">
+        <span><b>{friendships.length}</b> active</span>
+        {completeSeasons > 0 && <span><b>{completeSeasons}</b> report{completeSeasons === 1 ? '' : 's'} ready</span>}
+        {bankruptPartners > 0 && <span className="danger"><b>{bankruptPartners}</b> bankrupt partner{bankruptPartners === 1 ? '' : 's'}</span>}
+        {chaosContracts > 0 && <span><b>{chaosContracts}</b> Chaos</span>}
+      </div>
 
 
       {waitingOnThem > 0 && (
