@@ -49,7 +49,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <div className="first-contract-mark pending"><UserPlus size={24} strokeWidth={1.8} /></div>
           <p className="eyebrow">Challenge received</p>
           <h1>{inviter} put you under contract.</h1>
-          <p className="first-contract-copy">They picked <strong>{mode}</strong>. Accept it and Season 1 starts immediately—Duo XP, debt, Arena pressure and all.</p>
+          <p className="first-contract-copy">They picked <strong>{mode}</strong>. Accept it and Season 1 starts immediately. Duo XP, debt, Arena pressure and all.</p>
           <Button variant="aura" icon={ArrowRight} onClick={() => onNavigate('contracts')}>Review challenge</Button>
           {pendingInvitations.length > 1 && <p className="pending-count-note">+{pendingInvitations.length - 1} more challenge{pendingInvitations.length === 2 ? '' : 's'} waiting</p>}
         </section>
