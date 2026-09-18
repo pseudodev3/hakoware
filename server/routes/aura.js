@@ -298,6 +298,8 @@ router.get('/grudges/me', auth, async (req, res) => {
       'grudge.expiresAt': { $gt: now }
     }).sort({ 'grudge.createdAt': -1 });
 
+    await Promise.all(friendships.map((friendship) => refreshGameState(friendship)));
+
     return res.json(friendships.map((friendship) => {
       const isVictim = String(friendship.grudge.victimId) === String(req.user.id);
       const claimantIsUser1 = String(friendship.grudge.claimantId) === String(friendship.user1);
@@ -305,7 +307,7 @@ router.get('/grudges/me', auth, async (req, res) => {
       return {
         ...publicGrudge(friendship),
         role: isVictim ? 'VICTIM' : 'CLAIMANT',
-        revengeReady: isVictim && isBankruptPerspective(claimantPerspective, now),
+        revengeReady: isVictim && friendship.season?.status === 'ACTIVE' && Boolean(claimantPerspective?.isBankrupt),
         revengeCost: REVENGE_COST
       };
     }));
@@ -329,10 +331,15 @@ router.post('/grudges/:friendshipId/revenge', auth, async (req, res) => {
     });
     if (!friendship) return res.status(404).json({ msg: 'No active revenge window on this contract' });
 
+    await refreshGameState(friendship);
+    if (friendship.season?.status !== 'ACTIVE') {
+      return res.status(409).json({ msg: 'Revenge is paused until this contract starts another season' });
+    }
+
     const claimantId = friendship.grudge.claimantId;
     const claimantIsUser1 = String(claimantId) === String(friendship.user1);
     const claimantPerspective = claimantIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
-    if (!isBankruptPerspective(claimantPerspective, now)) {
+    if (!claimantPerspective?.isBankrupt) {
       return res.status(400).json({ msg: `${friendship.grudge.claimantName || 'They'} have not gone bankrupt yet` });
     }
 
@@ -516,11 +523,16 @@ router.post('/use-card', auth, async (req, res) => {
       const isUser1 = friendship.user1.toString() === req.user.id;
       const isUser2 = friendship.user2.toString() === req.user.id;
       if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
+
+      await refreshGameState(friendship);
+      if (friendship.season?.status !== 'ACTIVE') {
+        return res.status(409).json({ msg: 'Claim only works during an active season' });
+      }
       if (activeGrudge(friendship.grudge)) return res.status(400).json({ msg: 'This contract already has an active Grudge. Settle that beef first.' });
 
       const targetId = isUser1 ? friendship.user2 : friendship.user1;
       const targetPerspective = isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
-      if (!isBankruptPerspective(targetPerspective)) {
+      if (!targetPerspective?.isBankrupt) {
         return res.status(400).json({ msg: 'This contract partner is not bankrupt' });
       }
 
