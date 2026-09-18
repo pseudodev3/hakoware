@@ -3,6 +3,7 @@ import { Check, Clock3, Dice5, Mail, Plus, Swords, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { ContractCard } from './ContractCard';
 import { respondToInvitation } from '../../../services/friendshipService';
+import { getBankruptPartner } from '../contractState';
 import './ContractsView.css';
 
 const FALLBACK_NAMES = {
@@ -24,6 +25,11 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
   const modeName = (id) => modeNames[id] || FALLBACK_NAMES[id] || FALLBACK_NAMES.DONT_GHOST;
   const completeSeasons = friendships.filter((item) => item.season?.status === 'COMPLETE').length;
   const chaosContracts = friendships.filter((item) => item.templateId === 'CHAOS').length;
+  const bankruptPartners = friendships.filter((item) => getBankruptPartner(item, userId)).length;
+  const orderedFriendships = useMemo(
+    () => [...friendships].sort((a, b) => Number(Boolean(getBankruptPartner(b, userId))) - Number(Boolean(getBankruptPartner(a, userId)))),
+    [friendships, userId]
+  );
 
   const respond = async (friendship, action) => {
     const id = friendship._id || friendship.id;
@@ -52,6 +58,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
       <section className="contracts-overview">
         <div><small>Active</small><strong>{friendships.length}</strong><span>contracts in play</span></div>
         <div><small>Reports ready</small><strong>{completeSeasons}</strong><span>seasons complete</span></div>
+        <div className={bankruptPartners ? 'bankrupt' : ''}><small>Bankrupt partners</small><strong>{bankruptPartners}</strong><span>{bankruptPartners ? 'pressure is unlocked' : 'nobody underwater'}</span></div>
         <div className={chaosContracts ? 'chaos' : ''}><small>Chaos</small><strong>{chaosContracts}</strong><span>{chaosContracts ? 'unstable contracts' : 'none active'}</span></div>
       </section>
 
@@ -117,7 +124,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
           <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active seasons yet.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Choose a mode</Button></div>
         ) : (
           <div className="contracts-grid">
-            {friendships.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
+            {orderedFriendships.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
           </div>
         )}
       </section>
