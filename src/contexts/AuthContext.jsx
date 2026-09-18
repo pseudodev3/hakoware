@@ -72,8 +72,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = (email, password, displayName) => authenticate('/auth/signup', { email, password, displayName });
-  const login = (email, password) => authenticate('/auth/login', { email, password });
+  const signup = (username, email, password) => authenticate('/auth/signup', { username, email, password });
+  const login = (identifier, password) => authenticate('/auth/login', { identifier, password });
+
+  const claimUsername = async (username) => {
+    try {
+      const nextUser = withUid(await api.put('/auth/username', { username }));
+      seedResource(RESOURCE_KEYS.user, nextUser);
+      setBootstrapData((current) => current ? { ...current, user: nextUser } : current);
+      setUser(nextUser);
+      return { success: true, user: nextUser };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -144,6 +156,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     signup,
     login,
+    claimUsername,
     logout,
     refreshUser,
     refreshBootstrap,

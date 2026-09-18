@@ -164,9 +164,11 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
 
     setBusy('share-duo');
     try {
-      const partner = partnerName(strongest);
+      const partnerUser = partnerFor(strongest);
+      const partner = partnerUser?.username ? `@${partnerUser.username}` : partnerName(strongest);
+      const userIdentity = user.username ? `@${user.username}` : user.displayName;
       const blob = await buildDuoShareCard({
-        userName: user.displayName,
+        userName: userIdentity,
         partnerName: partner,
         duoLevel: strongest.duoLevel || 1,
         duoTitle: strongest.duoTitle || 'New Contract',
@@ -178,7 +180,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
       const result = await shareHakoware({
         source: 'DUO',
         title: 'Hakoware Duo',
-        text: `${user.displayName} × ${partner} · Duo Lv. ${strongest.duoLevel || 1} · ${strongest.duoTitle || 'New Contract'}`,
+        text: `${userIdentity} × ${partner} · Duo Lv. ${strongest.duoLevel || 1} · ${strongest.duoTitle || 'New Contract'}`,
         url: '',
         files: [file]
       });
@@ -228,7 +230,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
     <div className="you-view">
       <section className="identity-card">
         <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
-        <div className="identity-copy"><p className="eyebrow">Player profile</p><h1>{user.displayName}</h1><p>{user.email}</p></div>
+        <div className="identity-copy"><p className="eyebrow">Player profile</p><h1>{user.displayName}</h1><p>{user.username ? `@${user.username}` : 'Hakoware player'}</p></div>
         <div className="nen-chip"><Sparkles size={14} strokeWidth={1.8} /> {user.nenType ? typeLabel(user.nenType) : 'No affinity'}</div>
       </section>
 

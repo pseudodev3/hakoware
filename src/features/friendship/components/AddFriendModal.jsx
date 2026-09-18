@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { BookOpen, Check, Clock3, Copy, Dice5, Dumbbell, Hammer, HeartHandshake, LockKeyhole, Mail, MessageCircle, Share2, SlidersHorizontal } from 'lucide-react';
+import { AtSign, BookOpen, Check, Clock3, Copy, Dice5, Dumbbell, Hammer, HeartHandshake, LockKeyhole, MessageCircle, Share2, SlidersHorizontal } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
@@ -31,7 +31,7 @@ const ICONS = {
 
 export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, templates = [] }) => {
   const modes = templates.length ? templates : FALLBACK_TEMPLATES;
-  const [email, setEmail] = useState('');
+  const [friendIdentifier, setFriendIdentifier] = useState('');
   const [limit, setLimit] = useState(7);
   const [templateId, setTemplateId] = useState('DONT_GHOST');
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
   };
 
   const reset = () => {
-    setEmail('');
+    setFriendIdentifier('');
     setLimit(7);
     setTemplateId('DONT_GHOST');
     setShareInvite(null);
@@ -62,7 +62,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     event.preventDefault();
     setLoading(true);
     const effectiveLimit = selected.id === 'CUSTOM' ? limit : selected.limit;
-    const result = await sendFriendInvitation(email, effectiveLimit, selected.id);
+    const result = await sendFriendInvitation(friendIdentifier, effectiveLimit, selected.id);
     if (result.success && result.inviteReady) {
       setShareInvite({ ...result, modeName: selected.name });
       await onRefresh?.();
@@ -90,7 +90,9 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
   const share = async () => {
     if (!shareInvite) return;
-    const text = `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Open Hakoware with ${shareInvite.recipientEmail} and it’ll be waiting for you.`;
+    const text = shareInvite.requiresSignup
+      ? `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Join Hakoware with ${shareInvite.recipientEmail} and it’ll be waiting for you.`
+      : `I sent you a ${shareInvite.modeName || 'Hakoware'} contract on Hakoware. Open it and it’ll be waiting for you.`;
     const result = await shareHakoware({
       source: 'INVITE',
       title: 'Hakoware contract',
@@ -114,7 +116,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           <div className="invite-share-icon"><Check size={20} strokeWidth={2} /></div>
           <div className="invite-share-copy">
             <strong>{shareInvite.modeName || 'Contract'} is waiting.</strong>
-            <p>Share this link too. When <b>{shareInvite.recipientEmail}</b> opens Hakoware, the request will be waiting.</p>
+            <p>Share this link too. When <b>{shareInvite.recipientLabel}</b> opens Hakoware, the request will be waiting.</p>
           </div>
           <button type="button" className="invite-link" onClick={copyInvite} aria-label="Copy Hakoware invite link">
             <span>{shareInvite.inviteUrl}</span>
@@ -167,14 +169,16 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
           <Input
             label="Who are you challenging?"
-            type="email"
-            placeholder="friend@example.com"
-            icon={Mail}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
+            type="text"
+            placeholder="@username or friend@example.com"
+            icon={AtSign}
+            value={friendIdentifier}
+            onChange={(event) => setFriendIdentifier(event.target.value)}
+            autoCapitalize="none"
+            spellCheck={false}
             required
           />
+          <p className="contract-field-note">Use their @username if they are already on Hakoware, or an email address to invite someone new.</p>
 
           {selected?.id === 'CUSTOM' && (
             <>

@@ -30,12 +30,13 @@ const HOUR = 60 * 60 * 1000;
 router.use(auth, founder);
 
 const ownedPlayers = (ownerId) => User.find({ isTestAccount: true, testOwnerId: ownerId })
-  .select('_id displayName email auraBalance inventory isTestAccount testOwnerId')
+  .select('_id displayName username email auraBalance inventory isTestAccount testOwnerId')
   .sort({ createdAt: 1 });
 
 const playerView = (user) => ({
   _id: user._id,
   displayName: user.displayName,
+  username: user.username || null,
   email: user.email,
   auraBalance: Number(user.auraBalance) || 0,
   inventory: user.inventory || [],
@@ -61,8 +62,8 @@ const ownedContract = async (ownerId, friendshipId) => {
 
 const contractView = async (friendship) => {
   const populated = await Friendship.findById(friendship._id)
-    .populate('user1', 'displayName email auraBalance isTestAccount')
-    .populate('user2', 'displayName email auraBalance isTestAccount')
+    .populate('user1', 'displayName username email auraBalance isTestAccount')
+    .populate('user2', 'displayName username email auraBalance isTestAccount')
     .lean();
   return populated;
 };
@@ -72,8 +73,8 @@ const labSnapshot = async (ownerId) => {
   const ids = players.map((player) => player._id);
   const contracts = ids.length
     ? await Friendship.find({ user1: { $in: ids }, user2: { $in: ids } })
-      .populate('user1', 'displayName email auraBalance isTestAccount')
-      .populate('user2', 'displayName email auraBalance isTestAccount')
+      .populate('user1', 'displayName username email auraBalance isTestAccount')
+      .populate('user2', 'displayName username email auraBalance isTestAccount')
       .sort({ createdAt: -1 })
       .lean()
     : [];
@@ -107,8 +108,11 @@ router.post('/players', async (req, res) => {
 
     const unique = crypto.randomBytes(5).toString('hex');
     const password = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 10);
+    const testUsername = `test_${unique}`;
     const user = await User.create({
       displayName,
+      username: testUsername,
+      usernameNormalized: testUsername,
       email: `test-${String(req.user.id).slice(-8)}-${unique}@hakoware.test`,
       password,
       auraBalance: 500,

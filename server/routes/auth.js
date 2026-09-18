@@ -11,6 +11,7 @@ const auth = require('../middleware/auth');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 const { initializeContractGame, recordEvent } = require('../services/contractGame');
+const { normalizeUsername, validateUsername } = require('../services/username');
 
 const NEN_TYPES = new Set(['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST']);
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -24,6 +25,7 @@ const publicUser = (user) => {
   delete data.welcomeAuraGranted;
   delete data.lastDailyAuraBonusKey;
   delete data.authVersion;
+  delete data.usernameNormalized;
   return data;
 };
 const signupLimiter = createRateLimiter({
@@ -50,25 +52,40 @@ const resetLimiter = createRateLimiter({
   max: 10,
   message: 'Too many reset attempts. Try again later.'
 });
+const usernameLimiter = createRateLimiter({
+  name: 'auth-username',
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: 'Too many username attempts. Try again later.'
+});
 
 
 router.post('/signup', signupLimiter, async (req, res) => {
   try {
-    const displayName = String(req.body.displayName || '').trim();
+    const usernameCheck = validateUsername(req.body.username);
     const email = normalizeEmail(req.body.email);
     const password = String(req.body.password || '');
 
-    if (displayName.length < 2 || displayName.length > 32) {
-      return res.status(400).json({ msg: 'Display name must be between 2 and 32 characters' });
-    }
+    if (!usernameCheck.valid) return res.status(400).json({ msg: usernameCheck.message });
     if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ msg: 'Enter a valid email address' });
     if (password.length < 8) return res.status(400).json({ msg: 'Password must be at least 8 characters' });
 
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({
+      $or: [
+        { email },
+        { usernameNormalized: usernameCheck.normalized }
+      ]
+    });
+    if (existing?.usernameNormalized === usernameCheck.normalized) {
+      return res.status(400).json({ msg: 'That username is unavailable' });
+    }
     if (existing) return res.status(400).json({ msg: 'An account with this email already exists' });
 
     const user = new User({
-      displayName,
+      displayName: usernameCheck.username,
+      username: usernameCheck.username,
+      usernameNormalized: usernameCheck.normalized,
       email,
       password: await bcrypt.hash(password, 10),
       auraBalance: 100,
@@ -89,7 +106,7 @@ router.post('/signup', signupLimiter, async (req, res) => {
 
     for (const invite of pendingInvites) {
       if (invite.inviterId.toString() === user._id.toString()) continue;
-      const inviter = await User.findById(invite.inviterId).select('displayName');
+      const inviter = await User.findById(invite.inviterId).select('displayName username');
       if (!inviter) continue;
 
       const existingFriendship = await Friendship.findOne({
@@ -119,6 +136,9 @@ router.post('/signup', signupLimiter, async (req, res) => {
     void sendWelcomeEmail(user.email, user.displayName);
     return res.status(201).json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
+    if (err?.code === 11000 && err?.keyPattern?.usernameNormalized) {
+      return res.status(400).json({ msg: 'That username is unavailable' });
+    }
     console.error('Signup failed:', err.message);
     return res.status(500).json({ msg: 'Could not create account' });
   }
@@ -126,11 +146,16 @@ router.post('/signup', signupLimiter, async (req, res) => {
 
 router.post('/login', loginLimiter, async (req, res) => {
   try {
-    const email = normalizeEmail(req.body.email);
+    const identifier = String(req.body.identifier || req.body.email || '').trim();
     const password = String(req.body.password || '');
-    const user = await User.findOne({ email });
+    const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
+    const query = isEmail
+      ? { email: normalizeEmail(identifier) }
+      : { usernameNormalized: normalizeUsername(identifier) };
+
+    const user = identifier ? await User.findOne(query) : null;
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ msg: 'Invalid email or password' });
+      return res.status(400).json({ msg: 'Invalid username/email or password' });
     }
     return res.json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
@@ -139,10 +164,36 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
+router.put('/username', auth, usernameLimiter, async (req, res) => {
+  try {
+    const usernameCheck = validateUsername(req.body.username);
+    if (!usernameCheck.valid) return res.status(400).json({ msg: usernameCheck.message });
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    if (user.usernameNormalized) return res.status(409).json({ msg: 'Username is already set' });
+
+    const existing = await User.findOne({
+      usernameNormalized: usernameCheck.normalized,
+      _id: { $ne: user._id }
+    }).select('_id');
+    if (existing) return res.status(400).json({ msg: 'That username is unavailable' });
+
+    user.username = usernameCheck.username;
+    user.usernameNormalized = usernameCheck.normalized;
+    await user.save();
+    return res.json(publicUser(user));
+  } catch (err) {
+    if (err?.code === 11000) return res.status(400).json({ msg: 'That username is unavailable' });
+    console.error('Claim username failed:', err.message);
+    return res.status(500).json({ msg: 'Could not claim username' });
+  }
+});
+
 router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion');
+      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion -usernameNormalized');
     if (!user) return res.status(404).json({ msg: 'User not found' });
     return res.json(user);
   } catch (err) {

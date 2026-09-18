@@ -64,7 +64,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
             <span className="sidebar-avatar">{user?.displayName?.[0]?.toUpperCase() || 'U'}</span>
             <span className="sidebar-user-copy">
               <strong>{user?.displayName}</strong>
-              <small>{user?.auraBalance || 0} Aura</small>
+              <small>{user?.username ? `@${user.username} · ${user?.auraBalance || 0} Aura` : `${user?.auraBalance || 0} Aura`}</small>
             </span>
           </button>
 

@@ -41,7 +41,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
   if (friendships.length === 0 && pendingInvitations.length > 0) {
     const invitation = pendingInvitations[0];
-    const inviter = invitation?.user1?.displayName || 'Someone';
+    const inviter = invitation?.user1?.username ? `@${invitation.user1.username}` : (invitation?.user1?.displayName || 'Someone');
     const mode = String(invitation?.templateId || 'DONT_GHOST').replaceAll('_', ' ').toLowerCase();
     return (
       <div className="home-view onboarding-home">

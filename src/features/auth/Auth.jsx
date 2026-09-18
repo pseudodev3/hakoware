@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Lock, Mail, Moon, Sun, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AtSign, Lock, Mail, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { Input } from '../../shared/components/Input';
@@ -51,7 +51,7 @@ const AuthShell = ({ children, onBack }) => {
 };
 
 export const Login = ({ onToggle, onBack, showToast }) => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -63,7 +63,7 @@ export const Login = ({ onToggle, onBack, showToast }) => {
     setLoading(true);
     setError('');
     try {
-      const result = await login(email, password);
+      const result = await login(identifier, password);
       if (!result.success) setError(result.error || 'Could not sign you in.');
     } catch {
       setError('Hakoware could not reach the server.');
@@ -78,7 +78,18 @@ export const Login = ({ onToggle, onBack, showToast }) => {
         <AuthBrand eyebrow="Hakoware" title="Welcome back" description="Your contracts, Aura and unfinished business are right where you left them." />
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="auth-error-banner" role="alert">{error}</div>}
-          <Input label="Email" type="email" placeholder="you@example.com" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input
+            label="Username or email"
+            type="text"
+            placeholder="@username or you@example.com"
+            icon={AtSign}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            required
+          />
           <div className="input-with-action-label">
             <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot password</button>
@@ -93,7 +104,7 @@ export const Login = ({ onToggle, onBack, showToast }) => {
 };
 
 export const Signup = ({ onToggle, onBack }) => {
-  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -105,7 +116,7 @@ export const Signup = ({ onToggle, onBack }) => {
     setLoading(true);
     setError('');
     try {
-      const result = await signup(email, password, displayName);
+      const result = await signup(username, email, password);
       if (!result.success) setError(result.error || 'Could not create your account.');
     } catch {
       setError('Hakoware could not complete registration.');
@@ -117,16 +128,91 @@ export const Signup = ({ onToggle, onBack }) => {
   return (
     <AuthShell onBack={onBack}>
       <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
-        <AuthBrand eyebrow="Create your ID" title="Start a contract" description="Pick a name, bring a friend, then decide how long silence gets to stay free." />
+        <AuthBrand eyebrow="Create your ID" title="Claim your username" description="Your @username is how people find you on Hakoware. Email stays behind the scenes for recovery and important account messages." />
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="auth-error-banner" role="alert">{error}</div>}
-          <Input label="Display name" type="text" placeholder="How friends know you" icon={User} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-          <Input label="Email" type="email" placeholder="you@example.com" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Input
+            label="Username"
+            type="text"
+            placeholder="ghostt"
+            icon={AtSign}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={3}
+            maxLength={20}
+            required
+          />
+          <p className="auth-field-note">3-20 characters. Letters, numbers, dots and underscores.</p>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            icon={Mail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+          <p className="auth-field-note">Used for recovery and important account notifications.</p>
+          <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
           <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Create account</Button>
         </form>
         <div className="auth-footer"><p>Already have an account? <button type="button" onClick={onToggle}>Log in</button></p></div>
       </motion.div>
     </AuthShell>
+  );
+};
+
+export const ClaimUsername = () => {
+  const [username, setUsername] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const { user, claimUsername, logout } = useAuth();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    const result = await claimUsername(username);
+    if (!result.success) setError(result.error || 'Could not claim that username.');
+    setSaving(false);
+  };
+
+  return (
+    <div className="auth-container">
+      <div className="auth-orbit" aria-hidden="true" />
+      <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
+        <AuthBrand
+          eyebrow="One-time setup"
+          title="Claim your Hakoware username"
+          description="This becomes your public @username. Your email stays private and continues handling recovery and important account messages."
+        />
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {error && <div className="auth-error-banner" role="alert">{error}</div>}
+          <Input
+            label="Username"
+            type="text"
+            placeholder="ghostt"
+            icon={AtSign}
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={3}
+            maxLength={20}
+            required
+          />
+          <p className="auth-field-note">3-20 characters. Letters, numbers, dots and underscores. Usernames are unique.</p>
+          <Button variant="aura" className="w-full" size="lg" loading={saving} icon={ArrowRight} type="submit">Claim @{username.replace(/^@+/, '') || 'username'}</Button>
+        </form>
+        <div className="auth-footer">
+          <p>Signed in as {user?.email}. <button type="button" onClick={logout}>Use another account</button></p>
+        </div>
+      </motion.div>
+    </div>
   );
 };

@@ -55,6 +55,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
   const status = statusCopy(stats);
   const name = friend.displayName || 'Contract partner';
+  const handle = friend.username ? `@${friend.username}` : null;
   const mode = MODE_NAMES[friendship.templateId] || MODE_NAMES.DONT_GHOST;
   const level = friendship.duoLevel || 1;
   const xpProgress = duoProgress(friendship.duoXP || 0, level);
@@ -97,7 +98,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
             <h3>{name}</h3>
             <span className={`contract-status ${status.tone}`}>{seasonDone ? 'Season clear' : status.label}</span>
           </div>
-          <p>{seasonDone ? 'Final report ready' : `${status.detail} · ${stats.limit}-day rule`}</p>
+          <p>{handle ? `${handle} · ` : ''}{seasonDone ? 'Final report ready' : `${status.detail} · ${stats.limit}-day rule`}</p>
         </div>
         <button className="contract-settings" onClick={() => onAction('SETTINGS', friendship)} aria-label={`Contract settings for ${name}`}>
           <Settings size={17} strokeWidth={1.8} />
