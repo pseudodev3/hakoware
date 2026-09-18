@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { getContractMeta, getUserFriendships } from './services/friendshipService';
-import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
 import { Login, Signup } from './features/auth/Auth';
 import { ResetPassword } from './features/auth/ResetPassword';
@@ -19,6 +17,7 @@ import { Arena } from './features/arena/components/Arena';
 import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
 import { returnToFounderSession } from './services/testLabService';
+import { prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
@@ -41,45 +40,38 @@ const TestSessionBar = ({ user }) => {
 };
 
 function MainApp({ showToast }) {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, bootstrapData, refreshBootstrap } = useAuth();
   const joining = isJoinLink();
   const [hasEntered, setHasEntered] = useState(joining);
   const [activeTab, setActiveTab] = useState('home');
-  const [friendships, setFriendships] = useState([]);
-  const [pendingReceived, setPendingReceived] = useState([]);
-  const [pendingSent, setPendingSent] = useState([]);
-  const [pendingExternal, setPendingExternal] = useState([]);
-  const [contractMeta, setContractMeta] = useState({ templates: [], worldEvent: null });
+  const [friendships, setFriendships] = useState(bootstrapData?.contracts?.active || []);
+  const [pendingReceived, setPendingReceived] = useState(bootstrapData?.contracts?.pendingReceived || []);
+  const [pendingSent, setPendingSent] = useState(bootstrapData?.contracts?.pendingSent || []);
+  const [pendingExternal, setPendingExternal] = useState(bootstrapData?.contracts?.pendingExternal || []);
+  const [contractMeta, setContractMeta] = useState(bootstrapData?.meta || { templates: [], worldEvent: null });
   const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
+
+  const applyBootstrap = (payload) => {
+    if (!payload) return;
+    const contracts = payload.contracts || {};
+    setFriendships(contracts.active || []);
+    setPendingReceived(contracts.pendingReceived || []);
+    setPendingSent(contracts.pendingSent || []);
+    setPendingExternal(contracts.pendingExternal || []);
+    if (payload.meta) setContractMeta(payload.meta);
+  };
 
   const loadData = async () => {
     if (!isAuthenticated || !user) return;
 
     try {
       const oldBalance = Number(user.auraBalance) || 0;
-      const [contracts, meta] = await Promise.all([
-        getUserFriendships(),
-        getContractMeta().catch((error) => {
-          console.error('Contract meta sync failed:', error);
-          return null;
-        })
-      ]);
+      const refreshed = await refreshBootstrap();
+      if (!refreshed.success) throw new Error(refreshed.error || 'Could not sync Hakoware');
 
-      setFriendships(contracts.active || []);
-      setPendingReceived(contracts.pendingReceived || []);
-      setPendingSent(contracts.pendingSent || []);
-      setPendingExternal(contracts.pendingExternal || []);
-      if (meta) setContractMeta(meta);
-
-      try {
-        await getUserAura();
-      } catch (auraError) {
-        console.error('Aura summary sync failed:', auraError);
-      }
-
-      const refreshed = await refreshUser();
+      applyBootstrap(refreshed.data);
       const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
       if (nextBalance > oldBalance) {
         showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
@@ -91,8 +83,16 @@ function MainApp({ showToast }) {
   };
 
   useEffect(() => {
-    if (isAuthenticated) loadData();
-  }, [isAuthenticated]);
+    if (!isAuthenticated) return undefined;
+
+    if (bootstrapData) {
+      applyBootstrap(bootstrapData);
+      return prefetchWarmTabs();
+    }
+
+    void loadData();
+    return undefined;
+  }, [isAuthenticated, bootstrapData?.generatedAt]);
 
   const handleAction = (type, friendship) => {
     if (type === 'ARENA') {
