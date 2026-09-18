@@ -248,6 +248,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/reset-password" element={<ResetPassword showToast={showToast} />} />
         <Route path="/reset-password/:token" element={<ResetPassword showToast={showToast} />} />
         <Route path="/founder" element={<FounderRoute showToast={showToast} />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
