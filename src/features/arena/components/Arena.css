@@ -8,7 +8,7 @@
 .arena-meta-line .danger,.arena-meta-line .danger b { color:var(--aura-red); }
 .arena-tabs { width:100%; display:flex; gap:20px; border-bottom:1px solid var(--border-subtle); }
 .arena-tabs button { min-height:40px; padding:0 1px; position:relative; color:var(--text-muted); font-size:.7rem; font-weight:620; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.arena-tabs button:active { transform:scale(.97); }
+.arena-tabs button:active { transform:scale(.96); }
 .arena-tabs button.active { color:var(--text-primary); }
 .arena-tabs button.active::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--aura-gold); }
 .arena-panel { overflow:hidden; background:transparent; }
