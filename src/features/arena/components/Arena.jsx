@@ -123,18 +123,14 @@ export const Arena = ({ friendships, showToast }) => {
       </header>
 
 
-      <section className="hunter-profile-strip">
-        <div className="hunter-profile-mark"><Sword size={20} strokeWidth={1.8} /></div>
-        <div className="hunter-profile-copy"><span>YOUR HUNTER RECORD</span><strong>{hunterProfile.rank || 'Rookie Hunter'}</strong><p>{hunterProfile.rep || 0} Rep · {hunterProfile.successfulHunts || 0} closes · {hunterProfile.conversionRate || 0}% conversion</p></div>
-        <div className="hunter-profile-earned"><small>Aura collected</small><strong>{hunterProfile.auraCollected || 0}</strong></div>
-      </section>
-
-      <section className="arena-summary">
-        <div><small>Open targets</small><strong>{openTargets}</strong><span>{bounties.length - openTargets} currently hunted</span></div>
-        <div><small>Aura in escrow</small><strong>{bountyPool}</strong><span>moves only on proof or escape</span></div>
-        <div><small>Public grudges</small><strong>{grudges.length}</strong><span>{grudges.length ? 'somebody made it personal' : 'peace, somehow'}</span></div>
-        <div className={activeAnomalies ? 'hot' : ''}><small>Live anomalies</small><strong>{activeAnomalies}</strong><span>{activeAnomalies ? 'contracts unstable' : 'quiet for now'}</span></div>
-      </section>
+      <div className="arena-meta-line" aria-label="Arena summary">
+        <span><b>{hunterProfile.rank || 'Rookie Hunter'}</b> · {hunterProfile.rep || 0} Rep · {hunterProfile.successfulHunts || 0} closes</span>
+        <span><b>{hunterProfile.auraCollected || 0}</b> Aura collected</span>
+        <span><b>{openTargets}</b> open target{openTargets === 1 ? '' : 's'}</span>
+        <span><b>{bountyPool}</b> Aura in escrow</span>
+        {grudges.length > 0 && <span><b>{grudges.length}</b> grudge{grudges.length === 1 ? '' : 's'}</span>}
+        {activeAnomalies > 0 && <span className="danger"><b>{activeAnomalies}</b> live anomal{activeAnomalies === 1 ? 'y' : 'ies'}</span>}
+      </div>
 
       <div className="arena-tabs" role="tablist" aria-label="Arena views">
         <button className={tab === 'bounties' ? 'active' : ''} onClick={() => setTab('bounties')} role="tab" aria-selected={tab === 'bounties'}>Bounties</button>
