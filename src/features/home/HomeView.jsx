@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowRight, Clock3, Dice5, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ArrowRight, CheckCircle2, Clock3, Dice5, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { WorldEventBanner } from '../../shared/components/WorldEventBanner';
 import { ContractCard } from '../friendship/components/ContractCard';
@@ -13,6 +13,16 @@ const contractState = (friendship, userId) => {
   const daysMissed = Math.floor(Math.max(0, Date.now() - new Date(perspective?.lastInteraction || Date.now())) / 86400000);
   const debt = (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
   return { debt, daysLeft: Math.max(0, limit - daysMissed), daysMissed };
+};
+
+const perspectiveFor = (friendship, userId) => {
+  const user1Id = friendship.user1?._id || friendship.user1;
+  return String(user1Id) === String(userId) ? friendship.user1Perspective : friendship.user2Perspective;
+};
+
+const partnerFor = (friendship, userId) => {
+  const user1Id = friendship.user1?._id || friendship.user1;
+  return String(user1Id) === String(userId) ? friendship.user2 : friendship.user1;
 };
 
 const priority = (friendship, userId) => {
@@ -37,6 +47,28 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const visible = (hot.length ? hot : sorted).slice(0, 3);
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
   const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
+  const [, refreshBriefingState] = useState(0);
+  const firstSeasonBriefing = useMemo(() => friendships.find((friendship) => {
+    if (friendship.season?.status !== 'ACTIVE' || Number(friendship.season?.number || 1) !== 1) return false;
+    if (Number(friendship.duoXP) > 0 || !friendship.season?.startedAt) return false;
+    const age = Date.now() - new Date(friendship.season.startedAt).getTime();
+    return age >= 0 && age <= 72 * 60 * 60 * 1000;
+  }) || null, [friendships]);
+  const briefingKey = firstSeasonBriefing
+    ? `hakoware-season-briefing:${firstSeasonBriefing._id || firstSeasonBriefing.id}:1`
+    : null;
+  const showSeasonBriefing = Boolean(briefingKey && localStorage.getItem(briefingKey) !== 'seen');
+
+  const dismissSeasonBriefing = () => {
+    if (briefingKey) localStorage.setItem(briefingKey, 'seen');
+    refreshBriefingState((value) => value + 1);
+  };
+
+  const makeFirstCheckin = () => {
+    if (!firstSeasonBriefing) return;
+    dismissSeasonBriefing();
+    onAction('CHECKIN', firstSeasonBriefing);
+  };
 
   if (friendships.length === 0 && pendingInvitations.length > 0) {
     const invitation = pendingInvitations[0];
@@ -74,21 +106,21 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   }
 
   if (friendships.length === 0) {
+    const identity = user.username ? `@${user.username}` : user.displayName;
     return (
       <div className="home-view onboarding-home">
         <section className="first-contract-card">
           <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
-          <p className="eyebrow">Start the game</p>
-          <h1>Pick a person. Pick your poison.</h1>
-          <p className="first-contract-copy">Choose a contract mode, invite someone you actually care about, then survive the season together. Check-ins build Duo XP. Silence builds debt. Chaos makes its own rules.</p>
-          <Button variant="aura" icon={Swords} onClick={onAddFriend}>Choose a contract</Button>
-          <div className="onboarding-rail" aria-label="How Hakoware works">
-            <span><b>01</b> Choose a game mode</span>
-            <span><b>02</b> Build your Duo level</span>
+          <p className="eyebrow">You’re in, {identity}</p>
+          <h1>Hakoware starts with one other person.</h1>
+          <p className="first-contract-copy">Pick someone you actually care about, choose the rules between you, and start Season 1. We’ll teach the rest when it becomes relevant.</p>
+          <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start your first contract</Button>
+          <div className="onboarding-rail" aria-label="How your first contract starts">
+            <span><b>01</b> Pick a person</span>
+            <span><b>02</b> Set the rules</span>
             <span><b>03</b> Survive the season</span>
           </div>
         </section>
-        <section className="home-note"><Sparkles size={17} strokeWidth={1.8} /><p>You start with <strong>{user.auraBalance || 0} Aura</strong>. Don’t waste it.</p></section>
       </div>
     );
   }
@@ -126,6 +158,26 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             </span>
             <ArrowRight size={17} strokeWidth={2} />
           </button>
+        );
+      })()}
+
+      {showSeasonBriefing && firstSeasonBriefing && (() => {
+        const partner = partnerFor(firstSeasonBriefing, userId);
+        const partnerName = partner?.username ? `@${partner.username}` : (partner?.displayName || 'your partner');
+        const limit = Number(perspectiveFor(firstSeasonBriefing, userId)?.limit) || 3;
+        return (
+          <section className="season-start-briefing">
+            <span className="season-start-mark"><CheckCircle2 size={18} strokeWidth={1.9} /></span>
+            <div className="season-start-copy">
+              <span>SEASON 1 STARTED</span>
+              <strong>You and {partnerName} are live.</strong>
+              <p>Check in within {limit} day{limit === 1 ? '' : 's'}. Valid check-ins build Duo XP. Miss the window and debt starts.</p>
+            </div>
+            <div className="season-start-actions">
+              <button type="button" className="season-start-dismiss" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={15} /></button>
+              <Button variant="aura" size="sm" onClick={makeFirstCheckin}>Make first check-in</Button>
+            </div>
+          </section>
         );
       })()}
 
