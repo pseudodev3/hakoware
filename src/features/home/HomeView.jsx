@@ -134,13 +134,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <p className="eyebrow">Your circle</p>
           <h1>{hot.length ? 'Something is happening.' : 'Everybody survived.'}</h1>
           <p>{hot.length ? `${hot.length} contract${hot.length === 1 ? '' : 's'} need attention right now.` : `${friendships.length} active contract${friendships.length === 1 ? '' : 's'} · no immediate fires.`}</p>
-          {worldEvent && (
-            <p className="home-world-rule">
-              <span>Weekly rule</span>
-              <strong>{worldEvent.name}</strong>
-              <b>{WORLD_RULE_COPY[worldEvent.id] || worldEvent.description}</b>
-            </p>
-          )}
         </div>
         <button className="aura-chip" onClick={() => onNavigate('you')} aria-label={`${user.auraBalance || 0} Aura, open profile`}><span>{user.auraBalance || 0}</span> Aura</button>
       </header>
@@ -200,6 +193,13 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <span><b>Active</b> {activeSeasons}</span>
         {completeReports > 0 && <span><b>Reports</b> {completeReports}</span>}
         {liveChaos > 0 && <span className="danger"><b>Chaos</b> {liveChaos} live</span>}
+        {worldEvent && (
+          <span className="world-rule">
+            <b>{worldEvent.name}</b>
+            <i>·</i>
+            {WORLD_RULE_COPY[worldEvent.id] || worldEvent.description}
+          </span>
+        )}
       </div>
 
       <section className="home-section">
