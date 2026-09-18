@@ -72,9 +72,12 @@ export const FriendshipSettingsModal = ({ isOpen, onClose, friendship, currentUs
     <Modal isOpen={isOpen} onClose={onClose} title={`Contract with ${friend.displayName}`} size="md">
       <div className="contract-settings-content">
         <section className={`contract-rule-summary ${isChaos ? 'chaos' : ''}`}>
-          <span className="contract-rule-icon">{isChaos ? <Dice5 size={19} /> : <ShieldCheck size={19} />}</span>
-          <div><span>GAME MODE</span><strong>{modeName}</strong><p>{perspective?.limit || 7}-day rule · Season {season.number || 1} · {season.status?.toLowerCase() || 'active'}</p></div>
-          <span className="contract-duo-badge"><Trophy size={13} /> Lv. {friendship.duoLevel || 1}</span>
+          <span className="contract-rule-icon">{isChaos ? <Dice5 size={18} /> : <ShieldCheck size={18} />}</span>
+          <div>
+            <strong>{modeName}</strong>
+            <p>{perspective?.limit || 7}-day rule · Season {season.number || 1} · {season.status?.toLowerCase() || 'active'}</p>
+          </div>
+          <span className="contract-duo-badge"><Trophy size={12} /> Duo Lv. {friendship.duoLevel || 1}</span>
         </section>
 
         {isCustom ? (
@@ -86,7 +89,7 @@ export const FriendshipSettingsModal = ({ isOpen, onClose, friendship, currentUs
           </form>
         ) : (
           <section className="fixed-rule-panel">
-            <Clock3 size={18} strokeWidth={1.8} />
+            <Clock3 size={17} strokeWidth={1.8} />
             <div><strong>{perspective?.limit || 7}-day grace period</strong><p>{modeName} has fixed rules for the whole season. Start another mode if you want a different cadence.</p></div>
           </section>
         )}
