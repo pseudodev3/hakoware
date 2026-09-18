@@ -28,6 +28,7 @@ const {
 } = require('../services/contractGame');
 const { syncDebtState } = require('../services/debtState');
 const { ensureActiveGameState, loadContractsForUser } = require('../services/contractQueries');
+const { normalizeUsername } = require('../services/username');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -64,7 +65,9 @@ router.get('/meta', auth, (req, res) => {
 
 router.post('/', auth, inviteLimiter, async (req, res) => {
   try {
-    const email = String(req.body.friendEmail || '').trim().toLowerCase();
+    const identifier = String(req.body.friendIdentifier || req.body.friendEmail || '').trim();
+    const email = /^\S+@\S+\.\S+$/.test(identifier) ? identifier.toLowerCase() : null;
+    const usernameNormalized = email ? null : normalizeUsername(identifier);
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
@@ -74,11 +77,26 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
       ? normalizeLimit(req.body.limit, user.defaultLimit || 7)
       : template.limit;
 
-    if (!email) return res.status(400).json({ msg: 'Friend email is required' });
+    if (!identifier) return res.status(400).json({ msg: 'Enter a username or email' });
     if (!limit) return res.status(400).json({ msg: 'Grace period must be between 1 and 30 days' });
-    if (email === user.email) return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
+    if (!email && !/^[a-z0-9][a-z0-9._]{1,18}[a-z0-9]$/.test(usernameNormalized)) {
+      return res.status(400).json({ msg: 'Enter a valid username or email' });
+    }
+    if (email && email === user.email) return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
+    if (!email && usernameNormalized === user.usernameNormalized) {
+      return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
+    }
 
-    const friend = await User.findOne({ email });
+    const friend = email
+      ? await User.findOne({ email })
+      : await User.findOne({ usernameNormalized });
+
+    if (!friend && !email) {
+      return res.status(404).json({ msg: 'Could not find that Hakoware username' });
+    }
+
+    const senderIdentity = user.username ? `@${user.username}` : user.displayName;
+
     if (!friend) {
       const expiresAt = new Date(Date.now() + 14 * DAY);
       const pendingInvite = await PendingInvite.findOneAndUpdate(
@@ -87,14 +105,20 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
         { new: true, upsert: true, setDefaultsOnInsert: true }
       );
 
-      void sendFriendRequestEmail(email, user.displayName, true);
+      void sendFriendRequestEmail(email, senderIdentity, true);
       return res.status(202).json({
         inviteReady: true,
+        requiresSignup: true,
         inviteUrl: `${frontendUrl()}/?join=1`,
         recipientEmail: pendingInvite.recipientEmail,
+        recipientLabel: pendingInvite.recipientEmail,
         templateId: pendingInvite.templateId,
         expiresAt: pendingInvite.expiresAt
       });
+    }
+
+    if (String(friend._id) === String(user._id)) {
+      return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
     }
 
     const existing = await Friendship.findOne({
@@ -119,12 +143,14 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
       metadata: { templateId: template.id, limit }
     });
 
-    await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: email });
-    void sendFriendRequestEmail(friend.email, user.displayName, false);
+    await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: friend.email });
+    void sendFriendRequestEmail(friend.email, senderIdentity, false);
     return res.status(202).json({
       inviteReady: true,
+      requiresSignup: false,
       inviteUrl: `${frontendUrl()}/?join=1`,
-      recipientEmail: email,
+      recipientUsername: friend.username || null,
+      recipientLabel: friend.username ? `@${friend.username}` : friend.displayName,
       templateId: friendship.templateId,
       expiresAt: null
     });
@@ -149,14 +175,14 @@ router.get('/:id/recap', auth, async (req, res) => {
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
     await ensureActiveGameState(friendship);
-    await friendship.populate('user1 user2', 'displayName avatar');
+    await friendship.populate('user1 user2', 'displayName username avatar');
 
     const recap = await buildRecap(friendship);
     return res.json({
       ...recap,
       players: [
-        { id: friendship.user1?._id || friendship.user1, displayName: friendship.user1?.displayName || friendship.user1DisplayName },
-        { id: friendship.user2?._id || friendship.user2, displayName: friendship.user2?.displayName || friendship.user2DisplayName }
+        { id: friendship.user1?._id || friendship.user1, displayName: friendship.user1?.displayName || friendship.user1DisplayName, username: friendship.user1?.username || null },
+        { id: friendship.user2?._id || friendship.user2, displayName: friendship.user2?.displayName || friendship.user2DisplayName, username: friendship.user2?.username || null }
       ]
     });
   } catch (err) {
