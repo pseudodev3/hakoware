@@ -1,5 +1,6 @@
 .lp-root {
   --lp-grid-line: rgba(247,244,236,.045);
+  --lp-orbit-line: rgba(226,180,93,.10);
   --lp-danger-surface: rgba(255,116,123,.075);
   --lp-danger-border: rgba(255,116,123,.2);
   min-height: 100dvh;
@@ -10,6 +11,7 @@
 
 :root[data-theme='light'] .lp-root {
   --lp-grid-line: rgba(31,27,20,.055);
+  --lp-orbit-line: rgba(121,89,34,.10);
   --lp-danger-surface: rgba(201,78,88,.075);
   --lp-danger-border: rgba(201,78,88,.2);
 }
@@ -112,26 +114,54 @@
 .lp-hero::before {
   content: '';
   position: absolute;
-  top: -34rem;
-  left: 50%;
-  width: 78rem;
-  height: 78rem;
+  top: -30rem;
+  left: 54%;
+  width: 72rem;
+  height: 72rem;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: radial-gradient(circle, var(--aura-gold-glow), transparent 64%);
+  background: radial-gradient(circle, var(--aura-gold-glow), transparent 68%);
+  opacity: .62;
   pointer-events: none;
 }
 
 .lp-hero-grid {
   position: absolute;
   inset: 0;
-  opacity: .52;
-  background-image:
-    linear-gradient(var(--lp-grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--lp-grid-line) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.8) 46%, transparent 92%);
+  overflow: hidden;
+  opacity: .9;
+  background:
+    radial-gradient(circle at 96% 16%, transparent 0 20rem, var(--lp-orbit-line) 20.05rem 20.12rem, transparent 20.2rem),
+    radial-gradient(circle at -4% 88%, transparent 0 17rem, color-mix(in srgb, var(--lp-orbit-line) 72%, transparent) 17.05rem 17.11rem, transparent 17.2rem),
+    radial-gradient(circle at 78% 78%, color-mix(in srgb, var(--aura-gold-glow) 24%, transparent), transparent 31rem);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.88) 62%, transparent 98%);
   pointer-events: none;
+}
+
+.lp-hero-grid::before,
+.lp-hero-grid::after {
+  content: '';
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--lp-orbit-line) 72%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.lp-hero-grid::before {
+  width: 52rem;
+  height: 22rem;
+  top: 7rem;
+  right: -28rem;
+  transform: rotate(-17deg);
+}
+
+.lp-hero-grid::after {
+  width: 38rem;
+  height: 14rem;
+  left: -22rem;
+  bottom: 5rem;
+  transform: rotate(14deg);
+  opacity: .66;
 }
 
 .lp-hero-shell {
@@ -146,23 +176,70 @@
 
 .lp-hero-copy { max-width: 690px; }
 
-.lp-live-pill {
+.lp-season-marker {
   width: fit-content;
-  min-height: 30px;
   margin-bottom: 22px;
-  padding: 0 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  color: var(--text-secondary);
-  background: var(--surface-soft);
-  box-shadow: inset 0 0 0 1px var(--border-subtle);
-  font-size: .68rem;
-  font-weight: 580;
+  display: grid;
+  grid-template-columns: 12px auto;
+  align-items: stretch;
+  gap: 10px;
 }
 
-.lp-live-pill > span,
+.lp-season-rail {
+  position: relative;
+  min-height: 42px;
+}
+
+.lp-season-rail::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 5px;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--aura-gold) 22%, var(--aura-gold) 78%, transparent);
+  opacity: .48;
+}
+
+.lp-season-rail i {
+  position: absolute;
+  top: 17px;
+  left: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aura-green);
+}
+
+.lp-season-copy {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  align-items: baseline;
+  column-gap: 8px;
+}
+
+.lp-season-copy > span {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .56rem;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+
+.lp-season-copy strong {
+  color: var(--text-primary);
+  font-size: .78rem;
+  font-weight: 640;
+  letter-spacing: -.015em;
+}
+
+.lp-season-copy small {
+  color: var(--text-muted);
+  font-size: .62rem;
+}
+
 .lp-status-dot {
   width: 7px;
   height: 7px;
@@ -196,29 +273,33 @@
 }
 
 .lp-proof-row {
+  width: min(630px, 100%);
   margin-top: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   color: var(--text-muted);
-  font-size: .68rem;
+}
+
+.lp-proof-row > div {
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+}
+
+.lp-proof-row > div:first-child { padding-left: 0; }
+.lp-proof-row > div + div { border-left: 1px solid var(--border-subtle); }
+
+.lp-proof-row svg {
+  color: var(--text-faint);
 }
 
 .lp-proof-row span {
-  position: relative;
-  padding-left: 12px;
-}
-
-.lp-proof-row span::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  transform: translateY(-50%);
-  border-radius: 50%;
-  background: var(--aura-gold);
+  font-size: .64rem;
+  line-height: 1.35;
 }
 
 .lp-game-shell {
@@ -816,12 +897,14 @@
   .lp-brand > div { display: none; }
   .lp-nav-actions .btn-ghost { display: none; }
   .lp-hero { min-height: auto; padding: 108px 16px 68px; }
-  .lp-hero-grid { background-size: 44px 44px; }
   .lp-hero h1 { font-size: clamp(3rem,15vw,4.85rem); }
   .lp-hero-copy > p { margin-top: 22px; font-size: .94rem; }
   .lp-hero-actions { align-items: stretch; flex-direction: column; }
   .lp-hero-actions .btn { width: 100%; }
-  .lp-proof-row { gap: 8px 14px; }
+  .lp-proof-row { width: 100%; }
+  .lp-proof-row > div { padding-inline: 9px; align-items: center; text-align: center; }
+  .lp-proof-row > div:first-child { padding-left: 0; }
+  .lp-proof-row > div:last-child { padding-right: 0; }
   .lp-game-shell { padding: 14px; border-radius: 22px; }
   .lp-game-shell::before { border-radius: 23px; }
   .lp-duo-block { grid-template-columns: auto minmax(0,1fr); }
@@ -854,7 +937,9 @@
 @media (max-width: 420px) {
   .lp-nav-actions .btn { min-height: 40px; padding-inline: 12px; }
   .lp-theme-toggle { width: 40px; height: 40px; }
-  .lp-live-pill { font-size: .62rem; }
+  .lp-season-copy > span { font-size: .53rem; }
+  .lp-season-copy strong { font-size: .74rem; }
+  .lp-season-copy small { font-size: .59rem; }
   .lp-hero h1 { font-size: 3.28rem; }
   .lp-contract-status { gap: 5px; }
   .lp-contract-status > div { padding: 9px; }
