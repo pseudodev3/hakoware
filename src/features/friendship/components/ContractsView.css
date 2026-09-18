@@ -9,10 +9,10 @@
 .contract-section { display:flex; flex-direction:column; gap:11px; }
 .priority-invites { padding:5px 0 1px; }
 .priority-invites .contract-section-title h2 { color:var(--text-primary); font-size:.8rem; }
-.priority-invites .contract-section-title > span { color:var(--aura-gold); background:var(--aura-gold-soft); }
+.priority-invites .contract-section-title > span { color:var(--aura-gold); }
 .contract-section-title { display:flex; align-items:center; gap:8px; }
 .contract-section-title h2 { color:var(--text-secondary); font-size:.76rem; font-weight:650; }
-.contract-section-title > span { min-width:22px; height:22px; padding:0 6px; display:grid; place-items:center; border-radius:999px; color:var(--text-muted); background:var(--surface-soft); font-size:.6rem; font-family:var(--font-mono); }
+.contract-section-title > span { color:var(--text-faint); font-size:.6rem; font-family:var(--font-mono); }
 .contracts-grid { display:flex; flex-direction:column; }
 .invite-list { overflow:hidden; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .invite-card { min-height:72px; padding:10px 2px; display:flex; align-items:center; gap:11px; background:transparent; }
