@@ -41,11 +41,11 @@
 .hunt-button span, .pressure-button span { font-size:.59rem; font-weight:650; }
 .pressure-button { color:#171009; background:var(--aura-gold); }
 .hunt-button:active, .pressure-button:active { transform:scale(.96); }
-.hunter-lock, .proof-armed-state, .bounty-owner-state { min-height:36px; padding:0 9px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:10px; font-size:.61rem; }
-.hunter-lock { color:var(--aura-blue); background:var(--aura-blue-glow); }
-.proof-armed-state { color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); }
-.bounty-owner-state { color:var(--text-muted); background:var(--surface-soft); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.bounty-owner-state.danger { color:var(--aura-red); background:var(--aura-red-glow); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-red) 22%,transparent); }
+.hunter-lock, .proof-armed-state, .bounty-owner-state { min-height:32px; padding:0 2px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:5px; font-size:.61rem; font-weight:620; }
+.hunter-lock { color:var(--aura-blue); }
+.proof-armed-state { color:var(--aura-gold); }
+.bounty-owner-state { color:var(--text-muted); }
+.bounty-owner-state.danger { color:var(--aura-red); }
 .shame-rank { width:26px; flex:0 0 auto; color:var(--text-faint); font-family:var(--font-mono); font-size:.66rem; }
 .shame-debt { flex:0 0 auto; color:var(--aura-red); font-family:var(--font-mono); font-size:.7rem; font-weight:600; }
 .arena-empty { min-height:220px; padding:28px; display:grid; place-items:center; color:var(--text-muted); font-size:.74rem; text-align:center; }
