@@ -4,6 +4,7 @@ import { Bell, Check, Clock, MessageSquare, RotateCcw, Swords, Trash2, UserCheck
 import {
   deleteNotification,
   getUserNotifications,
+  peekUserNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
   NOTIFICATION_TYPES
@@ -14,13 +15,14 @@ import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
 import './NotificationsPanel.css';
 
 export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, showToast }) => {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedNotifications = peekUserNotifications().filter((notification) => notification.type !== 'CONTRACT_INVITE');
+  const [notifications, setNotifications] = useState(cachedNotifications);
+  const [loading, setLoading] = useState(cachedNotifications.length === 0);
   const shouldReduceMotion = useReducedMotion();
 
-  const loadNotifications = async () => {
+  const loadNotifications = async ({ force = false } = {}) => {
     try {
-      const data = await getUserNotifications();
+      const data = await getUserNotifications({ force });
       const visible = (data || []).filter((notification) => notification.type !== 'CONTRACT_INVITE');
       setNotifications(visible);
       onUnreadCountChange?.(visible.filter((notification) => !notification.read).length);
@@ -33,13 +35,13 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
 
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
+    const interval = setInterval(() => loadNotifications({ force: true }), 30000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    loadNotifications();
+    loadNotifications({ force: true });
     const onKeyDown = (event) => {
       if (event.key === 'Escape') onClose();
     };
@@ -49,17 +51,17 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
 
   const handleMarkAsRead = async (id) => {
     await markNotificationAsRead(id);
-    await loadNotifications();
+    await loadNotifications({ force: true });
   };
 
   const handleMarkAllRead = async () => {
     await markAllNotificationsAsRead();
-    await loadNotifications();
+    await loadNotifications({ force: true });
   };
 
   const handleDelete = async (id) => {
     await deleteNotification(id);
-    await loadNotifications();
+    await loadNotifications({ force: true });
   };
 
   const handleRespond = async (id, action) => {
