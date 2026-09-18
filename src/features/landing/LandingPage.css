@@ -1,6 +1,6 @@
 .lp-root {
   --lp-grid-line: rgba(247,244,236,.045);
-  --lp-orbit-line: rgba(226,180,93,.10);
+  --lp-orbit-line: rgba(226,180,93,.12);
   --lp-danger-surface: rgba(255,116,123,.075);
   --lp-danger-border: rgba(255,116,123,.2);
   min-height: 100dvh;
@@ -11,7 +11,7 @@
 
 :root[data-theme='light'] .lp-root {
   --lp-grid-line: rgba(31,27,20,.055);
-  --lp-orbit-line: rgba(121,89,34,.10);
+  --lp-orbit-line: rgba(121,89,34,.11);
   --lp-danger-surface: rgba(201,78,88,.075);
   --lp-danger-border: rgba(201,78,88,.2);
 }
@@ -114,14 +114,16 @@
 .lp-hero::before {
   content: '';
   position: absolute;
-  top: -30rem;
-  left: 54%;
-  width: 72rem;
-  height: 72rem;
+  top: -28rem;
+  left: 56%;
+  width: 76rem;
+  height: 76rem;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: radial-gradient(circle, var(--aura-gold-glow), transparent 68%);
-  opacity: .62;
+  background:
+    radial-gradient(circle at 50% 46%, var(--aura-gold-glow), transparent 64%),
+    radial-gradient(circle at 36% 64%, color-mix(in srgb, var(--aura-gold-glow) 34%, transparent), transparent 58%);
+  opacity: .54;
   pointer-events: none;
 }
 
@@ -129,12 +131,14 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  opacity: .9;
+  opacity: .96;
   background:
-    radial-gradient(circle at 96% 16%, transparent 0 20rem, var(--lp-orbit-line) 20.05rem 20.12rem, transparent 20.2rem),
-    radial-gradient(circle at -4% 88%, transparent 0 17rem, color-mix(in srgb, var(--lp-orbit-line) 72%, transparent) 17.05rem 17.11rem, transparent 17.2rem),
-    radial-gradient(circle at 78% 78%, color-mix(in srgb, var(--aura-gold-glow) 24%, transparent), transparent 31rem);
-  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.88) 62%, transparent 98%);
+    radial-gradient(ellipse 58rem 24rem at -13% -3%, color-mix(in srgb, var(--aura-gold-glow) 26%, transparent) 0 44%, transparent 44.4%),
+    radial-gradient(ellipse 64rem 30rem at 105% 27%, transparent 0 54%, var(--lp-orbit-line) 54.2% 54.35%, transparent 54.55%),
+    radial-gradient(ellipse 58rem 22rem at 92% 30%, transparent 0 64%, color-mix(in srgb, var(--lp-orbit-line) 66%, transparent) 64.2% 64.32%, transparent 64.52%),
+    radial-gradient(ellipse 46rem 18rem at -10% 74%, transparent 0 59%, color-mix(in srgb, var(--lp-orbit-line) 58%, transparent) 59.2% 59.34%, transparent 59.54%),
+    radial-gradient(ellipse 72rem 34rem at 79% 93%, color-mix(in srgb, var(--aura-gold-glow) 15%, transparent) 0 38%, transparent 38.5%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.92) 70%, transparent 100%);
   pointer-events: none;
 }
 
@@ -142,26 +146,34 @@
 .lp-hero-grid::after {
   content: '';
   position: absolute;
-  border: 1px solid color-mix(in srgb, var(--lp-orbit-line) 72%, transparent);
   border-radius: 50%;
   pointer-events: none;
 }
 
 .lp-hero-grid::before {
-  width: 52rem;
-  height: 22rem;
-  top: 7rem;
-  right: -28rem;
-  transform: rotate(-17deg);
+  width: 66rem;
+  height: 24rem;
+  top: -6rem;
+  left: -34rem;
+  transform: rotate(-16deg);
+  border: 1px solid color-mix(in srgb, var(--lp-orbit-line) 78%, transparent);
+  box-shadow:
+    0 0 0 5.5rem color-mix(in srgb, var(--surface-soft) 22%, transparent),
+    0 0 0 11rem color-mix(in srgb, var(--surface-soft) 10%, transparent);
+  opacity: .72;
 }
 
 .lp-hero-grid::after {
-  width: 38rem;
-  height: 14rem;
-  left: -22rem;
-  bottom: 5rem;
-  transform: rotate(14deg);
-  opacity: .66;
+  width: 70rem;
+  height: 29rem;
+  right: -37rem;
+  bottom: -9rem;
+  transform: rotate(18deg);
+  border: 1px solid color-mix(in srgb, var(--lp-orbit-line) 64%, transparent);
+  box-shadow:
+    0 0 0 7rem color-mix(in srgb, var(--aura-gold-glow) 10%, transparent),
+    inset 0 0 0 9rem color-mix(in srgb, var(--surface-soft) 14%, transparent);
+  opacity: .64;
 }
 
 .lp-hero-shell {
@@ -897,6 +909,9 @@
   .lp-brand > div { display: none; }
   .lp-nav-actions .btn-ghost { display: none; }
   .lp-hero { min-height: auto; padding: 108px 16px 68px; }
+  .lp-hero-grid { opacity: .9; }
+  .lp-hero-grid::before { width: 44rem; height: 17rem; top: -4rem; left: -28rem; }
+  .lp-hero-grid::after { width: 47rem; height: 20rem; right: -31rem; bottom: -4rem; }
   .lp-hero h1 { font-size: clamp(3rem,15vw,4.85rem); }
   .lp-hero-copy > p { margin-top: 22px; font-size: .94rem; }
   .lp-hero-actions { align-items: stretch; flex-direction: column; }
