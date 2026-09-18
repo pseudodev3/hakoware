@@ -11,14 +11,41 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Audit frontend production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Reject tracked env files
+        run: |
+          bad_env="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example$' || true)"
+          if [ -n "$bad_env" ]; then
+            echo "Tracked environment file(s) found:"
+            echo "$bad_env"
+            exit 1
+          fi
+
+      - name: Scan obvious committed secret patterns
+        run: |
+          if git grep -I -nE 'mongodb(\+srv)?://[^[:space:]]+:[^@[:space:]]+@|xkeysib-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' -- .; then
+            echo "Potential committed secret detected."
+            exit 1
+          fi
+
       - name: Build frontend
         run: npm run build
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
+
+      - name: Audit backend production dependencies
+        working-directory: server
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Check backend syntax
         working-directory: server
         run: |

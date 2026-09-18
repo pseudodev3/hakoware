@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const Friendship = require('../models/Friendship');
 const PendingInvite = require('../models/PendingInvite');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const VoiceNote = require('../models/VoiceNote');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const {
   refundOpenBountiesForFriendship,
@@ -29,6 +31,14 @@ const { ensureActiveGameState, loadContractsForUser } = require('../services/con
 
 const DAY = 24 * 60 * 60 * 1000;
 
+const inviteLimiter = createRateLimiter({
+  name: 'contract-invite',
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: 'Too many contract invites. Try again later.'
+});
+
 const normalizeLimit = (value, fallback = 7) => {
   const parsed = Number(value ?? fallback);
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > 30) return null;
@@ -52,7 +62,7 @@ router.get('/meta', auth, (req, res) => {
   res.json({ templates: Object.values(TEMPLATES), worldEvent: getWorldEvent() });
 });
 
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, inviteLimiter, async (req, res) => {
   try {
     const email = String(req.body.friendEmail || '').trim().toLowerCase();
     const user = await User.findById(req.user.id);
@@ -79,7 +89,7 @@ router.post('/', auth, async (req, res) => {
 
       void sendFriendRequestEmail(email, user.displayName, true);
       return res.status(202).json({
-        requiresSignup: true,
+        inviteReady: true,
         inviteUrl: `${frontendUrl()}/?join=1`,
         recipientEmail: pendingInvite.recipientEmail,
         templateId: pendingInvite.templateId,
@@ -111,7 +121,13 @@ router.post('/', auth, async (req, res) => {
 
     await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: email });
     void sendFriendRequestEmail(friend.email, user.displayName, false);
-    return res.status(201).json(friendship);
+    return res.status(202).json({
+      inviteReady: true,
+      inviteUrl: `${frontendUrl()}/?join=1`,
+      recipientEmail: email,
+      templateId: friendship.templateId,
+      expiresAt: null
+    });
   } catch (err) {
     console.error('Create contract failed:', err.message);
     return res.status(500).json({ msg: 'Could not create contract' });
@@ -224,6 +240,23 @@ router.post('/:id/checkin', auth, async (req, res) => {
     if (!key) return res.status(403).json({ msg: 'Not authorized' });
 
     const source = String(req.body.source || 'TEXT').toUpperCase() === 'VOICE' ? 'VOICE' : 'TEXT';
+    const voiceNoteId = req.body.voiceNoteId ? String(req.body.voiceNoteId) : null;
+    let pendingVoiceNote = null;
+
+    if (source === 'VOICE') {
+      const voiceQuery = {
+        friendshipId: friendship._id,
+        senderId: req.user.id,
+        status: 'PENDING',
+        expiresAt: { $gt: new Date() }
+      };
+      if (voiceNoteId) voiceQuery._id = voiceNoteId;
+      pendingVoiceNote = await VoiceNote.findOne(voiceQuery).sort({ createdAt: -1 });
+      if (!pendingVoiceNote) {
+        return res.status(409).json({ msg: 'Upload a fresh voice note before submitting this check-in' });
+      }
+    }
+
     const bountyCreditId = req.body.bountyCreditId ? String(req.body.bountyCreditId) : null;
     const bountyDecision = String(req.body.bountyDecision || '').toUpperCase();
     const proofRequirement = await getBountyDecisionRequirement(friendship._id, req.user.id);
@@ -272,6 +305,25 @@ router.post('/:id/checkin', auth, async (req, res) => {
     }
 
     const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
+
+    if (pendingVoiceNote) {
+      const committedVoice = await VoiceNote.findOneAndUpdate(
+        {
+          _id: pendingVoiceNote._id,
+          friendshipId: friendship._id,
+          senderId: req.user.id,
+          status: 'PENDING'
+        },
+        {
+          $set: { status: 'COMMITTED', expiresAt: null }
+        },
+        { new: true }
+      );
+
+      if (!committedVoice) {
+        console.error('Voice note commit lost after successful check-in:', pendingVoiceNote._id);
+      }
+    }
 
     if (recoveryStarted) {
       await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERY_STARTED', {

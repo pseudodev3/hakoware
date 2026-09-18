@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const founder = require('../middleware/founder');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const PendingInvite = require('../models/PendingInvite');
@@ -21,8 +22,16 @@ const SHARE_SOURCES = new Set([
 const safeRate = (numerator, denominator) => (
   denominator > 0 ? Math.round((numerator / denominator) * 100) : 0
 );
+const shareLimiter = createRateLimiter({
+  name: 'growth-share',
+  windowMs: 60 * 60 * 1000,
+  max: 120,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: 'Too many share events. Try again later.'
+});
 
-router.post('/share', auth, async (req, res) => {
+
+router.post('/share', auth, shareLimiter, async (req, res) => {
   try {
     const actor = await User.findById(req.user.id).select('isTestAccount');
     if (!actor) return res.status(404).json({ msg: 'User not found' });

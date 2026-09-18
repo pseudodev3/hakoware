@@ -3,10 +3,10 @@ import { api } from '../lib/api';
 export const sendFriendInvitation = async (toEmail, limit, templateId = 'DONT_GHOST') => {
   try {
     const response = await api.post('/friendships', { friendEmail: toEmail, limit, templateId });
-    if (response?.requiresSignup) {
+    if (response?.inviteReady || response?.requiresSignup) {
       return {
         success: true,
-        requiresSignup: true,
+        inviteReady: true,
         inviteUrl: response.inviteUrl,
         recipientEmail: response.recipientEmail,
         templateId: response.templateId,
@@ -24,12 +24,13 @@ export const getContractMeta = async () => api.get('/friendships/meta');
 export const getContractRecap = async (friendshipId) => api.get(`/friendships/${friendshipId}/recap`);
 export const runContractBack = async (friendshipId) => api.post(`/friendships/${friendshipId}/run-it-back`);
 
-export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null, bountyDecision = null) => {
+export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null, bountyDecision = null, voiceNoteId = null) => {
   try {
     const response = await api.post(`/friendships/${friendshipId}/checkin`, {
       source,
       bountyCreditId,
-      bountyDecision
+      bountyDecision,
+      voiceNoteId
     });
     return {
       success: true,

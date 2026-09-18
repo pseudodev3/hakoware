@@ -63,7 +63,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     setLoading(true);
     const effectiveLimit = selected.id === 'CUSTOM' ? limit : selected.limit;
     const result = await sendFriendInvitation(email, effectiveLimit, selected.id);
-    if (result.success && result.requiresSignup) {
+    if (result.success && result.inviteReady) {
       setShareInvite({ ...result, modeName: selected.name });
       await onRefresh?.();
       showToast?.('Invite saved — share it with them', 'SUCCESS');
@@ -90,7 +90,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
   const share = async () => {
     if (!shareInvite) return;
-    const text = `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Sign up with ${shareInvite.recipientEmail} and it will already be waiting for you.`;
+    const text = `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Open Hakoware with ${shareInvite.recipientEmail} and it’ll be waiting for you.`;
     const result = await shareHakoware({
       source: 'INVITE',
       title: 'Hakoware contract',
@@ -114,7 +114,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           <div className="invite-share-icon"><Check size={20} strokeWidth={2} /></div>
           <div className="invite-share-copy">
             <strong>{shareInvite.modeName || 'Contract'} is waiting.</strong>
-            <p>Share this link. When <b>{shareInvite.recipientEmail}</b> signs up, the request appears automatically.</p>
+            <p>Share this link too. When <b>{shareInvite.recipientEmail}</b> opens Hakoware, the request will be waiting.</p>
           </div>
           <button type="button" className="invite-link" onClick={copyInvite} aria-label="Copy Hakoware invite link">
             <span>{shareInvite.inviteUrl}</span>

@@ -13,6 +13,7 @@ const UserSchema = new mongoose.Schema({
   plusInterestAt: { type: Date, default: null },
   defaultLimit: { type: Number, default: 7, min: 1, max: 30 },
   emailVerified: { type: Boolean, default: false },
+  authVersion: { type: Number, default: 0, min: 0 },
   isTestAccount: { type: Boolean, default: false, index: true },
   testOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   notificationPreferences: {
