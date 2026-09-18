@@ -64,12 +64,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     refreshBriefingState((value) => value + 1);
   };
 
-  const makeFirstCheckin = () => {
-    if (!firstSeasonBriefing) return;
-    dismissSeasonBriefing();
-    onAction('CHECKIN', firstSeasonBriefing);
-  };
-
   if (friendships.length === 0 && pendingInvitations.length > 0) {
     const invitation = pendingInvitations[0];
     const inviter = invitation?.user1?.username ? `@${invitation.user1.username}` : (invitation?.user1?.displayName || 'Someone');
@@ -171,12 +165,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             <div className="season-start-copy">
               <span>SEASON 1 STARTED</span>
               <strong>You and {partnerName} are live.</strong>
-              <p>Check in within {limit} day{limit === 1 ? '' : 's'}. Valid check-ins build Duo XP. Miss the window and debt starts.</p>
+              <p>Your grace clock starts now. You do not need to check in yet. Make your next check-in before {limit} day{limit === 1 ? '' : 's'} of silence turns into debt.</p>
             </div>
-            <div className="season-start-actions">
-              <button type="button" className="season-start-dismiss" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={15} /></button>
-              <Button variant="aura" size="sm" onClick={makeFirstCheckin}>Make first check-in</Button>
-            </div>
+            <button type="button" className="season-start-dismiss" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={15} /></button>
           </section>
         );
       })()}

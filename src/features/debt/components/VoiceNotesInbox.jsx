@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, CheckCircle2, Loader2, MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-react';
-import { Button } from '../../../shared/components/Button';
+import { Check, CheckCircle2, Loader2, MessageSquare, Pause, Play, RefreshCw } from 'lucide-react';
 import { fetchVoiceNoteAudio, getMyVoiceNotes, markVoiceNoteListened } from '../../../services/voiceNoteService';
 import './VoiceNotesInbox.css';
 
@@ -95,18 +94,25 @@ export const VoiceNotesInbox = () => {
     }
   };
 
+  const formatNoteTime = (value) => {
+    const date = new Date(value);
+    const diff = Date.now() - date.getTime();
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.max(1, Math.floor(diff / 60000))}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
   return (
     <section className="voice-inbox-container" aria-labelledby="voice-inbox-title">
       <header className="inbox-header">
         <div className="title-group">
-          <MessageSquare size={19} className="inbox-title-icon" aria-hidden="true" />
-          <div>
-            <h3 id="voice-inbox-title">Voice inbox</h3>
-            <p>Private check-ins from your contracts</p>
-          </div>
+          <MessageSquare size={16} className="inbox-title-icon" aria-hidden="true" />
+          <h3 id="voice-inbox-title">Voice inbox</h3>
+          {!loading && notes.length > 0 && <span className="voice-count">{notes.length}</span>}
         </div>
         <button className="refresh-btn" onClick={loadNotes} disabled={loading} aria-label="Refresh voice inbox">
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
         </button>
       </header>
 
@@ -134,24 +140,20 @@ export const VoiceNotesInbox = () => {
                   </button>
                   <div className="note-info">
                     <div className="sender-row">
-                      <User size={13} aria-hidden="true" />
                       <span className="sender-name">{note.senderName || 'Friend'}</span>
                       {!note.listened && <span className="unread-tag">New</span>}
                     </div>
-                    <div className="date-row">
-                      <Calendar size={12} aria-hidden="true" />
-                      <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString()}</time>
-                    </div>
+                    <time className="date-row" dateTime={note.createdAt}>{formatNoteTime(note.createdAt)}</time>
                   </div>
                 </div>
 
                 <div className="note-actions">
                   {note.listened ? (
-                    <CheckCircle2 size={18} className="listened-icon" aria-label="Listened" />
+                    <CheckCircle2 size={17} className="listened-icon" aria-label="Listened" />
                   ) : (
-                    <Button variant="ghost" size="sm" onClick={() => handleMarkListened(note.id)}>
-                      Mark read
-                    </Button>
+                    <button className="mark-listened-btn" onClick={() => handleMarkListened(note.id)} aria-label="Mark voice note as listened" title="Mark listened">
+                      <Check size={14} strokeWidth={1.9} />
+                    </button>
                   )}
                 </div>
               </article>
