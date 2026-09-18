@@ -33,7 +33,7 @@ export const PressureMoveModal = ({ bounty, moves = [], loading, onClose, onSend
         </div>
 
         <div className="pressure-footer">
-          <p>No custom messages. Pressure stays game-like and bounded.</p>
+          <p>No custom messages. Pressure stays game-like, bounded, and never becomes harassment.</p>
           <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
         </div>
       </div>
