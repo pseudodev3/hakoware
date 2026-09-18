@@ -75,6 +75,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
   );
   const bankruptFriendships = useMemo(
     () => friendships.filter((friendship) => {
+      if (friendship.season?.status === 'COMPLETE') return false;
       const isUser1 = String(friendship.user1?._id || friendship.user1) === userId;
       const targetPerspective = isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
       return calculateDebt(targetPerspective)?.isBankrupt;
@@ -117,7 +118,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         <div>
           <p className="eyebrow">Arena</p>
           <h1>Pressure has to earn its payout.</h1>
-          <p>Hunters stake Aura, send one pressure move, and only get paid when the target says it actually worked.</p>
+          <p>Bankruptcy opens the Arena. Once a contract partner goes bankrupt, you can post Aura and let a hunter pressure them back into the contract.</p>
         </div>
         <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={bankruptFriendships.length === 0}>
           {bankruptFriendships.length === 0 ? 'No bankrupt targets' : 'Place bounty'}
