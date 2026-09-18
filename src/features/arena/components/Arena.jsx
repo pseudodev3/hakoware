@@ -7,6 +7,7 @@ import { api } from '../../../lib/api';
 import { getBountyMeta, getHunterProfile, huntBounty, sendBountyPressure } from '../../../services/bountyService';
 import { getPublicGrudges } from '../../../services/auraService';
 import { useAuth } from '../../../contexts/AuthContext';
+import { calculateDebt } from '../../../hooks/useDebt';
 import './Arena.css';
 
 const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
@@ -72,6 +73,14 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
     () => bounties.filter((bounty) => bounty.targetName?.toLowerCase().includes(search.toLowerCase())),
     [bounties, search]
   );
+  const bankruptFriendships = useMemo(
+    () => friendships.filter((friendship) => {
+      const isUser1 = String(friendship.user1?._id || friendship.user1) === userId;
+      const targetPerspective = isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
+      return calculateDebt(targetPerspective)?.isBankrupt;
+    }),
+    [friendships, userId]
+  );
   const bountyPool = bounties.reduce((total, bounty) => total + (bounty.amount || 0), 0);
   const activeAnomalies = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
   const openTargets = bounties.filter((bounty) => bounty.status === 'ACTIVE').length;
@@ -110,7 +119,9 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
           <h1>Pressure has to earn its payout.</h1>
           <p>Hunters stake Aura, send one pressure move, and only get paid when the target says it actually worked.</p>
         </div>
-        <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={friendships.length === 0}>Place bounty</Button>
+        <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={bankruptFriendships.length === 0}>
+          {bankruptFriendships.length === 0 ? 'No bankrupt targets' : 'Place bounty'}
+        </Button>
       </header>
 
       {worldEvent && (
@@ -217,7 +228,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         </section>
       )}
 
-      <CreateBountyModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} friendships={friendships} onRefresh={loadArenaData} showToast={showToast} />
+      <CreateBountyModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} friendships={bankruptFriendships} onRefresh={loadArenaData} showToast={showToast} />
       <PressureMoveModal bounty={pressureBounty} moves={meta.pressureMoves || []} loading={pressureLoading} onClose={() => setPressureBounty(null)} onSend={sendPressure} />
     </div>
   );
