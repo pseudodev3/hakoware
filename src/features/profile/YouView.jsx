@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Crown, Eye, EyeOff, History, LogOut, Palette, Share2, SlidersHorizontal, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
+import { Eye, EyeOff, LogOut, Share2, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -32,13 +32,7 @@ const partnerIsBankrupt = (friendship, userId) => {
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
-const PLUS_FEATURES = [
-  { icon: History, title: 'Full season archive', copy: 'Keep the complete story across every season.' },
-  { icon: BarChart3, title: 'Deeper Duo stats', copy: 'Patterns, streaks and relationship-level trends.' },
-  { icon: SlidersHorizontal, title: 'Advanced custom contracts', copy: 'More control over the rules you make together.' },
-  { icon: Palette, title: 'Premium recap styles', copy: 'More ways to turn a season into something worth sharing.' },
-  { icon: Crown, title: 'Duo cosmetics', copy: 'Themes, profile treatments and visual identity for your Duo.' }
-];
+const PLUS_FEATURES = ['Season archive', 'Deeper Duo stats', 'Advanced custom contracts', 'Premium recap styles', 'Duo cosmetics'];
 
 export const YouView = ({ friendships, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
@@ -228,78 +222,56 @@ export const YouView = ({ friendships, showToast }) => {
 
   return (
     <div className="you-view">
-      <section className="identity-card">
-        <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
-        <div className="identity-copy"><p className="eyebrow">Player profile</p><h1>{user.displayName}</h1><p>{user.username ? `@${user.username}` : 'Hakoware player'}</p></div>
-
-      </section>
-
-      <section className="player-summary-grid">
-        <div className="player-summary-primary"><UsersRound size={18} /><small>Strongest Duo</small><strong>Lv. {strongest?.duoLevel || 1}</strong><span>{strongest?.duoTitle || 'No contract yet'}</span></div>
-        <div><Trophy size={18} /><small>Active seasons</small><strong>{activeSeasons}</strong><span>{friendships.length} total contracts</span></div>
-        <div><Sparkles size={18} /><small>Total Duo XP</small><strong>{totalDuoXP}</strong><span>across your circle</span></div>
-      </section>
-
-
-      {strongest && (
-        <section className="duo-share-strip">
-          <div className="duo-share-copy">
-            <Share2 size={17} strokeWidth={1.8} />
-            <div>
-              <span>SHARE A MOMENT</span>
-              <strong>{partnerName(strongest)} · Duo Lv. {strongest.duoLevel || 1}</strong>
-              <small>{strongest.duoTitle || 'New Contract'} · {strongest.duoXP || 0} XP</small>
-            </div>
+      <header className="profile-header">
+        <div className="profile-identity">
+          <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
+          <div className="identity-copy">
+            <p className="eyebrow">You</p>
+            <h1>{user.displayName}</h1>
+            <p>{user.username ? `@${user.username}` : 'Hakoware player'}</p>
           </div>
-          <Button variant="secondary" size="sm" icon={Share2} loading={busy === 'share-duo'} onClick={shareStrongestDuo}>Share Duo</Button>
-        </section>
-      )}
-
-      <section className="plus-preview">
-        <div className="plus-preview-head">
-          <div className="plus-preview-mark"><Crown size={18} strokeWidth={1.8} /></div>
-          <div>
-            <span>EARLY PREVIEW · NO CHARGE</span>
-            <h2>Hakoware+</h2>
-            <p>The game stays free. Plus is for people who want more history, customization and identity around the relationships they already built here.</p>
-          </div>
+          {strongest && (
+            <Button variant="secondary" size="sm" icon={Share2} loading={busy === 'share-duo'} onClick={shareStrongestDuo}>
+              Share Duo
+            </Button>
+          )}
         </div>
 
-        <div className="plus-feature-grid">
-          {PLUS_FEATURES.map(({ icon: Icon, title, copy }) => (
-            <div className="plus-feature" key={title}>
-              <Icon size={16} strokeWidth={1.7} />
-              <div><strong>{title}</strong><span>{copy}</span></div>
-            </div>
-          ))}
+        <div className="profile-meta" aria-label="Profile summary">
+          <span><b>Strongest Duo</b> Lv. {strongest?.duoLevel || 1} · {strongest?.duoTitle || 'No contract yet'}</span>
+          <span><b>Active</b> {activeSeasons} season{activeSeasons === 1 ? '' : 's'}</span>
+          <span><b>Duo XP</b> {totalDuoXP}</span>
         </div>
+      </header>
 
-        <div className="plus-preview-foot">
-          <span>{plusInterested ? 'Interest saved. No payment, no commitment.' : 'Help decide whether we build this.'}</span>
-          <Button
-            variant={plusInterested ? 'secondary' : 'aura'}
-            size="sm"
-            loading={busy === 'plus-interest'}
-            disabled={plusInterested}
-            onClick={joinPlusInterest}
-          >
-            {plusInterested ? 'You are on the early list' : "I'm interested"}
-          </Button>
+      <section className="aura-summary">
+        <div className="aura-balance-copy">
+          <p className="eyebrow">Aura</p>
+          <div className="aura-balance-line"><strong>{aura.balance}</strong><span>spendable</span></div>
+          <small>Earned through play · {reputation.lifetimeEarned} lifetime</small>
+        </div>
+        <div className="aura-rank">
+          <div><strong>{reputation.name}</strong><small>{reputation.nextRankAt ? `${reputation.nextRankAt - reputation.lifetimeEarned} to next rank` : 'Top Aura rank'}</small></div>
+          <span className="aura-rank-progress" aria-label={`${reputation.progress || 0}% to next Aura rank`}><i style={{ width: `${reputation.progress || 0}%` }} /></span>
+          <Zap size={18} strokeWidth={1.7} />
         </div>
       </section>
 
-      <section className="aura-balance-card">
-        <div className="aura-wallet-copy">
-          <p className="eyebrow">Aura wallet</p>
-          <div className="aura-number">{aura.balance}</div>
-          <p>Spendable Aura · earned through play</p>
-          <div className="aura-reputation-row">
-            <span><strong>{reputation.name}</strong><small>{reputation.lifetimeEarned} lifetime Aura</small></span>
-            <span className="aura-rank-progress" aria-label={`${reputation.progress || 0}% to next Aura rank`}><i style={{ width: `${reputation.progress || 0}%` }} /></span>
-            <small>{reputation.nextRankAt ? `${reputation.nextRankAt - reputation.lifetimeEarned} to next rank` : 'Top Aura rank'}</small>
-          </div>
+      <section className="plus-row">
+        <div>
+          <strong>Hakoware+</strong>
+          <span>{PLUS_FEATURES.join(' · ')}</span>
+          <small>{plusInterested ? 'Interest saved. No payment, no commitment.' : 'The game stays free. Plus is for deeper history and customization.'}</small>
         </div>
-        <Zap size={28} strokeWidth={1.6} />
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={busy === 'plus-interest'}
+          disabled={plusInterested}
+          onClick={joinPlusInterest}
+        >
+          {plusInterested ? 'Interested' : "I'm interested"}
+        </Button>
       </section>
 
       {grudges.length > 0 && (
