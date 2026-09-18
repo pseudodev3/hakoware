@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { getContractMeta, getUserFriendships } from './services/friendshipService';
+import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
 import { Login, Signup } from './features/auth/Auth';
 import { ResetPassword } from './features/auth/ResetPassword';
@@ -40,7 +42,7 @@ const TestSessionBar = ({ user }) => {
 };
 
 function MainApp({ showToast }) {
-  const { user, isAuthenticated, bootstrapData, refreshBootstrap } = useAuth();
+  const { user, isAuthenticated, bootstrapData, refreshBootstrap, refreshUser } = useAuth();
   const joining = isJoinLink();
   const [hasEntered, setHasEntered] = useState(joining);
   const [activeTab, setActiveTab] = useState('home');
@@ -69,13 +71,38 @@ function MainApp({ showToast }) {
     try {
       const oldBalance = Number(user.auraBalance) || 0;
       const refreshed = await refreshBootstrap();
-      if (!refreshed.success) throw new Error(refreshed.error || 'Could not sync Hakoware');
 
-      applyBootstrap(refreshed.data);
-      const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
+      if (refreshed.success) {
+        applyBootstrap(refreshed.data);
+        const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
+        if (nextBalance > oldBalance) {
+          showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
+        }
+        return;
+      }
+
+      console.warn('Bootstrap sync failed, using legacy data endpoints:', refreshed.error);
+      const [contracts, meta] = await Promise.all([
+        getUserFriendships(),
+        getContractMeta()
+      ]);
+
+      setFriendships(contracts.active || []);
+      setPendingReceived(contracts.pendingReceived || []);
+      setPendingSent(contracts.pendingSent || []);
+      setPendingExternal(contracts.pendingExternal || []);
+      setContractMeta(meta || { templates: [], worldEvent: null });
+
+      await getUserAura({ force: true }).catch((auraError) => {
+        console.error('Fallback Aura sync failed:', auraError);
+      });
+
+      const userResult = await refreshUser();
+      const nextBalance = Number(userResult.user?.auraBalance ?? oldBalance) || 0;
       if (nextBalance > oldBalance) {
         showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
       }
+      prefetchWarmTabs();
     } catch (error) {
       console.error('Failed to sync Hakoware:', error);
       showToast(error.message || 'Could not sync Hakoware', 'ERROR');
