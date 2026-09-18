@@ -3,7 +3,7 @@
 > **Read this first when continuing Hakoware in a new chat.**
 >
 > Repo: `pseudodev3/hakoware`  
-> Frontend: Vercel — `https://hakoware.vercel.app`  
+> Frontend: Vercel - `https://hakoware.vercel.app`  
 > Backend: Railway  
 > Database: MongoDB  
 > Transactional email: Brevo  
@@ -123,10 +123,10 @@ The Founder Lab cleanup also removes disposable contracts, bounties, notificatio
 
 Current contract templates include:
 
-- `DONT_GHOST` — Don't Ghost Me
+- `DONT_GHOST` - Don't Ghost Me
 - `GYM_PACT`
 - `STUDY_ARC`
-- `LOCK_IN` — 30-Day Lock-In
+- `LOCK_IN` - 30-Day Lock-In
 - `LONG_DISTANCE`
 - `BUILD_IN_PUBLIC`
 - `CHAOS`
@@ -171,7 +171,7 @@ XP baseline:
 
 A voice note currently uploads before the check-in request. Known caveat: if the upload succeeds but the check-in request fails, the uploaded voice object can remain.
 
-## 7. Bankruptcy — CURRENT RULE
+## 7. Bankruptcy - CURRENT RULE
 
 This was changed on 2026-09-18 because bankruptcy previously disappeared after a single normal check-in.
 
@@ -214,7 +214,7 @@ The historical scar fields `wasBankrupt` / `bankruptAt` exist so bankruptcy can 
 
 Founder Lab can still force BANKRUPT immediately for testing.
 
-## 8. Bounties — CURRENT RULE
+## 8. Bounties - CURRENT RULE
 
 Bounties are now **bankruptcy-only**.
 

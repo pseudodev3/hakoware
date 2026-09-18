@@ -159,7 +159,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
   };
 
   const shareStrongestDuo = async () => {
-    if (!strongest) return showToast?.('Start a contract first — then you have something to brag about', 'ERROR');
+    if (!strongest) return showToast?.('Start a contract first. Then you have something to brag about', 'ERROR');
     const partner = partnerName(strongest);
     const result = await shareHakoware({
       source: 'DUO',
@@ -170,7 +170,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
 
     if (result.cancelled) return;
     if (result.success && result.method === 'CLIPBOARD') {
-      showToast?.('Duo brag copied — post it anywhere', 'SUCCESS');
+      showToast?.('Duo brag copied - post it anywhere', 'SUCCESS');
     } else if (!result.success) {
       showToast?.(result.error || 'Could not share your Duo', 'ERROR');
     }

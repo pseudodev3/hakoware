@@ -9,7 +9,7 @@ import './ContractRecapModal.css';
 const formatTemplate = (value = '') => value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const seasonGrade = (recap) => {
-  if (!recap?.season || !recap?.template) return '—';
+  if (!recap?.season || !recap?.template) return '-';
   const length = Number(recap.template.seasonDays || recap.season.lengthDays || 30);
   const limit = Math.max(1, Number(recap.template.limit) || 3);
   const expected = Math.max(2, Math.ceil(length / limit) * 2);
@@ -163,7 +163,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
 
       if (result.cancelled) return;
       if (result.success && result.method === 'CLIPBOARD') {
-        showToast?.('Recap copied — share it anywhere', 'SUCCESS');
+        showToast?.('Recap copied - share it anywhere', 'SUCCESS');
       } else if (!result.success) {
         showToast?.(result.error || 'Could not share recap', 'ERROR');
       }
