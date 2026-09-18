@@ -23,6 +23,8 @@ const BountySchema = new mongoose.Schema({
   targetId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   targetName: { type: String, required: true },
   friendshipId: { type: mongoose.Schema.Types.ObjectId, ref: 'Friendship', required: true },
+  isTestData: { type: Boolean, default: false, index: true },
+  testOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   amount: { type: Number, required: true },
   listingFee: { type: Number, default: 0, min: 0 },
   message: { type: String },
