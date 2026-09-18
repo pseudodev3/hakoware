@@ -40,6 +40,11 @@ app.get('/brand/hakoware-mark.jpg', (req, res) => {
   res.sendFile(path.join(__dirname, 'assets', 'hakoware-mark.jpg'));
 });
 
+app.get('/brand/hakoware-mark-v2.jpg', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=604800, immutable');
+  res.sendFile(path.join(__dirname, 'assets', 'hakoware-mark-v2.jpg'));
+});
+
 const allowedOrigins = (process.env.CORS_ORIGINS || FRONTEND_URL || '')
   .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
@@ -73,6 +78,8 @@ app.get('/health', (req, res) => {
     database: connected ? 'connected' : 'disconnected',
     storage: 'railway-bucket',
     email: email.configured ? email.provider : 'not-configured',
+    founderLab: 'available',
+    build: process.env.RAILWAY_GIT_COMMIT_SHA || null,
     uptime: Math.round(process.uptime())
   });
 });

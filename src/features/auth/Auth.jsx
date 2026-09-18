@@ -10,7 +10,7 @@ import './Auth.css';
 
 const AuthBrand = ({ eyebrow, title, description }) => (
   <div className="auth-header">
-    <img className="auth-logo" src="/hakoware-mark.png" alt="" />
+    <img className="auth-logo" src="/hakoware-mark-v2.png" alt="" />
     <span className="auth-eyebrow">{eyebrow}</span>
     <h1>{title}</h1>
     <p>{description}</p>

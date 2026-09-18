@@ -75,7 +75,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     return (
       <div className="home-view onboarding-home">
         <section className="first-contract-card">
-          <div className="first-contract-mark"><img src="/hakoware-mark.png" alt="" /></div>
+          <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <p className="eyebrow">Start the game</p>
           <h1>Pick a person. Pick your poison.</h1>
           <p className="first-contract-copy">Choose a contract mode, invite someone you actually care about, then survive the season together. Check-ins build Duo XP. Silence builds debt. Chaos makes its own rules.</p>

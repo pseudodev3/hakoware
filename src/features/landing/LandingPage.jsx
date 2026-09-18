@@ -82,7 +82,7 @@ export const LandingPage = ({ onEnter }) => {
     <div className="lp-root">
       <header className={`lp-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="lp-brand" aria-label="Hakoware">
-          <img src="/hakoware-mark.png" alt="" />
+          <img src="/hakoware-mark-v2.png" alt="" />
           <div><strong>Hakoware</strong><span>social game</span></div>
         </div>
 
@@ -250,7 +250,7 @@ export const LandingPage = ({ onEnter }) => {
                 <div><strong>+135</strong><span>XP</span></div>
               </div>
               <blockquote>“Disturbingly consistent.”</blockquote>
-              <div className="lp-recap-brand"><img src="/hakoware-mark.png" alt="" /><span>HAKOWARE · SEASON 03</span></div>
+              <div className="lp-recap-brand"><img src="/hakoware-mark-v2.png" alt="" /><span>HAKOWARE · SEASON 03</span></div>
             </div>
           </div>
         </section>
@@ -262,7 +262,7 @@ export const LandingPage = ({ onEnter }) => {
         </section>
 
         <section className="lp-final-section">
-          <div className="lp-final-mark"><img src="/hakoware-mark.png" alt="" /></div>
+          <div className="lp-final-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <span>START SMALL</span>
           <h2>Pick one person.<br />Make it interesting.</h2>
           <p>You only need one contract for Hakoware to start telling a story.</p>
@@ -271,7 +271,7 @@ export const LandingPage = ({ onEnter }) => {
       </main>
 
       <footer className="lp-footer">
-        <div className="lp-brand"><img src="/hakoware-mark.png" alt="" /><div><strong>Hakoware</strong><span>built as its own world</span></div></div>
+        <div className="lp-brand"><img src="/hakoware-mark-v2.png" alt="" /><div><strong>Hakoware</strong><span>built as its own world</span></div></div>
         <p>Social pressure. Duo progression. Mild consequences.</p>
       </footer>
     </div>

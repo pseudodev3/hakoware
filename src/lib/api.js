@@ -7,8 +7,10 @@ const handleResponse = async (response) => {
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
-    const error = (data && data.msg) || response.statusText;
-    throw new Error(error);
+    const error = new Error((data && data.msg) || response.statusText || `Request failed (${response.status})`);
+    error.status = response.status;
+    error.payload = data;
+    throw error;
   }
 
   return data;
