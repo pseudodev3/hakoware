@@ -8,14 +8,14 @@ import { shareHakoware } from '../../../lib/share';
 import './AddFriendModal.css';
 
 const FALLBACK_TEMPLATES = [
-  { id: 'DONT_GHOST', name: "Don't Ghost Me", tagline: 'The classic.', description: 'Three days of silence before debt starts.', limit: 3, seasonDays: 30, difficulty: 2 },
-  { id: 'GYM_PACT', name: 'Gym Pact', tagline: 'No disappearing after leg day.', description: 'A tighter two-day window for training partners.', limit: 2, seasonDays: 30, difficulty: 3 },
-  { id: 'STUDY_ARC', name: 'Study Arc', tagline: 'Lock in together.', description: 'Daily-ish pressure for study partners.', limit: 1, seasonDays: 30, difficulty: 4 },
-  { id: 'LOCK_IN', name: '30-Day Lock-In', tagline: 'No excuses for a month.', description: 'A one-day grace period for 30 days.', limit: 1, seasonDays: 30, difficulty: 5 },
-  { id: 'LONG_DISTANCE', name: 'Long Distance', tagline: 'Stay present from far away.', description: 'A four-day window with bonus voice XP.', limit: 4, seasonDays: 45, difficulty: 2 },
-  { id: 'BUILD_IN_PUBLIC', name: 'Build in Public', tagline: 'Ship something. Say something.', description: 'Daily check-ins for builders.', limit: 1, seasonDays: 30, difficulty: 4 },
-  { id: 'CHAOS', name: 'Chaos Contract', tagline: 'The rules will not stay still.', description: 'Surprise anomalies rewrite the contract temporarily.', limit: 3, seasonDays: 30, difficulty: 5, chaos: true },
-  { id: 'CUSTOM', name: 'Custom', tagline: 'Make your own problem.', description: 'Choose your own grace period.', limit: 7, seasonDays: 30, difficulty: 0 }
+  { id: 'DONT_GHOST', name: "Don't Ghost Me", tagline: 'The classic.', description: '3 days of silence, then debt.', limit: 3, seasonDays: 30, difficulty: 2 },
+  { id: 'GYM_PACT', name: 'Gym Pact', tagline: 'No disappearing after leg day.', description: '2-day check-in window.', limit: 2, seasonDays: 30, difficulty: 3 },
+  { id: 'STUDY_ARC', name: 'Study Arc', tagline: 'Lock in together.', description: 'Daily check-in pressure.', limit: 1, seasonDays: 30, difficulty: 4 },
+  { id: 'LOCK_IN', name: '30-Day Lock-In', tagline: 'No excuses for a month.', description: '1-day grace for 30 days.', limit: 1, seasonDays: 30, difficulty: 5 },
+  { id: 'LONG_DISTANCE', name: 'Long Distance', tagline: 'Stay present from far away.', description: '4-day window + voice bonus.', limit: 4, seasonDays: 45, difficulty: 2 },
+  { id: 'BUILD_IN_PUBLIC', name: 'Build in Public', tagline: 'Ship something. Say something.', description: 'Daily builder check-ins.', limit: 1, seasonDays: 30, difficulty: 4 },
+  { id: 'CHAOS', name: 'Chaos Contract', tagline: 'The rules will not stay still.', description: 'Anomalies change the rules.', limit: 3, seasonDays: 30, difficulty: 5, chaos: true },
+  { id: 'CUSTOM', name: 'Custom', tagline: 'Make your own problem.', description: 'Set your own grace period.', limit: 7, seasonDays: 30, difficulty: 0 }
 ];
 
 const PRIMARY_MODE_IDS = new Set(['DONT_GHOST', 'LONG_DISTANCE', 'LOCK_IN', 'CHAOS']);
@@ -135,8 +135,8 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
   const share = async () => {
     if (!shareInvite) return;
     const shareText = shareInvite.requiresSignup
-      ? `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Join Hakoware with ${shareInvite.recipientEmail} and it’ll be waiting for you.`
-      : `I sent you a ${shareInvite.modeName || 'Hakoware'} contract on Hakoware. Open it and it’ll be waiting for you.`;
+      ? `I sent you a ${shareInvite.modeName || 'Hakoware'} contract. Join with ${shareInvite.recipientEmail} to see it.`
+      : `I sent you a ${shareInvite.modeName || 'Hakoware'} contract on Hakoware.`;
     const result = await shareHakoware({
       source: 'INVITE',
       title: 'Hakoware contract',
@@ -161,8 +161,8 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
         <div className="invite-share-state">
           <div className="invite-share-icon"><Check size={20} strokeWidth={2} /></div>
           <div className="invite-share-copy">
-            <strong>{shareInvite.modeName || 'Contract'} is waiting.</strong>
-            <p>Share this link too. When <b>{shareInvite.recipientLabel}</b> opens Hakoware, the request will be waiting.</p>
+            <strong>Invite ready.</strong>
+            <p>Send this to <b>{shareInvite.recipientLabel}</b>.</p>
           </div>
           <button type="button" className="invite-link" onClick={copyInvite} aria-label="Copy Hakoware invite link">
             <span>{shareInvite.inviteUrl}</span>
@@ -189,9 +189,9 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
               <div className="contract-step-intro">
                 <span className="contract-step-icon"><UsersRound size={20} strokeWidth={1.8} /></span>
                 <div>
-                  <p className="mode-kicker">Start with someone real</p>
-                  <h3>Who are you putting under contract?</h3>
-                  <p>Use an @username if they already play Hakoware, or their email if you are inviting them in.</p>
+                  <p className="mode-kicker">Pick a person</p>
+                  <h3>Who’s this with?</h3>
+                  <p>Use their @username or email.</p>
                 </div>
               </div>
 
@@ -215,7 +215,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
               <div className="new-contract-actions single-primary">
                 <Button type="button" variant="secondary" onClick={close}>Cancel</Button>
-                <Button type="button" variant="aura" icon={ArrowRight} onClick={continueFromPerson}>Choose the rules</Button>
+                <Button type="button" variant="aura" icon={ArrowRight} onClick={continueFromPerson}>Next</Button>
               </div>
             </section>
           )}
@@ -223,8 +223,8 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           {step === 2 && (
             <section className="contract-step-panel">
               <div className="mode-intro">
-                <div><p className="mode-kicker">Playing with {friendIdentifier}</p><strong>What kind of contract is this?</strong></div>
-                <span>Every mode runs on seasons + Duo XP</span>
+                <div><p className="mode-kicker">{friendIdentifier}</p><strong>Pick a contract.</strong></div>
+                <span>Seasons + Duo XP</span>
               </div>
 
               <div className="template-grid" role="radiogroup" aria-label="Contract type">
@@ -289,7 +289,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
               <div className="new-contract-actions">
                 <Button type="button" variant="secondary" icon={ArrowLeft} onClick={() => setStep(1)}>Person</Button>
-                <Button type="button" variant={selected?.chaos ? 'danger' : 'aura'} icon={ArrowRight} onClick={continueFromContract}>Review contract</Button>
+                <Button type="button" variant={selected?.chaos ? 'danger' : 'aura'} icon={ArrowRight} onClick={continueFromContract}>Review</Button>
               </div>
             </section>
           )}
@@ -297,7 +297,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           {step === 3 && (
             <section className="contract-step-panel">
               <div className="contract-confirm">
-                <p className="mode-kicker">Ready to send</p>
+                <p className="mode-kicker">Confirm</p>
                 <div className="contract-confirm-duo">
                   <span>{friendIdentifier}</span>
                   <b>×</b>
@@ -311,7 +311,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
                   <span><b>{selected?.difficulty || '-'}/5</b><small>pressure level</small></span>
                 </div>
                 <div className="contract-confirm-note">
-                  Season 1 begins when they accept. Successful check-ins build Duo XP. Missing the {effectiveLimit}-day window starts debt.
+                  Season 1 starts when they accept. Miss {effectiveLimit} day{effectiveLimit === 1 ? '' : 's'} and debt starts.
                 </div>
               </div>
 

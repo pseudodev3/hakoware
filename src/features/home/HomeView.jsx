@@ -82,7 +82,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <div className="first-contract-mark pending"><UserPlus size={24} strokeWidth={1.8} /></div>
           <p className="eyebrow">Challenge received</p>
           <h1>{inviter} put you under contract.</h1>
-          <p className="first-contract-copy">They picked <strong>{mode}</strong>. Accept it and Season 1 starts immediately. Duo XP, debt, Arena pressure and all.</p>
+          <p className="first-contract-copy">They picked <strong>{mode}</strong>. Accept to start Season 1.</p>
           <Button variant="aura" icon={ArrowRight} onClick={() => onNavigate('contracts')}>Review challenge</Button>
           {pendingInvitations.length > 1 && <p className="pending-count-note">+{pendingInvitations.length - 1} more challenge{pendingInvitations.length === 2 ? '' : 's'} waiting</p>}
         </section>
@@ -96,10 +96,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <section className="first-contract-card pending-first-contract">
           <div className="first-contract-mark pending"><Clock3 size={24} strokeWidth={1.8} /></div>
           <p className="eyebrow">Challenge sent</p>
-          <h1>The game starts when they accept.</h1>
-          <p className="first-contract-copy">Your contract is saved. Once they join, Season 1 starts and Hakoware begins keeping score between you.</p>
+          <h1>Waiting on them.</h1>
+          <p className="first-contract-copy">Season 1 starts when they accept.</p>
           <div className="first-contract-actions">
-            <Button variant="secondary" onClick={() => onNavigate('contracts')}>View request</Button>
+            <Button variant="secondary" onClick={() => onNavigate('contracts')}>View</Button>
             <Button variant="aura" icon={Plus} onClick={onAddFriend}>Start another</Button>
           </div>
         </section>
@@ -114,9 +114,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <section className="first-contract-card">
           <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <p className="eyebrow">You’re in, {identity}</p>
-          <h1>Hakoware starts with one other person.</h1>
-          <p className="first-contract-copy">Pick someone you actually care about, choose the rules between you, and start Season 1. We’ll teach the rest when it becomes relevant.</p>
-          <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start your first contract</Button>
+          <h1>Start with one person.</h1>
+          <p className="first-contract-copy">Pick someone. Set the rules. Start Season 1.</p>
+          <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
           <div className="onboarding-rail" aria-label="How your first contract starts">
             <span><b>01</b> Pick a person</span>
             <span><b>02</b> Set the rules</span>
@@ -133,7 +133,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <div>
           <p className="eyebrow">Your circle</p>
           <h1>{hot.length ? 'Something is happening.' : 'Everybody survived.'}</h1>
-          <p>{hot.length ? `${hot.length} contract${hot.length === 1 ? '' : 's'} need attention right now.` : `${friendships.length} active contract${friendships.length === 1 ? '' : 's'} · no immediate fires.`}</p>
+          <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active · all clear.`}</p>
         </div>
         <button className="aura-chip" onClick={() => onNavigate('you')} aria-label={`${user.auraBalance || 0} Aura, open profile`}><span>{user.auraBalance || 0}</span> Aura</button>
       </header>
@@ -156,7 +156,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             <span className="bankruptcy-alert-copy">
               <small>{one ? 'Partner bankrupt' : `${bankruptPartners.length} partners bankrupt`}</small>
               <strong>{names}</strong>
-              <span>{one ? 'Bounties and Claim are unlocked.' : 'Open Contracts to choose who to pressure.'}</span>
+              <span>{one ? 'Bounties + Claim unlocked.' : 'Choose who to pressure.'}</span>
             </span>
             <ArrowRight size={17} strokeWidth={2} />
           </button>
@@ -173,7 +173,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             <div className="season-start-copy">
               <span>SEASON 1 STARTED</span>
               <strong>You and {partnerName} are live.</strong>
-              <p>Your grace clock starts now. You do not need to check in yet. Make your next check-in before {limit} day{limit === 1 ? '' : 's'} of silence turns into debt.</p>
+              <p>Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</p>
             </div>
             <button type="button" className="season-start-dismiss" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={15} /></button>
           </section>
@@ -183,7 +183,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
       {pendingInvitations.length > 0 && (
         <button className="pending-banner" onClick={() => onNavigate('contracts')}>
-          <span><strong>{pendingInvitations.length}</strong> new challenge{pendingInvitations.length === 1 ? '' : 's'} waiting</span>
+          <span><strong>{pendingInvitations.length}</strong> challenge{pendingInvitations.length === 1 ? '' : 's'} waiting</span>
           <ArrowRight size={17} strokeWidth={1.8} />
         </button>
       )}
@@ -204,7 +204,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
       <section className="home-section">
         <div className="section-heading">
-          <div><p className="eyebrow">{hot.length ? 'Right now' : 'Active contracts'}</p><h2>{hot.length ? 'Handle these first.' : 'The circle is holding.'}</h2></div>
+          <div><p className="eyebrow">{hot.length ? 'Right now' : 'Active contracts'}</p><h2>{hot.length ? 'Needs attention.' : 'All clear.'}</h2></div>
           <button className="text-action" onClick={() => onNavigate('contracts')}>All contracts <ArrowRight size={15} /></button>
         </div>
         <div className="home-contract-list">
@@ -213,7 +213,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       </section>
 
       <div className="home-footer-action">
-        <span>One more person changes the whole circle.</span>
+        <span>Grow the circle.</span>
         <button type="button" onClick={onAddFriend}><Plus size={15} /> New contract</button>
       </div>
     </div>

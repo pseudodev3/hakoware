@@ -144,8 +144,8 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
   const handleSubmit = async () => {
     if (!audioBlob || !friendship) return;
-    if (bountyLoading) return showToast?.('Arena state is still syncing', 'ERROR');
-    if (bountySyncError) return showToast?.('Could not verify the live bounty. Close and reopen this voice check-in.', 'ERROR');
+    if (bountyLoading) return showToast?.('Arena is still syncing', 'ERROR');
+    if (bountySyncError) return showToast?.('Could not verify the bounty. Reopen this voice check-in.', 'ERROR');
 
     setLoading(true);
     const contractId = friendship._id || friendship.id;
@@ -207,15 +207,15 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
         {bountySyncError && (
           <div className="voice-bounty-proof sync-error">
             <div className="voice-bounty-icon"><AlertTriangle size={18} /></div>
-            <div className="voice-bounty-copy"><span>ARENA SYNC FAILED</span><strong>Proof state could not be verified.</strong><p>Close and reopen before sending so no hunter credit or escape happens by accident.</p></div>
+            <div className="voice-bounty-copy"><span>ARENA SYNC FAILED</span><strong>Bounty not verified.</strong><p>Reopen before sending.</p></div>
           </div>
         )}
 
         {stats?.isBankrupt && (
           <div className="voice-recovery-banner">
             <span>BANKRUPTCY RECOVERY</span>
-            <strong>This voice check-in starts the comeback.</strong>
-            <p>Debt drops to {stats.limit}. You will still be recovering until one more valid check-in at least 20 hours later.</p>
+            <strong>Recovery starts now.</strong>
+            <p>Debt drops to {stats.limit}. One more check-in after 20h completes recovery.</p>
           </div>
         )}
 
@@ -223,7 +223,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
           <div className="voice-recovery-banner recovering">
             <span>RECOVERING</span>
             <strong>One clean check-in left.</strong>
-            <p>This voice check-in completes bankruptcy recovery and returns this side of the contract to stable.</p>
+            <p>This completes recovery.</p>
           </div>
         )}
 
@@ -233,10 +233,10 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
             <div className="voice-bounty-copy">
               <span>{pressureReady ? 'PROOF OF PRESSURE' : 'BOUNTY LIVE'}</span>
               <strong>{bounty.amount} Aura on this check-in</strong>
-              <p>{pressureReady ? `${bounty.hunterName} sent pressure. Decide whether they actually got you here.` : 'Checking in now closes this bounty without paying a hunter.'}</p>
+              <p>{pressureReady ? `Did ${bounty.hunterName} bring you back?` : 'Send now to close the bounty without paying a hunter.'}</p>
               {pressureReady && (
                 <div className="voice-proof-choice" role="group" aria-label="Bounty hunter credit">
-                  <button type="button" className={!creditHunter ? 'active' : ''} onClick={() => setCreditHunter(false)}>No credit · escape</button>
+                  <button type="button" className={!creditHunter ? 'active' : ''} onClick={() => setCreditHunter(false)}>Escape</button>
                   <button type="button" className={creditHunter ? 'active credit' : ''} onClick={() => setCreditHunter(true)}>Credit {bounty.hunterName}</button>
                 </div>
               )}
@@ -246,7 +246,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
         <div className="voice-header">
           <div className={`mic-status ${isRecording ? 'active' : ''}`}><Mic size={22} strokeWidth={1.8} /></div>
-          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready to send' : 'Say something real.'}</strong><p>{audioUrl ? 'Listen back or send it.' : 'Up to 60 seconds. Voice check-ins earn extra Duo XP.'}</p></div>
+          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready' : 'Say something.'}</strong><p>{audioUrl ? 'Listen or send.' : 'Up to 60s · bonus Duo XP.'}</p></div>
         </div>
 
         <div className="recording-area">
@@ -276,7 +276,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
         <div className="voice-actions">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="aura" disabled={!audioBlob || proofBlocked} loading={loading || bountyLoading} onClick={handleSubmit}>
-            {bountyLoading ? 'Syncing Arena…' : pressureReady && creditHunter ? `Send & credit ${bounty.hunterName}` : hasOpenBounty ? 'Send & escape bounty' : 'Send voice check-in'}
+            {bountyLoading ? 'Syncing Arena…' : pressureReady && creditHunter ? `Send & credit ${bounty.hunterName}` : hasOpenBounty ? 'Send & escape bounty' : 'Send voice'}
           </Button>
         </div>
       </div>

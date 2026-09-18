@@ -82,27 +82,27 @@ export const FriendshipSettingsModal = ({ isOpen, onClose, friendship, currentUs
 
         {isCustom ? (
           <form className="contract-settings-form" onSubmit={updateLimit}>
-            <div><h3>Your grace period</h3><p>Custom contracts let each side choose its own window.</p></div>
+            <div><h3>Your grace period</h3><p>Set your check-in window.</p></div>
             <Input label="Days" type="number" min="1" max="30" icon={Clock3} value={limit} onChange={(event) => setLimit(Number(event.target.value))} required />
-            <p className="settings-help">Debt begins after {limit} day{limit === 1 ? '' : 's'} without your check-in.</p>
+            <p className="settings-help">Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</p>
             <Button variant="primary" type="submit" loading={loading}>Save rule</Button>
           </form>
         ) : (
           <section className="fixed-rule-panel">
             <Clock3 size={17} strokeWidth={1.8} />
-            <div><strong>{perspective?.limit || 7}-day grace period</strong><p>{modeName} has fixed rules for the whole season. Start another mode if you want a different cadence.</p></div>
+            <div><strong>{perspective?.limit || 7}-day grace period</strong><p>Fixed for this season.</p></div>
           </section>
         )}
 
         {isChaos && (
           <section className="chaos-settings-panel">
             <div><span>CHAOS LEVEL</span><strong>{friendship.chaos?.level || 1} / 5</strong></div>
-            <p>{friendship.chaos?.activeEvent ? `${friendship.chaos.activeEvent.name} is active now.` : friendship.chaos?.nextEventAt ? `Next anomaly can strike around ${new Date(friendship.chaos.nextEventAt).toLocaleString()}.` : 'The next anomaly is unscheduled.'}</p>
+            <p>{friendship.chaos?.activeEvent ? `${friendship.chaos.activeEvent.name} is active now.` : friendship.chaos?.nextEventAt ? `Next anomaly can strike around ${new Date(friendship.chaos.nextEventAt).toLocaleString()}.` : 'Next anomaly unscheduled.'}</p>
           </section>
         )}
 
         <div className="contract-danger">
-          <div><strong>End contract</strong><p>This ends the season, removes the connection and refunds open bounty escrow. It cannot be undone.</p></div>
+          <div><strong>End contract</strong><p>Ends the season and connection. Open bounty escrow is refunded. Can’t be undone.</p></div>
           <Button variant="danger" icon={Trash2} loading={deleteLoading} onClick={terminate}>End contract</Button>
         </div>
       </div>

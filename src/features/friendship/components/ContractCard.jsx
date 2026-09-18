@@ -19,7 +19,7 @@ const MODE_NAMES = {
 
 const statusCopy = (stats) => {
   if (stats.isBankrupt) return { label: 'Bankrupt', detail: `${stats.totalDebt} debt`, tone: 'critical' };
-  if (stats.isRecovering) return { label: 'Recovering', detail: `${stats.totalDebt} debt · 1 clean check-in left`, tone: 'overdue' };
+  if (stats.isRecovering) return { label: 'Recovering', detail: `${stats.totalDebt} debt · 1 check-in left`, tone: 'overdue' };
   if (stats.totalDebt > 0) return { label: 'Overdue', detail: `${stats.totalDebt} debt`, tone: 'overdue' };
   const daysLeft = Math.max(0, stats.limit - stats.daysMissed);
   if (daysLeft <= 1) return { label: 'Due soon', detail: daysLeft === 0 ? 'Due today' : '1 day left', tone: 'due' };
@@ -129,7 +129,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       <div className="contract-state-row">
         <div className="contract-state-copy">
           <strong className={`contract-status ${status.tone}`}>{seasonDone ? 'Season complete' : status.label}</strong>
-          <span>{seasonDone ? 'Final report ready' : `${status.detail} · ${stats.limit}-day rule`}</span>
+          <span>{seasonDone ? 'Report ready' : `${status.detail} · ${stats.limit}d rule`}</span>
         </div>
         <div className="duo-summary">
           <strong>Lv. {level}</strong>
@@ -145,7 +145,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
             <BarChart3 size={14} strokeWidth={1.8} /> {seasonDone ? 'View report' : 'Report'}
           </button>
           {seasonDone ? (
-            <Button variant="aura" icon={Trophy} onClick={() => onAction('RECAP', friendship)}>Season recap</Button>
+            <Button variant="aura" icon={Trophy} onClick={() => onAction('RECAP', friendship)}>View recap</Button>
           ) : (
             <div className="contract-primary-actions">
               <Button variant="secondary" icon={Mic} disabled={checkedInToday} onClick={() => onAction('VOICE_CHECKIN', friendship)}>Voice</Button>

@@ -49,7 +49,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
     <div className="contracts-view">
       {pendingReceived.length > 0 && (
         <section className="contract-section priority-invites">
-          <div className="contract-section-title"><h2>Challenges waiting for you</h2><span>{pendingReceived.length}</span></div>
+          <div className="contract-section-title"><h2>Challenges</h2><span>{pendingReceived.length}</span></div>
           <div className="invite-list">
             {pendingReceived.map((friendship) => {
               const inviter = friendship.user1;
@@ -77,7 +77,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         <div>
           <p className="eyebrow">Contracts</p>
           <h1>Your roster.</h1>
-          <p>Every relationship is its own season. Build Duo XP, survive the rules, and keep the report respectable.</p>
+          <p>Every contract, one place.</p>
         </div>
         <Button variant="aura" icon={Plus} onClick={onAddFriend}>New contract</Button>
       </header>
@@ -92,7 +92,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
 
       {waitingOnThem > 0 && (
         <section className="contract-section compact-section">
-          <div className="contract-section-title"><h2>Waiting on them</h2><span>{waitingOnThem}</span></div>
+          <div className="contract-section-title"><h2>Waiting</h2><span>{waitingOnThem}</span></div>
           <div className="sent-list">
             {pendingSent.map((friendship) => (
               <div className="sent-row" key={friendship._id || friendship.id}>
@@ -113,9 +113,9 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
       )}
 
       <section className="contract-section active-contract-section">
-        <div className="contract-section-title"><h2>In play</h2><span>{friendships.length}</span></div>
+        <div className="contract-section-title"><h2>Active</h2><span>{friendships.length}</span></div>
         {friendships.length === 0 ? (
-          <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active seasons yet.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Start a contract</Button></div>
+          <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active contracts.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Start one</Button></div>
         ) : (
           <div className="contracts-grid">
             {orderedFriendships.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
