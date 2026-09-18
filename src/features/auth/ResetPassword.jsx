@@ -73,7 +73,7 @@ export const ResetPassword = ({ showToast }) => {
         transition={{ type: 'spring', duration: .45, bounce: 0 }}
       >
         <div className="auth-header">
-          <img className="auth-logo" src="/hakoware-mark.png" alt="Hakoware" />
+          <img className="auth-logo" src="/hakoware-mark-v2.png" alt="Hakoware" />
           <span className="auth-eyebrow">Account recovery</span>
           <h1>{success ? 'Password updated' : 'Choose a new password'}</h1>
           <p>{success ? 'Your account is secured with the new password.' : 'Set a new password for your Hakoware account. Your reset link is single-use and time limited.'}</p>
