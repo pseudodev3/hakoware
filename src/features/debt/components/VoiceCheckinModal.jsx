@@ -160,7 +160,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
       return;
     }
 
-    const checkin = await performCheckin(contractId, 'VOICE', bountyCreditId, bountyDecision);
+    const checkin = await performCheckin(contractId, 'VOICE', bountyCreditId, bountyDecision, voice.voiceNoteId);
     if (checkin.success) {
       const xp = checkin.game?.xp;
       const chaos = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
