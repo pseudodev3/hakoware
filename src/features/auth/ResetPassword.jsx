@@ -9,7 +9,8 @@ import { applyTheme, getInitialTheme } from '../../lib/theme';
 import './Auth.css';
 
 export const ResetPassword = ({ showToast }) => {
-  const { token } = useParams();
+  const { token: legacyToken } = useParams();
+  const token = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token') || legacyToken || '';
   const navigate = useNavigate();
   const [theme, setTheme] = useState(getInitialTheme);
   const [password, setPassword] = useState('');
@@ -35,7 +36,7 @@ export const ResetPassword = ({ showToast }) => {
     setLoading(true);
     setError('');
     try {
-      await api.post(`/auth/reset-password/${token}`, { password });
+      await api.post('/auth/reset-password', { password, token });
       setSuccess(true);
       showToast('Password updated', 'SUCCESS');
       setTimeout(() => navigate('/'), 2200);
