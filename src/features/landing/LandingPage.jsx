@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   AudioLines,
@@ -282,8 +283,16 @@ export const LandingPage = ({ onEnter }) => {
       </main>
 
       <footer className="lp-footer">
-        <div className="lp-brand"><img src="/hakoware-mark-v2.png" alt="" /><div><strong>Hakoware</strong><span>built as its own world</span></div></div>
-        <p>Social pressure. Duo progression. Mild consequences.</p>
+        <div className="lp-footer-main">
+          <div className="lp-brand"><img src="/hakoware-mark-v2.png" alt="" /><div><strong>Hakoware</strong><span>built as its own world</span></div></div>
+          <p>Social pressure. Duo progression. Mild consequences.</p>
+        </div>
+        <nav className="lp-footer-links" aria-label="Legal and support">
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
+          <Link to="/community">Community</Link>
+          <Link to="/contact">Contact</Link>
+        </nav>
       </footer>
     </div>
   );
