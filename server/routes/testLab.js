@@ -20,7 +20,8 @@ const {
   initializeContractGame,
   activateSeason,
   refreshGameState,
-  triggerChaosEvent
+  triggerChaosEvent,
+  recordEvent
 } = require('../services/contractGame');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -186,6 +187,7 @@ router.patch('/contracts/:id/state', async (req, res) => {
     const perspective = friendship[key];
     const limit = Math.max(1, Number(perspective.limit) || 7);
     const now = new Date();
+    const wasBankrupt = Boolean(perspective.isBankrupt);
 
     let elapsedMs = 0;
     if (state === 'READY') elapsedMs = 21 * HOUR;
@@ -204,9 +206,21 @@ router.patch('/contracts/:id/state', async (req, res) => {
     perspective.isInWarningZone = debt > 0 && !perspective.isBankrupt;
     perspective.daysUntilBankrupt = Math.max(0, (limit * 2) - debt);
     perspective.recoveryRequired = false;
-    perspective.wasBankrupt = perspective.isBankrupt;
-    perspective.bankruptAt = perspective.isBankrupt ? now : null;
+    perspective.wasBankrupt = perspective.wasBankrupt || perspective.isBankrupt;
+    perspective.bankruptAt = perspective.isBankrupt ? (perspective.bankruptAt || now) : perspective.bankruptAt;
     await friendship.save();
+
+    if (perspective.isBankrupt && !wasBankrupt) {
+      await recordEvent(friendship._id, 'BANKRUPTCY', {
+        userId: target._id,
+        metadata: {
+          debt,
+          limit,
+          season: friendship.season?.number,
+          forcedByFounderLab: true
+        }
+      });
+    }
 
     return res.json({ state, target: playerView(target), contract: await contractView(friendship) });
   } catch (error) {
