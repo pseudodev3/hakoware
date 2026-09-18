@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Clock3, Flame, Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
-import { WorldEventBanner } from '../../../shared/components/WorldEventBanner';
 import { CreateBountyModal } from './CreateBountyModal';
 import { PressureMoveModal } from './PressureMoveModal';
 import { huntBounty, sendBountyPressure } from '../../../services/bountyService';
@@ -29,7 +28,7 @@ const grudgeTimeLeft = (date) => {
   return days > 0 ? `${days}d ${hours}h left` : `${Math.max(1, hours)}h left`;
 };
 
-export const Arena = ({ friendships, worldEvent, showToast }) => {
+export const Arena = ({ friendships, showToast }) => {
   const { user, refreshUser } = useAuth();
   const cachedArena = peekArenaSnapshot();
   const [tab, setTab] = useState('bounties');
@@ -123,7 +122,6 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         </Button>
       </header>
 
-      <WorldEventBanner event={worldEvent} />
 
       <section className="hunter-profile-strip">
         <div className="hunter-profile-mark"><Sword size={20} strokeWidth={1.8} /></div>
