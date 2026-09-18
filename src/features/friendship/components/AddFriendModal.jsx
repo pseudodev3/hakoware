@@ -66,7 +66,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     if (result.success && result.inviteReady) {
       setShareInvite({ ...result, modeName: selected.name });
       await onRefresh?.();
-      showToast?.('Invite saved — share it with them', 'SUCCESS');
+      showToast?.('Invite saved - share it with them', 'SUCCESS');
     } else if (result.success) {
       showToast?.(`${selected.name} request sent`, 'SUCCESS');
       reset();
@@ -101,7 +101,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     if (result.cancelled) return;
     if (result.success && result.method === 'CLIPBOARD') {
       setCopied(true);
-      showToast?.('Invite copied — send it anywhere', 'SUCCESS');
+      showToast?.('Invite copied - send it anywhere', 'SUCCESS');
     } else if (!result.success) {
       showToast?.(result.error || 'Could not share the invite', 'ERROR');
     }
@@ -161,7 +161,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
             <div className="mode-rule-stats">
               <span><b>{selected?.id === 'CUSTOM' ? limit : selected?.limit}d</b> grace</span>
               <span><b>{selected?.seasonDays}d</b> season</span>
-              <span><b>{selected?.difficulty || '—'}/5</b> heat</span>
+              <span><b>{selected?.difficulty || '-'}/5</b> heat</span>
             </div>
           </div>
 
