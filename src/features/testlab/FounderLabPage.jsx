@@ -25,6 +25,7 @@ export const FounderLabPage = ({ showToast }) => {
   const [theme, setTheme] = useState(getInitialTheme);
   const [lab, setLab] = useState(null);
   const [status, setStatus] = useState('loading');
+  const [errorDetail, setErrorDetail] = useState('');
   const [busy, setBusy] = useState('');
   const [name, setName] = useState('Test A');
   const [user1Id, setUser1Id] = useState('');
@@ -39,15 +40,24 @@ export const FounderLabPage = ({ showToast }) => {
     try {
       const data = await getFounderLab();
       setLab(data);
+      setErrorDetail('');
       setStatus('ready');
       return data;
     } catch (error) {
-      if (error.message === 'Founder access only') {
+      if (error.status === 403 || error.message === 'Founder access only') {
         setStatus('denied');
         return null;
       }
+
+      const detail = error.status === 404
+        ? 'The Founder Lab backend route is not deployed yet. Railway needs the latest main build.'
+        : error.status === 500
+          ? 'The Founder Lab backend returned a server error. Check the latest Railway deployment log.'
+          : error.message || 'Could not reach the Hakoware API.';
+
+      setErrorDetail(detail);
       setStatus('error');
-      if (!quiet) showToast?.(error.message || 'Could not load Founder Test Lab', 'ERROR');
+      if (!quiet) showToast?.(detail, 'ERROR');
       return null;
     }
   };
@@ -167,7 +177,10 @@ export const FounderLabPage = ({ showToast }) => {
     return (
       <div className="founder-route founder-route-centered">
         <div className="founder-denied">
+          <img src="/hakoware-mark-v2.png" alt="" />
+          <span>FOUNDER LAB</span>
           <h1>Founder Lab unavailable.</h1>
+          <p>{errorDetail}</p>
           <Button variant="secondary" onClick={() => load()}>Retry</Button>
         </div>
       </div>
