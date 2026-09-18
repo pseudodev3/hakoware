@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import { clearResourceCache, seedResource } from '../lib/resourceCache';
+import { getBootstrap, RESOURCE_KEYS, seedBootstrap } from '../services/bootstrapService';
 
 const AuthContext = createContext(null);
 const withUid = (value) => value ? { ...value, uid: value.id || value._id } : null;
@@ -12,6 +14,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [bootstrapData, setBootstrapData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +26,11 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        setUser(withUid(await api.get('/auth/user')));
+        const payload = await getBootstrap({ force: true });
+        const normalized = { ...payload, user: withUid(payload.user) };
+        seedBootstrap(normalized);
+        setBootstrapData(normalized);
+        setUser(normalized.user);
       } catch (error) {
         console.error('Failed to restore session:', error);
         const founderToken = localStorage.getItem('hakoware_founder_token');
@@ -45,8 +52,11 @@ export const AuthProvider = ({ children }) => {
   const authenticate = async (endpoint, payload) => {
     try {
       const res = await api.post(endpoint, payload);
+      clearResourceCache();
       localStorage.setItem('token', res.token);
       const nextUser = withUid(res.user);
+      seedResource(RESOURCE_KEYS.user, nextUser);
+      setBootstrapData(null);
       setUser(nextUser);
       return { success: true, user: nextUser };
     } catch (error) {
@@ -60,14 +70,31 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('hakoware_founder_token');
+    clearResourceCache();
+    setBootstrapData(null);
     setUser(null);
   };
 
   const refreshUser = async () => {
     try {
       const nextUser = withUid(await api.get('/auth/user'));
+      seedResource(RESOURCE_KEYS.user, nextUser);
+      setBootstrapData((current) => current ? { ...current, user: nextUser } : current);
       setUser(nextUser);
       return { success: true, user: nextUser };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const refreshBootstrap = async () => {
+    try {
+      const payload = await getBootstrap({ force: true });
+      const normalized = { ...payload, user: withUid(payload.user) };
+      seedBootstrap(normalized);
+      setBootstrapData(normalized);
+      setUser(normalized.user);
+      return { success: true, data: normalized, user: normalized.user };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -105,16 +132,18 @@ export const AuthProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     user,
+    bootstrapData,
     loading,
     signup,
     login,
     logout,
     refreshUser,
+    refreshBootstrap,
     setNenType,
     buyCard,
     useCard,
     isAuthenticated: Boolean(user)
-  }), [user, loading]);
+  }), [user, bootstrapData, loading]);
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
