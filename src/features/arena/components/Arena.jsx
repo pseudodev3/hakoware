@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Clock3, Dice5, Flame, Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
+import { Clock3, Flame, Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
+import { WorldEventBanner } from '../../../shared/components/WorldEventBanner';
 import { CreateBountyModal } from './CreateBountyModal';
 import { PressureMoveModal } from './PressureMoveModal';
 import { huntBounty, sendBountyPressure } from '../../../services/bountyService';
@@ -122,13 +123,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         </Button>
       </header>
 
-      {worldEvent && (
-        <section className="arena-live-event">
-          <div className="arena-live-icon">{worldEvent.id === 'ANOMALY_SEASON' ? <Dice5 size={20} /> : <Activity size={20} />}</div>
-          <div><span>WORLD EVENT · {worldEvent.theme}</span><strong>{worldEvent.name}</strong><p>{worldEvent.description}</p></div>
-          <b>LIVE</b>
-        </section>
-      )}
+      <WorldEventBanner event={worldEvent} />
 
       <section className="hunter-profile-strip">
         <div className="hunter-profile-mark"><Sword size={20} strokeWidth={1.8} /></div>

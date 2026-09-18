@@ -1,6 +1,7 @@
 import React from 'react';
-import { ArrowRight, Clock3, Dice5, Flame, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound } from 'lucide-react';
+import { ArrowRight, Clock3, Dice5, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
+import { WorldEventBanner } from '../../shared/components/WorldEventBanner';
 import { ContractCard } from '../friendship/components/ContractCard';
 import { getBankruptPartner } from '../friendship/contractState';
 import './HomeView.css';
@@ -24,7 +25,6 @@ const priority = (friendship, userId) => {
   return -state.daysLeft;
 };
 
-const worldIcon = (worldEvent) => worldEvent?.id === 'ANOMALY_SEASON' ? Dice5 : worldEvent?.id === 'OPEN_MIC' ? Sparkles : worldEvent?.id === 'DUO_RUSH' ? UsersRound : Flame;
 
 export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate }) => {
   const userId = user.uid || user.id || user._id;
@@ -37,7 +37,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const visible = (hot.length ? hot : sorted).slice(0, 3);
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
   const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
-  const WorldIcon = worldIcon(worldEvent);
 
   if (friendships.length === 0 && pendingInvitations.length > 0) {
     const invitation = pendingInvitations[0];
@@ -130,13 +129,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         );
       })()}
 
-      {worldEvent && (
-        <section className="world-event-card">
-          <span className="world-event-icon"><WorldIcon size={19} strokeWidth={1.9} /></span>
-          <div><span className="world-label">LIVE WORLD EVENT · {worldEvent.theme}</span><strong>{worldEvent.name}</strong><p>{worldEvent.description}</p></div>
-          <span className="world-live">LIVE</span>
-        </section>
-      )}
+      <WorldEventBanner event={worldEvent} />
 
       {pendingInvitations.length > 0 && (
         <button className="pending-banner" onClick={() => onNavigate('contracts')}>
