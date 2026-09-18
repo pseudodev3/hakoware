@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrainCircuit, Droplets, Flame, Sparkles, Wind, Zap } from 'lucide-react';
+import { BrainCircuit, Droplets, Flame, Sparkles, Wind, X, Zap } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { useAuth } from '../../../contexts/AuthContext';
 import './WaterDivinationModal.css';
@@ -13,13 +13,13 @@ const NEN_TYPES = [
   { id: 'SPECIALIST', label: 'Specialist', icon: Sparkles, description: 'Hard to classify. You tend to make your own rules.' }
 ];
 
-export const WaterDivinationModal = () => {
+export const WaterDivinationModal = ({ isOpen = false, onClose = () => {} }) => {
   const { user, setNenType } = useAuth();
   const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  if (!user || user.nenType) return null;
+  if (!isOpen || !user || user.nenType) return null;
   const choice = NEN_TYPES.find((item) => item.id === selected);
 
   const save = async () => {
@@ -27,19 +27,24 @@ export const WaterDivinationModal = () => {
     setSaving(true);
     setError('');
     const result = await setNenType(choice.id);
-    if (!result.success) setError(result.error || 'Could not save your affinity');
+    if (!result.success) {
+      setError(result.error || 'Could not save your affinity');
+    } else {
+      onClose();
+    }
     setSaving(false);
   };
 
   return (
     <div className="affinity-overlay" role="dialog" aria-modal="true" aria-labelledby="affinity-title">
       <div className="affinity-card">
+        <button type="button" className="affinity-close" onClick={onClose} aria-label="Close affinity picker"><X size={18} /></button>
         <header className="affinity-header">
-          <img src="/hakoware-mark.svg" alt="" />
+          <img src="/hakoware-mark-v2.png" alt="" />
           <div>
-            <p className="affinity-kicker">First thing first</p>
-            <h2 id="affinity-title">Choose your Nen affinity.</h2>
-            <p>This is part of your Hakoware identity. Pick the one that feels closest to you.</p>
+            <p className="affinity-kicker">Optional profile detail</p>
+            <h2 id="affinity-title">Choose an affinity.</h2>
+            <p>Pick the style that feels closest to you. It only changes your profile identity, not your contract rules.</p>
           </div>
         </header>
 
@@ -61,7 +66,7 @@ export const WaterDivinationModal = () => {
         {error && <p className="affinity-error" role="alert">{error}</p>}
 
         <div className="affinity-footer">
-          <p>{choice ? `${choice.label} will be attached to your profile.` : 'You can only choose once.'}</p>
+          <p>{choice ? `${choice.label} will be attached to your profile.` : 'Optional, but the choice is permanent once saved.'}</p>
           <Button variant="aura" loading={saving} disabled={!choice} onClick={save}>
             {choice ? `Choose ${choice.label}` : 'Choose an affinity'}
           </Button>
