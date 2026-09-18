@@ -1,8 +1,9 @@
-import React from 'react';
-import { ArrowRight, BarChart3, Check, Clock3, Dice5, Flame, MessageCircle, Mic, Settings, TriangleAlert, Trophy, UsersRound } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, BarChart3, Check, Clock3, Dice5, Flame, MessageCircle, Mic, Settings, Share2, TriangleAlert, Trophy, UsersRound } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
 import { getContractSides } from '../contractState';
+import { shareHakoware } from '../../../lib/share';
 import './ContractCard.css';
 
 const MODE_NAMES = {
@@ -47,6 +48,7 @@ const formatTimeLeft = (date) => {
 };
 
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
+  const [chaosShared, setChaosShared] = useState(false);
   const { partner: friend, ownPerspective: perspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
   if (!stats || !friend) return null;
@@ -63,6 +65,21 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
   const checkedInToday = hoursSinceCheckin < 20;
   const partnerBankrupt = Boolean(partnerDebt?.isBankrupt) && !seasonDone;
+
+  const shareChaos = async () => {
+    if (!activeChaos) return;
+    const result = await shareHakoware({
+      source: 'CHAOS',
+      title: 'Hakoware Chaos event',
+      text: `${name} and I got hit with ${activeChaos.name} on Hakoware. ${activeChaos.description}`,
+      url: window.location.origin
+    });
+
+    if (result.success && result.method === 'CLIPBOARD') {
+      setChaosShared(true);
+      window.setTimeout(() => setChaosShared(false), 1800);
+    }
+  };
 
   return (
     <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
@@ -104,6 +121,9 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         <div className="contract-anomaly">
           <Flame size={16} strokeWidth={1.9} />
           <div><strong>{activeChaos.name}</strong><span>{formatTimeLeft(activeChaos.expiresAt)} · {activeChaos.description}</span></div>
+          <button type="button" className="contract-anomaly-share" onClick={shareChaos}>
+            <Share2 size={13} strokeWidth={1.9} /> {chaosShared ? 'Copied' : 'Share'}
+          </button>
         </div>
       )}
 
