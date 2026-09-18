@@ -9,7 +9,7 @@ const publicApiUrl = String(
 ).replace(/\/$/, '');
 const emailLogoUrl = String(
   process.env.EMAIL_LOGO_URL ||
-  (publicApiUrl ? `${publicApiUrl}/brand/hakoware-mark.jpg` : `${frontendUrl}/hakoware-mark.jpg`)
+  (publicApiUrl ? `${publicApiUrl}/brand/hakoware-mark-v2.jpg` : `${frontendUrl}/hakoware-mark-v2.jpg`)
 ).trim();
 
 const parseMailbox = (value, fallbackName = 'Hakoware') => {
