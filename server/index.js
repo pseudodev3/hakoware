@@ -7,6 +7,8 @@ const { assertBucketConfig } = require('./services/bucketStorage');
 const { getEmailStatus, verifyEmailTransport } = require('./services/emailService');
 const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
 const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
+const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
+const securityHeaders = require('./middleware/securityHeaders');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -35,7 +37,9 @@ try {
 }
 
 const app = express();
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
+app.use(securityHeaders);
 
 app.get('/brand/hakoware-mark.jpg', (req, res) => {
   res.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
@@ -76,15 +80,8 @@ app.use('/api/test-lab', require('./routes/testLab'));
 
 app.get('/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1;
-  const email = getEmailStatus();
   res.status(connected ? 200 : 503).json({
-    status: connected ? 'healthy' : 'starting',
-    database: connected ? 'connected' : 'disconnected',
-    storage: 'railway-bucket',
-    email: email.configured ? email.provider : 'not-configured',
-    founderLab: 'available',
-    build: process.env.RAILWAY_GIT_COMMIT_SHA || null,
-    uptime: Math.round(process.uptime())
+    status: connected ? 'healthy' : 'starting'
   });
 });
 
@@ -94,7 +91,7 @@ app.use((err, req, res, next) => {
   if (err?.message === 'Origin not allowed by CORS') return res.status(403).json({ msg: 'Origin not allowed' });
   if (err instanceof SyntaxError && 'body' in err) return res.status(400).json({ msg: 'Invalid JSON body' });
   if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ msg: 'Audio file is too large' });
-  if (err?.message === 'Only audio uploads are allowed') return res.status(415).json({ msg: err.message });
+  if (err?.message === 'Only supported audio uploads are allowed') return res.status(415).json({ msg: err.message });
   console.error(err);
   return res.status(500).json({ msg: 'Server error' });
 });
@@ -117,13 +114,14 @@ async function start() {
   server = app.listen(PORT, '0.0.0.0', () => console.log(`Hakoware API listening on port ${PORT}`));
   startDebtWorker();
   startChaosWorker();
+  startVoiceCleanupWorker();
 }
 
 async function shutdown(signal) {
   console.log(`${signal} received, shutting down gracefully`);
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-  await Promise.all([stopDebtWorker(), stopChaosWorker()]);
+  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker()]);
   if (server) await new Promise((resolve) => server.close(resolve));
   await mongoose.connection.close();
   process.exit(0);
