@@ -68,6 +68,8 @@ const FriendshipSchema = new mongoose.Schema({
   user1DisplayName: String,
   user2DisplayName: String,
   status: { type: String, enum: ['PENDING', 'ACTIVE', 'BLOCKED'], default: 'PENDING' },
+  isTestData: { type: Boolean, default: false, index: true },
+  testOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   templateId: { type: String, default: 'DONT_GHOST', index: true },
   duoXP: { type: Number, default: 0, min: 0 },
   duoLevel: { type: Number, default: 1, min: 1 },
