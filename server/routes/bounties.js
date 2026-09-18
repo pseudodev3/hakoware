@@ -52,6 +52,15 @@ router.post('/', auth, async (req, res) => {
     const isUser2 = friendship.user2.toString() === req.user.id;
     if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
 
+    const actor = await User.findById(req.user.id).select('isTestAccount testOwnerId');
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+    if (Boolean(actor.isTestAccount) !== Boolean(friendship.isTestData)) {
+      return res.status(403).json({ msg: 'Test Lab and live Arena data cannot mix' });
+    }
+    if (actor.isTestAccount && String(actor.testOwnerId) !== String(friendship.testOwnerId)) {
+      return res.status(403).json({ msg: 'This test contract belongs to another lab' });
+    }
+
     const targetId = isUser1 ? friendship.user2 : friendship.user1;
     const target = await User.findById(targetId).select('_id displayName');
     if (!target) return res.status(404).json({ msg: 'User not found' });
@@ -95,6 +104,8 @@ router.post('/', auth, async (req, res) => {
         targetId: target._id,
         targetName: target.displayName,
         friendshipId: friendship._id,
+        isTestData: Boolean(friendship.isTestData),
+        testOwnerId: friendship.testOwnerId || null,
         amount,
         listingFee,
         message: String(req.body.message || '').trim().slice(0, 180)
@@ -145,7 +156,15 @@ router.post('/', auth, async (req, res) => {
 router.get('/active', auth, async (req, res) => {
   try {
     await expireStaleBounties();
+    const actor = await User.findById(req.user.id).select('isTestAccount testOwnerId');
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+
+    const scope = actor.isTestAccount
+      ? { isTestData: true, testOwnerId: actor.testOwnerId }
+      : { isTestData: { $ne: true } };
+
     const bounties = await Bounty.find({
+      ...scope,
       status: { $in: ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'] },
       expiresAt: { $gt: new Date() }
     })
@@ -200,6 +219,17 @@ router.post('/:id/hunt', auth, async (req, res) => {
     const existing = await Bounty.findById(req.params.id);
     if (!existing) return res.status(404).json({ msg: 'Bounty not found' });
     if (existing.status !== 'ACTIVE') return res.status(400).json({ msg: 'Bounty is no longer open' });
+
+    const actor = await User.findById(req.user.id).select('isTestAccount testOwnerId');
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+    if (actor.isTestAccount) {
+      if (!existing.isTestData || String(existing.testOwnerId) !== String(actor.testOwnerId)) {
+        return res.status(403).json({ msg: 'Test players can only hunt inside their Founder Lab' });
+      }
+    } else if (existing.isTestData) {
+      return res.status(403).json({ msg: 'Founder Lab bounties are not part of the live Arena' });
+    }
+
     if (existing.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty on yourself' });
     if (existing.senderId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you placed' });
 
