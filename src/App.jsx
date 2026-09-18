@@ -189,6 +189,7 @@ function MainApp({ showToast }) {
           onAction={handleAction}
           onAddFriend={() => setModalType('ADD_FRIEND')}
           onRefresh={loadData}
+          onNavigate={setActiveTab}
           showToast={showToast}
         />
       )}
