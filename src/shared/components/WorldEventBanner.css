@@ -27,8 +27,7 @@
   height:6px;
   flex:0 0 auto;
   border-radius:50%;
-  background:var(--aura-gold);
-  box-shadow:0 0 0 4px var(--aura-gold-soft);
+  background:var(--aura-red);
 }
 
 .world-event-body {
@@ -163,13 +162,3 @@
   }
 }
 
-@media (prefers-reduced-motion:no-preference) {
-  .world-event-pulse {
-    animation:world-event-breathe 2.4s ease-in-out infinite;
-  }
-}
-
-@keyframes world-event-breathe {
-  0%,100% { opacity:.72; box-shadow:0 0 0 3px var(--aura-gold-soft); }
-  50% { opacity:1; box-shadow:0 0 0 6px var(--aura-gold-soft); }
-}
