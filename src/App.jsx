@@ -185,7 +185,6 @@ function MainApp({ showToast }) {
           pendingSent={pendingSent}
           pendingExternal={pendingExternal}
           templates={contractMeta.templates}
-          worldEvent={contractMeta.worldEvent}
           onAction={handleAction}
           onAddFriend={() => setModalType('ADD_FRIEND')}
           onRefresh={loadData}
@@ -194,8 +193,8 @@ function MainApp({ showToast }) {
         />
       )}
 
-      {activeTab === 'arena' && <Arena friendships={friendships} worldEvent={contractMeta.worldEvent} showToast={showToast} />}
-      {activeTab === 'you' && <YouView friendships={friendships} worldEvent={contractMeta.worldEvent} showToast={showToast} />}
+      {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
+      {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
 
       <AddFriendModal
         isOpen={modalType === 'ADD_FRIEND'}

@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
-import { WorldEventBanner } from '../../shared/components/WorldEventBanner';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
@@ -41,7 +40,7 @@ const PLUS_FEATURES = [
   { icon: Crown, title: 'Duo cosmetics', copy: 'Themes, profile treatments and visual identity for your Duo.' }
 ];
 
-export const YouView = ({ friendships, worldEvent, showToast }) => {
+export const YouView = ({ friendships, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
   const cachedYou = peekYouSnapshot();
   const [aura, setAura] = useState(cachedYou?.aura || {
@@ -241,7 +240,6 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
         <div><Sparkles size={18} /><small>Total Duo XP</small><strong>{totalDuoXP}</strong><span>across your circle</span></div>
       </section>
 
-      <WorldEventBanner event={worldEvent} compact />
 
       {strongest && (
         <section className="duo-share-strip">

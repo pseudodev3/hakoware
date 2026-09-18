@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Clock3, Dice5, Mail, Plus, Swords, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
-import { WorldEventBanner } from '../../../shared/components/WorldEventBanner';
 import { ContractCard } from './ContractCard';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { getBankruptPartner } from '../contractState';
@@ -18,7 +17,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], worldEvent, onAction, onAddFriend, onRefresh, onNavigate, showToast }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -90,7 +89,6 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         <div className={chaosContracts ? 'chaos' : ''}><small>Chaos</small><strong>{chaosContracts}</strong><span>{chaosContracts ? 'unstable contracts' : 'none active'}</span></div>
       </section>
 
-      <WorldEventBanner event={worldEvent} compact />
 
       {waitingOnThem > 0 && (
         <section className="contract-section compact-section">
