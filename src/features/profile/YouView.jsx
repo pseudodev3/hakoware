@@ -7,6 +7,7 @@ import { Button } from '../../shared/components/Button';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
+import { buildDuoShareCard } from '../../lib/duoShareCard';
 import './YouView.css';
 
 const perspectiveFor = (friendship, userId, mine = true) => {
@@ -160,19 +161,38 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
 
   const shareStrongestDuo = async () => {
     if (!strongest) return showToast?.('Start a contract first. Then you have something to brag about', 'ERROR');
-    const partner = partnerName(strongest);
-    const result = await shareHakoware({
-      source: 'DUO',
-      title: 'Hakoware Duo',
-      text: `${user.displayName} × ${partner} are Duo Lv. ${strongest.duoLevel || 1} · ${strongest.duoTitle || 'New Contract'} on Hakoware.`,
-      url: window.location.origin
-    });
 
-    if (result.cancelled) return;
-    if (result.success && result.method === 'CLIPBOARD') {
-      showToast?.('Duo brag copied - post it anywhere', 'SUCCESS');
-    } else if (!result.success) {
-      showToast?.(result.error || 'Could not share your Duo', 'ERROR');
+    setBusy('share-duo');
+    try {
+      const partner = partnerName(strongest);
+      const blob = await buildDuoShareCard({
+        userName: user.displayName,
+        partnerName: partner,
+        duoLevel: strongest.duoLevel || 1,
+        duoTitle: strongest.duoTitle || 'New Contract',
+        duoXP: strongest.duoXP || 0,
+        templateName: typeLabel(strongest.templateId || 'Contract'),
+        seasonNumber: strongest.season?.number || 1
+      });
+      const file = new File([blob], 'hakoware-duo-card.png', { type: 'image/png' });
+      const result = await shareHakoware({
+        source: 'DUO',
+        title: 'Hakoware Duo',
+        text: `${user.displayName} × ${partner} · Duo Lv. ${strongest.duoLevel || 1} · ${strongest.duoTitle || 'New Contract'}`,
+        url: '',
+        files: [file]
+      });
+
+      if (result.cancelled) return;
+      if (result.success && result.method === 'CLIPBOARD') {
+        showToast?.('Duo card text copied - image sharing is not supported here', 'SUCCESS');
+      } else if (!result.success) {
+        showToast?.(result.error || 'Could not share your Duo', 'ERROR');
+      }
+    } catch (error) {
+      showToast?.(error.message || 'Could not build your Duo card', 'ERROR');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -230,7 +250,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
               <small>{strongest.duoTitle || 'New Contract'} · {strongest.duoXP || 0} XP</small>
             </div>
           </div>
-          <Button variant="secondary" size="sm" icon={Share2} onClick={shareStrongestDuo}>Share Duo</Button>
+          <Button variant="secondary" size="sm" icon={Share2} loading={busy === 'share-duo'} onClick={shareStrongestDuo}>Share Duo</Button>
         </section>
       )}
 
