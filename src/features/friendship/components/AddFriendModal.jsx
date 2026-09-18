@@ -31,12 +31,7 @@ const ICONS = {
   CUSTOM: SlidersHorizontal
 };
 
-const stepTitle = (step, shareInvite) => {
-  if (shareInvite) return 'Invite ready';
-  if (step === 1) return 'Choose a person';
-  if (step === 2) return 'Choose a contract';
-  return 'Review contract';
-};
+const stepTitle = (_step, shareInvite) => shareInvite ? 'Invite ready' : 'New contract';
 
 export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, templates = [] }) => {
   const modes = templates.length ? templates : FALLBACK_TEMPLATES;
@@ -189,7 +184,6 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
               <div className="contract-step-intro">
                 <span className="contract-step-icon"><UsersRound size={20} strokeWidth={1.8} /></span>
                 <div>
-                  <p className="mode-kicker">Pick a person</p>
                   <h3>Who’s this with?</h3>
                   <p>Use their @username or email.</p>
                 </div>
@@ -297,7 +291,6 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           {step === 3 && (
             <section className="contract-step-panel">
               <div className="contract-confirm">
-                <p className="mode-kicker">Confirm</p>
                 <div className="contract-confirm-duo">
                   <span>{friendIdentifier}</span>
                   <b>×</b>
