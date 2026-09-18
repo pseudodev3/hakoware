@@ -25,6 +25,7 @@ const publicUser = (user) => {
   delete data.welcomeAuraGranted;
   delete data.lastDailyAuraBonusKey;
   delete data.authVersion;
+  delete data.usernameNormalized;
   return data;
 };
 const signupLimiter = createRateLimiter({
@@ -147,7 +148,7 @@ router.post('/login', loginLimiter, async (req, res) => {
   try {
     const identifier = String(req.body.identifier || req.body.email || '').trim();
     const password = String(req.body.password || '');
-    const isEmail = identifier.includes('@');
+    const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
     const query = isEmail
       ? { email: normalizeEmail(identifier) }
       : { usernameNormalized: normalizeUsername(identifier) };
@@ -192,7 +193,7 @@ router.put('/username', auth, usernameLimiter, async (req, res) => {
 router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion');
+      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion -usernameNormalized');
     if (!user) return res.status(404).json({ msg: 'User not found' });
     return res.json(user);
   } catch (err) {
