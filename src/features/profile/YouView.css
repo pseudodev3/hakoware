@@ -1,17 +1,17 @@
-.you-view { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:24px; }
-.profile-header { padding:8px 0 2px; display:flex; flex-direction:column; gap:15px; }
-.profile-identity { display:flex; align-items:center; gap:13px; }
+.you-view { max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:22px; }
+.profile-header { padding:8px 0 2px; display:flex; flex-direction:column; gap:13px; }
+.profile-identity { display:grid; grid-template-columns:52px minmax(0,1fr) auto; align-items:center; gap:13px; }
 .identity-avatar { width:52px; height:52px; flex:0 0 auto; display:grid; place-items:center; border-radius:14px; background:var(--surface-soft); color:var(--text-primary); font-size:1rem; font-weight:700; }
 .identity-copy { flex:1; min-width:0; }
-.identity-copy h1 { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1.55rem; font-weight:700; letter-spacing:-.045em; }
+.identity-copy h1 { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1.5rem; font-weight:650; letter-spacing:-.03em; }
 .identity-copy > p:last-child { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.7rem; }
-.profile-meta { padding:10px 0; display:flex; align-items:center; flex-wrap:wrap; gap:7px 16px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:.65rem; }
+.profile-meta { padding:8px 0; display:flex; align-items:center; flex-wrap:wrap; gap:6px 14px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); color:var(--text-muted); font-size:.64rem; line-height:1.45; }
 .profile-meta span { display:inline-flex; align-items:center; gap:4px; }
 .profile-meta b { color:var(--text-secondary); font-weight:650; }
-.aura-summary { min-height:102px; padding:4px 0 14px; display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,.7fr); align-items:end; gap:28px; border-bottom:1px solid var(--border-subtle); }
+.aura-summary { min-height:96px; padding:3px 0 13px; display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,.7fr); align-items:end; gap:26px; border-bottom:1px solid var(--border-subtle); }
 .aura-balance-copy { min-width:0; }
 .aura-balance-line { margin-top:2px; display:flex; align-items:baseline; gap:8px; }
-.aura-balance-line strong { color:var(--text-primary); font-family:var(--font-mono); font-size:clamp(2.2rem,6vw,3.7rem); line-height:1; letter-spacing:-.065em; font-weight:650; }
+.aura-balance-line strong { color:var(--text-primary); font-family:var(--font-mono); font-size:clamp(2.15rem,5vw,3.45rem); line-height:1; letter-spacing:-.055em; font-weight:640; font-variant-numeric:tabular-nums; }
 .aura-balance-line span,.aura-balance-copy small { color:var(--text-muted); font-size:.62rem; }
 .aura-balance-copy small { display:block; margin-top:5px; }
 .aura-rank { min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px 10px; }
@@ -21,7 +21,7 @@
 .aura-rank > svg { grid-column:2; grid-row:1 / span 2; color:var(--aura-gold); }
 .aura-rank-progress { grid-column:1; height:4px; overflow:hidden; background:var(--surface-soft-strong); }
 .aura-rank-progress i { height:100%; display:block; background:var(--aura-gold); transition:width 220ms var(--ease-out); }
-.plus-row { padding:12px 0; display:flex; align-items:center; justify-content:space-between; gap:20px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.plus-row { padding:11px 0; display:flex; align-items:center; justify-content:space-between; gap:18px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .plus-row > div { min-width:0; display:flex; flex-direction:column; }
 .plus-row strong { color:var(--text-primary); font-size:.78rem; font-weight:660; }
 .plus-row span { margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary); font-size:.61rem; }
@@ -34,7 +34,7 @@
 .market-card-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
 .market-card-top strong { color:var(--text-primary); font-size:.8rem; font-weight:650; }
 .market-card-top span { flex:0 0 auto; color:var(--aura-gold); font-family:var(--font-mono); font-size:.64rem; }
-.market-card p { max-width:720px; color:var(--text-muted); font-size:.68rem; line-height:1.48; }
+.market-card p { max-width:68ch; color:var(--text-muted); font-size:.68rem; line-height:1.5; text-wrap:pretty; }
 .market-card > .btn { align-self:flex-start; margin-top:2px; }
 .inventory-card { min-height:62px; padding:9px 0; display:flex; align-items:center; gap:10px; }
 .inventory-card + .inventory-card { border-top:1px solid var(--border-subtle); }
@@ -70,13 +70,19 @@
   .privacy-row:hover,.account-logout-row:hover { background:color-mix(in srgb,var(--surface-soft) 48%,transparent); }
 }
 @media (max-width:620px) {
-  .you-view { padding-top:2px; gap:20px; }
-  .profile-identity { align-items:flex-start; flex-wrap:wrap; }
-  .profile-identity .btn { margin-left:65px; }
-  .aura-summary { grid-template-columns:1fr; gap:16px; }
-  .plus-row { align-items:flex-start; flex-direction:column; gap:10px; }
-  .plus-row span { white-space:normal; line-height:1.45; }
+  .you-view { padding-top:1px; gap:18px; }
+  .profile-header { gap:11px; }
+  .profile-identity { grid-template-columns:46px minmax(0,1fr); align-items:center; gap:11px; }
+  .identity-avatar { width:46px; height:46px; border-radius:12px; }
+  .identity-copy h1 { font-size:1.38rem; }
+  .profile-identity .btn { grid-column:2; justify-self:start; margin:0; }
+  .profile-meta { padding:8px 0; gap:5px 11px; font-size:.62rem; }
+  .aura-summary { grid-template-columns:1fr; gap:14px; min-height:0; padding-bottom:12px; }
+  .aura-balance-line strong { font-size:2.35rem; }
+  .plus-row { align-items:flex-start; flex-direction:column; gap:9px; }
+  .plus-row span { white-space:normal; line-height:1.45; text-wrap:pretty; }
   .plus-row .btn { width:100%; }
+  .you-section { gap:8px; }
   .inventory-card { align-items:flex-start; flex-wrap:wrap; }
   .inventory-card .inventory-copy { min-width:140px; }
   .inventory-card select { flex:1 1 150px; max-width:none; }
