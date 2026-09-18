@@ -9,12 +9,13 @@ const VoiceNote = require('../models/VoiceNote');
 const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
-const { getObject, putObject } = require('../services/bucketStorage');
+const { deleteObject, getObject, putObject } = require('../services/bucketStorage');
 const { prepareCheckinGame } = require('../services/contractGame');
 
 const AUDIO_TYPES = new Map([
   ['audio/webm', '.webm'],
   ['audio/mp4', '.m4a'],
+  ['audio/x-m4a', '.m4a'],
   ['audio/mpeg', '.mp3'],
   ['audio/ogg', '.ogg'],
   ['audio/wav', '.wav'],
@@ -84,7 +85,13 @@ router.post('/upload', auth, uploadLimiter, upload.single('audio'), async (req, 
       listened: false
     });
     voiceNote.filePath = `/api/voice-notes/${voiceNote._id}/audio`;
-    await voiceNote.save();
+
+    try {
+      await voiceNote.save();
+    } catch (saveError) {
+      await deleteObject(storageKey).catch(() => null);
+      throw saveError;
+    }
 
     return res.status(201).json(voiceNote);
   } catch (err) {
@@ -95,7 +102,10 @@ router.post('/upload', auth, uploadLimiter, upload.single('audio'), async (req, 
 
 router.get('/my-inbox', auth, async (req, res) => {
   try {
-    const notes = await VoiceNote.find({ recipientId: req.user.id, status: 'COMMITTED' })
+    const notes = await VoiceNote.find({
+      recipientId: req.user.id,
+      $or: [{ status: 'COMMITTED' }, { status: { $exists: false } }]
+    })
       .sort({ createdAt: -1 })
       .limit(50)
       .populate('senderId', 'displayName avatar');
@@ -115,13 +125,14 @@ router.get('/:id/audio', auth, async (req, res) => {
     const isSender = note.senderId.toString() === userId;
     const isRecipient = note.recipientId.toString() === userId;
     if (!isSender && !isRecipient) return res.status(403).json({ msg: 'Not authorized' });
-    if (isRecipient && note.status !== 'COMMITTED') return res.status(404).json({ msg: 'Note not found' });
+    const isCommitted = note.status === 'COMMITTED' || !note.status;
+    if (isRecipient && !isCommitted) return res.status(404).json({ msg: 'Note not found' });
     if (!note.storageKey) return res.status(410).json({ msg: 'Audio is no longer available' });
 
     const object = await getObject(note.storageKey);
-    const contentType = object.headers.get('content-type');
+    const contentType = String(object.headers.get('content-type') || '').toLowerCase().split(';')[0].trim();
     const contentLength = object.headers.get('content-length');
-    if (contentType) res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Type', AUDIO_TYPES.has(contentType) ? contentType : 'application/octet-stream');
     if (contentLength) res.setHeader('Content-Length', contentLength);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     if (!object.body) return res.status(404).end();
@@ -137,7 +148,7 @@ router.get('/:id/audio', auth, async (req, res) => {
 router.put('/:id/listened', auth, async (req, res) => {
   try {
     const note = await VoiceNote.findById(req.params.id);
-    if (!note || note.status !== 'COMMITTED') return res.status(404).json({ msg: 'Note not found' });
+    if (!note || (note.status && note.status !== 'COMMITTED')) return res.status(404).json({ msg: 'Note not found' });
     if (note.recipientId.toString() !== req.user.id) return res.status(403).json({ msg: 'Not authorized' });
 
     note.listened = true;
