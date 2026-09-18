@@ -6,7 +6,7 @@ const MIN_INTERVAL_MS = 60 * 1000;
 
 let stopped = true;
 let timer = null;
-let running = false;
+let currentSweep = null;
 
 const configuredInterval = () => {
   const parsed = Number(process.env.DEBT_WORKER_INTERVAL_MS);
@@ -15,13 +15,11 @@ const configuredInterval = () => {
 };
 
 const runDebtSweep = async () => {
-  if (running) return;
-  running = true;
+  if (currentSweep) return currentSweep;
 
-  let checked = 0;
-  let failed = 0;
-
-  try {
+  currentSweep = (async () => {
+    let checked = 0;
+    let failed = 0;
     const cursor = Friendship.find({ status: 'ACTIVE' }).cursor();
 
     for await (const friendship of cursor) {
@@ -33,12 +31,16 @@ const runDebtSweep = async () => {
         console.error(`Debt worker could not refresh contract ${friendship._id}:`, error.message);
       }
     }
-  } finally {
-    running = false;
-  }
 
-  if (failed > 0) {
-    console.warn(`Debt worker finished with ${failed} failure(s) after checking ${checked} contract(s)`);
+    if (failed > 0) {
+      console.warn(`Debt worker finished with ${failed} failure(s) after checking ${checked} contract(s)`);
+    }
+  })();
+
+  try {
+    await currentSweep;
+  } finally {
+    currentSweep = null;
   }
 };
 
@@ -68,10 +70,11 @@ const startDebtWorker = () => {
   void tick();
 };
 
-const stopDebtWorker = () => {
+const stopDebtWorker = async () => {
   stopped = true;
   if (timer) clearTimeout(timer);
   timer = null;
+  if (currentSweep) await currentSweep;
 };
 
 module.exports = {
