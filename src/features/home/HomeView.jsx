@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, CheckCircle2, Clock3, Dice5, Plus, Sparkles, Swords, TriangleAlert, Trophy, UserPlus, UsersRound, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3, Plus, Swords, TriangleAlert, UserPlus, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { ContractCard } from '../friendship/components/ContractCard';
 import { getBankruptPartner } from '../friendship/contractState';
@@ -53,6 +53,8 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const visible = (hot.length ? hot : sorted).slice(0, 3);
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
   const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
+  const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
+  const completeReports = friendships.filter((item) => item.season?.status === 'COMPLETE').length;
   const [, refreshBriefingState] = useState(0);
   const firstSeasonBriefing = useMemo(() => friendships.find((friendship) => {
     if (friendship.season?.status !== 'ACTIVE' || Number(friendship.season?.number || 1) !== 1) return false;
@@ -193,11 +195,12 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </button>
       )}
 
-      <section className="home-game-summary">
-        <div><span className="summary-icon"><UsersRound size={17} /></span><small>Strongest Duo</small><strong>Lv. {highestDuo?.duoLevel || 1}</strong><p>{highestDuo?.duoTitle || 'New Contract'}</p></div>
-        <div><span className="summary-icon"><Trophy size={17} /></span><small>Active seasons</small><strong>{friendships.filter((item) => item.season?.status === 'ACTIVE').length}</strong><p>{friendships.filter((item) => item.season?.status === 'COMPLETE').length} reports ready</p></div>
-        <div className={liveChaos ? 'hot' : ''}><span className="summary-icon"><Dice5 size={17} /></span><small>Live anomalies</small><strong>{liveChaos}</strong><p>{liveChaos ? 'Chaos is awake' : 'Quiet for now'}</p></div>
-      </section>
+      <div className="home-context-line" aria-label="Circle summary">
+        <span><b>Strongest Duo</b> Lv. {highestDuo?.duoLevel || 1} · {highestDuo?.duoTitle || 'New Contract'}</span>
+        <span><b>Active</b> {activeSeasons}</span>
+        {completeReports > 0 && <span><b>Reports</b> {completeReports}</span>}
+        {liveChaos > 0 && <span className="danger"><b>Chaos</b> {liveChaos} live</span>}
+      </div>
 
       <section className="home-section">
         <div className="section-heading">
@@ -209,10 +212,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </div>
       </section>
 
-      <section className="home-footer-action">
-        <div><p className="eyebrow">Add fuel</p><h3>One more person changes the whole circle.</h3></div>
-        <Button variant="secondary" icon={Plus} onClick={onAddFriend}>New contract</Button>
-      </section>
+      <div className="home-footer-action">
+        <span>One more person changes the whole circle.</span>
+        <button type="button" onClick={onAddFriend}><Plus size={15} /> New contract</button>
+      </div>
     </div>
   );
 };
