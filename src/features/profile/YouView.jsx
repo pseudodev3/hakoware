@@ -82,6 +82,7 @@ export const YouView = ({ friendships, worldEvent, showToast }) => {
     void refresh({ silent: warm, refreshAccount: false, force: warm });
   }, []);
   useEffect(() => { setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 })); }, [user.auraBalance]);
+  useEffect(() => { setPlusInterestedState(Boolean(user.plusInterestAt)); }, [user.plusInterestAt]);
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
