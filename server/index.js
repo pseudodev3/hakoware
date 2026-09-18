@@ -71,6 +71,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/aura', require('./routes/aura'));
 app.use('/api/bounties', require('./routes/bounties'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/growth', require('./routes/growth'));
 app.use('/api/test-lab', require('./routes/testLab'));
 
 app.get('/health', (req, res) => {
