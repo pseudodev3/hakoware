@@ -117,7 +117,7 @@ export const Arena = ({ friendships, worldEvent, showToast }) => {
         <div>
           <p className="eyebrow">Arena</p>
           <h1>Pressure has to earn its payout.</h1>
-          <p>Hunters stake Aura, send one pressure move, and only get paid when the target says it actually worked.</p>
+          <p>Bankruptcy opens the Arena. Once a contract partner goes bankrupt, you can post Aura and let a hunter pressure them back into the contract.</p>
         </div>
         <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={bankruptFriendships.length === 0}>
           {bankruptFriendships.length === 0 ? 'No bankrupt targets' : 'Place bounty'}
