@@ -21,6 +21,10 @@ export const seedBootstrap = (payload) => {
   seedResource(RESOURCE_KEYS.contractMeta, payload.meta);
   seedResource(RESOURCE_KEYS.aura, payload.aura);
   seedResource(RESOURCE_KEYS.notifications, payload.notifications?.items || []);
+
+  // Arena and You are derived from core game state. Revalidate them after a bootstrap refresh.
+  invalidateResource(RESOURCE_KEYS.arena);
+  invalidateResource(RESOURCE_KEYS.you);
   return payload;
 };
 
