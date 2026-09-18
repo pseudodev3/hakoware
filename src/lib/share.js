@@ -26,7 +26,7 @@ export const shareHakoware = async ({
       await navigator.share({
         title,
         text,
-        url,
+        ...(url ? { url } : {}),
         ...(usableFiles.length ? { files: usableFiles } : {})
       });
       const method = usableFiles.length ? 'NATIVE_FILES' : 'NATIVE';
