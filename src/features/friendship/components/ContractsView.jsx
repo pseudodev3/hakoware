@@ -18,7 +18,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], worldEvent, onAction, onAddFriend, onRefresh, showToast }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], worldEvent, onAction, onAddFriend, onRefresh, onNavigate, showToast }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -39,6 +39,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
     if (result.success) {
       showToast?.(action === 'ACCEPT' ? 'Season 1 started' : 'Challenge declined', 'SUCCESS');
       await onRefresh();
+      if (action === 'ACCEPT') onNavigate?.('home');
     } else {
       showToast?.(result.error || 'Could not update contract', 'ERROR');
     }
@@ -116,7 +117,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
       <section className="contract-section active-contract-section">
         <div className="contract-section-title"><h2>In play</h2><span>{friendships.length}</span></div>
         {friendships.length === 0 ? (
-          <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active seasons yet.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Choose a mode</Button></div>
+          <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active seasons yet.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Start a contract</Button></div>
         ) : (
           <div className="contracts-grid">
             {orderedFriendships.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
