@@ -207,7 +207,7 @@ export const ClaimUsername = () => {
             required
           />
           <p className="auth-field-note">3-20 characters. Letters, numbers, dots and underscores. Usernames are unique.</p>
-          <Button variant="aura" className="w-full" size="lg" loading={saving} icon={ArrowRight} type="submit">Claim @{username || 'username'}</Button>
+          <Button variant="aura" className="w-full" size="lg" loading={saving} icon={ArrowRight} type="submit">Claim @{username.replace(/^@+/, '') || 'username'}</Button>
         </form>
         <div className="auth-footer">
           <p>Signed in as {user?.email}. <button type="button" onClick={logout}>Use another account</button></p>
