@@ -148,7 +148,7 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
     return res.status(202).json({
       inviteReady: true,
       requiresSignup: false,
-      inviteUrl: `${frontendUrl()}/?join=1`,
+      inviteUrl: frontendUrl(),
       recipientUsername: friend.username || null,
       recipientLabel: friend.username ? `@${friend.username}` : friend.displayName,
       templateId: friendship.templateId,
