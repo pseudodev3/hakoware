@@ -149,8 +149,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
           <motion.aside className="notifications-panel" aria-label="Notifications" {...panelMotion}>
             <header className="panel-header">
               <div className="panel-heading">
-                <span className="panel-kicker">Activity</span>
-                <h3>Notifications</h3>
+                <h3>Activity</h3>
               </div>
               <div className="panel-header-actions">
                 {unreadCount > 0 && <button className="mark-all-btn" onClick={handleMarkAllRead}>Mark all read</button>}
@@ -163,12 +162,12 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                 <section className="invitations-section" aria-labelledby="pending-contracts-title">
                   <div className="panel-section-title">
                     <UserPlus size={16} strokeWidth={1.8} />
-                    <span id="pending-contracts-title">Pending contracts</span>
+                    <span id="pending-contracts-title">Invites</span>
                   </div>
                   <div className="invitation-list">
                     {pendingInvitations.map((invitation) => (
                       <div key={invitation._id} className="invitation-card">
-                        <p><strong>{invitation.user1.displayName}</strong> wants to start a contract with you.</p>
+                        <p><strong>{invitation.user1.displayName}</strong> wants to start a contract.</p>
                         <div className="invitation-actions">
                           <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(invitation._id, 'ACCEPT')}>Accept</Button>
                           <Button variant="secondary" size="sm" onClick={() => handleRespond(invitation._id, 'DECLINE')}>Decline</Button>
@@ -182,9 +181,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
               <section className="voice-section"><VoiceNotesInbox /></section>
 
               {loading && notifications.length === 0 ? (
-                <div className="panel-empty" aria-live="polite"><div className="loading-spinner" /><p>Syncing notifications…</p></div>
+                <div className="panel-empty" aria-live="polite"><div className="loading-spinner" /><p>Syncing…</p></div>
               ) : notifications.length === 0 ? (
-                <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No notifications yet</p></div>
+                <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No notifications.</p></div>
               ) : (
                 <div className="notification-list">
                   {notifications.map((notification) => (

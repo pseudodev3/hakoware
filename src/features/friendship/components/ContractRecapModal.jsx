@@ -163,7 +163,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
 
       if (result.cancelled) return;
       if (result.success && result.method === 'CLIPBOARD') {
-        showToast?.('Recap copied - share it anywhere', 'SUCCESS');
+        showToast?.('Recap copied.', 'SUCCESS');
       } else if (!result.success) {
         showToast?.(result.error || 'Could not share recap', 'ERROR');
       }
@@ -189,18 +189,18 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Contract report" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Recap" size="lg">
       {loading && !recap ? (
-        <div className="recap-loading"><RefreshCw className="animate-spin" size={20} /><span>Building report…</span></div>
+        <div className="recap-loading"><RefreshCw className="animate-spin" size={20} /><span>Building recap…</span></div>
       ) : recap ? (
         <div className="recap-wrap">
           <section className={`recap-hero ${recap.template?.chaos ? 'chaos' : ''}`}>
             <div className="recap-hero-top">
-              <span className="recap-label">HAKOWARE // {tab === 'week' ? 'WEEKLY REPORT' : `SEASON ${recap.season?.number || 1}`}</span>
+              <span className="recap-label">HAKOWARE // {tab === 'week' ? 'THIS WEEK' : `SEASON ${recap.season?.number || 1}`}</span>
               <span className="recap-mode">{recap.template?.name}</span>
             </div>
             <h2>{names || 'Contract duo'}</h2>
-            <p>{tab === 'week' ? recap.weekly?.line : `Season grade ${grade}. ${recap.duo?.title}.`}</p>
+            <p>{tab === 'week' ? recap.weekly?.line : `Grade ${grade} · ${recap.duo?.title}`}</p>
 
             <div className="duo-level-row">
               <div><UsersRound size={17} strokeWidth={1.8} /><span>Duo Lv. {recap.duo?.level || 1}</span><strong>{recap.duo?.title}</strong></div>
@@ -252,7 +252,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
           </div>
         </div>
       ) : (
-        <div className="recap-loading"><span>No report available yet.</span></div>
+        <div className="recap-loading"><span>No recap yet.</span></div>
       )}
     </Modal>
   );
