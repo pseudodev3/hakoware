@@ -32,7 +32,7 @@ const partnerIsBankrupt = (friendship, userId) => {
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
-const PLUS_FEATURES = ['Season archive', 'Deeper Duo stats', 'Advanced custom contracts', 'Premium recap styles', 'Duo cosmetics'];
+const PLUS_FEATURES = ['Archive', 'Duo stats', 'Custom contracts', 'Recap styles', 'Cosmetics'];
 
 export const YouView = ({ friendships, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
@@ -106,16 +106,16 @@ export const YouView = ({ friendships, showToast }) => {
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
     const result = await buyCard(card);
-    showToast?.(result.success ? `${card.name} added to your inventory` : result.error, result.success ? 'SUCCESS' : 'ERROR');
+    showToast?.(result.success ? `${card.name} added.` : result.error, result.success ? 'SUCCESS' : 'ERROR');
     await refresh();
     setBusy(null);
   };
 
   const useOwnedCard = async (cardId) => {
-    if (cardId === 'PURIFY' && !hasDebt) return showToast?.('You do not have any debt to clear', 'ERROR');
-    if (cardId === 'STEAL' && !stealTarget) return showToast?.('Choose a bankrupt contract first', 'ERROR');
-    if (cardId === 'SIGNAL_FLARE' && !signalTarget) return showToast?.('Choose a contract for the Signal Flare', 'ERROR');
-    if (cardId === 'CHAOS_TICKET' && !chaosTarget) return showToast?.('Choose a Chaos Contract first', 'ERROR');
+    if (cardId === 'PURIFY' && !hasDebt) return showToast?.('No debt to clear.', 'ERROR');
+    if (cardId === 'STEAL' && !stealTarget) return showToast?.('Choose a bankrupt contract.', 'ERROR');
+    if (cardId === 'SIGNAL_FLARE' && !signalTarget) return showToast?.('Choose a contract.', 'ERROR');
+    if (cardId === 'CHAOS_TICKET' && !chaosTarget) return showToast?.('Choose a Chaos Contract.', 'ERROR');
 
     const targetId = cardId === 'STEAL'
       ? stealTarget
@@ -128,8 +128,8 @@ export const YouView = ({ friendships, showToast }) => {
     setBusy(`use-${cardId}`);
     const result = await useCard(cardId, targetId);
     let successMessage = 'Card used';
-    if (cardId === 'STEAL' && result.success) successMessage = `Claimed ${result.effect?.stolen || 0} Aura · Grudge activated 🤣`;
-    if (cardId === 'SIGNAL_FLARE' && result.success) successMessage = 'Signal Flare sent · 48h cooldown started';
+    if (cardId === 'STEAL' && result.success) successMessage = `Claimed ${result.effect?.stolen || 0} Aura · Grudge live`;
+    if (cardId === 'SIGNAL_FLARE' && result.success) successMessage = 'Signal Flare sent · 48h cooldown';
     showToast?.(result.success ? successMessage : result.error, result.success ? 'SUCCESS' : 'ERROR');
     if (result.success) {
       if (cardId === 'STEAL') setStealTarget('');
@@ -144,7 +144,7 @@ export const YouView = ({ friendships, showToast }) => {
     setBusy(`revenge-${grudge.friendshipId}`);
     try {
       const result = await returnTheFavor(grudge.friendshipId);
-      showToast?.(`Returned the favor · spent ${result.cost} to take ${result.stolen} Aura 🤣`, 'SUCCESS');
+      showToast?.(`Favor returned · ${result.stolen} Aura taken · ${result.cost} spent`, 'SUCCESS');
       await refresh();
     } catch (error) {
       showToast?.(error.message || 'Could not return the favor', 'ERROR');
@@ -154,7 +154,7 @@ export const YouView = ({ friendships, showToast }) => {
   };
 
   const shareStrongestDuo = async () => {
-    if (!strongest) return showToast?.('Start a contract first. Then you have something to brag about', 'ERROR');
+    if (!strongest) return showToast?.('Start a contract first.', 'ERROR');
 
     setBusy('share-duo');
     try {
@@ -261,7 +261,7 @@ export const YouView = ({ friendships, showToast }) => {
         <div>
           <strong>Hakoware+</strong>
           <span>{PLUS_FEATURES.join(' · ')}</span>
-          <small>{plusInterested ? 'Interest saved. No payment, no commitment.' : 'The game stays free. Plus is for deeper history and customization.'}</small>
+          <small>{plusInterested ? 'Interest saved. No payment.' : 'Core game stays free.'}</small>
         </div>
         <Button
           variant="secondary"
@@ -314,7 +314,7 @@ export const YouView = ({ friendships, showToast }) => {
 
       {inventory.length > 0 && (
         <section className="you-section">
-          <div className="you-section-heading"><div><p className="eyebrow">Inventory</p><h2>Cards in your pocket</h2></div></div>
+          <div className="you-section-heading"><div><p className="eyebrow">Inventory</p><h2>Your cards</h2></div></div>
           <div className="inventory-list">
             {[...new Set(inventory)].map((cardId) => {
               const card = cards.find((item) => item.id === cardId) || { id: cardId, name: typeLabel(cardId), description: '' };
@@ -338,7 +338,7 @@ export const YouView = ({ friendships, showToast }) => {
                     </select>
                   )}
                   {cardId === 'STEAL' && stealTarget && (
-                    <span className="inventory-hint">Steal {projectedSteal} Aura · original card cost 180 · math {claimNet >= 0 ? '+' : ''}{claimNet} 🤣</span>
+                    <span className="inventory-hint">Take {projectedSteal} Aura · 180 cost · net {claimNet >= 0 ? '+' : ''}{claimNet}</span>
                   )}
                   {cardId === 'SIGNAL_FLARE' && (
                     <select value={signalTarget} onChange={(event) => setSignalTarget(event.target.value)} aria-label="Choose contract for Signal Flare">
@@ -362,7 +362,7 @@ export const YouView = ({ friendships, showToast }) => {
       )}
 
       <section className="you-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Aura market</p><h2>Turn participation into leverage.</h2></div></div>
+        <div className="you-section-heading"><div><p className="eyebrow">Aura market</p><h2>Spend Aura</h2></div></div>
         <div className="market-grid">
           {cards.map((card) => (
             <article className="market-card" key={card.id}>
@@ -384,7 +384,7 @@ export const YouView = ({ friendships, showToast }) => {
       </section>
 
       <section className="you-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Recent movement</h2></div></div>
+        <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Recent</h2></div></div>
         <div className="transaction-list">
           {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
             <div className="transaction-row" key={transaction._id}>
@@ -399,7 +399,7 @@ export const YouView = ({ friendships, showToast }) => {
         <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Session</h2></div></div>
         <button className="account-logout-row" type="button" onClick={logout}>
           <span className="account-logout-icon"><LogOut size={18} strokeWidth={1.8} /></span>
-          <span className="account-logout-copy"><strong>Sign out of Hakoware</strong><small>Return to the landing page and end this session on this device.</small></span>
+          <span className="account-logout-copy"><strong>Sign out</strong><small>End this session on this device.</small></span>
           <span className="account-logout-label">Sign out</span>
         </button>
       </section>
