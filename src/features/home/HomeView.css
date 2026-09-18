@@ -11,8 +11,8 @@
 .aura-chip { min-height:40px; padding:0 4px; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; color:var(--aura-gold); background:transparent; font-size:.72rem; font-weight:650; transition:transform 140ms var(--ease-out), color 140ms var(--ease-out); }
 .aura-chip span { color:var(--text-primary); font-family:var(--font-mono); font-size:.9rem; font-variant-numeric:tabular-nums; }
 .aura-chip:active { transform:scale(.96); }
-.season-start-briefing { min-height:78px; padding:12px 13px; display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; gap:10px; border-radius:15px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--border-subtle); }
-.season-start-mark { width:36px; height:36px; display:grid; place-items:center; border-radius:11px; color:var(--aura-green); background:var(--aura-green-glow); }
+.season-start-briefing { min-height:72px; padding:10px 0; display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:10px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.season-start-mark { width:28px; height:28px; display:grid; place-items:center; color:var(--aura-green); }
 .season-start-copy { min-width:0; display:flex; flex-direction:column; }
 .season-start-copy > span { color:var(--aura-green); font-family:var(--font-mono); font-size:.52rem; font-weight:750; letter-spacing:.075em; }
 .season-start-copy strong { margin-top:3px; font-size:.82rem; font-weight:680; }
@@ -20,12 +20,12 @@
 .season-start-dismiss { width:36px; height:36px; display:grid; place-items:center; border-radius:10px; color:var(--text-muted); background:var(--surface-soft); transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .season-start-dismiss:active { transform:scale(.96); }
 
-.pending-banner { min-height:50px; padding:0 15px; display:flex; align-items:center; justify-content:space-between; border-radius:14px; color:var(--aura-gold); background:var(--aura-gold-soft); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); font-size:.76rem; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out); }
+.pending-banner { min-height:48px; padding:0 2px; display:flex; align-items:center; justify-content:space-between; color:var(--aura-gold); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); font-size:.76rem; transition:transform 140ms var(--ease-out), color 140ms var(--ease-out); }
 .pending-banner strong { color:var(--text-primary); }
 .pending-banner:active { transform:scale(.96); }
-.bankruptcy-alert-strip { min-height:66px; padding:11px 13px; display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:11px; border-radius:16px; text-align:left; background:var(--aura-red-glow); box-shadow:inset 0 0 0 1px rgba(255,116,123,.24); transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out); }
-.bankruptcy-alert-strip:active { transform:scale(.985); }
-.bankruptcy-alert-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:11px; color:var(--aura-red); background:color-mix(in srgb,var(--aura-red-glow) 72%,var(--surface-2)); }
+.bankruptcy-alert-strip { min-height:62px; padding:9px 0; display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:10px; text-align:left; border-top:1px solid color-mix(in srgb,var(--aura-red) 24%,var(--border-subtle)); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 24%,var(--border-subtle)); transition:transform 140ms var(--ease-out), color 140ms var(--ease-out); }
+.bankruptcy-alert-strip:active { transform:scale(.99); }
+.bankruptcy-alert-icon { width:28px; height:28px; display:grid; place-items:center; color:var(--aura-red); }
 .bankruptcy-alert-copy { min-width:0; display:flex; flex-direction:column; }
 .bankruptcy-alert-copy small { color:var(--aura-red); font-family:var(--font-mono); font-size:.54rem; font-weight:750; letter-spacing:.065em; text-transform:uppercase; }
 .bankruptcy-alert-copy strong { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); font-size:.82rem; font-weight:700; }
@@ -62,9 +62,9 @@
 
 @media (hover:hover) and (pointer:fine) {
   .aura-chip:hover { color:var(--aura-gold-strong); }
-  .pending-banner:hover { background:var(--aura-gold-glow); }
+  .pending-banner:hover { color:var(--aura-gold-strong); }
   .home-footer-action button:hover { color:var(--text-primary); }
-  .bankruptcy-alert-strip:hover { background:color-mix(in srgb,var(--aura-red-glow) 78%,var(--surface-2)); }
+  .bankruptcy-alert-strip:hover { color:var(--text-primary); }
   .text-action:hover { color:var(--text-primary); }
   .season-start-dismiss:hover { color:var(--text-primary); background:var(--surface-soft-strong); }
 }
@@ -73,10 +73,10 @@
   .home-view { gap:20px; }
   .home-hero { align-items:flex-start; padding-top:4px; }
   .game-home-hero h1 { font-size:2.4rem; }
-  .bankruptcy-alert-strip { grid-template-columns:36px minmax(0,1fr) auto; padding:10px 11px; }
-  .bankruptcy-alert-icon { width:36px; height:36px; }
-  .season-start-briefing { grid-template-columns:34px minmax(0,1fr) auto; align-items:start; padding:11px; }
-  .season-start-mark { width:34px; height:34px; }
+  .bankruptcy-alert-strip { grid-template-columns:26px minmax(0,1fr) auto; padding:9px 0; }
+  .bankruptcy-alert-icon { width:26px; height:26px; }
+  .season-start-briefing { grid-template-columns:26px minmax(0,1fr) auto; align-items:start; padding:10px 0; }
+  .season-start-mark { width:26px; height:26px; }
   .home-hero .home-world-rule { font-size:.55rem; gap:4px; }
   .section-heading { align-items:center; }
   .section-heading h2 { font-size:1.04rem; }
