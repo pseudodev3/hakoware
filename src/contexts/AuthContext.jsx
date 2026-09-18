@@ -31,17 +31,25 @@ export const AuthProvider = ({ children }) => {
         seedBootstrap(normalized);
         setBootstrapData(normalized);
         setUser(normalized.user);
-      } catch (error) {
-        console.error('Failed to restore session:', error);
-        const founderToken = localStorage.getItem('hakoware_founder_token');
-        if (founderToken) {
-          localStorage.setItem('token', founderToken);
-          localStorage.removeItem('hakoware_founder_token');
-          window.location.assign('/founder');
-          return;
+      } catch (bootstrapError) {
+        console.warn('Bootstrap restore failed, falling back to account restore:', bootstrapError.message);
+        try {
+          const nextUser = withUid(await api.get('/auth/user'));
+          seedResource(RESOURCE_KEYS.user, nextUser);
+          setBootstrapData(null);
+          setUser(nextUser);
+        } catch (error) {
+          console.error('Failed to restore session:', error);
+          const founderToken = localStorage.getItem('hakoware_founder_token');
+          if (founderToken) {
+            localStorage.setItem('token', founderToken);
+            localStorage.removeItem('hakoware_founder_token');
+            window.location.assign('/founder');
+            return;
+          }
+          localStorage.removeItem('token');
+          setUser(null);
         }
-        localStorage.removeItem('token');
-        setUser(null);
       } finally {
         setLoading(false);
       }
