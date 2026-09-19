@@ -6,7 +6,7 @@ const Notification = require('../models/Notification');
 const { TEMPLATES, getWorldEvent } = require('../services/contractGame');
 const { loadContractsForUser } = require('../services/contractQueries');
 const { buildAuraSummary } = require('../services/auraSummary');
-const { notificationView } = require('../services/clientViews');
+const { currentUserView, notificationView } = require('../services/clientViews');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -17,7 +17,7 @@ router.get('/', auth, async (req, res) => {
 
     const [user, notifications] = await Promise.all([
       User.findById(req.user.id)
-        .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion -usernameNormalized')
+        .select('_id displayName username avatar inventory auraBalance plusInterestAt isTestAccount privacySettings')
         .lean(),
       Notification.find({ toUserId: req.user.id })
         .sort({ createdAt: -1 })
@@ -34,7 +34,7 @@ router.get('/', auth, async (req, res) => {
 
     return res.json({
       generatedAt: new Date(),
-      user,
+      user: currentUserView(user),
       contracts,
       meta: {
         templates: Object.values(TEMPLATES),
