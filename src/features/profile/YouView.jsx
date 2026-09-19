@@ -8,6 +8,7 @@ import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService'
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
 import { buildDuoShareCard } from '../../lib/duoShareCard';
+import { MARKET_ART, PLUS_ART } from './marketArt';
 import './YouView.css';
 
 const perspectiveFor = (friendship, userId, mine = true) => {
@@ -259,6 +260,7 @@ export const YouView = ({ friendships, showToast }) => {
       </section>
 
       <section className="hakoware-plus-card" aria-label="Hakoware plus">
+        <img className="hakoware-plus-art" src={PLUS_ART} alt="" aria-hidden="true" />
         <div className="hakoware-plus-copy">
           <h2>Hakoware+</h2>
           <p>{PLUS_FEATURES.join(' · ')}</p>
@@ -286,7 +288,7 @@ export const YouView = ({ friendships, showToast }) => {
           {cards.map((card) => (
             <article className="aura-market-item" key={card.id}>
               <div className="aura-market-content">
-                <span className={'aura-market-art art-' + String(card.id || '').toLowerCase().replaceAll('_', '-')} aria-hidden="true"><i /></span>
+                <img className="aura-market-art" src={MARKET_ART[card.id]} alt="" loading="lazy" decoding="async" />
                 <div>
                   <h3>{card.name}</h3>
                   <strong className="aura-market-price">{card.cost} Aura</strong>
