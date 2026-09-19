@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowRight, BarChart3, Check, Flame, MessageCircle, Mic, Settings, Share2, TriangleAlert, Trophy } from 'lucide-react';
+import { Check, Flame, Mic, MoreHorizontal, Share2, Trophy } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
-import { Button } from '../../../shared/components/Button';
 import { getContractSides } from '../contractState';
 import { shareHakoware } from '../../../lib/share';
 import { buildChaosShareImage } from '../../../lib/chaosShare';
@@ -41,6 +40,14 @@ const formatTimeLeft = (date) => {
   return `${Math.ceil(hours / 24)}d left`;
 };
 
+const normalStateDetail = (status) => {
+  if (status.label === 'Clear') return 'You are both on track.';
+  if (status.label === 'Due soon') return 'The check-in window is getting tight.';
+  if (status.label === 'Recovering') return 'One more check-in to stabilize this contract.';
+  if (status.label === 'Bankrupt') return 'Recovery actions are live.';
+  return 'Check in to start pulling this contract back.';
+};
+
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
   const [chaosShareState, setChaosShareState] = useState('');
   const { partner: friend, ownPerspective: perspective, partnerDebt } = getContractSides(friendship, currentUserId);
@@ -54,7 +61,9 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   const level = friendship.duoLevel || 1;
   const xpProgress = duoProgress(friendship.duoXP || 0, level);
   const season = friendship.season || {};
+  const seasonNumber = season.number || 1;
   const seasonDone = season.status === 'COMPLETE';
+  const seasonTimeLeft = seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now());
   const activeChaos = friendship.templateId === 'CHAOS' ? friendship.chaos?.activeEvent : null;
   const wanted = friendship.chaos?.wantedUntil && new Date(friendship.chaos.wantedUntil).getTime() > Date.now();
   const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
@@ -81,7 +90,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         targetLabel: chaosTargetLabel,
         timeLeft,
         partnerName: name,
-        seasonNumber: season.number || 1,
+        seasonNumber,
         duoLevel: level,
         duoTitle: friendship.duoTitle || 'New Contract'
       });
@@ -112,105 +121,157 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
     }
   };
 
-  return (
-    <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
-      <div className="contract-slip-kicker" aria-hidden="true">
-        <span>HAKOWARE CONTRACT</span>
-        <span>{activeChaos ? 'ANOMALY LIVE' : seasonDone ? 'CLOSED' : 'ACTIVE'} · S{season.number || 1}</span>
-      </div>
+  let displayState = {
+    label: status.label,
+    hero: stats.totalDebt > 0 ? `${stats.totalDebt} debt` : status.detail,
+    detail: normalStateDetail(status),
+    context: '',
+    tone: status.tone,
+    meta: [`${stats.limit}d rule`, `Season ${seasonNumber}`, seasonTimeLeft]
+  };
 
+  if (seasonDone) {
+    displayState = {
+      label: 'Season complete',
+      hero: `Season ${seasonNumber} closed`,
+      detail: 'Your report is ready.',
+      context: `Duo Lv. ${level} · ${friendship.duoXP || 0} XP`,
+      tone: 'due',
+      meta: ['Complete']
+    };
+  } else if (activeChaos) {
+    const timeLeft = formatTimeLeft(activeChaos.expiresAt);
+    displayState = chaosTargetsCurrentUser
+      ? {
+          label: activeChaos.name === 'Double Trouble' ? 'Anomaly live' : activeChaos.name,
+          hero: activeChaos.name === 'Double Trouble' ? '2× XP +10' : 'Your move',
+          detail: chaosRule,
+          context: timeLeft,
+          tone: 'chaos',
+          meta: [activeChaos.name, 'Your move']
+        }
+      : {
+          label: activeChaos.name,
+          hero: `${name}'s move`,
+          detail: chaosRule,
+          context: `${timeLeft} · you are still ${status.label}`,
+          tone: 'chaos',
+          meta: [`Season ${seasonNumber}`, 'Anomaly live']
+        };
+  } else if (wanted) {
+    displayState = {
+      label: 'Wanted',
+      hero: formatTimeLeft(friendship.chaos.wantedUntil),
+      detail: friendship.chaos?.lastConsequence || 'Chaos consequence is live.',
+      context: '',
+      tone: 'chaos',
+      meta: [`Season ${seasonNumber}`, 'Wanted']
+    };
+  } else if (partnerBankrupt) {
+    displayState = {
+      label: 'Partner bankrupt',
+      hero: `${partnerDebt.totalDebt} debt`,
+      detail: `${name} is bankrupt. Bounties + Claim are unlocked.`,
+      context: 'Arena open',
+      tone: 'chaos',
+      meta: [`Season ${seasonNumber}`, seasonTimeLeft]
+    };
+  }
+
+  const hideDuo = seasonDone || chaosTargetsCurrentUser;
+
+  return (
+    <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
       <div className="contract-main">
         <div className="contract-avatar" aria-hidden="true">
           {friend.avatar ? <img src={friend.avatar} alt="" /> : <span>{name[0]?.toUpperCase()}</span>}
         </div>
+
         <div className="contract-identity">
           <h3>{name}</h3>
           <p>{handle || mode}</p>
         </div>
-        <button className="contract-settings" onClick={() => onAction('SETTINGS', friendship)} aria-label={`Contract settings for ${name}`}>
-          <Settings size={16} strokeWidth={1.8} />
+
+        <div className="contract-head-meta" aria-label={`${mode}, season ${seasonNumber}`}>
+          <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{mode}</span>
+          <span>Season {seasonNumber}</span>
+        </div>
+
+        <button className="contract-settings" onClick={() => onAction('SETTINGS', friendship)} aria-label={`More options for ${name}'s contract`}>
+          <MoreHorizontal size={18} strokeWidth={1.6} />
         </button>
       </div>
 
-      <div className="contract-meta-line">
-        <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{mode}</span>
-        {!chaosTargetsCurrentUser && <span>{stats.limit}d rule</span>}
-        <span>{seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now())}</span>
+      <div className="contract-live-state">
+        <strong className={`contract-status ${displayState.tone}`}>{displayState.label}</strong>
+        <div className="contract-state-hero">{displayState.hero}</div>
+        <p className="contract-state-detail">{displayState.detail}</p>
+        {displayState.context && <p className={`contract-state-context ${displayState.tone}`}>{displayState.context}</p>}
       </div>
 
-      {partnerBankrupt && (
-        <div className="partner-bankruptcy-alert">
-          <TriangleAlert size={16} strokeWidth={2} />
-          <div>
-            <strong>{name} is bankrupt</strong>
-            <span>{partnerDebt.totalDebt} debt · Bounties + Claim unlocked</span>
+      <div className="contract-meta-line">
+        {displayState.meta.map((item, index) => (
+          <React.Fragment key={`${item}-${index}`}>
+            {index > 0 && <span className="contract-meta-separator" aria-hidden="true">·</span>}
+            <span>{item}</span>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {!hideDuo && (
+        <div className="contract-duo">
+          <div className="contract-duo-copy">
+            <strong>Duo Lv. {level}</strong>
+            <span>{friendship.duoTitle || 'New Contract'} · {friendship.duoXP || 0} XP</span>
           </div>
-          <button type="button" onClick={() => onAction('ARENA', friendship)}>
-            Arena <ArrowRight size={13} strokeWidth={2} />
-          </button>
-        </div>
-      )}
-
-      {activeChaos && (
-        <div className="contract-anomaly">
-          <Flame size={15} strokeWidth={1.9} />
-          <div className="contract-anomaly-copy">
-            <div className="contract-anomaly-title-row">
-              <strong>{activeChaos.name}</strong>
-              <span className="contract-anomaly-time">{formatTimeLeft(activeChaos.expiresAt)}</span>
-            </div>
-            <span className="contract-anomaly-rule">{chaosRule}</span>
-          </div>
-          <button
-            type="button"
-            className="contract-anomaly-share"
-            onClick={shareChaos}
-            disabled={chaosShareState === 'PREPARING'}
-          >
-            <Share2 size={12} strokeWidth={1.9} />
-            {chaosShareState === 'PREPARING' ? 'Preparing…' : chaosShareState === 'COPIED' ? 'Copied' : chaosShareState === 'SHARED' ? 'Shared' : 'Share'}
-          </button>
-        </div>
-      )}
-
-      {wanted && !activeChaos && (
-        <div className="contract-wanted">
-          <Flame size={14} strokeWidth={1.9} />
-          <span>WANTED · {friendship.chaos?.lastConsequence || 'Chaos consequence'} · {formatTimeLeft(friendship.chaos.wantedUntil)}</span>
-        </div>
-      )}
-
-      {!chaosTargetsCurrentUser && (
-        <>
-          <div className="contract-state-row">
-            <div className="contract-state-copy">
-              <strong className={`contract-status ${status.tone}`}>{seasonDone ? 'Season complete' : status.label}</strong>
-              <span>{seasonDone ? 'Report ready' : `${status.detail} · ${stats.limit}d rule`}</span>
-            </div>
-            <div className="duo-summary">
-              <strong>Lv. {level}</strong>
-              <span>{friendship.duoTitle || 'New Contract'} · {friendship.duoXP || 0} XP</span>
-            </div>
-          </div>
-
           <div className="duo-meter" aria-label={`Duo level progress ${xpProgress}%`}><span style={{ width: `${xpProgress}%` }} /></div>
-        </>
+        </div>
       )}
 
       {!compact && (
         <div className="contract-actions">
           <button type="button" className="contract-report-link" onClick={() => onAction('RECAP', friendship)}>
-            <BarChart3 size={14} strokeWidth={1.8} /> {seasonDone ? 'View report' : 'Report'}
+            {seasonDone ? 'Season report' : 'Report'}
           </button>
+
+          <div className="contract-action-spacer" aria-hidden="true" />
+
+          {!seasonDone && activeChaos && (
+            <button
+              type="button"
+              className="contract-secondary-action"
+              onClick={shareChaos}
+              disabled={chaosShareState === 'PREPARING'}
+            >
+              <Share2 size={16} strokeWidth={1.6} />
+              {chaosShareState === 'PREPARING' ? 'Preparing…' : chaosShareState === 'COPIED' ? 'Copied' : chaosShareState === 'SHARED' ? 'Shared' : 'Share'}
+            </button>
+          )}
+
+          {!seasonDone && !activeChaos && partnerBankrupt && (
+            <button type="button" className="contract-secondary-action danger" onClick={() => onAction('ARENA', friendship)}>
+              <Flame size={16} strokeWidth={1.6} />
+              Arena
+            </button>
+          )}
+
+          {!seasonDone && !activeChaos && !partnerBankrupt && (
+            <button type="button" className="contract-secondary-action" disabled={checkedInToday} onClick={() => onAction('VOICE_CHECKIN', friendship)}>
+              <Mic size={16} strokeWidth={1.6} />
+              Voice
+            </button>
+          )}
+
           {seasonDone ? (
-            <Button variant="aura" icon={Trophy} onClick={() => onAction('RECAP', friendship)}>View recap</Button>
+            <button type="button" className="contract-primary-action" onClick={() => onAction('RECAP', friendship)}>
+              <Trophy size={16} strokeWidth={1.6} />
+              View recap
+            </button>
           ) : (
-            <div className="contract-primary-actions">
-              <Button variant="secondary" icon={Mic} disabled={checkedInToday} onClick={() => onAction('VOICE_CHECKIN', friendship)}>Voice</Button>
-              <Button variant="aura" icon={checkedInToday ? Check : MessageCircle} disabled={checkedInToday} onClick={() => onAction('CHECKIN', friendship)}>
-                {checkedInToday ? 'Checked in' : 'Check in'}
-              </Button>
-            </div>
+            <button type="button" className="contract-primary-action" disabled={checkedInToday} onClick={() => onAction('CHECKIN', friendship)}>
+              <Check size={16} strokeWidth={1.6} />
+              {checkedInToday ? 'Checked in' : 'Check in'}
+            </button>
           )}
         </div>
       )}

@@ -13,7 +13,7 @@
 .contract-section-title { display:flex; align-items:center; gap:8px; }
 .contract-section-title h2 { color:var(--text-secondary); font-size:.75rem; font-weight:630; letter-spacing:-.01em; }
 .contract-section-title > span { color:var(--text-faint); font-size:.6rem; font-family:var(--font-mono); }
-.contracts-grid { display:flex; flex-direction:column; }
+.contracts-grid { display:flex; flex-direction:column; gap:10px; }
 .invite-list { overflow:hidden; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .invite-card { min-height:68px; padding:9px 2px; display:flex; align-items:center; gap:10px; background:transparent; }
 .invite-card + .invite-card { border-top:1px solid var(--border-subtle); }
