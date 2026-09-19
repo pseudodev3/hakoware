@@ -37,7 +37,6 @@ export const performCheckin = async (friendshipId, source = 'TEXT', bountyCredit
     });
     return {
       success: true,
-      friendship: response.friendship || response,
       game: response.game || null,
       bounty: response.bounty || null,
       recovery: response.recovery || null
@@ -49,8 +48,8 @@ export const performCheckin = async (friendshipId, source = 'TEXT', bountyCredit
 
 export const respondToInvitation = async (friendshipId, action) => {
   try {
-    const friendship = await api.put(`/friendships/${friendshipId}/respond`, { action: action.toUpperCase() });
-    return { success: true, friendship };
+    await api.put(`/friendships/${friendshipId}/respond`, { action: action.toUpperCase() });
+    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }
