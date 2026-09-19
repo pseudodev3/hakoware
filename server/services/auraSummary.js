@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
+const { auraTransactionView } = require('./clientViews');
 const { calculateDebtState } = require('./debtState');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -163,7 +164,7 @@ const buildAuraSummary = async (userId) => {
   user = await User.findById(user._id);
 
   const [history, earned, spent, reputationEarned, count] = await Promise.all([
-    AuraTransaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(40),
+    AuraTransaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(40).select('_id amount description createdAt').lean(),
     AuraTransaction.aggregate([
       { $match: { userId: user._id, amount: { $gt: 0 } } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -192,7 +193,7 @@ const buildAuraSummary = async (userId) => {
     totalSpent: Math.abs(spent[0]?.total || 0),
     totalTransactions: count,
     reputation: auraRankFromEarned(lifetimeEarned),
-    history
+    history: history.map(auraTransactionView)
   };
 };
 
