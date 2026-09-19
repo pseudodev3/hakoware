@@ -1,3 +1,5 @@
+import { drawHakowareStamp } from './shareStamp';
+
 const RED = '#ff747b';
 const PAPER = '#f7f4ec';
 const MUTED = '#777268';
@@ -83,6 +85,16 @@ export const buildChaosShareImage = async ({
   drawOrbit(ctx, 980, 230, 430, 160, -0.22, 0.30);
   drawOrbit(ctx, 70, 1120, 520, 190, 0.18, 0.15);
   drawOrbit(ctx, 900, 1100, 610, 240, -0.08, 0.09);
+
+  await drawHakowareStamp(ctx, {
+    x: 872,
+    y: 264,
+    radius: 126,
+    tint: RED,
+    opacity: 0.13,
+    rotation: 0.09,
+    footer: 'CONTRACT SYSTEM'
+  });
 
   ctx.fillStyle = RED;
   ctx.font = '700 25px ui-monospace, SFMono-Regular, Menlo, monospace';

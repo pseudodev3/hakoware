@@ -1,3 +1,5 @@
+import { drawHakowareStamp } from './shareStamp';
+
 const GOLD = '#e7b35a';
 const PAPER = '#f7f4ec';
 const MUTED = '#777268';
@@ -63,6 +65,16 @@ export const buildDuoShareCard = async ({
   drawOrbit(ctx, 980, 230, 430, 160, -0.22, 0.28);
   drawOrbit(ctx, 80, 1120, 520, 190, 0.18, 0.14);
   drawOrbit(ctx, 880, 1080, 610, 240, -0.08, 0.08);
+
+  await drawHakowareStamp(ctx, {
+    x: 872,
+    y: 264,
+    radius: 126,
+    tint: GOLD,
+    opacity: 0.12,
+    rotation: -0.1,
+    footer: 'CONTRACT SYSTEM'
+  });
 
   ctx.fillStyle = GOLD;
   ctx.font = '700 25px ui-monospace, SFMono-Regular, monospace';
