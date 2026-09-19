@@ -1,7 +1,7 @@
 .contract-card {
   --contract-theme-surface:var(--bg-card);
   --contract-theme-accent:var(--aura-gold);
-  --contract-motif-opacity:.34;
+  --contract-motif-opacity:.22;
   position:relative;
   isolation:isolate;
   overflow:hidden;
@@ -16,10 +16,10 @@
   content:"";
   position:absolute;
   z-index:0;
-  top:-92px;
-  right:-112px;
-  width:290px;
-  height:230px;
+  top:-118px;
+  right:-145px;
+  width:310px;
+  height:240px;
   pointer-events:none;
   opacity:var(--contract-motif-opacity);
   transform:rotate(-12deg);
@@ -38,7 +38,7 @@
   height:4px;
   border-radius:50%;
   pointer-events:none;
-  opacity:.45;
+  opacity:.25;
   background:var(--contract-theme-accent);
   box-shadow:20px 31px 0 -1px color-mix(in srgb,var(--contract-theme-accent) 72%,transparent);
 }
@@ -46,15 +46,15 @@
 .contract-card.chaos-active {
   --contract-theme-surface:color-mix(in srgb,var(--bg-card) 94%,var(--aura-red) 6%);
   --contract-theme-accent:var(--aura-red);
-  --contract-motif-opacity:.28;
-  border-color:color-mix(in srgb,var(--aura-red) 18%,var(--border-subtle));
+  --contract-motif-opacity:.15;
+  border-color:color-mix(in srgb,var(--aura-red) 12%,var(--border-subtle));
 }
 .contract-card.wanted,
 .contract-card.partner-bankrupt {
   --contract-theme-surface:color-mix(in srgb,var(--bg-card) 96%,var(--aura-red) 4%);
   --contract-theme-accent:var(--aura-red);
-  --contract-motif-opacity:.24;
-  border-color:color-mix(in srgb,var(--aura-red) 18%,var(--border-subtle));
+  --contract-motif-opacity:.16;
+  border-color:color-mix(in srgb,var(--aura-red) 12%,var(--border-subtle));
 }
 
 .contract-main {
@@ -322,7 +322,7 @@
   .contract-card.wanted:hover,
   .contract-card.partner-bankrupt:hover {
     --contract-theme-surface:color-mix(in srgb,var(--bg-card-hover) 94%,var(--aura-red) 6%);
-    border-color:color-mix(in srgb,var(--aura-red) 28%,var(--border-active));
+    border-color:color-mix(in srgb,var(--aura-red) 22%,var(--border-active));
   }
   .contract-settings:hover {
     color:var(--text-primary);
@@ -335,8 +335,10 @@
 }
 
 @media (max-width:560px) {
-  .contract-card { padding:16px; border-radius:15px; --contract-motif-opacity:.28; }
-  .contract-card::before { top:-98px; right:-122px; }
+  .contract-card { padding:16px; border-radius:15px; --contract-motif-opacity:.18; }
+  .contract-card.chaos-active { --contract-motif-opacity:.12; }
+  .contract-card.wanted,.contract-card.partner-bankrupt { --contract-motif-opacity:.13; }
+  .contract-card::before { top:-126px; right:-150px; }
   .contract-avatar { width:40px; height:40px; border-radius:11px; }
   .contract-main { gap:9px; }
   .contract-identity h3 { font-size:.91rem; }
