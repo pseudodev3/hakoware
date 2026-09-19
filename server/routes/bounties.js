@@ -217,13 +217,7 @@ router.get('/contract/:friendshipId', auth, async (req, res) => {
       _id: bounty._id,
       amount: bounty.amount,
       status: bounty.status,
-      hunterId: bounty.hunterId,
-      hunterName: bounty.hunterName,
-      hunterBond: bounty.hunterBond,
-      huntExpiresAt: bounty.huntExpiresAt,
-      pressureSentAt: bounty.pressureSentAt,
-      pressurePreset: bounty.pressurePreset,
-      senderName: bounty.senderName
+      hunterName: bounty.hunterName || null
     });
   } catch (err) {
     console.error('Load contract bounty failed:', err.message);
