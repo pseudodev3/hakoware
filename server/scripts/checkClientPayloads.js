@@ -2,6 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const {
+  currentUserView,
   contractView,
   recapView,
   notificationView,
@@ -17,6 +18,36 @@ const assertMissing = (value, keys, label) => {
   }
 };
 
+
+
+const currentUser = currentUserView({
+  _id: 'user-id',
+  displayName: 'Player',
+  username: 'player',
+  usernameNormalized: 'player',
+  email: 'private@example.com',
+  password: 'hashed-password',
+  avatar: null,
+  nenType: 'ENHANCER',
+  inventory: ['PURIFY'],
+  auraBalance: 200,
+  plusInterestAt: new Date(),
+  defaultLimit: 7,
+  emailVerified: true,
+  authVersion: 4,
+  isTestAccount: false,
+  testOwnerId: 'private-owner-id',
+  notificationPreferences: { email: true },
+  privacySettings: { optOutPublicBankruptcy: true },
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
+assertMissing(
+  currentUser,
+  ['email', 'password', 'usernameNormalized', 'nenType', 'defaultLimit', 'emailVerified', 'authVersion', 'testOwnerId', 'notificationPreferences', 'createdAt', 'updatedAt'],
+  'currentUserView'
+);
+assert.strictEqual(currentUser.privacySettings.optOutPublicBankruptcy, true);
 
 const contract = contractView({
   _id: 'contract-id',
