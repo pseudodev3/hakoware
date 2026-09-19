@@ -51,7 +51,7 @@ const CHAOS_EVENTS = [
   },
   {
     type: 'DOUBLE_TROUBLE', minLevel: 1, name: 'Double Trouble',
-    description: 'Check in before the anomaly closes. Survive it for double Duo XP.',
+    description: 'The targeted check-in gets 2× Duo XP +10. Beat the clock.',
     durationHours: 18, xpMultiplier: 2, successXP: 10, failureTitle: 'Caught Sleeping'
   },
   {

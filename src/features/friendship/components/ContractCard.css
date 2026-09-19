@@ -33,11 +33,16 @@
 .partner-bankruptcy-alert span { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.58rem; }
 .partner-bankruptcy-alert button { min-height:32px; padding:0 2px 0 8px; display:inline-flex; align-items:center; gap:4px; color:var(--aura-red); font-size:.58rem; font-weight:700; transition:transform 140ms var(--ease-out), color 140ms var(--ease-out); }
 .partner-bankruptcy-alert button:active { transform:scale(.96); }
-.contract-anomaly { padding:9px 0; display:flex; align-items:flex-start; gap:8px; border-top:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); color:var(--aura-red); }
-.contract-anomaly > div { min-width:0; flex:1; display:flex; flex-direction:column; }
+.contract-anomaly { padding:10px 0; display:grid; grid-template-columns:18px minmax(0,1fr) auto; align-items:start; gap:8px; border-top:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); color:var(--aura-red); }
+.contract-anomaly > svg { margin-top:2px; }
+.contract-anomaly-copy { min-width:0; display:flex; flex-direction:column; }
+.contract-anomaly-title-row { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; }
 .contract-anomaly strong { color:var(--text-primary); font-size:.67rem; font-weight:680; }
-.contract-anomaly span { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.59rem; }
-.contract-anomaly-share { min-height:28px; padding:0 2px 0 7px; flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; color:var(--aura-red); font-size:.53rem; font-weight:650; }
+.contract-anomaly-time { color:var(--aura-red); font-family:var(--font-mono); font-size:.52rem; font-weight:650; }
+.contract-anomaly-rule { margin-top:4px; color:var(--text-muted); font-size:.59rem; line-height:1.5; white-space:normal; overflow:visible; }
+.contract-anomaly-share { min-height:28px; padding:0 2px 0 7px; display:inline-flex; align-items:center; gap:4px; color:var(--aura-red); font-size:.53rem; font-weight:650; transition:color 140ms var(--ease-out), opacity 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.contract-anomaly-share:active { transform:scale(.96); }
+.contract-anomaly-share:disabled { opacity:.55; }
 .contract-wanted { min-height:34px; padding:7px 0; display:flex; align-items:center; gap:7px; border-top:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); color:var(--aura-red); font-family:var(--font-mono); font-size:.55rem; font-weight:650; }
 .contract-actions { margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .contract-report-link { min-height:36px; padding:0 2px; display:inline-flex; align-items:center; gap:6px; color:var(--text-muted); font-size:.62rem; font-weight:620; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
@@ -66,6 +71,6 @@
   .contract-primary-actions { width:100%; min-width:0; gap:6px; }
   .partner-bankruptcy-alert { grid-template-columns:18px minmax(0,1fr); }
   .partner-bankruptcy-alert button { grid-column:2; justify-self:start; padding-left:0; }
-  .contract-anomaly { flex-wrap:wrap; }
-  .contract-anomaly-share { margin-left:23px; padding-left:0; }
+  .contract-anomaly { grid-template-columns:18px minmax(0,1fr); }
+  .contract-anomaly-share { grid-column:2; justify-self:start; padding-left:0; }
 }

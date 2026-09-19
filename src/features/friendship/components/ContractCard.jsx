@@ -4,6 +4,7 @@ import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
 import { getContractSides } from '../contractState';
 import { shareHakoware } from '../../../lib/share';
+import { buildChaosShareImage } from '../../../lib/chaosShare';
 import './ContractCard.css';
 
 const MODE_NAMES = {
@@ -41,7 +42,7 @@ const formatTimeLeft = (date) => {
 };
 
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
-  const [chaosShared, setChaosShared] = useState(false);
+  const [chaosShareState, setChaosShareState] = useState('');
   const { partner: friend, ownPerspective: perspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
   if (!stats || !friend) return null;
@@ -59,19 +60,55 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
   const checkedInToday = hoursSinceCheckin < 20;
   const partnerBankrupt = Boolean(partnerDebt?.isBankrupt) && !seasonDone;
+  const chaosTargetsCurrentUser = activeChaos && String(activeChaos.targetUserId || '') === String(currentUserId || '');
+  const partnerPossessive = name.endsWith('s') ? `${name}’` : `${name}’s`;
+  const chaosRule = activeChaos?.name === 'Double Trouble'
+    ? chaosTargetsCurrentUser
+      ? 'Your next check-in gets 2× Duo XP +10. Beat the clock.'
+      : `${partnerPossessive} next check-in gets 2× Duo XP +10. They need to beat the clock.`
+    : activeChaos?.description || '';
+  const chaosTargetLabel = chaosTargetsCurrentUser ? 'Your move' : `${name}'s move`;
 
   const shareChaos = async () => {
-    if (!activeChaos) return;
-    const result = await shareHakoware({
-      source: 'CHAOS',
-      title: 'Hakoware Chaos event',
-      text: `${name} and I got hit with ${activeChaos.name} on Hakoware. ${activeChaos.description}`,
-      url: window.location.origin
-    });
+    if (!activeChaos || chaosShareState === 'PREPARING') return;
+    setChaosShareState('PREPARING');
 
-    if (result.success && result.method === 'CLIPBOARD') {
-      setChaosShared(true);
-      window.setTimeout(() => setChaosShared(false), 1800);
+    try {
+      const timeLeft = formatTimeLeft(activeChaos.expiresAt);
+      const blob = await buildChaosShareImage({
+        eventName: activeChaos.name,
+        rule: chaosRule,
+        targetLabel: chaosTargetLabel,
+        timeLeft,
+        partnerName: name,
+        seasonNumber: season.number || 1,
+        duoLevel: level,
+        duoTitle: friendship.duoTitle || 'New Contract'
+      });
+      const filename = `hakoware-${String(activeChaos.name || 'chaos').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+      const result = await shareHakoware({
+        source: 'CHAOS',
+        title: `${activeChaos.name} · Hakoware`,
+        text: `${activeChaos.name} is live on my Chaos Contract with ${name}. ${chaosRule}\n${window.location.origin}`,
+        url: '',
+        files: [file]
+      });
+
+      if (result.cancelled) {
+        setChaosShareState('');
+        return;
+      }
+
+      if (result.success) {
+        setChaosShareState(result.method === 'CLIPBOARD' ? 'COPIED' : 'SHARED');
+        window.setTimeout(() => setChaosShareState(''), 1800);
+      } else {
+        setChaosShareState('');
+      }
+    } catch (error) {
+      console.error('Could not build Chaos share card:', error);
+      setChaosShareState('');
     }
   };
 
@@ -112,9 +149,21 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       {activeChaos && (
         <div className="contract-anomaly">
           <Flame size={15} strokeWidth={1.9} />
-          <div><strong>{activeChaos.name}</strong><span>{formatTimeLeft(activeChaos.expiresAt)} · {activeChaos.description}</span></div>
-          <button type="button" className="contract-anomaly-share" onClick={shareChaos}>
-            <Share2 size={12} strokeWidth={1.9} /> {chaosShared ? 'Copied' : 'Share'}
+          <div className="contract-anomaly-copy">
+            <div className="contract-anomaly-title-row">
+              <strong>{activeChaos.name}</strong>
+              <span className="contract-anomaly-time">{formatTimeLeft(activeChaos.expiresAt)}</span>
+            </div>
+            <span className="contract-anomaly-rule">{chaosRule}</span>
+          </div>
+          <button
+            type="button"
+            className="contract-anomaly-share"
+            onClick={shareChaos}
+            disabled={chaosShareState === 'PREPARING'}
+          >
+            <Share2 size={12} strokeWidth={1.9} />
+            {chaosShareState === 'PREPARING' ? 'Preparing…' : chaosShareState === 'COPIED' ? 'Copied' : chaosShareState === 'SHARED' ? 'Shared' : 'Share'}
           </button>
         </div>
       )}
