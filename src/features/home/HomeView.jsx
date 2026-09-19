@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, CheckCircle2, Clock3, Plus, Swords, TriangleAlert, UserPlus, X } from 'lucide-react';
+import { ArrowRight, Clock3, Plus, Swords, UserPlus, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { ContractCard } from '../friendship/components/ContractCard';
 import { getBankruptPartner } from '../friendship/contractState';
