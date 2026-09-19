@@ -98,10 +98,6 @@ export const YouView = ({ friendships, showToast }) => {
   };
 
   const partnerName = (friendship) => partnerFor(friendship)?.displayName || 'Contract partner';
-  const selectedStealFriendship = bankrupt.find((friendship) => String(friendship._id) === String(stealTarget));
-  const selectedStealPartner = selectedStealFriendship ? partnerFor(selectedStealFriendship) : null;
-  const projectedSteal = Math.floor((Number(selectedStealPartner?.auraBalance) || 0) * 0.1);
-  const claimNet = projectedSteal - 180;
 
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
@@ -338,7 +334,7 @@ export const YouView = ({ friendships, showToast }) => {
                     </select>
                   )}
                   {cardId === 'STEAL' && stealTarget && (
-                    <span className="inventory-hint">Take {projectedSteal} Aura · 180 cost · net {claimNet >= 0 ? '+' : ''}{claimNet}</span>
+                    <span className="inventory-hint">Takes 10% of their current Aura · creates a public Grudge</span>
                   )}
                   {cardId === 'SIGNAL_FLARE' && (
                     <select value={signalTarget} onChange={(event) => setSignalTarget(event.target.value)} aria-label="Choose contract for Signal Flare">
