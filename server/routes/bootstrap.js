@@ -6,6 +6,7 @@ const Notification = require('../models/Notification');
 const { TEMPLATES, getWorldEvent } = require('../services/contractGame');
 const { loadContractsForUser } = require('../services/contractQueries');
 const { buildAuraSummary } = require('../services/auraSummary');
+const { currentUserView, notificationView } = require('../services/clientViews');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -16,23 +17,24 @@ router.get('/', auth, async (req, res) => {
 
     const [user, notifications] = await Promise.all([
       User.findById(req.user.id)
-        .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion -usernameNormalized')
+        .select('_id displayName username email avatar inventory auraBalance plusInterestAt isTestAccount privacySettings')
         .lean(),
       Notification.find({ toUserId: req.user.id })
         .sort({ createdAt: -1 })
         .limit(50)
+        .select('_id type title message read createdAt')
         .lean()
     ]);
 
     if (!user || !aura) return res.status(404).json({ msg: 'User not found' });
 
-    const visibleNotifications = notifications.filter(
-      (notification) => notification.type !== 'CONTRACT_INVITE'
-    );
+    const visibleNotifications = notifications
+      .filter((notification) => notification.type !== 'CONTRACT_INVITE')
+      .map(notificationView);
 
     return res.json({
       generatedAt: new Date(),
-      user,
+      user: currentUserView(user),
       contracts,
       meta: {
         templates: Object.values(TEMPLATES),

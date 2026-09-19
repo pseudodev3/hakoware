@@ -9,6 +9,7 @@ const { refreshGameState, recordEvent } = require('../services/contractGame');
 const { calculateDebtState } = require('../services/debtState');
 const { refundOpenBountiesForTarget } = require('../services/bountyEscrow');
 const { buildAuraSummary } = require('../services/auraSummary');
+const { publicGrudgeView } = require('../services/clientViews');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -58,17 +59,6 @@ const sameMoment = (left, right) => {
   return new Date(left).getTime() === new Date(right).getTime();
 };
 
-const publicGrudge = (friendship) => ({
-  friendshipId: friendship._id,
-  claimantId: friendship.grudge.claimantId,
-  claimantName: friendship.grudge.claimantName,
-  victimId: friendship.grudge.victimId,
-  victimName: friendship.grudge.victimName,
-  createdAt: friendship.grudge.createdAt,
-  expiresAt: friendship.grudge.expiresAt,
-  originalClaimAmount: friendship.grudge.originalClaimAmount || 0
-});
-
 router.get('/me', auth, async (req, res) => {
   try {
     const summary = await buildAuraSummary(req.user.id);
@@ -100,7 +90,7 @@ router.get('/grudges/public', auth, async (req, res) => {
       'grudge.revengeUsed': { $ne: true },
       'grudge.expiresAt': { $gt: now }
     }).sort({ 'grudge.createdAt': -1 }).limit(100).lean();
-    return res.json(friendships.map(publicGrudge));
+    return res.json(friendships.map(publicGrudgeView));
   } catch (err) {
     console.error('Load public grudges failed:', err.message);
     return res.status(500).json({ msg: 'Could not load grudges' });
@@ -125,7 +115,8 @@ router.get('/grudges/me', auth, async (req, res) => {
       const claimantIsUser1 = String(friendship.grudge.claimantId) === String(friendship.user1);
       const claimantPerspective = claimantIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
       return {
-        ...publicGrudge(friendship),
+        ...publicGrudgeView(friendship),
+        friendshipId: friendship._id,
         role: isVictim ? 'VICTIM' : 'CLAIMANT',
         revengeReady: isVictim && friendship.season?.status === 'ACTIVE' && Boolean(claimantPerspective?.isBankrupt),
         revengeCost: REVENGE_COST

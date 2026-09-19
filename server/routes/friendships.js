@@ -29,6 +29,7 @@ const {
 const { syncDebtState } = require('../services/debtState');
 const { ensureActiveGameState, loadContractsForUser } = require('../services/contractQueries');
 const { normalizeUsername } = require('../services/username');
+const { recapView } = require('../services/clientViews');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -178,13 +179,13 @@ router.get('/:id/recap', auth, async (req, res) => {
     await friendship.populate('user1 user2', 'displayName username avatar');
 
     const recap = await buildRecap(friendship);
-    return res.json({
+    return res.json(recapView({
       ...recap,
       players: [
-        { id: friendship.user1?._id || friendship.user1, displayName: friendship.user1?.displayName || friendship.user1DisplayName, username: friendship.user1?.username || null },
-        { id: friendship.user2?._id || friendship.user2, displayName: friendship.user2?.displayName || friendship.user2DisplayName, username: friendship.user2?.username || null }
+        { displayName: friendship.user1?.displayName || friendship.user1DisplayName, username: friendship.user1?.username || null },
+        { displayName: friendship.user2?.displayName || friendship.user2DisplayName, username: friendship.user2?.username || null }
       ]
-    });
+    }));
   } catch (err) {
     console.error('Load recap failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Could not load recap' });
@@ -199,7 +200,7 @@ router.post('/:id/run-it-back', auth, async (req, res) => {
     if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
     await ensureActiveGameState(friendship);
     await runItBack(friendship);
-    return res.json(friendship);
+    return res.json({ success: true });
   } catch (err) {
     console.error('Run it back failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Could not start another season' });
@@ -248,7 +249,7 @@ router.put('/:id/respond', auth, async (req, res) => {
       });
     }
 
-    return res.json(friendship);
+    return res.json({ success: true });
   } catch (err) {
     console.error('Respond to contract failed:', err.message);
     return res.status(500).json({ msg: 'Could not respond to contract' });
@@ -392,9 +393,11 @@ router.post('/:id/checkin', auth, async (req, res) => {
     });
 
     return res.json({
-      friendship,
-      game,
-      bounty: bountyResults[0] || null,
+      game: {
+        xp: Number(game.xp) || 0,
+        chaosResolved: Boolean(game.chaosResolved)
+      },
+      bounty: bountyResults[0] ? { outcome: bountyResults[0].outcome } : null,
       recovery: {
         started: recoveryStarted,
         completed: recoveryCompleted,
@@ -436,7 +439,7 @@ router.put('/:id/limit', auth, async (req, res) => {
       friendshipId: friendship._id
     });
 
-    return res.json(friendship);
+    return res.json({ success: true });
   } catch (err) {
     console.error('Update contract failed:', err.message);
     return res.status(500).json({ msg: 'Could not update contract' });

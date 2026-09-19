@@ -2,13 +2,16 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
+const { notificationView } = require('../services/clientViews');
 
 router.get('/', auth, async (req, res) => {
   try {
     const notifications = await Notification.find({ toUserId: req.user.id })
       .sort({ createdAt: -1 })
-      .limit(50);
-    return res.json(notifications);
+      .limit(50)
+      .select('_id type title message read createdAt')
+      .lean();
+    return res.json(notifications.map(notificationView));
   } catch (err) {
     console.error('Load notifications failed:', err.message);
     return res.status(500).json({ msg: 'Could not load notifications' });
@@ -36,7 +39,7 @@ router.put('/:id/read', auth, async (req, res) => {
 
     notification.read = true;
     await notification.save();
-    return res.json(notification);
+    return res.json(notificationView(notification));
   } catch (err) {
     console.error('Mark notification failed:', err.message);
     return res.status(500).json({ msg: 'Could not update notification' });

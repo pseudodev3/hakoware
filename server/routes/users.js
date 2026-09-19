@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const auth = require('../middleware/auth');
 const { calculateDebtState } = require('../services/debtState');
+const { publicKey } = require('../services/clientViews');
 
 router.get('/leaderboard', auth, async (req, res) => {
   try {
@@ -38,11 +39,17 @@ router.get('/leaderboard', auth, async (req, res) => {
         : { isTestAccount: { $ne: true } }),
       'privacySettings.optOutPublicBankruptcy': false
     })
-      .select('displayName username avatar nenType')
+      .select('displayName username avatar')
       .lean();
 
     const usersWithStats = users
-      .map((user) => ({ ...user, totalDebt: bankruptStats[user._id.toString()].totalDebt }))
+      .map((user) => ({
+        _id: publicKey(user._id, 'shame'),
+        displayName: user.displayName,
+        username: user.username || null,
+        avatar: user.avatar || null,
+        totalDebt: bankruptStats[user._id.toString()].totalDebt
+      }))
       .sort((a, b) => b.totalDebt - a.totalDebt);
 
     return res.json(usersWithStats);

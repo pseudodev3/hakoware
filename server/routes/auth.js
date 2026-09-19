@@ -12,22 +12,12 @@ const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendResetPasswordEmail, sendWelcomeEmail } = require('../services/emailService');
 const { initializeContractGame, recordEvent } = require('../services/contractGame');
 const { normalizeUsername, validateUsername } = require('../services/username');
+const { currentUserView } = require('../services/clientViews');
 
 const NEN_TYPES = new Set(['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST']);
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 const signToken = (user) => jwt.sign({ user: { id: user.id, v: Number(user.authVersion) || 0 } }, process.env.JWT_SECRET, { expiresIn: '7d' });
-const publicUser = (user) => {
-  const data = user.toObject();
-  delete data.password;
-  delete data.resetPasswordToken;
-  delete data.resetPasswordExpire;
-  delete data.welcomeAuraGranted;
-  delete data.lastDailyAuraBonusKey;
-  delete data.authVersion;
-  delete data.usernameNormalized;
-  return data;
-};
 const signupLimiter = createRateLimiter({
   name: 'auth-signup',
   windowMs: 60 * 60 * 1000,
@@ -134,7 +124,7 @@ router.post('/signup', signupLimiter, async (req, res) => {
     if (pendingInvites.length) await PendingInvite.deleteMany({ recipientEmail: email });
 
     void sendWelcomeEmail(user.email, user.displayName);
-    return res.status(201).json({ token: signToken(user), user: publicUser(user) });
+    return res.status(201).json({ token: signToken(user), user: currentUserView(user) });
   } catch (err) {
     if (err?.code === 11000 && err?.keyPattern?.usernameNormalized) {
       return res.status(400).json({ msg: 'That username is unavailable' });
@@ -157,7 +147,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ msg: 'Invalid username/email or password' });
     }
-    return res.json({ token: signToken(user), user: publicUser(user) });
+    return res.json({ token: signToken(user), user: currentUserView(user) });
   } catch (err) {
     console.error('Login failed:', err.message);
     return res.status(500).json({ msg: 'Could not sign in' });
@@ -182,7 +172,7 @@ router.put('/username', auth, usernameLimiter, async (req, res) => {
     user.username = usernameCheck.username;
     user.usernameNormalized = usernameCheck.normalized;
     await user.save();
-    return res.json(publicUser(user));
+    return res.json(currentUserView(user));
   } catch (err) {
     if (err?.code === 11000) return res.status(400).json({ msg: 'That username is unavailable' });
     console.error('Claim username failed:', err.message);
@@ -193,9 +183,9 @@ router.put('/username', auth, usernameLimiter, async (req, res) => {
 router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password -resetPasswordToken -resetPasswordExpire -welcomeAuraGranted -lastDailyAuraBonusKey -authVersion -usernameNormalized');
+      .select('_id displayName username email avatar inventory auraBalance plusInterestAt isTestAccount privacySettings');
     if (!user) return res.status(404).json({ msg: 'User not found' });
-    return res.json(user);
+    return res.json(currentUserView(user));
   } catch (err) {
     console.error('Load user failed:', err.message);
     return res.status(500).json({ msg: 'Could not load account' });
@@ -213,7 +203,7 @@ router.put('/nen-type', auth, async (req, res) => {
 
     user.nenType = nenType;
     await user.save();
-    return res.json(publicUser(user));
+    return res.json(currentUserView(user));
   } catch (err) {
     console.error('Set Nen failed:', err.message);
     return res.status(500).json({ msg: 'Could not set Nen affinity' });

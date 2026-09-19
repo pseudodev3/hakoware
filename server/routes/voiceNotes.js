@@ -11,6 +11,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { deleteObject, getObject, putObject } = require('../services/bucketStorage');
 const { prepareCheckinGame } = require('../services/contractGame');
+const { voiceNoteInboxView } = require('../services/clientViews');
 
 const AUDIO_TYPES = new Map([
   ['audio/webm', '.webm'],
@@ -93,7 +94,7 @@ router.post('/upload', auth, uploadLimiter, upload.single('audio'), async (req, 
       throw saveError;
     }
 
-    return res.status(201).json(voiceNote);
+    return res.status(201).json({ _id: voiceNote._id });
   } catch (err) {
     console.error('Voice note upload failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Voice note upload failed' });
@@ -108,8 +109,9 @@ router.get('/my-inbox', auth, async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .limit(50)
-      .populate('senderId', 'displayName avatar');
-    return res.json(notes);
+      .select('_id senderName filePath duration listened listenedAt createdAt')
+      .lean();
+    return res.json(notes.map(voiceNoteInboxView));
   } catch (err) {
     console.error('Voice inbox failed:', err.message);
     return res.status(500).json({ msg: 'Could not load voice notes' });
@@ -154,7 +156,7 @@ router.put('/:id/listened', auth, async (req, res) => {
     note.listened = true;
     note.listenedAt = new Date();
     await note.save();
-    return res.json(note);
+    return res.json({ success: true, _id: note._id, listened: true, listenedAt: note.listenedAt });
   } catch (err) {
     console.error('Mark voice note listened failed:', err.message);
     return res.status(500).json({ msg: 'Could not update voice note' });
