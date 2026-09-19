@@ -33,6 +33,18 @@ const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase(
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
 const PLUS_FEATURES = ['Archive', 'Duo stats', 'Custom contracts', 'Recap styles', 'Cosmetics'];
+const MARKET_ART = {
+  PURIFY: '/assets/hakoware/clean-slate.webp',
+  STEAL: '/assets/hakoware/claim.webp',
+  SIGNAL_FLARE: '/assets/hakoware/signal-flare.webp',
+  CHAOS_TICKET: '/assets/hakoware/chaos-ticket.webp'
+};
+const MARKET_SUMMARY = {
+  PURIFY: 'Reset debt. Keep your grace.',
+  STEAL: 'Take 10% from a bankrupt partner.',
+  SIGNAL_FLARE: 'Send a pressure signal. 48h cooldown.',
+  CHAOS_TICKET: 'Roll the next anomaly now.'
+};
 
 export const YouView = ({ friendships, showToast }) => {
   const { user, refreshUser, buyCard, useCard, logout } = useAuth();
@@ -217,14 +229,13 @@ export const YouView = ({ friendships, showToast }) => {
   };
 
   return (
-    <div className="you-view">
-      <header className="profile-header">
+    <div className="you-view you-circle-first">
+      <section className="profile-aura-area" aria-label="Profile and Aura">
         <div className="profile-identity">
           <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
           <div className="identity-copy">
-            <p className="eyebrow">You</p>
             <h1>{user.displayName}</h1>
-            <p>{user.username ? `@${user.username}` : 'Hakoware player'}</p>
+            <p>{user.username ? '@' + user.username : 'Hakoware player'}</p>
           </div>
           {strongest && (
             <Button variant="secondary" size="sm" icon={Share2} loading={busy === 'share-duo'} onClick={shareStrongestDuo}>
@@ -233,72 +244,104 @@ export const YouView = ({ friendships, showToast }) => {
           )}
         </div>
 
+        <div className="profile-aura-row">
+          <div className="aura-balance-copy">
+            <p className="eyebrow">Aura</p>
+            <div className="aura-balance-line"><strong>{aura.balance}</strong><span>spendable</span></div>
+            <small>Earned through play · {reputation.lifetimeEarned} lifetime</small>
+          </div>
+          <div className="aura-rank">
+            <div><strong>{reputation.name}</strong><small>{reputation.nextRankAt ? reputation.nextRankAt - reputation.lifetimeEarned + ' to next rank' : 'Top Aura rank'}</small></div>
+            <span className="aura-rank-progress" aria-label={(reputation.progress || 0) + '% to next Aura rank'}><i style={{ width: (reputation.progress || 0) + '%' }} /></span>
+            <Zap size={18} strokeWidth={1.6} />
+          </div>
+        </div>
+
         <div className="profile-meta" aria-label="Profile summary">
-          <span><b>Strongest Duo</b> Lv. {strongest?.duoLevel || 1} · {strongest?.duoTitle || 'No contract yet'}</span>
+          <span><b>Strongest Duo</b> Lv. {strongest?.duoLevel || 1}</span>
           <span><b>Active</b> {activeSeasons} season{activeSeasons === 1 ? '' : 's'}</span>
           <span><b>Duo XP</b> {totalDuoXP}</span>
         </div>
-      </header>
+      </section>
 
-      <section className="aura-summary">
-        <div className="aura-balance-copy">
-          <p className="eyebrow">Aura</p>
-          <div className="aura-balance-line"><strong>{aura.balance}</strong><span>spendable</span></div>
-          <small>Earned through play · {reputation.lifetimeEarned} lifetime</small>
+      <section className="hakoware-plus-card" aria-label="Hakoware plus">
+        <div className="hakoware-plus-copy">
+          <h2>Hakoware+</h2>
+          <p>{PLUS_FEATURES.join(' · ')}</p>
         </div>
-        <div className="aura-rank">
-          <div><strong>{reputation.name}</strong><small>{reputation.nextRankAt ? `${reputation.nextRankAt - reputation.lifetimeEarned} to next rank` : 'Top Aura rank'}</small></div>
-          <span className="aura-rank-progress" aria-label={`${reputation.progress || 0}% to next Aura rank`}><i style={{ width: `${reputation.progress || 0}%` }} /></span>
-          <Zap size={18} strokeWidth={1.7} />
+        <div className="hakoware-plus-footer">
+          <small>{plusInterested ? 'Interest saved. No payment.' : 'Core game stays free.'}</small>
+          <Button
+            variant="aura"
+            size="sm"
+            loading={busy === 'plus-interest'}
+            disabled={plusInterested}
+            onClick={joinPlusInterest}
+          >
+            {plusInterested ? 'Interested' : "I'm interested"}
+          </Button>
         </div>
       </section>
 
-      <section className="plus-row">
-        <div>
-          <strong>Hakoware+</strong>
-          <span>{PLUS_FEATURES.join(' · ')}</span>
-          <small>{plusInterested ? 'Interest saved. No payment.' : 'Core game stays free.'}</small>
+      <section className="aura-market-section">
+        <div className="aura-market-heading">
+          <h2>Aura Market</h2>
+          <p>Spend Aura to change the game.</p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={busy === 'plus-interest'}
-          disabled={plusInterested}
-          onClick={joinPlusInterest}
-        >
-          {plusInterested ? 'Interested' : "I'm interested"}
-        </Button>
+        <div className="aura-market-grid">
+          {cards.map((card) => (
+            <article className="aura-market-item" key={card.id}>
+              <div className="aura-market-content">
+                {MARKET_ART[card.id] && <img src={MARKET_ART[card.id]} alt="" loading="lazy" decoding="async" />}
+                <div>
+                  <h3>{card.name}</h3>
+                  <strong className="aura-market-price">{card.cost} Aura</strong>
+                  <p>{MARKET_SUMMARY[card.id] || card.description}</p>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={busy === 'buy-' + card.id}
+                disabled={aura.balance < card.cost}
+                onClick={() => purchase(card)}
+              >
+                {aura.balance < card.cost ? 'Not enough Aura' : 'Buy card'}
+              </Button>
+            </article>
+          ))}
+        </div>
       </section>
 
       {grudges.length > 0 && (
-        <section className="you-section">
+        <section className="you-section you-secondary-section">
           <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h2>Somebody made it personal.</h2></div></div>
-          <div className="market-grid">
+          <div className="grudge-list">
             {grudges.map((grudge) => (
-              <article className="market-card" key={grudge.friendshipId}>
-                <div className="market-card-top">
+              <article className="grudge-card" key={grudge.friendshipId}>
+                <div className="grudge-card-top">
                   <strong>{grudge.victimName} vs {grudge.claimantName}</strong>
                   <span>{daysLeft(grudge.expiresAt)}d left</span>
                 </div>
                 <p>
                   {grudge.role === 'VICTIM'
                     ? grudge.revengeReady
-                      ? `${grudge.claimantName} finally went bankrupt. Return the Favor for ${grudge.revengeCost} Aura and take 10% of theirs.`
-                      : `${grudge.claimantName} Claimed you. If they go bankrupt before this expires, your revenge window opens.`
-                    : `${grudge.victimName} has a public Grudge against you. Stay solvent until the timer dies.`}
+                      ? grudge.claimantName + ' finally went bankrupt. Return the Favor for ' + grudge.revengeCost + ' Aura and take 10% of theirs.'
+                      : grudge.claimantName + ' Claimed you. If they go bankrupt before this expires, your revenge window opens.'
+                    : grudge.victimName + ' has a public Grudge against you. Stay solvent until the timer dies.'}
                 </p>
                 {grudge.role === 'VICTIM' && (
                   <Button
                     variant={grudge.revengeReady ? 'danger' : 'secondary'}
                     size="sm"
-                    loading={busy === `revenge-${grudge.friendshipId}`}
+                    loading={busy === 'revenge-' + grudge.friendshipId}
                     disabled={!grudge.revengeReady || aura.balance < grudge.revengeCost}
                     onClick={() => revenge(grudge)}
                   >
                     {grudge.revengeReady
                       ? aura.balance < grudge.revengeCost
-                        ? `Need ${grudge.revengeCost} Aura`
-                        : `Return the Favor · ${grudge.revengeCost}`
+                        ? 'Need ' + grudge.revengeCost + ' Aura'
+                        : 'Return the Favor · ' + grudge.revengeCost
                       : 'Waiting for them to slip'}
                   </Button>
                 )}
@@ -309,7 +352,7 @@ export const YouView = ({ friendships, showToast }) => {
       )}
 
       {inventory.length > 0 && (
-        <section className="you-section">
+        <section className="you-section you-secondary-section">
           <div className="you-section-heading"><div><p className="eyebrow">Inventory</p><h2>Your cards</h2></div></div>
           <div className="inventory-list">
             {[...new Set(inventory)].map((cardId) => {
@@ -333,9 +376,7 @@ export const YouView = ({ friendships, showToast }) => {
                       {bankrupt.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
                     </select>
                   )}
-                  {cardId === 'STEAL' && stealTarget && (
-                    <span className="inventory-hint">Takes 10% of their current Aura · creates a public Grudge</span>
-                  )}
+                  {cardId === 'STEAL' && stealTarget && <span className="inventory-hint">Takes 10% of their current Aura · creates a public Grudge</span>}
                   {cardId === 'SIGNAL_FLARE' && (
                     <select value={signalTarget} onChange={(event) => setSignalTarget(event.target.value)} aria-label="Choose contract for Signal Flare">
                       <option value="">{friendships.length ? 'Choose contract' : 'No active contracts'}</option>
@@ -349,7 +390,7 @@ export const YouView = ({ friendships, showToast }) => {
                     </select>
                   )}
                   {cardId === 'PURIFY' && !hasDebt && <span className="inventory-hint">No debt to clear</span>}
-                  <Button variant="secondary" size="sm" loading={busy === `use-${cardId}`} disabled={disabled} onClick={() => useOwnedCard(cardId)}>Use</Button>
+                  <Button variant="secondary" size="sm" loading={busy === 'use-' + cardId} disabled={disabled} onClick={() => useOwnedCard(cardId)}>Use</Button>
                 </article>
               );
             })}
@@ -357,29 +398,16 @@ export const YouView = ({ friendships, showToast }) => {
         </section>
       )}
 
-      <section className="you-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Aura market</p><h2>Spend Aura</h2></div></div>
-        <div className="market-grid">
-          {cards.map((card) => (
-            <article className="market-card" key={card.id}>
-              <div className="market-card-top"><strong>{card.name}</strong><span>{card.cost} Aura</span></div>
-              <p>{card.description}</p>
-              <Button variant="secondary" size="sm" loading={busy === `buy-${card.id}`} disabled={aura.balance < card.cost} onClick={() => purchase(card)}>{aura.balance < card.cost ? 'Not enough Aura' : 'Buy card'}</Button>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="you-section">
+      <section className="you-section you-secondary-section">
         <div className="you-section-heading"><div><p className="eyebrow">Privacy</p><h2>Public pressure</h2></div></div>
         <button className="privacy-row" type="button" onClick={toggleShameBoard} disabled={savingPrivacy} aria-pressed={appearsOnShameBoard}>
-          <span className="privacy-icon">{appearsOnShameBoard ? <Eye size={18} /> : <EyeOff size={18} />}</span>
+          <span className="privacy-icon">{appearsOnShameBoard ? <Eye size={18} strokeWidth={1.6} /> : <EyeOff size={18} strokeWidth={1.6} />}</span>
           <span className="privacy-copy"><strong>Appear on the Shame Board</strong><small>{appearsOnShameBoard ? 'If you become bankrupt, the Arena can show your public debt total.' : 'Your bankruptcy stays out of the public ranking.'}</small></span>
-          <span className={`privacy-switch ${appearsOnShameBoard ? 'on' : ''}`} aria-hidden="true"><i /></span>
+          <span className={'privacy-switch ' + (appearsOnShameBoard ? 'on' : '')} aria-hidden="true"><i /></span>
         </button>
       </section>
 
-      <section className="you-section">
+      <section className="you-section you-secondary-section">
         <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Recent</h2></div></div>
         <div className="transaction-list">
           {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
@@ -391,10 +419,10 @@ export const YouView = ({ friendships, showToast }) => {
         </div>
       </section>
 
-      <section className="you-section account-section">
+      <section className="you-section you-secondary-section account-section">
         <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Session</h2></div></div>
         <button className="account-logout-row" type="button" onClick={logout}>
-          <span className="account-logout-icon"><LogOut size={18} strokeWidth={1.8} /></span>
+          <span className="account-logout-icon"><LogOut size={18} strokeWidth={1.6} /></span>
           <span className="account-logout-copy"><strong>Sign out</strong><small>End this session on this device.</small></span>
           <span className="account-logout-label">Sign out</span>
         </button>
