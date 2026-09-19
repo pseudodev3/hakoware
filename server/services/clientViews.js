@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const toPlain = (value) => {
   if (!value) return {};
   if (typeof value.toObject === 'function') return value.toObject();
@@ -6,12 +8,19 @@ const toPlain = (value) => {
 
 
 
+const publicKey = (value, prefix = 'item') => {
+  const raw = String(value || '');
+  if (!raw) return null;
+  return `${prefix}-${crypto.createHash('sha256').update(raw).digest('hex').slice(0, 16)}`;
+};
+
 const currentUserView = (value) => {
   const data = toPlain(value);
   return {
     _id: data._id,
     displayName: data.displayName,
     username: data.username,
+    email: data.email,
     avatar: data.avatar || null,
     inventory: Array.isArray(data.inventory) ? data.inventory : [],
     auraBalance: Number(data.auraBalance) || 0,
@@ -191,7 +200,12 @@ const bountyArenaView = (value, viewerId) => {
     viewerRole
   };
 
-  if (viewerRole === 'HUNTER') view.hunterBond = Number(data.hunterBond) || 0;
+  if (viewerRole === 'TARGET') view.targetId = data.targetId;
+  if (viewerRole === 'SENDER') view.senderId = data.senderId;
+  if (viewerRole === 'HUNTER') {
+    view.hunterId = data.hunterId;
+    view.hunterBond = Number(data.hunterBond) || 0;
+  }
   return view;
 };
 
@@ -199,6 +213,7 @@ const publicGrudgeView = (friendship) => {
   const data = toPlain(friendship);
   const grudge = data.grudge || {};
   return {
+    friendshipId: publicKey(data._id, 'grudge'),
     claimantName: grudge.claimantName,
     victimName: grudge.victimName,
     createdAt: grudge.createdAt,
@@ -218,6 +233,7 @@ const auraTransactionView = (value) => {
 };
 
 module.exports = {
+  publicKey,
   currentUserView,
   contractView,
   recapView,
