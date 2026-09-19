@@ -5,6 +5,24 @@ const toPlain = (value) => {
 };
 
 
+
+const currentUserView = (value) => {
+  const data = toPlain(value);
+  return {
+    _id: data._id,
+    displayName: data.displayName,
+    username: data.username,
+    avatar: data.avatar || null,
+    inventory: Array.isArray(data.inventory) ? data.inventory : [],
+    auraBalance: Number(data.auraBalance) || 0,
+    plusInterestAt: data.plusInterestAt || null,
+    isTestAccount: Boolean(data.isTestAccount),
+    privacySettings: {
+      optOutPublicBankruptcy: Boolean(data.privacySettings?.optOutPublicBankruptcy)
+    }
+  };
+};
+
 const participantView = (value) => {
   if (!value) return null;
   const data = toPlain(value);
@@ -200,6 +218,7 @@ const auraTransactionView = (value) => {
 };
 
 module.exports = {
+  currentUserView,
   contractView,
   recapView,
   notificationView,
