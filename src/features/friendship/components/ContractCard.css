@@ -1,19 +1,60 @@
 .contract-card {
+  --contract-theme-surface:var(--bg-card);
+  --contract-theme-accent:var(--aura-gold);
+  --contract-motif-opacity:.34;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
   padding:18px;
   border:1px solid var(--border-subtle);
   border-radius:16px;
-  background:var(--bg-card);
+  background:var(--contract-theme-surface);
   box-shadow:var(--shadow-card);
   transition:background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
+.contract-card::before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:-92px;
+  right:-112px;
+  width:290px;
+  height:230px;
+  pointer-events:none;
+  opacity:var(--contract-motif-opacity);
+  transform:rotate(-12deg);
+  background:
+    radial-gradient(ellipse at 48% 50%, transparent 0 45%, color-mix(in srgb,var(--contract-theme-accent) 24%,transparent) 45.2% 45.7%, transparent 46% 100%),
+    radial-gradient(ellipse at 67% 58%, transparent 0 57%, color-mix(in srgb,var(--contract-theme-accent) 18%,transparent) 57.2% 57.65%, transparent 58% 100%),
+    radial-gradient(ellipse at 36% 71%, transparent 0 68%, color-mix(in srgb,var(--contract-theme-accent) 14%,transparent) 68.2% 68.6%, transparent 69% 100%);
+}
+.contract-card::after {
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:35px;
+  right:38px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  pointer-events:none;
+  opacity:.45;
+  background:var(--contract-theme-accent);
+  box-shadow:20px 31px 0 -1px color-mix(in srgb,var(--contract-theme-accent) 72%,transparent);
+}
+.contract-card > * { position:relative; z-index:1; }
 .contract-card.chaos-active {
+  --contract-theme-surface:color-mix(in srgb,var(--bg-card) 94%,var(--aura-red) 6%);
+  --contract-theme-accent:var(--aura-red);
+  --contract-motif-opacity:.28;
   border-color:color-mix(in srgb,var(--aura-red) 18%,var(--border-subtle));
-  background:color-mix(in srgb,var(--bg-card) 94%,var(--aura-red) 6%);
 }
 .contract-card.wanted,
 .contract-card.partner-bankrupt {
+  --contract-theme-surface:color-mix(in srgb,var(--bg-card) 96%,var(--aura-red) 4%);
+  --contract-theme-accent:var(--aura-red);
+  --contract-motif-opacity:.24;
   border-color:color-mix(in srgb,var(--aura-red) 18%,var(--border-subtle));
-  background:color-mix(in srgb,var(--bg-card) 96%,var(--aura-red) 4%);
 }
 
 .contract-main {
@@ -274,14 +315,14 @@
 
 @media (hover:hover) and (pointer:fine) {
   .contract-card:hover {
+    --contract-theme-surface:var(--bg-card-hover);
     border-color:var(--border-active);
-    background:var(--bg-card-hover);
   }
   .contract-card.chaos-active:hover,
   .contract-card.wanted:hover,
   .contract-card.partner-bankrupt:hover {
+    --contract-theme-surface:color-mix(in srgb,var(--bg-card-hover) 94%,var(--aura-red) 6%);
     border-color:color-mix(in srgb,var(--aura-red) 28%,var(--border-active));
-    background:color-mix(in srgb,var(--bg-card-hover) 94%,var(--aura-red) 6%);
   }
   .contract-settings:hover {
     color:var(--text-primary);
@@ -294,7 +335,7 @@
 }
 
 @media (max-width:560px) {
-  .contract-card { padding:16px; border-radius:15px; }
+  .contract-card { padding:16px; border-radius:15px; --contract-motif-opacity:.28; }\n  .contract-card::before { top:-98px; right:-122px; }
   .contract-avatar { width:40px; height:40px; border-radius:11px; }
   .contract-main { gap:9px; }
   .contract-identity h3 { font-size:.91rem; }
