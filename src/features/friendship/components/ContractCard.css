@@ -2,7 +2,14 @@
 .contracts-grid .contract-card + .contract-card { margin-top:-1px; }
 .contract-card.chaos-contract { background:color-mix(in srgb,var(--aura-red-glow) 16%,transparent); }
 .contract-card.wanted,.contract-card.partner-bankrupt { border-color:color-mix(in srgb,var(--aura-red) 26%,var(--border-subtle)); }
-.contract-main { min-width:0; display:flex; align-items:center; gap:11px; }
+.contract-main { position:relative; min-width:0; display:flex; align-items:center; gap:11px; }
+.contract-main::before { content:''; position:absolute; top:50%; left:44px; width:3px; height:24px; border-radius:999px; background:var(--border-active); opacity:.52; transform:translateY(-50%); pointer-events:none; }
+.contract-card.due .contract-main::before { background:var(--aura-gold); opacity:.78; }
+.contract-card.overdue .contract-main::before,
+.contract-card.critical .contract-main::before,
+.contract-card.chaos-contract .contract-main::before,
+.contract-card.wanted .contract-main::before,
+.contract-card.partner-bankrupt .contract-main::before { background:var(--aura-red); opacity:.82; }
 .contract-avatar { width:40px; height:40px; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; border-radius:11px; background:var(--surface-soft); color:var(--text-secondary); font-size:.8rem; font-weight:680; }
 .contract-avatar img { width:100%; height:100%; object-fit:cover; outline:1px solid var(--image-outline); outline-offset:-1px; }
 .contract-identity { flex:1; min-width:0; display:flex; flex-direction:column; }
@@ -60,6 +67,7 @@
   .contract-card { padding:12px 0; }
   .contract-avatar { width:38px; height:38px; border-radius:10px; }
   .contract-main { gap:10px; }
+  .contract-main::before { left:42px; height:22px; }
   .contract-identity h3 { font-size:.9rem; }
   .contract-meta-line { margin:7px 0 0; gap:4px 9px; }
   .contract-state-row { margin-top:11px; align-items:flex-end; flex-direction:row; gap:12px; }
