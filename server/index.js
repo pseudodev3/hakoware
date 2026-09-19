@@ -57,9 +57,12 @@ const allowedOrigins = (process.env.CORS_ORIGINS || FRONTEND_URL || '')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
 
+const HAKOWARE_VERCEL_PREVIEW_ORIGIN = /^https:\/\/hakoware-v2-[a-z0-9-]+-ghostts-projects-0d589912\.vercel\.app$/i;
+
 app.use(cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (HAKOWARE_VERCEL_PREVIEW_ORIGIN.test(origin)) return callback(null, true);
     if (!IS_PRODUCTION && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
     return callback(new Error('Origin not allowed by CORS'));
   },
