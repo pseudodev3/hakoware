@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const auth = require('../middleware/auth');
 const { calculateDebtState } = require('../services/debtState');
+const { publicKey } = require('../services/clientViews');
 
 router.get('/leaderboard', auth, async (req, res) => {
   try {
@@ -43,6 +44,7 @@ router.get('/leaderboard', auth, async (req, res) => {
 
     const usersWithStats = users
       .map((user) => ({
+        _id: publicKey(user._id, 'shame'),
         displayName: user.displayName,
         username: user.username || null,
         avatar: user.avatar || null,
