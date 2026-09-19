@@ -2,6 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const {
+  publicKey,
   currentUserView,
   contractView,
   recapView,
@@ -19,6 +20,9 @@ const assertMissing = (value, keys, label) => {
 };
 
 
+
+assert.strictEqual(publicKey('raw-id', 'test'), publicKey('raw-id', 'test'), 'public keys must be deterministic');
+assert.notStrictEqual(publicKey('raw-id', 'test'), 'raw-id', 'public keys must not expose raw ids');
 
 const currentUser = currentUserView({
   _id: 'user-id',
@@ -44,9 +48,10 @@ const currentUser = currentUserView({
 });
 assertMissing(
   currentUser,
-  ['email', 'password', 'usernameNormalized', 'nenType', 'defaultLimit', 'emailVerified', 'authVersion', 'testOwnerId', 'notificationPreferences', 'createdAt', 'updatedAt'],
+  ['password', 'usernameNormalized', 'nenType', 'defaultLimit', 'emailVerified', 'authVersion', 'testOwnerId', 'notificationPreferences', 'createdAt', 'updatedAt'],
   'currentUserView'
 );
+assert.strictEqual(currentUser.email, 'private@example.com');
 assert.strictEqual(currentUser.privacySettings.optOutPublicBankruptcy, true);
 
 const contract = contractView({
@@ -171,10 +176,17 @@ const bountySource = {
 };
 const bountyViewer = bountyArenaView(bountySource, 'viewer-id');
 assertMissing(bountyViewer, ['senderId', 'targetId', 'hunterId', 'friendshipId', 'isTestData', 'testOwnerId', 'attempts', 'listingFee', 'hunterBond'], 'bountyArenaView viewer');
+const bountyTarget = bountyArenaView(bountySource, 'target-id');
+assert.strictEqual(String(bountyTarget.targetId), 'target-id');
+assertMissing(bountyTarget, ['senderId', 'hunterId', 'friendshipId', 'isTestData', 'testOwnerId', 'attempts', 'listingFee', 'hunterBond'], 'bountyArenaView target');
+const bountySender = bountyArenaView(bountySource, 'sender-id');
+assert.strictEqual(String(bountySender.senderId), 'sender-id');
+assertMissing(bountySender, ['targetId', 'hunterId', 'friendshipId', 'isTestData', 'testOwnerId', 'attempts', 'listingFee', 'hunterBond'], 'bountyArenaView sender');
 const bountyHunter = bountyArenaView(bountySource, 'hunter-id');
 assert.strictEqual(bountyHunter.viewerRole, 'HUNTER');
+assert.strictEqual(String(bountyHunter.hunterId), 'hunter-id');
 assert.strictEqual(bountyHunter.hunterBond, 10);
-assertMissing(bountyHunter, ['senderId', 'targetId', 'hunterId', 'friendshipId', 'isTestData', 'testOwnerId', 'attempts', 'listingFee'], 'bountyArenaView hunter');
+assertMissing(bountyHunter, ['senderId', 'targetId', 'friendshipId', 'isTestData', 'testOwnerId', 'attempts', 'listingFee'], 'bountyArenaView hunter');
 
 const publicGrudge = publicGrudgeView({
   _id: 'private-contract-id',
@@ -188,7 +200,8 @@ const publicGrudge = publicGrudgeView({
     originalClaimAmount: 20
   }
 });
-assertMissing(publicGrudge, ['friendshipId', 'claimantId', 'victimId'], 'publicGrudgeView');
+assert.ok(publicGrudge.friendshipId && publicGrudge.friendshipId !== 'private-contract-id', 'publicGrudgeView must use an opaque public key');
+assertMissing(publicGrudge, ['claimantId', 'victimId'], 'publicGrudgeView');
 
 const transaction = auraTransactionView({
   _id: 'transaction-id',
