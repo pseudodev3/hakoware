@@ -4,6 +4,7 @@ import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { getContractRecap, runContractBack } from '../../../services/friendshipService';
 import { shareHakoware } from '../../../lib/share';
+import { drawHakowareStamp } from '../../../lib/shareStamp';
 import './ContractRecapModal.css';
 
 const formatTemplate = (value = '') => value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -47,6 +48,16 @@ const buildShareImage = async (recap) => {
   gradient.addColorStop(1, 'rgba(231,179,90,0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, 760);
+
+  await drawHakowareStamp(ctx, {
+    x: 860,
+    y: 1120,
+    radius: 118,
+    tint: '#e7b35a',
+    opacity: 0.11,
+    rotation: -0.07,
+    footer: 'WEEKLY REPORT'
+  });
 
   const names = (recap.players || []).map((player) => player.displayName).filter(Boolean).join(' × ') || 'Hakoware Duo';
   const weekly = recap.weekly || {};
