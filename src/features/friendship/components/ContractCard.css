@@ -335,7 +335,8 @@
 }
 
 @media (max-width:560px) {
-  .contract-card { padding:16px; border-radius:15px; --contract-motif-opacity:.28; }\n  .contract-card::before { top:-98px; right:-122px; }
+  .contract-card { padding:16px; border-radius:15px; --contract-motif-opacity:.28; }
+  .contract-card::before { top:-98px; right:-122px; }
   .contract-avatar { width:40px; height:40px; border-radius:11px; }
   .contract-main { gap:9px; }
   .contract-identity h3 { font-size:.91rem; }
