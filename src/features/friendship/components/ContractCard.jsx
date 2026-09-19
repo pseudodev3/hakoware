@@ -114,6 +114,11 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
   return (
     <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
+      <div className="contract-slip-kicker" aria-hidden="true">
+        <span>HAKOWARE CONTRACT</span>
+        <span>{activeChaos ? 'ANOMALY LIVE' : seasonDone ? 'CLOSED' : 'ACTIVE'} · S{season.number || 1}</span>
+      </div>
+
       <div className="contract-main">
         <div className="contract-avatar" aria-hidden="true">
           {friend.avatar ? <img src={friend.avatar} alt="" /> : <span>{name[0]?.toUpperCase()}</span>}
@@ -129,7 +134,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
       <div className="contract-meta-line">
         <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{mode}</span>
-        <span>Season {season.number || 1}</span>
+        {!chaosTargetsCurrentUser && <span>{stats.limit}d rule</span>}
         <span>{seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now())}</span>
       </div>
 
