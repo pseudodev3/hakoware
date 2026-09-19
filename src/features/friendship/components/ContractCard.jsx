@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, BarChart3, Check, Dice5, Flame, MessageCircle, Mic, Settings, Share2, TriangleAlert, Trophy } from 'lucide-react';
+import { ArrowRight, BarChart3, Check, Flame, MessageCircle, Mic, Settings, Share2, TriangleAlert, Trophy } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { Button } from '../../../shared/components/Button';
 import { getContractSides } from '../contractState';
@@ -91,7 +91,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       </div>
 
       <div className="contract-meta-line">
-        <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{friendship.templateId === 'CHAOS' && <Dice5 size={11} strokeWidth={2} />} {mode}</span>
+        <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{mode}</span>
         <span>Season {season.number || 1}</span>
         <span>{seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now())}</span>
       </div>
