@@ -146,9 +146,9 @@ export const Arena = ({ friendships, showToast }) => {
           </div>
           <div className="arena-list">
             {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties.'}</div> : filtered.map((bounty) => {
-              const isTarget = bounty.viewerRole === 'TARGET';
-              const isSender = bounty.viewerRole === 'SENDER';
-              const isHunter = bounty.viewerRole === 'HUNTER';
+              const isTarget = bounty.viewerRole ? bounty.viewerRole === 'TARGET' : String(bounty.targetId) === userId;
+              const isSender = bounty.viewerRole ? bounty.viewerRole === 'SENDER' : String(bounty.senderId) === userId;
+              const isHunter = bounty.viewerRole ? bounty.viewerRole === 'HUNTER' : String(bounty.hunterId || '') === userId;
               const proofArmed = bounty.status === 'PRESSURE_SENT';
               const hunting = bounty.status === 'HUNTING' || proofArmed;
               const window = timeLeft(bounty.huntExpiresAt);
