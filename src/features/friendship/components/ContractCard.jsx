@@ -175,18 +175,22 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         </div>
       )}
 
-      <div className="contract-state-row">
-        <div className="contract-state-copy">
-          <strong className={`contract-status ${status.tone}`}>{seasonDone ? 'Season complete' : status.label}</strong>
-          <span>{seasonDone ? 'Report ready' : `${status.detail} · ${stats.limit}d rule`}</span>
-        </div>
-        <div className="duo-summary">
-          <strong>Lv. {level}</strong>
-          <span>{friendship.duoTitle || 'New Contract'} · {friendship.duoXP || 0} XP</span>
-        </div>
-      </div>
+      {!chaosTargetsCurrentUser && (
+        <>
+          <div className="contract-state-row">
+            <div className="contract-state-copy">
+              <strong className={`contract-status ${status.tone}`}>{seasonDone ? 'Season complete' : status.label}</strong>
+              <span>{seasonDone ? 'Report ready' : `${status.detail} · ${stats.limit}d rule`}</span>
+            </div>
+            <div className="duo-summary">
+              <strong>Lv. {level}</strong>
+              <span>{friendship.duoTitle || 'New Contract'} · {friendship.duoXP || 0} XP</span>
+            </div>
+          </div>
 
-      <div className="duo-meter" aria-label={`Duo level progress ${xpProgress}%`}><span style={{ width: `${xpProgress}%` }} /></div>
+          <div className="duo-meter" aria-label={`Duo level progress ${xpProgress}%`}><span style={{ width: `${xpProgress}%` }} /></div>
+        </>
+      )}
 
       {!compact && (
         <div className="contract-actions">
