@@ -183,7 +183,7 @@ router.put('/username', auth, usernameLimiter, async (req, res) => {
 router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('_id displayName username avatar inventory auraBalance plusInterestAt isTestAccount privacySettings');
+      .select('_id displayName username email avatar inventory auraBalance plusInterestAt isTestAccount privacySettings');
     if (!user) return res.status(404).json({ msg: 'User not found' });
     return res.json(currentUserView(user));
   } catch (err) {
