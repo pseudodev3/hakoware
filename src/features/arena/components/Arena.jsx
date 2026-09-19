@@ -146,9 +146,9 @@ export const Arena = ({ friendships, showToast }) => {
           </div>
           <div className="arena-list">
             {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties.'}</div> : filtered.map((bounty) => {
-              const isTarget = String(bounty.targetId) === userId;
-              const isSender = String(bounty.senderId) === userId;
-              const isHunter = String(bounty.hunterId || '') === userId;
+              const isTarget = bounty.viewerRole ? bounty.viewerRole === 'TARGET' : String(bounty.targetId) === userId;
+              const isSender = bounty.viewerRole ? bounty.viewerRole === 'SENDER' : String(bounty.senderId) === userId;
+              const isHunter = bounty.viewerRole ? bounty.viewerRole === 'HUNTER' : String(bounty.hunterId || '') === userId;
               const proofArmed = bounty.status === 'PRESSURE_SENT';
               const hunting = bounty.status === 'HUNTING' || proofArmed;
               const window = timeLeft(bounty.huntExpiresAt);
@@ -187,7 +187,7 @@ export const Arena = ({ friendships, showToast }) => {
           <div className="arena-panel-head"><div><Flame size={18} strokeWidth={1.8} /><strong>Public grudges</strong></div><span className="arena-privacy-note">Claims are public until settled or expired</span></div>
           <div className="arena-list">
             {loading ? <div className="arena-empty">Loading beef…</div> : grudges.length === 0 ? <div className="arena-empty">No public Grudges.</div> : grudges.map((grudge) => (
-              <article className="bounty-item proof-armed-item" key={grudge.friendshipId}>
+              <article className="bounty-item proof-armed-item" key={`${grudge.claimantName}:${grudge.victimName}:${grudge.createdAt}`}>
                 <div className="bounty-avatar"><Flame size={17} /></div>
                 <div className="bounty-copy">
                   <div className="bounty-title-row"><strong>{grudge.victimName} vs {grudge.claimantName}</strong><span className="bounty-status proof">GRUDGE</span></div>
@@ -204,7 +204,7 @@ export const Arena = ({ friendships, showToast }) => {
           <div className="arena-panel-head"><div><Target size={18} strokeWidth={1.8} /><strong>Most overdue</strong></div><span className="arena-privacy-note">Opt-out respected</span></div>
           <div className="arena-list shame-list-new">
             {loading ? <div className="arena-empty">Loading board…</div> : shame.length === 0 ? <div className="arena-empty">Nobody is bankrupt right now.</div> : shame.map((person, index) => (
-              <article className="shame-item-new" key={person._id}>
+              <article className="shame-item-new" key={person.username || `${person.displayName}:${index}`}>
                 <span className="shame-rank">{String(index + 1).padStart(2, '0')}</span>
                 <div className="bounty-avatar">{person.displayName?.[0]?.toUpperCase() || '?'}</div>
                 <div className="bounty-copy"><strong>{person.displayName}</strong><span>{person.username ? `@${person.username}` : 'Hakoware player'}</span></div>
