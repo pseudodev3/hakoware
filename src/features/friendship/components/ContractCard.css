@@ -2,14 +2,12 @@
 .contracts-grid .contract-card + .contract-card { margin-top:-1px; }
 .contract-card.chaos-contract { background:color-mix(in srgb,var(--aura-red-glow) 16%,transparent); }
 .contract-card.wanted,.contract-card.partner-bankrupt { border-color:color-mix(in srgb,var(--aura-red) 26%,var(--border-subtle)); }
-.contract-main { position:relative; min-width:0; display:flex; align-items:center; gap:11px; }
-.contract-main::before { content:''; position:absolute; top:50%; left:44px; width:3px; height:24px; border-radius:999px; background:var(--border-active); opacity:.52; transform:translateY(-50%); pointer-events:none; }
-.contract-card.due .contract-main::before { background:var(--aura-gold); opacity:.78; }
-.contract-card.overdue .contract-main::before,
-.contract-card.critical .contract-main::before,
-.contract-card.chaos-contract .contract-main::before,
-.contract-card.wanted .contract-main::before,
-.contract-card.partner-bankrupt .contract-main::before { background:var(--aura-red); opacity:.82; }
+.contract-slip-kicker { margin-bottom:9px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--text-faint); font-family:var(--font-mono); font-size:.48rem; font-weight:700; letter-spacing:.11em; line-height:1; text-transform:uppercase; }
+.contract-slip-kicker span:last-child { color:var(--text-muted); letter-spacing:.08em; }
+.contract-card.chaos-contract .contract-slip-kicker span:last-child,
+.contract-card.wanted .contract-slip-kicker span:last-child,
+.contract-card.partner-bankrupt .contract-slip-kicker span:last-child { color:var(--aura-red); }
+.contract-main { min-width:0; display:flex; align-items:center; gap:11px; }
 .contract-avatar { width:40px; height:40px; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; border-radius:11px; background:var(--surface-soft); color:var(--text-secondary); font-size:.8rem; font-weight:680; }
 .contract-avatar img { width:100%; height:100%; object-fit:cover; outline:1px solid var(--image-outline); outline-offset:-1px; }
 .contract-identity { flex:1; min-width:0; display:flex; flex-direction:column; }
@@ -23,7 +21,7 @@
 .contract-meta-line span.chaos { color:var(--aura-red); }
 .contract-state-row { margin-top:13px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
 .contract-state-copy,.duo-summary { min-width:0; display:flex; flex-direction:column; }
-.contract-status { font-size:.71rem; font-weight:680; }
+.contract-status { width:max-content; padding:2px 0; border-top:1px solid currentColor; border-bottom:1px solid currentColor; font-family:var(--font-mono); font-size:.62rem; font-weight:760; letter-spacing:.08em; line-height:1.35; text-transform:uppercase; }
 .contract-status.good { color:var(--aura-green); }
 .contract-status.due { color:var(--aura-gold); }
 .contract-status.overdue,.contract-status.critical { color:var(--aura-red); }
@@ -51,7 +49,7 @@
 .contract-anomaly-share:active { transform:scale(.96); }
 .contract-anomaly-share:disabled { opacity:.55; }
 .contract-wanted { min-height:34px; padding:7px 0; display:flex; align-items:center; gap:7px; border-top:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 18%,transparent); color:var(--aura-red); font-family:var(--font-mono); font-size:.55rem; font-weight:650; }
-.contract-actions { margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.contract-actions { margin-top:13px; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px dashed color-mix(in srgb,var(--border-subtle) 78%,transparent); }
 .contract-report-link { min-height:36px; padding:0 2px; display:inline-flex; align-items:center; gap:6px; color:var(--text-muted); font-size:.62rem; font-weight:620; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .contract-report-link:active { transform:scale(.96); }
 .contract-primary-actions { display:grid; grid-template-columns:1fr 1.2fr; gap:7px; min-width:min(280px,60%); }
@@ -66,8 +64,8 @@
 @media (max-width:560px) {
   .contract-card { padding:12px 0; }
   .contract-avatar { width:38px; height:38px; border-radius:10px; }
+  .contract-slip-kicker { margin-bottom:8px; font-size:.46rem; }
   .contract-main { gap:10px; }
-  .contract-main::before { left:42px; height:22px; }
   .contract-identity h3 { font-size:.9rem; }
   .contract-meta-line { margin:7px 0 0; gap:4px 9px; }
   .contract-state-row { margin-top:11px; align-items:flex-end; flex-direction:row; gap:12px; }
