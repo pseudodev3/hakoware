@@ -16,6 +16,7 @@ const {
 } = require('../services/bountyEscrow');
 const { recordEvent, refreshGameState } = require('../services/contractGame');
 const { calculateDebtState, syncDebtState } = require('../services/debtState');
+const { bountyArenaView } = require('../services/clientViews');
 
 const HOUR = 60 * 60 * 1000;
 const BOUNTY_COOLDOWN_HOURS = 24;
@@ -162,7 +163,7 @@ router.post('/', auth, async (req, res) => {
       friendshipId: friendship._id
     });
 
-    return res.status(201).json({ ...bounty.toObject(), economics: { listingFee, totalCost } });
+    return res.status(201).json({ success: true, bountyId: bounty._id, economics: { listingFee, totalCost } });
   } catch (err) {
     console.error('Create bounty failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Could not place bounty' });
@@ -185,8 +186,9 @@ router.get('/active', auth, async (req, res) => {
       expiresAt: { $gt: new Date() }
     })
       .sort({ createdAt: -1 })
-      .limit(100);
-    return res.json(bounties);
+      .limit(100)
+      .lean();
+    return res.json(bounties.map((bounty) => bountyArenaView(bounty, req.user.id)));
   } catch (err) {
     console.error('Load bounties failed:', err.message);
     return res.status(500).json({ msg: 'Could not load bounties' });
@@ -324,7 +326,7 @@ router.post('/:id/hunt', auth, async (req, res) => {
       friendshipId: bounty.friendshipId
     });
 
-    return res.json(bounty);
+    return res.json({ success: true, hunterBond: bond });
   } catch (err) {
     console.error('Hunt bounty failed:', err.message);
     return res.status(500).json({ msg: 'Could not hunt bounty' });
@@ -365,7 +367,7 @@ router.post('/:id/pressure', auth, async (req, res) => {
       friendshipId: bounty.friendshipId
     });
 
-    return res.json({ bounty, move });
+    return res.json({ success: true });
   } catch (err) {
     console.error('Send bounty pressure failed:', err.message);
     return res.status(500).json({ msg: 'Could not send pressure' });
