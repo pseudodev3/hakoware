@@ -127,93 +127,68 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   }
 
   return (
-    <div className="home-view">
-      <header className="home-hero game-home-hero">
-        <div>
-          <p className="eyebrow">Your circle</p>
-          <h1>{hot.length ? 'Something is happening.' : 'Everybody survived.'}</h1>
-          <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active · all clear.`}</p>
+    <div className="home-view circle-first-home">
+      <header className="circle-first-header">
+        <div className="circle-first-title">
+          <h1>Your circle</h1>
+          <p>{hot.length ? hot.length + ' need' + (hot.length === 1 ? 's' : '') + ' attention.' : friendships.length + ' active · all clear.'}</p>
         </div>
-        <button className="aura-chip" onClick={() => onNavigate('you')} aria-label={`${user.auraBalance || 0} Aura, open profile`}><span>{user.auraBalance || 0}</span> Aura</button>
+        <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>New</Button>
+        <button className="circle-all-contracts" type="button" onClick={() => onNavigate('contracts')}>
+          All contracts <ArrowRight size={15} strokeWidth={1.6} />
+        </button>
       </header>
 
-      {bankruptPartners.length > 0 && (() => {
-        const visibleNames = bankruptPartners
-          .slice(0, 2)
-          .map(({ partner }) => partner?.displayName || 'Contract partner');
-        const remaining = bankruptPartners.length - visibleNames.length;
-        const names = `${visibleNames.join(', ')}${remaining > 0 ? ` +${remaining}` : ''}`;
-        const one = bankruptPartners.length === 1;
+      {pendingInvitations.length > 0 && (
+        <button className="circle-pending-link" type="button" onClick={() => onNavigate('contracts')}>
+          <span><strong>{pendingInvitations.length}</strong> challenge{pendingInvitations.length === 1 ? '' : 's'} waiting</span>
+          <ArrowRight size={16} strokeWidth={1.6} />
+        </button>
+      )}
 
-        return (
-          <button
-            className="bankruptcy-alert-strip"
-            type="button"
-            onClick={() => onNavigate(one ? 'arena' : 'contracts')}
-          >
-            <span className="bankruptcy-alert-icon"><TriangleAlert size={19} strokeWidth={2} /></span>
-            <span className="bankruptcy-alert-copy">
-              <small>{one ? 'Partner bankrupt' : `${bankruptPartners.length} partners bankrupt`}</small>
-              <strong>{names}</strong>
-              <span>{one ? 'Bounties + Claim unlocked.' : 'Choose who to pressure.'}</span>
-            </span>
-            <ArrowRight size={17} strokeWidth={2} />
-          </button>
-        );
-      })()}
+      <section className="circle-contracts" aria-label={hot.length ? 'Contracts needing attention' : 'Active contracts'}>
+        {visible.map((friendship) => (
+          <ContractCard
+            key={friendship._id || friendship.id}
+            friendship={friendship}
+            currentUserId={userId}
+            onAction={onAction}
+          />
+        ))}
+      </section>
 
       {showSeasonBriefing && firstSeasonBriefing && (() => {
         const partner = partnerFor(firstSeasonBriefing, userId);
-        const partnerName = partner?.username ? `@${partner.username}` : (partner?.displayName || 'your partner');
+        const partnerName = partner?.username ? '@' + partner.username : (partner?.displayName || 'your partner');
         const limit = Number(perspectiveFor(firstSeasonBriefing, userId)?.limit) || 3;
         return (
-          <section className="season-start-briefing">
-            <span className="season-start-mark"><CheckCircle2 size={18} strokeWidth={1.9} /></span>
-            <div className="season-start-copy">
-              <span>SEASON 1 STARTED</span>
-              <strong>You and {partnerName} are live.</strong>
-              <p>Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</p>
+          <section className="circle-season-briefing">
+            <div>
+              <span>Season 1 started</span>
+              <p>You and {partnerName} are live.</p>
+              <small>Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</small>
             </div>
-            <button type="button" className="season-start-dismiss" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={15} /></button>
+            <button type="button" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={16} strokeWidth={1.6} /></button>
           </section>
         );
       })()}
 
-
-      {pendingInvitations.length > 0 && (
-        <button className="pending-banner" onClick={() => onNavigate('contracts')}>
-          <span><strong>{pendingInvitations.length}</strong> challenge{pendingInvitations.length === 1 ? '' : 's'} waiting</span>
-          <ArrowRight size={17} strokeWidth={1.8} />
-        </button>
-      )}
-
-      <div className="home-context-line" aria-label="Circle summary">
-        <span><b>Strongest Duo</b> Lv. {highestDuo?.duoLevel || 1} · {highestDuo?.duoTitle || 'New Contract'}</span>
-        <span><b>Active</b> {activeSeasons}</span>
-        {completeReports > 0 && <span><b>Reports</b> {completeReports}</span>}
-        {liveChaos > 0 && <span className="danger"><b>Chaos</b> {liveChaos} live</span>}
+      <div className="circle-summary" aria-label="Circle summary">
+        <span><b>{activeSeasons}</b>Active</span>
+        <span><b>Lv. {highestDuo?.duoLevel || 1}</b>Strongest Duo</span>
+        {completeReports > 0 && <span><b>{completeReports}</b>Reports</span>}
+        <span><b className={liveChaos > 0 ? 'danger' : ''}>{liveChaos > 0 ? liveChaos + ' live' : 'Clear'}</b>Chaos</span>
         {worldEvent && (
-          <span className="world-rule">
+          <span className="circle-world-rule">
             <b>{worldEvent.name}</b>
-            <i>·</i>
             {WORLD_RULE_COPY[worldEvent.id] || worldEvent.description}
           </span>
         )}
       </div>
 
-      <section className="home-section">
-        <div className="section-heading">
-          <div><p className="eyebrow">{hot.length ? 'Right now' : 'Active contracts'}</p><h2>{hot.length ? 'Needs attention.' : 'All clear.'}</h2></div>
-          <button className="text-action" onClick={() => onNavigate('contracts')}>All contracts <ArrowRight size={15} /></button>
-        </div>
-        <div className="home-contract-list">
-          {visible.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
-        </div>
-      </section>
-
-      <div className="home-footer-action">
+      <div className="circle-grow">
         <span>Grow the circle.</span>
-        <button type="button" onClick={onAddFriend}><Plus size={15} /> New contract</button>
+        <button type="button" onClick={onAddFriend}><Plus size={15} strokeWidth={1.6} /> New contract</button>
       </div>
     </div>
   );
