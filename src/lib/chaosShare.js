@@ -147,15 +147,22 @@ export const buildChaosShareImage = async ({
   ctx.fillText('CURRENT RULE', 82, 882);
 
   ctx.fillStyle = PAPER;
-  ctx.font = '650 44px system-ui, -apple-system, sans-serif';
-  const ruleLines = wrapLines(ctx, rule, 890);
+  let ruleSize = 44;
+  ctx.font = `650 ${ruleSize}px system-ui, -apple-system, sans-serif`;
+  let ruleLines = wrapLines(ctx, rule, 890);
+  if (ruleLines.length > 3) {
+    ruleSize = 36;
+    ctx.font = `650 ${ruleSize}px system-ui, -apple-system, sans-serif`;
+    ruleLines = wrapLines(ctx, rule, 890);
+  }
   let ruleY = 956;
-  ruleLines.slice(0, 4).forEach((line) => {
+  const ruleLineHeight = ruleSize + 11;
+  ruleLines.slice(0, 3).forEach((line) => {
     ctx.fillText(line, 82, ruleY);
-    ruleY += 55;
+    ruleY += ruleLineHeight;
   });
 
-  const duoLineY = Math.max(1138, ruleY + 30);
+  const duoLineY = 1158;
   ctx.fillStyle = MUTED;
   ctx.font = '600 22px system-ui, -apple-system, sans-serif';
   ctx.fillText(`You × ${partnerName || 'contract partner'}`, 82, duoLineY);
