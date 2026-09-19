@@ -6,6 +6,7 @@ const {
   refreshGameState,
   recordEvent
 } = require('./contractGame');
+const { contractView } = require('./clientViews');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -74,13 +75,19 @@ const loadContractsForUser = async (userId) => {
   );
 
   const userIdString = String(userId);
-  const active = friendships.filter((friendship) => friendship.status === 'ACTIVE');
-  const pendingReceived = friendships.filter(
-    (friendship) => friendship.status === 'PENDING' && String(friendship.user2?._id || friendship.user2) === userIdString
-  );
-  const pendingSent = friendships.filter(
-    (friendship) => friendship.status === 'PENDING' && String(friendship.user1?._id || friendship.user1) === userIdString
-  );
+  const active = friendships
+    .filter((friendship) => friendship.status === 'ACTIVE')
+    .map(contractView);
+  const pendingReceived = friendships
+    .filter(
+      (friendship) => friendship.status === 'PENDING' && String(friendship.user2?._id || friendship.user2) === userIdString
+    )
+    .map(contractView);
+  const pendingSent = friendships
+    .filter(
+      (friendship) => friendship.status === 'PENDING' && String(friendship.user1?._id || friendship.user1) === userIdString
+    )
+    .map(contractView);
 
   return {
     active,
