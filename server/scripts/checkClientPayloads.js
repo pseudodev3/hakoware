@@ -2,6 +2,8 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const {
+  contractView,
+  recapView,
   notificationView,
   voiceNoteInboxView,
   bountyArenaView,
@@ -14,6 +16,80 @@ const assertMissing = (value, keys, label) => {
     assert.ok(!(key in value), `${label} leaked ${key}`);
   }
 };
+
+
+const contract = contractView({
+  _id: 'contract-id',
+  user1: { _id: 'user-1', displayName: 'One', username: 'one', avatar: null, auraBalance: 999, email: 'one@example.com', nenType: 'ENHANCER' },
+  user2: { _id: 'user-2', displayName: 'Two', username: 'two', avatar: null, auraBalance: 888, email: 'two@example.com', nenType: 'SPECIALIST' },
+  user1DisplayName: 'One',
+  user2DisplayName: 'Two',
+  status: 'ACTIVE',
+  isTestData: true,
+  testOwnerId: 'private-owner-id',
+  templateId: 'CHAOS',
+  duoXP: 80,
+  duoLevel: 2,
+  duoTitle: 'Locked In',
+  season: { number: 1, status: 'ACTIVE', lengthDays: 30, startedAt: new Date(), endsAt: new Date() },
+  chaos: {
+    level: 2,
+    nextEventAt: new Date(),
+    wantedUntil: null,
+    lastConsequence: 'Test',
+    activeEvent: {
+      eventId: 'private-event-id',
+      type: 'VOICE_TAX',
+      name: 'Voice Tax',
+      description: 'Use voice.',
+      targetUserId: 'user-1',
+      startedAt: new Date(),
+      expiresAt: new Date(),
+      payload: { requiredSource: 'VOICE', auraBonus: 100 }
+    }
+  },
+  grudge: { claimantId: 'private-claimant-id', victimId: 'private-victim-id' },
+  claimState: { user1WindowKey: new Date() },
+  user1Perspective: {
+    baseDebt: 1,
+    limit: 3,
+    lastInteraction: new Date(),
+    recoveryRequired: true,
+    bankruptcyNoticeKey: 'private-notice-key',
+    calculatedDebt: 7,
+    calculatedAt: new Date(),
+    daysMissed: 9,
+    isBankrupt: true,
+    isInWarningZone: false,
+    daysUntilBankrupt: 0
+  },
+  user2Perspective: { baseDebt: 0, limit: 3, lastInteraction: new Date(), recoveryRequired: false }
+});
+assertMissing(contract, ['isTestData', 'testOwnerId', 'grudge', 'claimState', 'createdAt', 'updatedAt'], 'contractView');
+assertMissing(contract.user1, ['auraBalance', 'email', 'nenType'], 'contractView user1');
+assertMissing(contract.user2, ['auraBalance', 'email', 'nenType'], 'contractView user2');
+assertMissing(contract.user1Perspective, ['bankruptcyNoticeKey', 'calculatedDebt', 'calculatedAt', 'daysMissed', 'isBankrupt', 'isInWarningZone', 'daysUntilBankrupt'], 'contractView perspective');
+assertMissing(contract.chaos.activeEvent, ['eventId', 'type', 'startedAt', 'payload'], 'contractView chaos event');
+assert.ok(!('lengthDays' in contract.season), 'contractView leaked season length bookkeeping');
+
+const recap = recapView({
+  friendshipId: 'private-contract-id',
+  template: { id: 'CHAOS', name: 'Chaos', limit: 3, seasonDays: 30, chaos: true, privateRule: 'secret' },
+  duo: { xp: 50, level: 2, title: 'Locked In', progress: 25, nextLevelXP: 200 },
+  weekly: { checkins: 2, voiceNotes: 1, chaosSurvived: 1, chaosFailed: 0, xpGained: 25, auraChanged: 99, line: 'Still here.', from: new Date(), to: new Date() },
+  season: { checkins: 8, voiceNotes: 3, chaosSurvived: 2, chaosFailed: 1, bankruptcies: 1, xpGained: 100, auraChanged: 200, number: 1, status: 'ACTIVE' },
+  chaos: { level: 2, activeEvent: { name: 'Voice Tax', payload: { requiredSource: 'VOICE' }, targetUserId: 'private-user-id' }, lastConsequence: 'Wanted', nextEventAt: new Date() },
+  worldEvent: { xpMultiplier: 2, privateRule: 'secret' },
+  players: [{ id: 'private-user-id', displayName: 'One', username: 'one' }]
+});
+assertMissing(recap, ['friendshipId', 'worldEvent'], 'recapView');
+assertMissing(recap.template, ['privateRule'], 'recapView template');
+assertMissing(recap.duo, ['nextLevelXP'], 'recapView duo');
+assertMissing(recap.weekly, ['auraChanged', 'from', 'to'], 'recapView weekly');
+assertMissing(recap.season, ['auraChanged'], 'recapView season');
+assertMissing(recap.chaos, ['nextEventAt'], 'recapView chaos');
+assertMissing(recap.chaos.activeEvent, ['payload', 'targetUserId'], 'recapView chaos event');
+assertMissing(recap.players[0], ['id'], 'recapView player');
 
 const notification = notificationView({
   _id: 'notification-id',
@@ -98,6 +174,12 @@ const contractQueries = fs.readFileSync(path.join(__dirname, '..', 'services', '
 assert.ok(
   !/populate\([^\n]*(?:auraBalance|nenType)/.test(contractQueries),
   'Contract partner population must not expose auraBalance or dormant nenType'
+);
+
+const friendshipRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'friendships.js'), 'utf8');
+assert.ok(
+  !friendshipRoutes.includes('return res.json(friendship);'),
+  'Friendship action routes must not return raw Friendship documents'
 );
 
 console.log('Client payload minimization checks passed');
