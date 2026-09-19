@@ -33,12 +33,6 @@ const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase(
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
 const PLUS_FEATURES = ['Archive', 'Duo stats', 'Custom contracts', 'Recap styles', 'Cosmetics'];
-const MARKET_ART = {
-  PURIFY: '/assets/hakoware/clean-slate.webp',
-  STEAL: '/assets/hakoware/claim.webp',
-  SIGNAL_FLARE: '/assets/hakoware/signal-flare.webp',
-  CHAOS_TICKET: '/assets/hakoware/chaos-ticket.webp'
-};
 const MARKET_SUMMARY = {
   PURIFY: 'Reset debt. Keep your grace.',
   STEAL: 'Take 10% from a bankrupt partner.',
@@ -292,7 +286,7 @@ export const YouView = ({ friendships, showToast }) => {
           {cards.map((card) => (
             <article className="aura-market-item" key={card.id}>
               <div className="aura-market-content">
-                {MARKET_ART[card.id] && <img src={MARKET_ART[card.id]} alt="" loading="lazy" decoding="async" />}
+                <span className={'aura-market-art art-' + String(card.id || '').toLowerCase().replaceAll('_', '-')} aria-hidden="true"><i /></span>
                 <div>
                   <h3>{card.name}</h3>
                   <strong className="aura-market-price">{card.cost} Aura</strong>
