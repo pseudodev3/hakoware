@@ -123,7 +123,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
   let displayState = {
     label: status.label,
-    hero: status.isRecovering || status.isBankrupt || stats.totalDebt > 0 ? `${stats.totalDebt} debt` : status.detail,
+    hero: stats.totalDebt > 0 ? `${stats.totalDebt} debt` : status.detail,
     detail: normalStateDetail(status),
     context: '',
     tone: status.tone,
