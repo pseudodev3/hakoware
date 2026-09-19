@@ -6,6 +6,7 @@ const Notification = require('../models/Notification');
 const { TEMPLATES, getWorldEvent } = require('../services/contractGame');
 const { loadContractsForUser } = require('../services/contractQueries');
 const { buildAuraSummary } = require('../services/auraSummary');
+const { notificationView } = require('../services/clientViews');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -21,14 +22,15 @@ router.get('/', auth, async (req, res) => {
       Notification.find({ toUserId: req.user.id })
         .sort({ createdAt: -1 })
         .limit(50)
+        .select('_id type title message read createdAt')
         .lean()
     ]);
 
     if (!user || !aura) return res.status(404).json({ msg: 'User not found' });
 
-    const visibleNotifications = notifications.filter(
-      (notification) => notification.type !== 'CONTRACT_INVITE'
-    );
+    const visibleNotifications = notifications
+      .filter((notification) => notification.type !== 'CONTRACT_INVITE')
+      .map(notificationView);
 
     return res.json({
       generatedAt: new Date(),
