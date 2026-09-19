@@ -213,4 +213,30 @@ assert.ok(
   'Friendship action routes must not return raw Friendship documents'
 );
 
+const authRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'auth.js'), 'utf8');
+assert.ok(authRoutes.includes('currentUserView'), 'Auth routes must use the minimized current-user view');
+
+const bootstrapRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'bootstrap.js'), 'utf8');
+assert.ok(bootstrapRoutes.includes('user: currentUserView(user)'), 'Bootstrap must use the minimized current-user view');
+
+const bountyRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'bounties.js'), 'utf8');
+assert.ok(bountyRoutes.includes('bountyArenaView'), 'Arena routes must use minimized bounty views');
+assert.ok(!bountyRoutes.includes('return res.json(bounties);'), 'Arena must not return raw Bounty collections');
+assert.ok(!bountyRoutes.includes('return res.json(bounty);'), 'Arena actions must not return raw Bounty documents');
+
+const voiceRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'voiceNotes.js'), 'utf8');
+assert.ok(voiceRoutes.includes('voiceNoteInboxView'), 'Voice inbox must use the minimized voice-note view');
+assert.ok(!voiceRoutes.includes('return res.status(201).json(voiceNote);'), 'Voice upload must not return raw VoiceNote documents');
+
+const notificationRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'notifications.js'), 'utf8');
+assert.ok(notificationRoutes.includes('notificationView'), 'Notifications must use the minimized notification view');
+assert.ok(!notificationRoutes.includes('return res.json(notifications);'), 'Notifications must not return raw Notification collections');
+
+const viteConfig = fs.readFileSync(path.join(__dirname, '..', '..', 'vite.config.js'), 'utf8');
+assert.ok(
+  viteConfig.includes("envPrefix: ['VITE_', 'API_URL']"),
+  'Frontend environment exposure must stay limited to VITE_* and API_URL'
+);
+assert.ok(!viteConfig.includes("'API_'"), 'Generic API_* environment exposure is forbidden');
+
 console.log('Client payload minimization checks passed');
