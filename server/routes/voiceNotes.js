@@ -12,6 +12,7 @@ const Notification = require('../models/Notification');
 const { deleteObject, getObject, putObject } = require('../services/bucketStorage');
 const { prepareCheckinGame } = require('../services/contractGame');
 const { voiceNoteInboxView } = require('../services/clientViews');
+const { sendRouteError } = require('../services/httpError');
 
 const AUDIO_TYPES = new Map([
   ['audio/webm', '.webm'],
@@ -97,7 +98,7 @@ router.post('/upload', auth, uploadLimiter, upload.single('audio'), async (req, 
     return res.status(201).json({ _id: voiceNote._id });
   } catch (err) {
     console.error('Voice note upload failed:', err.message);
-    return res.status(err.status || 500).json({ msg: err.message || 'Voice note upload failed' });
+    return sendRouteError(res, err, 'Voice note upload failed');
   }
 });
 
