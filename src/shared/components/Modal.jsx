@@ -9,7 +9,8 @@ export const Modal = ({
   title,
   children,
   size = 'md',
-  showClose = true
+  showClose = true,
+  footer = null
 }) => {
   const shouldReduceMotion = useReducedMotion();
 
@@ -65,7 +66,7 @@ export const Modal = ({
           />
 
           <motion.div
-            className="modal-content"
+            className={`modal-content ${footer ? 'has-footer' : ''}`}
             style={sizes[size]}
             role="dialog"
             aria-modal="true"
@@ -81,6 +82,7 @@ export const Modal = ({
               )}
             </header>
             <div className="modal-body">{children}</div>
+            {footer && <footer className="modal-footer">{footer}</footer>}
           </motion.div>
         </div>
       )}
