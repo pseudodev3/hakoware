@@ -48,9 +48,15 @@ const normalStateDetail = (status) => {
   return 'Check in to start pulling this contract back.';
 };
 
+const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
+  const seasonStart = new Date(seasonStartedAt || 0).getTime();
+  const lastInteraction = new Date(perspective?.lastInteraction || 0).getTime();
+  return seasonStart > 0 && lastInteraction > seasonStart;
+};
+
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
   const [chaosShareState, setChaosShareState] = useState('');
-  const { partner: friend, ownPerspective: perspective, partnerDebt } = getContractSides(friendship, currentUserId);
+  const { partner: friend, ownPerspective: perspective, partnerPerspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
   if (!stats || !friend) return null;
 
@@ -69,8 +75,13 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   const wanted = Boolean(wantedUserId && friendship.chaos?.wantedUntil);
   const wantedTargetsCurrentUser = wanted && String(wantedUserId) === String(currentUserId || '');
   const mostWanted = wanted && new Date(friendship.chaos.wantedUntil).getTime() <= Date.now();
+  const ownCheckedInThisSeason = checkedInAfterSeasonStart(perspective, season.startedAt);
+  const partnerCheckedInThisSeason = checkedInAfterSeasonStart(partnerPerspective, season.startedAt);
   const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
-  const checkedInToday = hoursSinceCheckin < 20;
+  const checkedInToday = ownCheckedInThisSeason && hoursSinceCheckin < 20;
+  const firstDuoCycleOpen = season.status === 'ACTIVE'
+    && seasonNumber === 1
+    && (!ownCheckedInThisSeason || !partnerCheckedInThisSeason);
   const partnerBankrupt = Boolean(partnerDebt?.isBankrupt) && !seasonDone;
   const chaosTargetsCurrentUser = activeChaos && String(activeChaos.targetUserId || '') === String(currentUserId || '');
   const partnerPossessive = name.endsWith('s') ? `${name}’` : `${name}’s`;
@@ -132,6 +143,37 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
     tone: status.tone,
     meta: [`${stats.limit}d rule`, `Season ${seasonNumber}`, seasonTimeLeft]
   };
+
+  if (firstDuoCycleOpen) {
+    if (!ownCheckedInThisSeason && !partnerCheckedInThisSeason) {
+      displayState = {
+        label: 'Season 1 live',
+        hero: 'Make the first move',
+        detail: `Check in now. Then ${name} can match you.`,
+        context: '',
+        tone: 'good',
+        meta: [`${stats.limit}d rule`, 'First check-in']
+      };
+    } else if (!ownCheckedInThisSeason) {
+      displayState = {
+        label: 'Your move',
+        hero: 'Check in',
+        detail: `${name} already checked in. Match them.`,
+        context: '',
+        tone: 'good',
+        meta: [`${stats.limit}d rule`, 'First duo cycle']
+      };
+    } else {
+      displayState = {
+        label: 'Waiting on them',
+        hero: `${name}'s move`,
+        detail: 'Your first check-in is in. Now they need theirs.',
+        context: '',
+        tone: 'good',
+        meta: [`${stats.limit}d rule`, 'First duo cycle']
+      };
+    }
+  }
 
   if (seasonDone) {
     displayState = {
