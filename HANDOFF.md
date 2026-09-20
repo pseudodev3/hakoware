@@ -476,6 +476,19 @@ The next focused pass fixes a first-check-in activation bug and clarifies the fi
 
 Keep exceptional states such as Chaos, Wanted, bankruptcy, and season completion higher-priority than first-check-in guidance.
 
+### Mobile action + picker follow-up
+
+A focused mobile UX fix keeps critical actions visible and removes native iOS picker styling:
+
+- `Modal` supports an optional persistent footer outside the scrollable body;
+- text check-in actions live in that footer so `Check in` stays visible above mobile safe areas/browser chrome;
+- normal check-in actions remain side-by-side on narrow screens; pressure-proof actions may stack;
+- Inventory no longer uses native contract `<select>` controls;
+- reusable `SelectMenu` provides Hakoware-styled contract pickers for Claim, Signal Flare, and Chaos Ticket;
+- Inventory picker popovers open upward so they do not collide with the lower navigation/browser area.
+
+Keep native selects out of player-facing Hakoware surfaces when a branded picker is already available.
+
 ## 16. You / Aura Market
 
 The Product Design translation is already in production/main.
