@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useAuth } from './contexts/AuthContext';
 import { getContractMeta, getUserFriendships } from './services/friendshipService';
 import { getUserAura } from './services/auraService';
@@ -44,6 +45,7 @@ const TestSessionBar = ({ user }) => {
 
 function MainApp({ showToast }) {
   const { user, isAuthenticated, bootstrapData, refreshBootstrap, refreshUser } = useAuth();
+  const shouldReduceMotion = useReducedMotion();
   const joining = isJoinLink();
   const [hasEntered, setHasEntered] = useState(joining);
   const [activeTab, setActiveTab] = useState('home');
@@ -164,37 +166,45 @@ function MainApp({ showToast }) {
       onRefresh={loadData}
       showToast={showToast}
     >
-      {activeTab === 'home' && (
-        <HomeView
-          user={user}
-          friendships={friendships}
-          pendingInvitations={pendingReceived}
-          pendingOutboundCount={pendingSent.length + pendingExternal.length}
-          worldEvent={contractMeta.worldEvent}
-          onAction={handleAction}
-          onAddFriend={() => setModalType('ADD_FRIEND')}
-          onNavigate={setActiveTab}
-        />
-      )}
+      <motion.div
+        key={activeTab}
+        className="tab-stage"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: shouldReduceMotion ? 0 : .17, ease: [0.2, 0, 0, 1] }}
+      >
+        {activeTab === 'home' && (
+          <HomeView
+            user={user}
+            friendships={friendships}
+            pendingInvitations={pendingReceived}
+            pendingOutboundCount={pendingSent.length + pendingExternal.length}
+            worldEvent={contractMeta.worldEvent}
+            onAction={handleAction}
+            onAddFriend={() => setModalType('ADD_FRIEND')}
+            onNavigate={setActiveTab}
+          />
+        )}
 
-      {activeTab === 'contracts' && (
-        <ContractsView
-          user={user}
-          friendships={friendships}
-          pendingReceived={pendingReceived}
-          pendingSent={pendingSent}
-          pendingExternal={pendingExternal}
-          templates={contractMeta.templates}
-          onAction={handleAction}
-          onAddFriend={() => setModalType('ADD_FRIEND')}
-          onRefresh={loadData}
-          onNavigate={setActiveTab}
-          showToast={showToast}
-        />
-      )}
+        {activeTab === 'contracts' && (
+          <ContractsView
+            user={user}
+            friendships={friendships}
+            pendingReceived={pendingReceived}
+            pendingSent={pendingSent}
+            pendingExternal={pendingExternal}
+            templates={contractMeta.templates}
+            onAction={handleAction}
+            onAddFriend={() => setModalType('ADD_FRIEND')}
+            onRefresh={loadData}
+            onNavigate={setActiveTab}
+            showToast={showToast}
+          />
+        )}
 
-      {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
-      {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
+        {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
+        {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
+      </motion.div>
 
       <AddFriendModal
         isOpen={modalType === 'ADD_FRIEND'}
