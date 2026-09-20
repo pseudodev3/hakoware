@@ -14,6 +14,7 @@ const Notification = require('../models/Notification');
 const PendingInvite = require('../models/PendingInvite');
 const VoiceNote = require('../models/VoiceNote');
 const { deleteObject } = require('../services/bucketStorage');
+const { sendRouteError } = require('../services/httpError');
 const {
   TEMPLATES,
   CHAOS_EVENTS,
@@ -270,7 +271,7 @@ router.post('/contracts/:id/chaos', async (req, res) => {
     return res.json({ event, contract: await contractView(friendship) });
   } catch (error) {
     console.error('Trigger test Chaos failed:', error.message);
-    return res.status(error.status || 500).json({ msg: error.message || 'Could not trigger Chaos' });
+    return sendRouteError(res, error, 'Could not trigger Chaos');
   }
 });
 
