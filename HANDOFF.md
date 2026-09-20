@@ -4,294 +4,458 @@
 >
 > Repo: `pseudodev3/hakoware`  
 > Frontend: `https://hakoware.vercel.app`  
-> Backend: Railway service `joyful-clarity - hakoware`  
+> Backend: Railway  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-09-20**
+> Last updated: **2026-09-19**
 >
-> Current `main`: **`27705fa87d5c042bee540bfac31ba02aeb01a9c6`**
+> Current main baseline: **`b6c70ae893f7badc9502540cc6651e006262715a`**
 >
-> Current in-progress branch: **`ux/interaction-smoothness-pass`**
+> The fastest safe resume prompt is:
 >
-> Fast safe resume prompt:
->
-> **Read `HANDOFF.md`, inspect current `main` and `ux/interaction-smoothness-pass`, then continue from the in-progress branch. Do not open a PR until the interaction pass is finished. Do not assume frontend changes are live unless Vercel succeeds or the user verifies them on-device.**
+> **Read `HANDOFF.md`, inspect current `main`, and continue Hakoware from there. Do not assume a merged change is live until deployment status is checked.**
 
-## 1. Exact current state
+## 1. Current status
 
-### Main
+Current `main` includes the recent UI simplification, responsive polish, core microcopy compression, the secondary signed-in copy pass, and the canonical voice guide.
 
-Current `main` is:
+Latest relevant commits:
 
-`27705fa87d5c042bee540bfac31ba02aeb01a9c6`
+- `5ee5132fc4a608d05953705ddf3b4d26a6297971` - simplify signed-in app UI hierarchy
+- `c9923f1d53ffe01a9a19177018c25fec64f7ba5e` - remove unnecessary boxes from signed-in UI
+- `01581b64734ca98151eac635b924a4309c4218d4` - responsive spacing and typography pass
+- `f0d623858516cc6f6da970a369b830c756bdff18` - compress core Hakoware microcopy
+- `a7c3db710f9703b8f15c0287fd74988eece61f69` - finish core microcopy compression
+- `b6c70ae893f7badc9502540cc6651e006262715a` - compress secondary UI copy and add voice guide
 
-Recent important merges:
+At handoff time:
 
-- PR #57 - **Make Wanted a real Arena bounty state**
-  - merged as `e176c7399c4d85f43f3afe057193b0c59101b094`
-- PR #59 - **Harden Hakoware server request and upload handling**
-  - merged as `ec305046cef29cb80ccccc84d2dd9cdb494dff46`
-- PR #58 - **Add priority notification emails and clean Home CTA**
-  - merged as `27705fa87d5c042bee540bfac31ba02aeb01a9c6`
+- Railway for current main: **success**
+- Vercel for current main: **blocked by free-tier build-rate-limit**
+- therefore, merged frontend changes may still lag behind the code in `main`
 
-Deployment status for current `main` at handoff time:
+Do not claim current frontend changes are live unless Vercel later succeeds or the user manually confirms the UI.
 
-- Railway backend: **success**
-- Vercel: **blocked by free-tier build-rate-limit**
-- Vercel failure is quota-related, not a code/build failure
+### Stale branch warning
 
-The user manually verified the Wanted production deployment before the later security/email merges and confirmed it was working.
+The branch `copy/compress-core-flow` is stale/diverged and should not be used as the starting point. Equivalent/newer copy work is already on `main`.
 
-### In-progress branch
-
-Branch:
-
-`ux/interaction-smoothness-pass`
-
-At handoff time it is:
-
-- ahead of `main`
-- not behind `main`
-- **no PR opened yet**
-- intentionally still in progress because the user wants PRs opened only when work is finished, to conserve Vercel build quota
-
-Files currently changed on this branch:
-
-- `src/App.jsx`
-- `src/features/notifications/components/NotificationsPanel.jsx`
-- `src/features/notifications/components/NotificationsPanel.css`
-- `src/shared/components/Layout.css`
-
-Current interaction-pass work already applied:
-
-- notification actions are optimistic instead of waiting for refetch before UI changes
-- notification rows animate/reflow subtly on read/delete
-- **Mark all read** is visible on mobile instead of being hidden below 640px
-- bulk-read action gets clear progress state
-- authenticated Home / Contracts / Arena / You tab changes use a very light entry transition
-- sidebar/mobile-nav active icons/indicators get subtle motion
-- scroll container gets better touch/overscroll behavior
-
-The pass is **not finished/audited yet**. Continue from this branch, inspect the exact diff, and finish the interaction-quality pass before opening a PR.
-
-## 2. Current product priority
-
-The user explicitly wants to improve **UX, clarity, responsiveness, and smoothness now rather than adding new mechanics**.
-
-Current concern from real use:
-
-> Hakoware looks much better, but some interactions still feel static or abrupt rather than buttery smooth.
-
-Do **not** respond to this by adding decorative animation everywhere.
-
-The desired direction is:
-
-- continuity between states;
-- immediate feedback after taps;
-- subtle transitions when content changes;
-- smooth panel/list/modal behavior;
-- polished pressed/active states;
-- fewer hard cuts;
-- no overanimation;
-- respect reduced-motion preferences.
-
-Current strategic focus:
-
-1. interaction quality / microinteractions;
-2. first-duo activation and onboarding clarity;
-3. evidence-led UX fixes from actual iPhone use;
-4. reduce friction/confusion before adding more systems.
-
-A useful activation metric to watch later:
-
-**account created → first accepted contract → first mutual check-in**
-
-## 3. Product identity
+## 2. Product direction
 
 Hakoware is a **social-chaos game built around real relationships and recurring contracts**.
 
-It is not a task manager, CRM, habit dashboard, crypto app, or generic SaaS product.
+It should feel like a game first, not a productivity dashboard, CRM, admin panel, or generic SaaS app.
 
-Core principle:
+Current signed-in areas:
 
-**Relationships dominate. Systems recede.**
+- **Home**
+- **Contracts**
+- **Arena**
+- **You**
 
-Hierarchy should usually be:
-
-**person → what is happening → what matters now → action**
-
-Signed-in areas:
-
-- Home
-- Contracts
-- Arena
-- You
-
-Founder tooling:
+Founder tooling lives separately at:
 
 - `/founder`
 
-## 4. UI direction
+### Core product principle
 
-The signed-in UI has already gone through a substantial cleanup.
+**Relationships dominate. Systems recede.**
 
-Keep:
+A user should primarily see:
 
-- strong typography;
-- restrained depth;
-- subtle borders/dividers;
-- lightweight icons;
-- dark/gold/red/green Hakoware palette;
+- who they are playing with;
+- what is happening between them;
+- what matters now;
+- what action they can take next.
+
+Duo XP, debt, Aura, Chaos, seasons, bounties, Grudges, Wanted, etc. should support that relationship state instead of each becoming its own dashboard card.
+
+## 3. UI direction and anti-slop rules
+
+The UI has recently gone through a major cleanup because the signed-in app had too many boxes, cards, pills, shadows, glows, KPI grids, and repeated explanatory panels.
+
+The current direction is intentionally flatter and more editorial.
+
+### Keep
+
+- clear typography hierarchy;
+- spacing and dividers;
+- restrained gold accents;
+- red for genuine danger/exception state;
+- green/blue only where semantically useful;
+- relationship lists;
+- metadata rows;
+- strong primary actions;
 - mobile-first layout;
-- meaningful state color;
-- real game-item presentation where appropriate;
-- intentional motion only.
+- light and dark mode;
+- subtle purposeful motion;
+- real controls with clear tap targets.
 
-Avoid:
+### Avoid
 
 - card soup;
-- nested cards;
-- KPI strips;
-- generic SaaS dashboard treatment;
-- giant status pills;
-- excessive glows;
-- heavy icons;
-- unnecessary decoration;
-- boxes around ordinary information;
-- animation for animation's sake.
+- stat-box grids;
+- nested cards inside cards;
+- glowing status pills;
+- decorative badges that do not communicate meaningful state;
+- rounded containers around ordinary information;
+- giant icon tiles for normal content;
+- "AI SaaS dashboard" visual language;
+- adding a new visual component to explain information that can fit into existing hierarchy;
+- overusing uppercase mono micro-labels;
+- generic dashboard copy;
+- rebuilding already-clean areas just to make them look different.
 
-Exceptional states may be visually stronger:
+### Container rule
+
+Use containers for:
+
+- actual controls;
+- selection targets;
+- inputs;
+- buttons;
+- avatars/identity objects;
+- toggles;
+- modal shells;
+- truly exceptional state.
+
+Ordinary information should usually use:
+
+- typography;
+- spacing;
+- alignment;
+- dividers;
+- restrained color.
+
+### Exceptional states that may be visually stronger
 
 - bankruptcy;
-- Wanted / Most Wanted;
+- Wanted;
 - live Chaos;
 - bounty proof;
 - destructive actions;
 - security/sync errors;
-- season completion.
+- season-complete moments.
 
-### UI skills
+## 4. Required design skills for future UI work
 
-For substantial Hakoware UI work, consult:
+The user explicitly wants these two design skills consulted for Hakoware UI work.
 
-- `jakubkrehel/skills` → `better-ui`
-- `emilkowalski/skills` → `emil-design-eng`
+### Better UI
 
-Also use better-layout / better-typography guidance when appropriate.
+Repo:
 
-Do not claim they are installed unless the environment confirms it. Reading the skill files directly is acceptable.
+`https://github.com/jakubkrehel/skills`
 
-## 5. Voice / copy
+Skill:
 
-Canonical voice guide:
+`better-ui`
 
-`docs/VOICE.md`
+Install command the user provided:
 
-Rule:
+```bash
+npx skills add https://github.com/jakubkrehel/skills --skill better-ui
+```
 
-**State first. Action second. Explanation only when needed.**
+Direct skill file in the repo:
 
-Copy should be:
+`skills/better-ui/SKILL.md`
+
+Related useful skills from the same repo:
+
+- `skills/better-layout/SKILL.md`
+- `skills/better-typography/SKILL.md`
+
+These were also consulted during the responsive/layout pass.
+
+### Emil Design Engineering
+
+Repo:
+
+`https://github.com/emilkowalski/skills`
+
+Skill:
+
+`emil-design-eng`
+
+Install command the user provided:
+
+```bash
+npx skills add https://github.com/emilkowalski/skills --skill emil-design-eng
+```
+
+Direct skill file in the repo:
+
+`skills/emil-design-eng/SKILL.md`
+
+### Rule for future chats
+
+Before making substantial signed-in UI changes:
+
+1. inspect current `main`;
+2. consult `better-ui`;
+3. consult `emil-design-eng`;
+4. use `better-layout` and `better-typography` when layout/type is involved;
+5. preserve Hakoware's existing visual language instead of introducing another design system.
+
+Do not say these skills are installed unless the environment confirms that. If they are not installed, read the skill files directly from the GitHub repos before UI work.
+
+## 5. Current microcopy direction
+
+The UI cleanup exposed that some screens were visually clean but too wordy.
+
+Canonical voice guide: `docs/VOICE.md`
+
+The current copy direction is:
+
+**state first, action second, explanation only when needed.**
+
+Hakoware copy should be:
 
 - short;
 - specific;
 - confident;
 - slightly mischievous;
 - never corporate;
-- never tutorial-heavy.
+- never tutorial-heavy;
+- never padded with explanation the user already understands from context.
 
-Do not over-compress high-stakes copy such as:
+### Examples of the intended voice
 
-- bankruptcy/recovery;
-- bounty hunter credit;
-- Claim / Return the Favor;
-- Aura spending;
-- destructive actions;
-- security/sync errors.
+Prefer:
 
-## 6. Home / You current design state
-
-A Product Design prototype was translated into production and merged earlier.
-
-Home:
-
-- relationships dominate immediately;
-- contract cards are the repeated object;
-- system metadata is quieter;
-- duplicate bottom **Grow the circle / New contract** CTA has now been removed;
-- primary Home header **New** action remains.
-
-You:
-
-- Profile + Aura form one coherent top area;
-- Hakoware+ is a premium destination, not a settings row;
-- Aura Market feels like an in-game market;
-- Inventory / Grudges / Privacy / Aura Ledger / Account visually recede;
-- Aura item art uses a permanent dark mini-stage so light mode does not expose pale gutters.
-
-Do not redesign these surfaces from scratch unless a real usability problem is observed.
-
-## 7. Contract cards
-
-Approved card anatomy:
-
-**identity → state → context → Duo → actions**
-
-Keep:
-
-- true card shell;
-- text-only status eyebrow;
-- lightweight icons;
-- 3-dot overflow;
-- state hero;
-- meta line;
-- slim Duo XP meter;
-- quiet Report + secondary + gold primary.
+- `Waiting on them.`
+- `Season 1 starts when they accept.`
+- `1 needs attention.`
+- `Debt starts after 3 days of silence.`
+- `Bounties + Claim unlocked.`
+- `Inside grace period.`
+- `One check-in every 20h. Resets your side + earns Duo XP.`
 
 Avoid:
 
-- identity rail;
-- nested boxed status areas;
-- status dots/pills;
-- excessive state ornament.
+- long explanatory paragraphs for routine states;
+- repeating the heading inside the description;
+- "this feature allows you to...";
+- multi-sentence onboarding explanations when one line is enough.
 
-Orbit motif exists only as a subtle theme layer and was deliberately quieted after testing.
+### Do not over-compress high-stakes copy
 
-Current user reaction: contract cards are acceptable now; do not churn them aesthetically without a concrete reason.
+Keep enough detail for:
 
-## 8. Core contract modes
+- End contract;
+- bankruptcy recovery;
+- bounty hunter credit;
+- Claim / Revenge;
+- Aura spending;
+- destructive or irreversible actions;
+- security/sync failures.
 
-Templates:
+Concise is good. Ambiguous is not.
 
-- `DONT_GHOST`
-- `GYM_PACT`
-- `STUDY_ARC`
-- `LOCK_IN`
-- `LONG_DISTANCE`
-- `BUILD_IN_PUBLIC`
-- `CHAOS`
-- `CUSTOM`
+## 6. Current Home / Contracts UX
+
+### Home
+
+Current design direction:
+
+- one strong relationship-state hero;
+- Aura is quiet;
+- weekly/world modifier is integrated into the same metadata system, not shown as a standalone Season Event card;
+- Strongest Duo / active / reports / Chaos / world modifier are compact metadata;
+- relationship cards are a single-column list;
+- temporary states use strips rather than cards;
+- no KPI grid.
+
+World modifier should read like:
+
+`Anomaly Season · Chaos cycles faster`
+
+Do not restore:
+
+- standalone `SEASON EVENT ACTIVE` card;
+- yellow pulsing activity dot;
+- repeated Season Event banners across tabs;
+- separate "Weekly rule" hero block.
+
+### Contracts
+
+Incoming challenges appear **before** the rest of Contracts so a newly invited user does not need to scroll to find Accept/Decline.
+
+Current flow:
+
+- incoming challenges first;
+- roster header;
+- compact metadata;
+- waiting requests;
+- active contracts.
+
+Contract cards are built around:
+
+**person → state → Duo progress → action**
+
+Important information still visible:
+
+- person;
+- handle;
+- contract mode;
+- season;
+- time left;
+- due/debt state;
+- bankruptcy;
+- Duo level/title/XP;
+- live Chaos;
+- Wanted;
+- primary check-in actions.
+
+Do not re-add a separate season progress bar unless there is a strong product reason. Duo XP is the single persistent progress meter.
+
+## 7. Onboarding
+
+The onboarding was recently simplified.
+
+### Username-first identity
+
+Public identity is username-first.
+
+- username is public;
+- email remains operational/private for recovery, invites, and important account functions;
+- login accepts username or email;
+- new signup requires username + email + password;
+- legacy users without usernames get a one-time claim screen;
+- username changes are not implemented yet;
+- X OAuth is not implemented yet.
+
+### New Contract flow
+
+Current flow:
+
+**Person → Contract → Confirm**
+
+The first screen asks for:
+
+- `@username`, or
+- email.
+
+The strongest four contract modes show first:
+
+- Don't Ghost Me
+- Long Distance
+- 30-Day Lock-In
+- Chaos
+
+Other modes are behind `More contracts`.
+
+Do not restore a tutorial carousel.
+
+### Affinity / Nen
+
+Affinity/Nen is removed from visible UI because it currently has no gameplay effect.
+
+The backend `nenType` field remains dormant for possible future reuse.
+
+Do not expose Affinity again unless it is given a real gameplay or profile consequence.
+
+## 8. Notifications
+
+Notifications were simplified because the previous panel used too much vertical space.
+
+Current direction:
+
+- flatter activity feed;
+- compact rows;
+- unread state uses subtle edge/background treatment;
+- icon actions instead of text-heavy Mark read/Delete rows;
+- voice inbox is compact;
+- voice notes are list rows, not large cards.
+
+Do not restore large notification cards for routine activity.
+
+## 9. Contract settings / modal hierarchy
+
+A dedicated container audit removed unnecessary boxes from:
+
+- Contract Settings;
+- text check-in;
+- voice check-in;
+- recap;
+- bounty creation;
+- pressure moves;
+- onboarding confirmation;
+- notifications;
+- Home notices.
+
+Contract Settings should stay flat:
+
+- mode summary as metadata/divider;
+- grace-period explanation as a row;
+- Chaos info as a state strip;
+- End Contract remains visually strong because it is destructive.
+
+General rule:
+
+**information uses hierarchy, controls use containers.**
+
+## 10. Contract modes
+
+Current templates:
+
+- `DONT_GHOST` - Don't Ghost Me
+- `GYM_PACT` - Gym Pact
+- `STUDY_ARC` - Study Arc
+- `LOCK_IN` - 30-Day Lock-In
+- `LONG_DISTANCE` - Long Distance
+- `BUILD_IN_PUBLIC` - Build in Public
+- `CHAOS` - Chaos Contract
+- `CUSTOM` - Custom
 
 Typical seasons are 30 days.
 
-Long Distance typically uses 45 days.
+Long Distance uses 45 days.
 
-Duo progression:
+Duo progression persists across seasons.
+
+Current Duo level formula:
 
 `level = floor(sqrt(xp / 50)) + 1`
 
-Check-in cadence:
+Minimum level is 1.
 
-- one valid check-in every 20h per side
+Titles currently include:
 
-Base XP:
+- New Contract
+- Locked In
+- Partners in Crime
+- Certified Menaces
+- Habitual Enablers
+- Unbreakable Contract
+- Legendary Duo
 
-- text +10
-- voice +15
+## 11. Check-ins
 
-## 9. Bankruptcy / recovery
+Hakoware supports:
 
-Authoritative logic lives in:
+- text check-ins;
+- voice check-ins.
+
+General check-in cadence:
+
+- one valid check-in every **20 hours** per side of a contract.
+
+Baseline XP:
+
+- text: +10 Duo XP;
+- voice: +15 Duo XP;
+- Long Distance voice gets extra bonus;
+- Chaos/world modifiers can change XP.
+
+The UI should not prompt a new user to check in immediately after a contract starts if the 20-hour gate means they are not eligible.
+
+The Season 1 start briefing is informational, not a forced first-check-in CTA.
+
+## 12. Bankruptcy
+
+Authoritative debt logic:
 
 `server/services/debtState.js`
 
@@ -299,432 +463,358 @@ Bankruptcy threshold:
 
 `total debt >= limit * 2`
 
-Recovery:
+Recovery flow:
 
 **BANKRUPT → RECOVERING → STABLE**
 
-Normal contract debt/grace continues independently of Chaos anomalies unless a specific mechanic says otherwise.
+First valid check-in while bankrupt:
 
-## 10. Wanted / Most Wanted / Arena bounty loop
+- stops the debt spiral;
+- debt drops to the grace limit/warning threshold;
+- `recoveryRequired = true`;
+- state becomes Recovering.
 
-This section replaces the old handoff description that said Wanted was only a 48h label.
+Next valid check-in, at least 20h later:
 
-### Failed Chaos anomaly
+- clears recovery debt;
+- `recoveryRequired = false`;
+- returns to Stable.
 
-When a targeted Chaos anomaly fails:
+Historical scar fields exist so bankruptcy remains part of recap/history.
 
-- the anomaly consequence applies;
-- Wanted begins;
-- Hakoware automatically creates a **system Chaos bounty**;
-- no new Chaos anomaly can start while Wanted is unresolved;
-- normal contract debt continues underneath.
+Bounties remain bankruptcy-only.
 
-Automatic bounty by Chaos level:
+## 13. Bounties, Claims, Grudges, Revenge
 
-- Lv1 → 25 Aura
-- Lv2 → 35 Aura
-- Lv3 → 50 Aura
-- Lv4 → 70 Aura
-- Lv5 → 100 Aura
+Bounties:
 
-### Wanted
-
-Wanted gives a 48h escape window.
-
-The target remains allowed to check in.
-
-Check-in is the counterplay and settlement action.
-
-The contract partner **cannot hunt** the automatic system Wanted bounty.
-
-Eligible outside Arena players can hunt it.
-
-### Most Wanted
-
-If the wanted target still has not checked in after the 48h Wanted window:
-
-- state derives to **Most Wanted**;
-- the bounty remains public/huntable;
-- normal debt continues rising;
-- Wanted does not simply disappear.
-
-### Wanted + bankruptcy
-
-If the target becomes bankrupt while Wanted/Most Wanted:
-
-- do **not** create a second overlapping bounty;
-- the same bounty remains;
-- the contract partner can add Aura to that bounty;
-- Arena shows one combined total and the funding breakdown.
-
-Example:
-
-`130 Aura`  
-`50 Chaos + 80 Partner`
-
-Combined bounty cap remains 500 Aura.
-
-### Settlement economics
-
-System and partner funding are tracked separately.
-
-If hunter pressure is credited:
-
-- hunter receives the combined total.
-
-If target escapes/checks in without hunter credit:
-
-- system Chaos Aura closes;
-- only partner-funded Aura is refundable;
-- Hunter Bond follows the existing settlement rules.
-
-Clean Slate can clear bankruptcy state but does **not** erase unresolved Wanted.
-
-Chaos Ticket cannot be consumed while Wanted is unresolved.
-
-Legacy Wanted states are backfilled from the latest `CHAOS_FAILED` event so pre-feature Wanted contracts can enter the new system.
-
-## 11. Existing bounty / Claim / Grudge mechanics
-
-Normal bankruptcy bounty:
-
-- bankruptcy unlocks partner bounty placement;
-- amount 10–500 Aura;
-- reward escrowed;
+- only on a bankrupt contract partner;
+- amount: 10 to 500 Aura;
+- poster escrows reward;
 - listing fee applies;
 - hunter stakes bond;
 - hunter sends pressure;
-- target credits or escapes.
+- target decides whether hunter actually caused the return:
+  - credit hunter;
+  - or escape.
 
 Claim:
 
-- cost 180 Aura;
-- bankrupt partner only;
-- steals 10% of current Aura;
-- once per bankruptcy window;
-- creates 7-day Grudge.
+- cost: 180 Aura;
+- only on bankrupt partner;
+- steals 10% of target's current Aura;
+- one Claim per bankruptcy window;
+- creates a public Grudge for 7 days.
 
 Return the Favor:
 
-- cost 60 Aura;
-- if original claimant later becomes bankrupt during active Grudge;
+- cost: 60 Aura;
+- available if the original claimant later becomes bankrupt during the Grudge window;
 - steals 10% of claimant's current Aura;
-- settles Grudge.
+- settles the Grudge.
 
-## 12. Aura cards
+## 14. Aura cards
 
-Current cards:
+Current cards include:
 
-- Clean Slate / PURIFY → 120 Aura
-- Claim / STEAL → 180 Aura
-- Signal Flare → 45 Aura
-- Chaos Ticket → 90 Aura
+### Clean Slate / PURIFY
+- cost: 120 Aura;
+- clears debt across active contracts without changing grace rules.
 
-Aura is in-app game currency, not crypto in this Hakoware version.
+### Claim / STEAL
+- cost: 180 Aura;
+- bankruptcy-only;
+- steals 10% of current Aura;
+- creates Grudge.
 
-## 13. Notifications
+### Signal Flare
+- cost: 45 Aura;
+- 48h cooldown;
+- sends a high-visibility pressure signal.
 
-The panel is intentionally flatter and compact.
+### Chaos Ticket
+- cost: 90 Aura;
+- Chaos Contract only;
+- forces next anomaly roll if none is active.
 
-Current architecture already had:
+Aura is an in-app game currency, not a crypto token in this Hakoware version.
 
-- individual Mark read;
-- Delete;
-- backend `PUT /notifications/read-all`;
-- frontend `markAllNotificationsAsRead()`;
-- a header **Mark all read** control.
+## 15. Chaos and world modifiers
 
-Important bug discovered on 2026-09-20:
+Chaos anomaly types include:
 
-The mobile CSS explicitly hid the bulk-read button:
+- Voice Tax
+- Double Trouble
+- Aura Surge
+- Wildcard
+- Silence Tax
+- Sudden Death
 
-`.mark-all-btn { display:none; }`
+Failed Chaos may apply debt and Wanted.
 
-inside `@media (max-width:640px)`.
+Wanted lasts 48h.
 
-The current in-progress interaction branch fixes this and keeps Mark all read visible on iPhone.
+Background Chaos worker exists and request-time fallback remains.
 
-The branch also makes notification actions optimistic so Mark read/Delete/Mark all read feel immediate instead of waiting for a network refetch.
+Current deterministic weekly modifiers include:
 
-Do not re-expand notifications into large activity cards.
+- Duo Rush
+- Open Mic
+- Clean Sweep
+- Anomaly Season
 
-## 14. Priority email notifications
-
-Merged on current `main`.
-
-High-priority in-app notifications can also send email for:
-
-- Chaos anomaly detected;
-- Chaos failed / Wanted;
-- bankruptcy;
-- bounty placed or boosted;
-- hunter assigned;
-- hunter pressure;
-- Signal Flare;
-- Claim received;
-- Return the Favor received.
-
-Rules:
-
-- in-app notification remains source of truth;
-- email failures do not fail gameplay;
-- `notificationPreferences.email = false` is respected;
-- bankruptcy warning preference is respected;
-- Founder Lab/test accounts are skipped;
-- routine check-ins, refunds, ordinary rewards, recaps, etc. remain in-app only.
-
-## 15. Server security baseline
-
-The server-side hardening pass is merged.
-
-Current protections include:
-
-- env files ignored;
-- server-side authorization checks;
-- client payload minimization;
-- exact CORS + narrow Hakoware Vercel preview regex;
-- CSP/security headers;
-- `authVersion` session revocation;
-- founder allowlist fail-closed;
-- generic forgot-password response;
-- fragment reset links;
-- private voice storage;
-- MIME whitelist;
-- request body size limits;
-- rate limiting.
-
-Newer hardening from PR #59:
-
-### Safe error responses
-
-Unexpected route failures no longer return arbitrary internal `err.message` / `error.message`.
-
-Intentional 4xx gameplay/business errors can still preserve their messages.
-
-### Request guard
-
-Global request guard rejects:
-
-- Mongo operator keys beginning with `$`;
-- dotted object keys;
-- `__proto__`;
-- `constructor`;
-- `prototype`;
-- excessive nesting;
-- excessive field count.
-
-### Voice magic-byte validation
-
-Voice uploads validate actual file signatures for accepted types:
-
-- WebM
-- MP4/M4A
-- MP3
-- Ogg
-- WAV
-- AAC/ADTS
-
-MIME alone is no longer trusted.
-
-### Rate limiter
-
-Current limiter remains dependency-free/in-memory for Railway free-tier simplicity.
-
-It now:
-
-- hashes limiter keys;
-- caps active buckets;
-- fails closed if storage saturates;
-- adds account-targeted login throttling in addition to IP throttling.
-
-Known limitation:
-
-- limiter is process-local;
-- if Hakoware later runs multiple API replicas, move rate limiting to shared storage.
-
-Regression script:
-
-`server/scripts/checkServerHardening.js`
-
-npm script:
-
-`check:server-hardening`
+The weekly modifier still changes gameplay. Only the presentation was simplified.
 
 ## 16. Founder Lab
 
-Founder access is controlled through `FOUNDER_EMAILS`.
+Founder email is configured through:
 
-Founder Lab:
+`FOUNDER_EMAILS`
+
+Known founder account:
+
+`hakoware265@gmail.com`
+
+Private route:
+
+`/founder`
+
+Founder Lab supports:
 
 - disposable test users;
 - real test contracts;
 - force Clear / Ready / Overdue / Bankrupt;
 - exact Chaos events;
 - test Aura;
-- season completion;
-- impersonation.
+- end seasons;
+- impersonate test users.
 
-Sandbox rules must remain:
+Sandbox rules:
 
-- test bounties stay out of live Arena;
-- test Grudges/Shame stay isolated;
-- test/live users cannot cross-hunt;
-- cleanup removes disposable test data.
+- test bounties do not enter live Arena;
+- test Grudges do not enter live feed;
+- test Shame Board entries stay isolated;
+- test and real users cannot hunt each other's bounties;
+- cleanup removes disposable test objects.
 
-Do not send priority emails to test accounts.
+## 17. Security / infrastructure hardening already done
 
-## 17. Auth architecture caveat
+Important security pass was merged earlier.
 
-Signed-in JWT remains JS-accessible/localStorage + `x-auth-token` by design because Founder impersonation currently depends on this architecture.
+Current protections include:
 
-Do not casually migrate to HttpOnly cookies during unrelated work.
+- env files ignored;
+- secret scanning in CI;
+- frontend CSP/security headers;
+- HSTS/frame/referrer/permissions policies;
+- auth/signup/reset/invite/voice/growth rate limits;
+- `authVersion` token revocation after password reset;
+- shorter founder impersonation tokens;
+- founder middleware fails closed if `FOUNDER_EMAILS` is unset;
+- minimal `/health`;
+- normal contract payloads avoid exposing partner email;
+- generic forgot-password response;
+- fragment-based reset token URL;
+- voice MIME whitelist;
+- voice notes remain PENDING until a valid check-in commits them;
+- abandoned pending voice notes are cleaned up;
+- CI runs frontend/backend production audits and syntax/build gates.
 
-That is a separate higher-blast-radius project.
+Architectural caveats:
 
-## 18. Deployment / quota constraints
+- normal auth token is still JS-accessible because of current impersonation/header-token architecture;
+- in-memory rate limiter is per Railway process;
+- shared store needed if horizontally scaling;
+- no full DB end-to-end suite;
+- Aura/bounty flows are not globally ACID Mongo transactions.
 
-The user is trying to conserve free-tier build/deployment limits.
+## 18. Background workers
 
-### GitHub Actions
+Already merged:
 
-Monthly Actions quota was exhausted.
+- debt-state worker;
+- Chaos worker.
 
-Do not rely on Actions as the validation gate until quota resets.
+Debt worker default cadence is roughly every 5 minutes.
 
-### Vercel
+Chaos worker default cadence is roughly every 60 seconds.
 
-Free-tier build-rate-limit has been hit repeatedly.
+Request-time fallbacks remain.
 
-A Vercel status of failure pointing to the build-rate-limit/upgrade page is **not** evidence of a code failure.
+Founder/test data should remain excluded where appropriate.
 
-### Railway
+## 19. Email
 
-Railway free tier is being conserved.
+Provider:
 
-Do not introduce extra staging/preview services unless the user explicitly wants that cost/complexity.
+**Brevo**
 
-### PR discipline
+Current branding:
 
-The user explicitly asked:
+- backend serves email logo from `/brand/hakoware-mark-v2.jpg`;
+- email header uses email-safe table layout;
+- password recovery copy is simplified;
+- old HxH/Association/protocol language was removed.
 
-**Do not open a PR until the work is finished.**
+Current logo assets include:
 
-For UI/UX passes:
+- `/public/hakoware-mark-v2.png`
+- `/public/favicon-v2.png`
+- `/public/apple-touch-icon-v2.png`
+- `/public/hakoware-mark-v2.jpg`
+- `/public/og-image-v2.jpg`
+- `/server/assets/hakoware-mark-v2.jpg`
 
-1. finish the branch;
-2. inspect exact diff;
-3. syntax/static audit;
-4. then open one PR;
-5. merge only after review.
+Do not recreate the logo.
 
-## 19. Real-device QA
+## 20. Growth / monetization state
 
-The user primarily tests on iPhone.
+Immediate growth target:
 
-Real iPhone screenshots are an important UX signal.
+**first 20 activated Duos**
 
-Past issues found through device testing:
+Not 1,000 signups.
 
-- iOS/Brave input auto-zoom;
-- notification bulk action hidden on mobile;
-- overly large notification cards;
-- incoming invites below the fold;
-- misleading immediate check-in CTA;
-- Season Event card feeling vibe-coded;
-- excessive boxes/glows/pills;
-- Aura Market artwork gutters in light mode.
+Growth features already implemented:
 
-Do not claim device behavior without user verification or real runtime evidence.
+- invite sharing;
+- recap sharing;
+- strongest Duo sharing;
+- live Chaos sharing;
+- first-party share telemetry;
+- Founder growth scorecard;
+- Hakoware+ interest capture.
 
-## 20. Current product risks / strategic notes
+Hakoware+ is only an early preview. Payments are **not** implemented.
 
-Hakoware now has many mechanics:
+Current Plus concepts:
 
-- contracts;
-- Duo XP;
-- debt;
-- bankruptcy;
-- recovery;
-- Aura;
-- cards;
-- Chaos;
-- anomalies;
-- Wanted;
-- Most Wanted;
-- bounties;
-- Hunter Bonds;
-- pressure;
-- Grudges;
-- Claim;
-- Return the Favor;
-- weekly/world rules;
-- Arena;
-- Hakoware+.
+- full season archive;
+- deeper Duo stats;
+- advanced custom contracts;
+- premium recap styles;
+- Duo cosmetics.
 
-Do not solve UX problems by adding more mechanics.
+Core game should remain free.
 
-The main UX challenge now is progressive disclosure:
+Do not sell Aura.
 
-New user should first understand:
+## 21. Launch state
 
-**pick someone → make a contract → check in → do not disappear**
+Hakoware has already been publicly launched on X.
 
-Then deeper systems can reveal themselves through play.
+Launch URL:
 
-Arena/Chaos/etc. should feel discovered, not explained all at once.
+`https://hakoware.vercel.app`
 
-## 21. Engineering workflow
+The user posted the launch from their X account and is aiming for first real Duos.
+
+A Reddit launch attempt was filtered by Reddit's automated filters. Reddit is not a current priority.
+
+## 22. Known deployment issue
+
+Vercel repeatedly fails with:
+
+**free-tier build-rate-limit**
+
+This is not the same as a code build failure.
+
+Standard workflow:
+
+1. merge;
+2. check Vercel status;
+3. check Railway status;
+4. do not say "live" unless current deployment confirms it or user manually sees it.
+
+## 23. Engineering workflow
 
 For repo changes:
 
 1. inspect current `main`;
-2. inspect any active feature branch before creating another;
-3. keep changes focused;
-4. preserve working mechanics;
-5. do not use GitHub Actions while quota is exhausted;
-6. run local/static/syntax checks available through repo inspection;
-7. inspect exact diff;
-8. open one PR only when finished;
-9. review exact PR head;
-10. squash merge;
-11. check exact merged commit deployment status;
-12. do not call something live until deployment confirms it or user verifies it.
+2. create a focused branch;
+3. implement narrowly;
+4. run/await `.github/workflows/validate.yml`;
+5. inspect exact diff;
+6. open PR;
+7. verify PR head;
+8. squash merge;
+9. check merged commit deployment statuses;
+10. do not claim device behavior without actual device confirmation.
 
-## 22. Immediate next task
+Validation currently includes:
 
-**Continue `ux/interaction-smoothness-pass`.**
+- frontend dependency install;
+- frontend production audit;
+- tracked env rejection;
+- obvious secret scan;
+- frontend production build;
+- backend install;
+- backend production audit;
+- backend syntax check.
 
-Do not start a second UX branch.
+## 24. Important UX findings from real iPhone testing
 
-Current intended scope:
+The user tests primarily on iPhone.
 
-- finish notification microinteraction polish;
-- ensure Mark all read is clearly usable on iPhone;
-- keep optimistic notification actions robust;
-- audit the light tab transition;
-- inspect existing modal/panel transitions for abrupt or duplicated animation;
-- improve touch/pressed feedback only where interactions genuinely feel dead;
-- preserve reduced-motion behavior;
-- avoid animation bloat;
-- do a final mobile-first interaction audit;
-- inspect exact diff;
-- only then open one PR.
+Already found/fixed:
 
-The user described the goal as:
+- iOS/Brave form focus auto-zoom caused by sub-16px inputs;
+- mobile form fields now enforce 16px on coarse/mobile pointers;
+- pinch zoom remains enabled;
+- onboarding became much smoother after username-first flow + Person → Contract → Confirm;
+- incoming invite acceptance moved above the fold;
+- notifications were too large for too little information and were flattened;
+- immediate post-acceptance check-in CTA was misleading and removed;
+- standalone Season Event card felt "vibecoded" and was removed;
+- excessive cards/boxes/pills/glows were systematically removed.
 
-**make Hakoware feel more buttery smooth and less static, without redesigning it or adding new mechanics.**
+Keep real iPhone screenshots as a primary UX signal.
 
-## 23. Resume checklist
+## 25. What to do next
 
-When starting a new chat:
+The broad signed-in copy-compression pass is complete on `main`.
+
+It now covers:
+
+- Home;
+- Contracts and contract creation;
+- check-in/settings flows;
+- Arena;
+- You;
+- Notifications and voice inbox;
+- recaps;
+- bounty/pressure modals;
+- key toasts and empty states.
+
+The canonical copy standard is `docs/VOICE.md`.
+
+### Next copy work should be evidence-led
+
+Do not start another broad rewrite by default.
+
+Use real iPhone screenshots and actual gameplay to find:
+
+- text that wraps badly;
+- copy that became too terse to understand;
+- backend-generated notification messages that still sound verbose;
+- high-stakes actions whose consequences need clearer wording.
+
+Preserve the current short voice and only expand copy when clarity or consequences require it.
+
+## 26. Resume checklist for a new chat
+
+When picking this project up again:
 
 1. read this file;
-2. inspect current `main` at/after `27705fa87d5c042bee540bfac31ba02aeb01a9c6`;
-3. inspect `ux/interaction-smoothness-pass`;
-4. continue that branch rather than starting over;
-5. do not open a PR until the interaction pass is finished;
-6. remember Vercel build-rate failures may be quota-only;
-7. preserve the current product hierarchy and mechanics;
-8. use Better UI + Emil Design Engineering principles for UI work;
-9. keep motion restrained and purposeful;
-10. prioritize first-duo UX and real iPhone feedback over adding systems.
+2. inspect current `main`;
+3. check latest Vercel/Railway statuses;
+4. do not use stale `copy/compress-core-flow`;
+5. if doing UI work, consult:
+   - `jakubkrehel/skills -> better-ui`
+   - `emilkowalski/skills -> emil-design-eng`
+   - and related better-layout / better-typography guidance;
+6. preserve the current flat hierarchy;
+7. do not restore card soup;
+8. keep copy short;
+9. keep high-stakes consequences explicit;
+10. validate and squash merge through the normal repo workflow.
