@@ -36,12 +36,15 @@ const createRateLimiter = ({
     let entry = buckets.get(key);
 
     if (!entry || entry.resetAt <= now) {
-      cleanup(now);
+      if (entry?.resetAt <= now) buckets.delete(key);
       entry = buckets.get(key);
 
       if (!entry && buckets.size >= MAX_BUCKETS) {
-        res.setHeader('Retry-After', '60');
-        return res.status(429).json({ msg: 'Too many requests. Try again shortly.' });
+        cleanup(now);
+        if (buckets.size >= MAX_BUCKETS) {
+          res.setHeader('Retry-After', '60');
+          return res.status(429).json({ msg: 'Too many requests. Try again shortly.' });
+        }
       }
 
       if (!entry) {
