@@ -395,7 +395,8 @@ router.post('/:id/checkin', auth, async (req, res) => {
     return res.json({
       game: {
         xp: Number(game.xp) || 0,
-        chaosResolved: Boolean(game.chaosResolved)
+        chaosResolved: Boolean(game.chaosResolved),
+        wantedCleared: Boolean(game.wantedCleared)
       },
       bounty: bountyResults[0] ? { outcome: bountyResults[0].outcome } : null,
       recovery: {
