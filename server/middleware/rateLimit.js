@@ -2,8 +2,6 @@ const crypto = require('crypto');
 
 const buckets = new Map();
 const MAX_BUCKETS = 10000;
-const TARGET_BUCKETS_AFTER_PRUNE = 8000;
-
 const hashKey = (value) => crypto
   .createHash('sha256')
   .update(String(value || 'unknown'))
@@ -14,17 +12,6 @@ const cleanup = (now = Date.now()) => {
   for (const [key, entry] of buckets.entries()) {
     if (entry.resetAt <= now) buckets.delete(key);
   }
-};
-
-const enforceCapacity = (now) => {
-  cleanup(now);
-  if (buckets.size < MAX_BUCKETS) return;
-
-  const oldest = [...buckets.entries()]
-    .sort((left, right) => left[1].lastSeenAt - right[1].lastSeenAt)
-    .slice(0, Math.max(1, buckets.size - TARGET_BUCKETS_AFTER_PRUNE));
-
-  for (const [key] of oldest) buckets.delete(key);
 };
 
 const cleanupTimer = setInterval(() => cleanup(), 10 * 60 * 1000);
@@ -49,9 +36,18 @@ const createRateLimiter = ({
     let entry = buckets.get(key);
 
     if (!entry || entry.resetAt <= now) {
-      enforceCapacity(now);
-      entry = { count: 0, resetAt: now + safeWindowMs, lastSeenAt: now };
-      buckets.set(key, entry);
+      cleanup(now);
+      entry = buckets.get(key);
+
+      if (!entry && buckets.size >= MAX_BUCKETS) {
+        res.setHeader('Retry-After', '60');
+        return res.status(429).json({ msg: 'Too many requests. Try again shortly.' });
+      }
+
+      if (!entry) {
+        entry = { count: 0, resetAt: now + safeWindowMs, lastSeenAt: now };
+        buckets.set(key, entry);
+      }
     }
 
     entry.count += 1;
