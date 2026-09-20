@@ -164,9 +164,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         return (
           <section className="circle-season-briefing">
             <div>
-              <span>Season 1 started</span>
-              <p>You and {partnerName} are live.</p>
-              <small>Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</small>
+              <span>First move</span>
+              <p>Check in with {partnerName}.</p>
+              <small>Then get them to match you. Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</small>
             </div>
             <button type="button" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={16} strokeWidth={1.6} /></button>
           </section>
