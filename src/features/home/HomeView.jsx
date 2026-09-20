@@ -186,10 +186,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         )}
       </div>
 
-      <div className="circle-grow">
-        <span>Grow the circle.</span>
-        <button type="button" onClick={onAddFriend}><Plus size={15} strokeWidth={1.6} /> New contract</button>
-      </div>
     </div>
   );
 };
