@@ -464,6 +464,18 @@ Do not make every component bounce/fade.
 
 Frequent navigation should remain fast; motion should make state continuity legible.
 
+### First-duo activation follow-up
+
+The next focused pass fixes a first-check-in activation bug and clarifies the first mutual action:
+
+- season activation sets `lastInteraction` as the debt-clock baseline, but that baseline must **not** count as a completed check-in;
+- a player may make their first check-in immediately after a season starts;
+- the normal 20h gate applies only after that player has actually checked in during the current season;
+- first-season contract cards guide the pair through the first mutual check-in without adding another onboarding container;
+- empty-state onboarding now ends with `Check in together`, not `Survive the season`.
+
+Keep exceptional states such as Chaos, Wanted, bankruptcy, and season completion higher-priority than first-check-in guidance.
+
 ## 16. You / Aura Market
 
 The Product Design translation is already in production/main.
