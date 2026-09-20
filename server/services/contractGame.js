@@ -496,6 +496,21 @@ const refreshChaosState = async (friendship, now = new Date()) => {
     return friendship;
   }
 
+  if (friendship.chaos?.wantedUntil && !friendship.chaos?.wantedUserId) {
+    const legacyFailure = await ContractEvent.findOne({
+      friendshipId: friendship._id,
+      type: 'CHAOS_FAILED',
+      userId: { $ne: null }
+    }).sort({ createdAt: -1 }).select('userId createdAt');
+
+    if (legacyFailure?.userId) {
+      friendship.chaos.wantedUserId = legacyFailure.userId;
+      friendship.chaos.wantedStartedAt = legacyFailure.createdAt || now;
+      friendship.chaos.nextEventAt = null;
+      await friendship.save();
+    }
+  }
+
   if (friendship.chaos?.wantedUserId) {
     await ensureWantedBounty(friendship, now).catch((error) => {
       console.error('Could not ensure Wanted bounty:', error.message);
