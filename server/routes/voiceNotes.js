@@ -12,6 +12,7 @@ const Notification = require('../models/Notification');
 const { deleteObject, getObject, putObject } = require('../services/bucketStorage');
 const { prepareCheckinGame } = require('../services/contractGame');
 const { voiceNoteInboxView } = require('../services/clientViews');
+const { matchesAudioSignature } = require('../services/audioValidation');
 const { sendRouteError } = require('../services/httpError');
 
 const AUDIO_TYPES = new Map([
@@ -70,6 +71,9 @@ router.post('/upload', auth, uploadLimiter, upload.single('audio'), async (req, 
     const mime = req.file.safeMime || String(req.file.mimetype || '').toLowerCase().split(';')[0].trim();
     const extension = AUDIO_TYPES.get(mime);
     if (!extension) return res.status(415).json({ msg: 'Unsupported audio format' });
+    if (!matchesAudioSignature(req.file.buffer, mime)) {
+      return res.status(415).json({ msg: 'Audio content does not match its declared format' });
+    }
     const storageKey = `voice_notes/${req.user.id}/${Date.now()}-${randomUUID()}${extension}`;
     await putObject(storageKey, req.file.buffer, mime);
 
