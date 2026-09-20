@@ -612,11 +612,9 @@ Brevo.
 
 ### Important quota constraints
 
-GitHub Actions monthly quota is exhausted at the moment.
+GitHub Actions can be used as the validation gate now that the repository is public.
 
-Do not use Actions as the validation gate until quota resets.
-
-Vercel free-tier build-rate limits have also been hit repeatedly.
+Vercel free-tier build-rate limits have still been hit repeatedly.
 
 Exact Vercel failure form seen:
 
