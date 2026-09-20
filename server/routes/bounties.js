@@ -17,6 +17,7 @@ const {
 const { recordEvent, refreshGameState } = require('../services/contractGame');
 const { calculateDebtState, syncDebtState } = require('../services/debtState');
 const { bountyArenaView } = require('../services/clientViews');
+const { sendRouteError } = require('../services/httpError');
 const { MAX_BOUNTY, partnerEscrowAmount, wantedStateFor } = require('../services/wantedBounty');
 
 const HOUR = 60 * 60 * 1000;
@@ -269,7 +270,7 @@ router.post('/', auth, async (req, res) => {
     return res.status(201).json({ success: true, boosted: false, bountyId: bounty._id, economics: { listingFee, totalCost, combinedTotal: amount, chaosAmount: 0, partnerAmount: amount } });
   } catch (err) {
     console.error('Create bounty failed:', err.message);
-    return res.status(err.status || 500).json({ msg: err.message || 'Could not place bounty' });
+    return sendRouteError(res, err, 'Could not place bounty');
   }
 });
 
