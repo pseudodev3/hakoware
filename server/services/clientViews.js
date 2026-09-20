@@ -192,6 +192,7 @@ const bountyArenaView = (value, viewerId) => {
   if (String(data.targetId || '') === viewer) viewerRole = 'TARGET';
   else if (String(data.senderId || '') === viewer) viewerRole = 'SENDER';
   else if (String(data.hunterId || '') === viewer) viewerRole = 'HUNTER';
+  else if (Boolean(data.viewerIsPartner)) viewerRole = 'PARTNER';
 
   const chaosAmount = Number(data.chaosAmount) || 0;
   const partnerAmount = partnerEscrowAmount(data);
