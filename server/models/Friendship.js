@@ -39,6 +39,8 @@ const ChaosSchema = new mongoose.Schema({
   level: { type: Number, default: 0, min: 0, max: 5 },
   nextEventAt: { type: Date, default: null },
   activeEvent: { type: ChaosEventSchema, default: null },
+  wantedUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  wantedStartedAt: { type: Date, default: null },
   wantedUntil: { type: Date, default: null },
   lastConsequence: { type: String, default: null }
 }, { _id: false });
