@@ -30,6 +30,13 @@ const loginLimiter = createRateLimiter({
   max: 20,
   message: 'Too many sign-in attempts. Try again later.'
 });
+const loginAccountLimiter = createRateLimiter({
+  name: 'auth-login-account',
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  keyGenerator: (req) => String(req.body.identifier || req.body.email || '').trim().toLowerCase() || req.ip,
+  message: 'Too many sign-in attempts for this account. Try again later.'
+});
 const forgotLimiter = createRateLimiter({
   name: 'auth-forgot',
   windowMs: 15 * 60 * 1000,
@@ -134,7 +141,7 @@ router.post('/signup', signupLimiter, async (req, res) => {
   }
 });
 
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', loginLimiter, loginAccountLimiter, async (req, res) => {
   try {
     const identifier = String(req.body.identifier || req.body.email || '').trim();
     const password = String(req.body.password || '');
