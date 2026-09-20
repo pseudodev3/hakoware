@@ -119,7 +119,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <div className="onboarding-rail" aria-label="How your first contract starts">
             <span><b>01</b> Pick a person</span>
             <span><b>02</b> Set the rules</span>
-            <span><b>03</b> Survive the season</span>
+            <span><b>03</b> Check in together</span>
           </div>
         </section>
       </div>
