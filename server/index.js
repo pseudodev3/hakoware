@@ -10,6 +10,7 @@ const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
 const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
 const securityHeaders = require('./middleware/securityHeaders');
+const requestGuard = require('./middleware/requestGuard');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -70,6 +71,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-auth-token']
 }));
 app.use(express.json({ limit: '1mb' }));
+app.use(requestGuard);
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bootstrap', require('./routes/bootstrap'));
