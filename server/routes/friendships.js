@@ -30,6 +30,7 @@ const { syncDebtState } = require('../services/debtState');
 const { ensureActiveGameState, loadContractsForUser } = require('../services/contractQueries');
 const { normalizeUsername } = require('../services/username');
 const { recapView } = require('../services/clientViews');
+const { sendRouteError } = require('../services/httpError');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -188,7 +189,7 @@ router.get('/:id/recap', auth, async (req, res) => {
     }));
   } catch (err) {
     console.error('Load recap failed:', err.message);
-    return res.status(err.status || 500).json({ msg: err.message || 'Could not load recap' });
+    return sendRouteError(res, err, 'Could not load recap');
   }
 });
 
@@ -203,7 +204,7 @@ router.post('/:id/run-it-back', auth, async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     console.error('Run it back failed:', err.message);
-    return res.status(err.status || 500).json({ msg: err.message || 'Could not start another season' });
+    return sendRouteError(res, err, 'Could not start another season');
   }
 });
 
@@ -408,7 +409,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
     });
   } catch (err) {
     console.error('Check-in failed:', err.message);
-    return res.status(err.status || 500).json({ msg: err.message || 'Could not check in' });
+    return sendRouteError(res, err, 'Could not check in');
   }
 });
 

@@ -10,6 +10,7 @@ const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
 const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
 const securityHeaders = require('./middleware/securityHeaders');
+const requestGuard = require('./middleware/requestGuard');
 
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -70,6 +71,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-auth-token']
 }));
 app.use(express.json({ limit: '1mb' }));
+app.use(requestGuard);
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bootstrap', require('./routes/bootstrap'));
@@ -95,7 +97,7 @@ app.use((err, req, res, next) => {
   if (err?.message === 'Origin not allowed by CORS') return res.status(403).json({ msg: 'Origin not allowed' });
   if (err instanceof SyntaxError && 'body' in err) return res.status(400).json({ msg: 'Invalid JSON body' });
   if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ msg: 'Audio file is too large' });
-  if (err?.message === 'Only supported audio uploads are allowed') return res.status(415).json({ msg: err.message });
+  if (err?.message === 'Only supported audio uploads are allowed') return res.status(415).json({ msg: 'Only supported audio uploads are allowed' });
   console.error(err);
   return res.status(500).json({ msg: 'Server error' });
 });
