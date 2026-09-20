@@ -9,6 +9,7 @@
 .modal-close:active { transform:scale(.96); }
 @media (hover:hover) and (pointer:fine) { .modal-close:hover { color:var(--text-primary); background:var(--surface-soft-strong); } }
 .modal-body { min-height:0; flex:1 1 auto; padding:22px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.modal-footer { flex:0 0 auto; padding:14px 22px 22px; border-top:1px solid var(--border-subtle); background:var(--surface-modal); }
 @media (max-width:640px) {
   .modal-root { padding:0; align-items:flex-end; }
   .modal-content { max-width:none !important; max-height:calc(100dvh - max(8px,env(safe-area-inset-top))); border-radius:22px 22px 0 0; }
@@ -16,5 +17,7 @@
   .modal-title h3 { font-size:.84rem; }
   .modal-close { width:42px; height:42px; border-radius:12px; }
   .modal-body { padding:16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .modal-content.has-footer .modal-body { padding-bottom:16px; }
+  .modal-footer { padding:12px 16px calc(12px + env(safe-area-inset-bottom)); }
 }
 @media (max-width:380px) { .modal-body { padding-inline:14px; } }
