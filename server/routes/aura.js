@@ -10,6 +10,7 @@ const { calculateDebtState } = require('../services/debtState');
 const { refundBankruptcyBountiesForTarget } = require('../services/bountyEscrow');
 const { buildAuraSummary } = require('../services/auraSummary');
 const { publicGrudgeView } = require('../services/clientViews');
+const { createNotification } = require('../services/notificationDelivery');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -214,10 +215,10 @@ router.post('/grudges/:friendshipId/revenge', auth, async (req, res) => {
     }).catch(() => null);
 
     await Promise.all([
-      Notification.create({
+      createNotification({
         toUserId: claimant._id,
         fromUserId: victim._id,
-        type: 'GAME_EVENT',
+        type: 'REVENGE_RECEIVED',
         title: 'RETURN THE FAVOR',
         message: `${victim.displayName} caught you bankrupt and took ${stealAmount} Aura back. The Grudge is settled.`,
         friendshipId: friendship._id
@@ -401,10 +402,10 @@ router.post('/use-card', auth, async (req, res) => {
       }).catch(() => null);
 
       await Promise.all([
-        Notification.create({
+        createNotification({
           toUserId: target._id,
           fromUserId: user._id,
-          type: 'GAME_EVENT',
+          type: 'CLAIM_RECEIVED',
           title: "YOU'VE BEEN CLAIMED",
           message: `${user.displayName} spent 180 Aura just to take ${amount} from you. A public Grudge is active for ${GRUDGE_DAYS} days.`,
           friendshipId: friendship._id
@@ -439,10 +440,10 @@ router.post('/use-card', auth, async (req, res) => {
       const targetId = isUser1 ? friendship.user2 : friendship.user1;
       friendship.claimState[flareField] = now;
       await friendship.save();
-      await Notification.create({
+      await createNotification({
         toUserId: targetId,
         fromUserId: user._id,
-        type: 'GAME_EVENT',
+        type: 'SIGNAL_FLARE',
         title: 'SIGNAL FLARE',
         message: `${user.displayName} burned Aura to make sure you saw this: your contract is waiting.`,
         friendshipId: friendship._id
