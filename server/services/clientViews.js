@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { partnerEscrowAmount, wantedStateFor } = require('./wantedBounty');
 
 const toPlain = (value) => {
   if (!value) return {};
@@ -76,7 +77,10 @@ const chaosView = (value) => {
       targetUserId: active.targetUserId || null,
       expiresAt: active.expiresAt || null
     } : null,
+    wantedUserId: data.wantedUserId || null,
+    wantedStartedAt: data.wantedStartedAt || null,
     wantedUntil: data.wantedUntil || null,
+    wantedState: data.wantedUserId ? wantedStateFor(data.wantedUntil) : null,
     lastConsequence: data.lastConsequence || null
   };
 };
@@ -189,10 +193,20 @@ const bountyArenaView = (value, viewerId) => {
   else if (String(data.senderId || '') === viewer) viewerRole = 'SENDER';
   else if (String(data.hunterId || '') === viewer) viewerRole = 'HUNTER';
 
+  const chaosAmount = Number(data.chaosAmount) || 0;
+  const partnerAmount = partnerEscrowAmount(data);
+  const source = data.source || (chaosAmount > 0 ? (partnerAmount > 0 ? 'COMBINED' : 'CHAOS') : 'PLAYER');
+
   const view = {
     _id: data._id,
     targetName: data.targetName,
     amount: Number(data.amount) || 0,
+    source,
+    chaosAmount,
+    partnerAmount,
+    chaosLevel: Number(data.chaosLevel) || null,
+    wantedState: chaosAmount > 0 ? wantedStateFor(data.wantedUntil) : null,
+    targetBankrupt: Boolean(data.targetBankrupt),
     message: data.message || '',
     status: data.status,
     hunterName: data.hunterName || null,
