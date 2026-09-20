@@ -7,7 +7,7 @@ const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { refreshGameState, recordEvent } = require('../services/contractGame');
 const { calculateDebtState } = require('../services/debtState');
-const { refundOpenBountiesForTarget } = require('../services/bountyEscrow');
+const { refundBankruptcyBountiesForTarget } = require('../services/bountyEscrow');
 const { buildAuraSummary } = require('../services/auraSummary');
 const { publicGrudgeView } = require('../services/clientViews');
 
@@ -313,7 +313,7 @@ router.post('/use-card', auth, async (req, res) => {
         await friendship.save();
 
         if (wasBankrupt) {
-          await refundOpenBountiesForTarget(
+          await refundBankruptcyBountiesForTarget(
             friendship._id,
             user._id,
             'Target used Clean Slate and recovered'
@@ -457,6 +457,8 @@ router.post('/use-card', auth, async (req, res) => {
       const participant = [friendship.user1.toString(), friendship.user2.toString()].includes(req.user.id);
       if (!participant) return res.status(403).json({ msg: 'Not authorized' });
       if (friendship.templateId !== 'CHAOS') return res.status(400).json({ msg: 'Chaos Ticket only works on a Chaos Contract' });
+      await refreshGameState(friendship);
+      if (friendship.chaos?.wantedUserId) return res.status(409).json({ msg: 'Clear Wanted with a check-in before rolling another anomaly' });
       if (friendship.chaos?.activeEvent) return res.status(400).json({ msg: 'This contract already has a live anomaly' });
       friendship.chaos.nextEventAt = new Date();
       await friendship.save();

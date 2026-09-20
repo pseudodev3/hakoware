@@ -49,6 +49,9 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
   const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
   const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
+  const fundingBreakdown = bounty?.chaosAmount > 0
+    ? `${bounty.chaosAmount} Chaos${bounty.partnerAmount > 0 ? ` + ${bounty.partnerAmount} Partner` : ''}`
+    : null;
 
   const handleCheckin = async (creditHunter = false) => {
     if (bountyLoading) return showToast?.('Arena is still syncing', 'ERROR');
@@ -61,6 +64,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
     if (result.success) {
       const xp = result.game?.xp;
       const chaos = result.game?.chaosResolved ? ' · anomaly survived' : '';
+      const wanted = result.game?.wantedCleared ? ' · Wanted cleared' : '';
       const bountyResult = result.bounty?.outcome === 'CLAIMED'
         ? ` · ${bounty?.hunterName || 'hunter'} credited`
         : result.bounty?.outcome === 'ESCAPED'
@@ -71,7 +75,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
         : result.recovery?.completed
           ? ' · bankruptcy recovery complete'
           : '';
-      showToast?.(`Checked in with ${friend.displayName}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}${recovery}`, 'SUCCESS');
+      showToast?.(`Checked in with ${friend.displayName}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${wanted}${bountyResult}${recovery}`, 'SUCCESS');
       await onRefresh?.();
       onClose?.();
     } else {
@@ -109,11 +113,15 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
               <span>{pressureReady ? 'PROOF OF PRESSURE' : 'BOUNTY LIVE'}</span>
               <strong>{bounty.amount} Aura on this check-in</strong>
               <p>
-                {pressureReady
+                {fundingBreakdown ? `${fundingBreakdown}. ` : ''}{pressureReady
                   ? `Credit ${bounty.hunterName} only if their pressure brought you back. Otherwise, escape.`
                   : bounty.status === 'HUNTING'
                     ? `${bounty.hunterName || 'A hunter'} picked this up. Check in to escape.`
-                    : 'No proof yet. Check in to close the bounty and return escrow.'}
+                    : bounty?.chaosAmount > 0
+                      ? bounty?.partnerAmount > 0
+                        ? 'No proof yet. Check in to escape; partner Aura returns.'
+                        : 'No proof yet. Check in to escape before a hunter gets paid.'
+                      : 'No proof yet. Check in to close the bounty and return escrow.'}
               </p>
             </div>
           </div>

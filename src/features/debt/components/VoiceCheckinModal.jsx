@@ -164,6 +164,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     if (checkin.success) {
       const xp = checkin.game?.xp;
       const chaos = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
+      const wanted = checkin.game?.wantedCleared ? ' · Wanted cleared' : '';
       const bountyResult = checkin.bounty?.outcome === 'CLAIMED'
         ? ` · ${bounty?.hunterName || 'hunter'} credited`
         : checkin.bounty?.outcome === 'ESCAPED'
@@ -174,7 +175,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
         : checkin.recovery?.completed
           ? ' · bankruptcy recovery complete'
           : '';
-      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${bountyResult}${recovery}`, 'SUCCESS');
+      showToast?.(`Voice sent to ${friend?.displayName || 'your friend'}${xp ? ` · +${xp} Duo XP` : ''}${chaos}${wanted}${bountyResult}${recovery}`, 'SUCCESS');
     } else {
       showToast?.(`Voice uploaded, but the check-in was not recorded: ${checkin.error || 'unknown error'}`, 'ERROR');
     }
@@ -192,6 +193,9 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
   const pressureReady = bounty?.status === 'PRESSURE_SENT' && bounty?.hunterName;
   const hasOpenBounty = Boolean(bounty && ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'].includes(bounty.status));
+  const fundingBreakdown = bounty?.chaosAmount > 0
+    ? `${bounty.chaosAmount} Chaos${bounty.partnerAmount > 0 ? ` + ${bounty.partnerAmount} Partner` : ''}`
+    : null;
   const proofBlocked = bountyLoading || bountySyncError;
 
   return (
@@ -233,7 +237,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
             <div className="voice-bounty-copy">
               <span>{pressureReady ? 'PROOF OF PRESSURE' : 'BOUNTY LIVE'}</span>
               <strong>{bounty.amount} Aura on this check-in</strong>
-              <p>{pressureReady ? `Did ${bounty.hunterName} bring you back?` : 'Send now to close the bounty without paying a hunter.'}</p>
+              <p>{fundingBreakdown ? `${fundingBreakdown}. ` : ''}{pressureReady ? `Did ${bounty.hunterName} bring you back?` : 'Send now to close the bounty without paying a hunter.'}</p>
               {pressureReady && (
                 <div className="voice-proof-choice" role="group" aria-label="Bounty hunter credit">
                   <button type="button" className={!creditHunter ? 'active' : ''} onClick={() => setCreditHunter(false)}>Escape</button>

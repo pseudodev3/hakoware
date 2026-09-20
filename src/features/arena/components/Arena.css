@@ -34,6 +34,8 @@
 .bounty-status.open { color:var(--aura-green); }
 .bounty-status.hunting { color:var(--aura-blue); }
 .bounty-status.proof { color:var(--aura-gold); }
+.bounty-status.wanted { color:var(--aura-red); }
+.bounty-funding { margin-top:5px; color:var(--aura-gold); font-family:var(--font-mono); font-size:.55rem; font-weight:620; }
 .bounty-hunt-meta { margin-top:5px; display:flex; align-items:center; gap:4px; color:var(--text-faint); font-size:.56rem; }
 .bounty-reward { flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; color:var(--aura-gold); font-family:var(--font-mono); font-size:.7rem; }
 .hunt-button, .pressure-button { min-height:38px; padding:0 10px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:11px; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out), color 140ms var(--ease-out); }

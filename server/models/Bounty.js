@@ -18,14 +18,20 @@ const HuntAttemptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const BountySchema = new mongoose.Schema({
-  senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  senderName: { type: String, required: true },
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  senderName: { type: String, default: 'Hakoware' },
   targetId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   targetName: { type: String, required: true },
   friendshipId: { type: mongoose.Schema.Types.ObjectId, ref: 'Friendship', required: true },
   isTestData: { type: Boolean, default: false, index: true },
   testOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
-  amount: { type: Number, required: true },
+  amount: { type: Number, required: true, min: 0, max: 500 },
+  source: { type: String, enum: ['PLAYER', 'CHAOS', 'COMBINED'], default: 'PLAYER', index: true },
+  chaosAmount: { type: Number, default: 0, min: 0, max: 500 },
+  partnerAmount: { type: Number, default: 0, min: 0, max: 500 },
+  chaosLevel: { type: Number, default: null, min: 1, max: 5 },
+  wantedUntil: { type: Date, default: null },
+  wantedConsequence: { type: String, default: null },
   listingFee: { type: Number, default: 0, min: 0 },
   message: { type: String },
   status: {

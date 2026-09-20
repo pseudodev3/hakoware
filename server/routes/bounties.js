@@ -17,6 +17,7 @@ const {
 const { recordEvent, refreshGameState } = require('../services/contractGame');
 const { calculateDebtState, syncDebtState } = require('../services/debtState');
 const { bountyArenaView } = require('../services/clientViews');
+const { MAX_BOUNTY, partnerEscrowAmount, wantedStateFor } = require('../services/wantedBounty');
 
 const HOUR = 60 * 60 * 1000;
 const BOUNTY_COOLDOWN_HOURS = 24;
@@ -42,8 +43,8 @@ router.post('/', auth, async (req, res) => {
   try {
     await expireStaleBounties();
     const amount = Number(req.body.amount);
-    if (!Number.isInteger(amount) || amount < 10 || amount > 500) {
-      return res.status(400).json({ msg: 'Bounty must be between 10 and 500 Aura' });
+    if (!Number.isInteger(amount) || amount < 10 || amount > MAX_BOUNTY) {
+      return res.status(400).json({ msg: `Bounty must be between 10 and ${MAX_BOUNTY} Aura` });
     }
 
     const friendship = await Friendship.findById(req.body.friendshipId);
@@ -77,18 +78,117 @@ router.post('/', auth, async (req, res) => {
     const targetDebt = syncDebtState(targetPerspective);
     if (!targetDebt.isBankrupt) {
       return res.status(409).json({
-        msg: `${target.displayName} is not bankrupt. Bounties unlock only after a contract partner reaches bankruptcy.`
+        msg: `${target.displayName} is not bankrupt. Partner Aura can only be added after bankruptcy.`
       });
     }
     await friendship.save();
 
     const existing = await Bounty.findOne({
-      senderId: req.user.id,
       targetId: target._id,
       friendshipId: friendship._id,
       status: { $in: ['ACTIVE', 'HUNTING', 'PRESSURE_SENT'] }
     });
-    if (existing) return res.status(400).json({ msg: 'You already have an open bounty on this contract' });
+
+    if (existing) {
+      const chaosBacked = Number(existing.chaosAmount) > 0 || ['CHAOS', 'COMBINED'].includes(existing.source);
+      if (!chaosBacked) return res.status(400).json({ msg: 'You already have an open bounty on this contract' });
+      if (existing.status !== 'ACTIVE') {
+        return res.status(409).json({ msg: 'A hunter already picked up this Wanted bounty. Boost it after the hunt reopens.' });
+      }
+
+      const remaining = Math.max(0, MAX_BOUNTY - (Number(existing.amount) || 0));
+      if (amount > remaining) {
+        return res.status(400).json({ msg: remaining > 0 ? `You can add at most ${remaining} Aura to this bounty` : 'This bounty is already at the 500 Aura cap' });
+      }
+
+      const listingFee = listingFeeFor(amount);
+      const totalCost = amount + listingFee;
+      const sender = await User.findOneAndUpdate(
+        { _id: req.user.id, auraBalance: { $gte: totalCost } },
+        { $inc: { auraBalance: -totalCost } },
+        { new: true }
+      ).select('_id displayName auraBalance');
+      if (!sender) return res.status(400).json({ msg: `You need ${totalCost} Aura including the ${listingFee} Aura Arena fee` });
+
+      const message = String(req.body.message || '').trim().slice(0, 180);
+      const set = {
+        source: 'COMBINED',
+        senderId: sender._id,
+        senderName: sender.displayName
+      };
+      if (message) set.message = message;
+
+      const boosted = await Bounty.findOneAndUpdate(
+        {
+          _id: existing._id,
+          status: 'ACTIVE',
+          amount: { $lte: MAX_BOUNTY - amount }
+        },
+        {
+          $inc: { amount, partnerAmount: amount, listingFee },
+          $set: set
+        },
+        { new: true }
+      );
+
+      if (!boosted) {
+        await User.updateOne({ _id: sender._id }, { $inc: { auraBalance: totalCost } });
+        return res.status(409).json({ msg: 'Bounty changed while you were boosting it. Refresh the Arena.' });
+      }
+
+      await Promise.all([
+        AuraTransaction.create({
+          userId: sender._id,
+          amount: -amount,
+          type: 'BOUNTY_BOOST',
+          description: `Added ${amount} Aura to ${target.displayName}'s Wanted bounty`,
+          metadata: { bountyId: boosted._id, friendshipId: friendship._id }
+        }),
+        AuraTransaction.create({
+          userId: sender._id,
+          amount: -listingFee,
+          type: 'ARENA_FEE',
+          description: `Arena boost fee for ${target.displayName}`,
+          metadata: { bountyId: boosted._id, friendshipId: friendship._id }
+        })
+      ]);
+
+      await recordEvent(friendship._id, 'BOUNTY_BOOSTED', {
+        userId: sender._id,
+        aura: -totalCost,
+        metadata: {
+          added: amount,
+          listingFee,
+          total: boosted.amount,
+          chaosAmount: Number(boosted.chaosAmount) || 0,
+          partnerAmount: partnerEscrowAmount(boosted),
+          targetId: target._id,
+          targetName: target.displayName
+        }
+      });
+      await Notification.create({
+        toUserId: target._id,
+        fromUserId: sender._id,
+        type: 'BOUNTY_PLACED',
+        title: `${boosted.amount} Aura bounty`,
+        message: `${sender.displayName} added ${amount} Aura to your Wanted bounty. Check in before a hunter closes it.`,
+        friendshipId: friendship._id
+      });
+
+      return res.json({
+        success: true,
+        boosted: true,
+        bountyId: boosted._id,
+        economics: {
+          added: amount,
+          listingFee,
+          totalCost,
+          combinedTotal: boosted.amount,
+          chaosAmount: Number(boosted.chaosAmount) || 0,
+          partnerAmount: partnerEscrowAmount(boosted)
+        }
+      });
+    }
 
     const cooldownCutoff = new Date(Date.now() - BOUNTY_COOLDOWN_HOURS * HOUR);
     const recentResolved = await Bounty.findOne({
@@ -124,6 +224,9 @@ router.post('/', auth, async (req, res) => {
         isTestData: Boolean(friendship.isTestData),
         testOwnerId: friendship.testOwnerId || null,
         amount,
+        source: 'PLAYER',
+        chaosAmount: 0,
+        partnerAmount: amount,
         listingFee,
         message: String(req.body.message || '').trim().slice(0, 180)
       });
@@ -163,7 +266,7 @@ router.post('/', auth, async (req, res) => {
       friendshipId: friendship._id
     });
 
-    return res.status(201).json({ success: true, bountyId: bounty._id, economics: { listingFee, totalCost } });
+    return res.status(201).json({ success: true, boosted: false, bountyId: bounty._id, economics: { listingFee, totalCost, combinedTotal: amount, chaosAmount: 0, partnerAmount: amount } });
   } catch (err) {
     console.error('Create bounty failed:', err.message);
     return res.status(err.status || 500).json({ msg: err.message || 'Could not place bounty' });
@@ -188,7 +291,28 @@ router.get('/active', auth, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
-    return res.json(bounties.map((bounty) => bountyArenaView(bounty, req.user.id)));
+
+    const friendshipIds = [...new Set(bounties.map((bounty) => String(bounty.friendshipId)).filter(Boolean))];
+    const friendships = friendshipIds.length
+      ? await Friendship.find({ _id: { $in: friendshipIds } })
+        .select('user1 user2 user1Perspective user2Perspective')
+        .lean()
+      : [];
+    const friendshipById = new Map(friendships.map((friendship) => [String(friendship._id), friendship]));
+
+    return res.json(bounties.map((bounty) => {
+      const friendship = friendshipById.get(String(bounty.friendshipId));
+      let targetBankrupt = false;
+      let viewerIsPartner = false;
+      if (friendship) {
+        const targetIsUser1 = String(friendship.user1) === String(bounty.targetId);
+        const perspective = targetIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+        const partnerId = targetIsUser1 ? friendship.user2 : friendship.user1;
+        targetBankrupt = Boolean(calculateDebtState(perspective)?.isBankrupt);
+        viewerIsPartner = String(partnerId) === String(req.user.id);
+      }
+      return bountyArenaView({ ...bounty, targetBankrupt, viewerIsPartner }, req.user.id);
+    }));
   } catch (err) {
     console.error('Load bounties failed:', err.message);
     return res.status(500).json({ msg: 'Could not load bounties' });
@@ -216,6 +340,10 @@ router.get('/contract/:friendshipId', auth, async (req, res) => {
     return res.json({
       _id: bounty._id,
       amount: bounty.amount,
+      source: bounty.source || 'PLAYER',
+      chaosAmount: Number(bounty.chaosAmount) || 0,
+      partnerAmount: partnerEscrowAmount(bounty),
+      wantedState: Number(bounty.chaosAmount) > 0 ? wantedStateFor(bounty.wantedUntil) : null,
       status: bounty.status,
       hunterName: bounty.hunterName || null
     });
@@ -243,7 +371,7 @@ router.post('/:id/hunt', auth, async (req, res) => {
     }
 
     if (existing.targetId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty on yourself' });
-    if (existing.senderId.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you placed' });
+    if (existing.senderId?.toString() === req.user.id) return res.status(400).json({ msg: 'You cannot hunt a bounty you funded' });
 
     const friendship = await Friendship.findById(existing.friendshipId);
     if (!friendship || friendship.status !== 'ACTIVE') {
@@ -257,15 +385,25 @@ router.post('/:id/hunt', auth, async (req, res) => {
 
     await refreshGameState(friendship);
     const targetIsUser1 = String(friendship.user1) === String(existing.targetId);
+    const contractPartnerId = targetIsUser1 ? friendship.user2 : friendship.user1;
+    const chaosBacked = Number(existing.chaosAmount) > 0 || ['CHAOS', 'COMBINED'].includes(existing.source);
+    if (chaosBacked && String(contractPartnerId) === String(req.user.id)) {
+      return res.status(400).json({ msg: 'Contract partners cannot hunt automatic Wanted bounties.' });
+    }
+
     const targetPerspective = targetIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
     const targetDebt = calculateDebtState(targetPerspective);
-    if (!targetDebt.isBankrupt) {
+    const wantedTarget = chaosBacked &&
+      friendship.chaos?.wantedUserId &&
+      String(friendship.chaos.wantedUserId) === String(existing.targetId);
+
+    if (!targetDebt.isBankrupt && !wantedTarget) {
       await refundOpenBountiesForTarget(
         friendship._id,
         existing.targetId,
-        'Target recovered before the hunt started'
+        'Target is no longer exposed in the Arena'
       ).catch(() => null);
-      return res.status(409).json({ msg: existing.targetName + ' already recovered. The bounty was refunded.' });
+      return res.status(409).json({ msg: existing.targetName + ' is no longer exposed. The bounty was closed.' });
     }
 
     const bond = hunterBondFor(existing.amount);

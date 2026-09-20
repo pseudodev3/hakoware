@@ -65,7 +65,10 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   const seasonDone = season.status === 'COMPLETE';
   const seasonTimeLeft = seasonDone ? 'Complete' : formatTimeLeft(season.endsAt || Date.now());
   const activeChaos = friendship.templateId === 'CHAOS' ? friendship.chaos?.activeEvent : null;
-  const wanted = friendship.chaos?.wantedUntil && new Date(friendship.chaos.wantedUntil).getTime() > Date.now();
+  const wantedUserId = friendship.chaos?.wantedUserId;
+  const wanted = Boolean(wantedUserId && friendship.chaos?.wantedUntil);
+  const wantedTargetsCurrentUser = wanted && String(wantedUserId) === String(currentUserId || '');
+  const mostWanted = wanted && new Date(friendship.chaos.wantedUntil).getTime() <= Date.now();
   const hoursSinceCheckin = Math.max(0, Date.now() - new Date(perspective?.lastInteraction || 0)) / 3600000;
   const checkedInToday = hoursSinceCheckin < 20;
   const partnerBankrupt = Boolean(partnerDebt?.isBankrupt) && !seasonDone;
@@ -159,14 +162,29 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
           meta: [`Season ${seasonNumber}`, 'Anomaly live']
         };
   } else if (wanted) {
-    displayState = {
-      label: 'Wanted',
-      hero: formatTimeLeft(friendship.chaos.wantedUntil),
-      detail: friendship.chaos?.lastConsequence || 'Chaos consequence is live.',
-      context: '',
-      tone: 'chaos',
-      meta: [`Season ${seasonNumber}`, 'Wanted']
-    };
+    const consequence = friendship.chaos?.lastConsequence || 'Chaos consequence';
+    const wantedLabel = mostWanted ? 'Most Wanted' : 'Wanted';
+    displayState = wantedTargetsCurrentUser
+      ? {
+          label: stats.isBankrupt ? `${wantedLabel} · Bankrupt` : wantedLabel,
+          hero: mostWanted ? 'Arena open' : formatTimeLeft(friendship.chaos.wantedUntil),
+          detail: `${consequence}. A public Chaos bounty is on you.`,
+          context: stats.isBankrupt
+            ? 'Bankrupt · partner Aura can raise the bounty. Check in to escape.'
+            : mostWanted
+              ? 'Check in to escape.'
+              : 'Check in before this escalates.',
+          tone: 'chaos',
+          meta: [`Season ${seasonNumber}`, wantedLabel, ...(stats.isBankrupt ? ['Bankrupt'] : [])]
+        }
+      : {
+          label: wantedLabel,
+          hero: `${name} is ${wantedLabel}`,
+          detail: `${consequence}. Their Chaos bounty is live in the Arena.`,
+          context: partnerBankrupt ? 'Bankrupt · partner Aura can raise the bounty.' : '',
+          tone: 'chaos',
+          meta: [`Season ${seasonNumber}`, wantedLabel]
+        };
   } else if (partnerBankrupt) {
     displayState = {
       label: 'Partner bankrupt',

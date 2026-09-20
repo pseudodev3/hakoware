@@ -114,8 +114,8 @@ export const Arena = ({ friendships, showToast }) => {
       <header className="arena-hero">
         <div>
           <p className="eyebrow">Arena</p>
-          <h1>Bankruptcy opens the Arena.</h1>
-          <p>Post Aura on a bankrupt partner. Hunters stake a bond, send pressure, and only get paid if the target credits them.</p>
+          <h1>Bankruptcy and Chaos open the Arena.</h1>
+          <p>Bankrupt partners can be bountied. Fail a Chaos anomaly and Hakoware puts you on the board automatically.</p>
         </div>
         <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={bankruptFriendships.length === 0}>
           {bankruptFriendships.length === 0 ? 'No bankrupt targets' : 'Place bounty'}
@@ -127,7 +127,7 @@ export const Arena = ({ friendships, showToast }) => {
         <span><b>{hunterProfile.rank || 'Rookie Hunter'}</b> · {hunterProfile.rep || 0} Rep · {hunterProfile.successfulHunts || 0} closes</span>
         <span><b>{hunterProfile.auraCollected || 0}</b> Aura collected</span>
         <span><b>{openTargets}</b> open target{openTargets === 1 ? '' : 's'}</span>
-        <span><b>{bountyPool}</b> Aura in escrow</span>
+        <span><b>{bountyPool}</b> Aura on the board</span>
         {grudges.length > 0 && <span><b>{grudges.length}</b> grudge{grudges.length === 1 ? '' : 's'}</span>}
         {activeAnomalies > 0 && <span className="danger"><b>{activeAnomalies}</b> live anomal{activeAnomalies === 1 ? 'y' : 'ies'}</span>}
       </div>
@@ -153,18 +153,38 @@ export const Arena = ({ friendships, showToast }) => {
               const hunting = bounty.status === 'HUNTING' || proofArmed;
               const window = timeLeft(bounty.huntExpiresAt);
               const bond = hunterBondFor(bounty.amount);
+              const isPartner = bounty.viewerRole === 'PARTNER';
+              const wantedLabel = bounty.wantedState === 'MOST_WANTED'
+                ? 'MOST WANTED'
+                : bounty.wantedState === 'WANTED'
+                  ? 'WANTED'
+                  : null;
+              const exposureLabel = wantedLabel
+                ? `${wantedLabel}${bounty.targetBankrupt ? ' · BANKRUPT' : ''}`
+                : bounty.targetBankrupt
+                  ? 'BANKRUPT'
+                  : null;
+              const fundingBreakdown = bounty.chaosAmount > 0
+                ? `${bounty.chaosAmount} Chaos${bounty.partnerAmount > 0 ? ` + ${bounty.partnerAmount} Partner` : ''}`
+                : null;
 
               return (
                 <article className={`bounty-item ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''}`} key={bounty._id || bounty.id}>
                   <div className="bounty-avatar">{bounty.targetName?.[0]?.toUpperCase() || '?'}</div>
                   <div className="bounty-copy">
-                    <div className="bounty-title-row"><strong>{bounty.targetName}</strong><span className={`bounty-status ${proofArmed ? 'proof' : hunting ? 'hunting' : 'open'}`}>{proofArmed ? 'PROOF ARMED' : hunting ? 'HUNTER ASSIGNED' : 'OPEN'}</span></div>
+                    <div className="bounty-title-row">
+                      <strong>{bounty.targetName}</strong>
+                      <span className={`bounty-status ${proofArmed ? 'proof' : hunting ? 'hunting' : wantedLabel ? 'wanted' : 'open'}`}>
+                        {proofArmed ? 'PROOF ARMED' : hunting ? 'HUNTER ASSIGNED' : exposureLabel || 'OPEN'}
+                      </span>
+                    </div>
                     <span>{bounty.message || 'Check in to close this bounty.'}</span>
+                    {fundingBreakdown && <small className="bounty-funding">{fundingBreakdown}</small>}
                     {hunting && <small className="bounty-hunt-meta"><Clock3 size={12} /> {bounty.hunterName || 'Hunter'} · {window || `${meta.huntWindowHours || 12}h window`}</small>}
                   </div>
                   <div className="bounty-reward"><Zap size={13} /> {bounty.amount}</div>
 
-                  {bounty.status === 'ACTIVE' && !isTarget && !isSender ? (
+                  {bounty.status === 'ACTIVE' && !isTarget && !isSender && !isPartner ? (
                     <button className="hunt-button hunt-cta" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName} for ${bounty.amount} Aura`}><Sword size={16} strokeWidth={1.8} /><span>Hunt · {bond} bond</span></button>
                   ) : isHunter && bounty.status === 'HUNTING' ? (
                     <button className="pressure-button" onClick={() => setPressureBounty(bounty)}><Target size={15} /><span>Send pressure</span></button>
@@ -173,7 +193,9 @@ export const Arena = ({ friendships, showToast }) => {
                   ) : isTarget ? (
                     <div className={`bounty-owner-state ${proofArmed ? 'danger' : ''}`}>{proofArmed ? 'Pressure on you' : hunting ? 'Being hunted' : 'On you'}</div>
                   ) : isSender ? (
-                    <div className="bounty-owner-state">Your bounty</div>
+                    <div className="bounty-owner-state">{bounty.chaosAmount > 0 ? 'Your boost' : 'Your bounty'}</div>
+                  ) : isPartner ? (
+                    <div className="bounty-owner-state">Your contract</div>
                   ) : hunting ? (
                     <div className="hunter-lock" title={bounty.hunterName ? `Hunted by ${bounty.hunterName}` : 'Hunter assigned'}><ShieldCheck size={16} /><span>{proofArmed ? 'Proof armed' : bounty.hunterName || 'Hunting'}</span></div>
                   ) : null}

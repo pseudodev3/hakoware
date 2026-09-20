@@ -43,7 +43,13 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
     if (result?.error || result?.success === false) {
       showToast?.(result.error || result.msg || 'Could not place bounty', 'ERROR');
     } else {
-      showToast?.(`${amount} Aura bounty placed · ${listingFee} Aura Arena fee burned`, 'SUCCESS');
+      const combinedTotal = Number(result.economics?.combinedTotal) || amount;
+      showToast?.(
+        result.boosted
+          ? `${amount} Aura added · ${combinedTotal} total · ${listingFee} Arena fee burned`
+          : `${amount} Aura bounty placed · ${listingFee} Aura Arena fee burned`,
+        'SUCCESS'
+      );
       setSelectedId('');
       setAmount(25);
       setMessage('');
@@ -58,7 +64,7 @@ export const CreateBountyModal = ({ isOpen, onClose, friendships, onRefresh, sho
       <form className="bounty-form" onSubmit={handleSubmit}>
         <div className="bounty-explainer">
           <Target size={18} strokeWidth={1.8} />
-          <p>Bankruptcy unlocks bounties. Your reward is escrowed. Hunters stake Aura and only get paid if the target credits their pressure.</p>
+          <p>Bankruptcy lets you place a bounty or add Aura to an existing Wanted bounty. Hunters only get paid if the target credits their pressure.</p>
         </div>
 
         <div className="bounty-field">

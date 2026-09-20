@@ -4,6 +4,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
 const { syncDebtState } = require('./debtState');
+const { ensureWantedBounty } = require('./wantedBounty');
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -151,8 +152,8 @@ const initializeContractGame = (friendship, templateId, customLimit) => {
   friendship.duoXP = friendship.duoXP || 0;
   syncDuoState(friendship);
   friendship.chaos = template.chaos
-    ? { level: 1, nextEventAt: null, activeEvent: null, wantedUntil: null, lastConsequence: null }
-    : { level: 0, nextEventAt: null, activeEvent: null, wantedUntil: null, lastConsequence: null };
+    ? { level: 1, nextEventAt: null, activeEvent: null, wantedUserId: null, wantedStartedAt: null, wantedUntil: null, lastConsequence: null }
+    : { level: 0, nextEventAt: null, activeEvent: null, wantedUserId: null, wantedStartedAt: null, wantedUntil: null, lastConsequence: null };
   return { template, limit };
 };
 
@@ -251,6 +252,12 @@ const reloadChaosState = async (friendship, perspectiveKey = null) => {
 };
 
 const triggerChaosEvent = async (friendship, now = new Date(), options = {}) => {
+  if (friendship.chaos?.wantedUserId) {
+    const error = new Error('Clear Wanted before another anomaly can start.');
+    error.status = 409;
+    throw error;
+  }
+
   const forcedTargetId = idString(options.targetUserId);
   let target = null;
 
@@ -379,13 +386,14 @@ const failActiveChaos = async (friendship, now = new Date()) => {
   const debtPenalty = Number(event.payload?.failureDebt) || 0;
   const consequence = event.payload?.failureTitle || 'Wanted';
   const wantedUntil = new Date(now.getTime() + 48 * HOUR);
-  const nextEventAt = new Date(now.getTime() + chaosCooldownMs(friendship.chaos.level || 1));
   const update = {
     $set: {
+      'chaos.wantedUserId': targetId,
+      'chaos.wantedStartedAt': now,
       'chaos.wantedUntil': wantedUntil,
       'chaos.lastConsequence': consequence,
       'chaos.activeEvent': null,
-      'chaos.nextEventAt': nextEventAt
+      'chaos.nextEventAt': null
     }
   };
 
@@ -413,14 +421,24 @@ const failActiveChaos = async (friendship, now = new Date()) => {
   }
 
   syncChaosFromFresh(friendship, claimed, key);
+  const wantedBounty = await ensureWantedBounty(friendship, now).catch((error) => {
+    console.error('Could not create Wanted bounty:', error.message);
+    return null;
+  });
   await recordEvent(friendship._id, 'CHAOS_FAILED', {
     userId: targetId,
-    metadata: { type: event.type, consequence, debtPenalty }
+    metadata: {
+      type: event.type,
+      consequence,
+      debtPenalty,
+      wantedBounty: Number(wantedBounty?.amount) || 0,
+      chaosLevel: Number(friendship.chaos?.level) || 1
+    }
   }).catch((error) => console.error('Could not record Chaos failure:', error.message));
   await notifyBoth(
     friendship,
     'Chaos won this round',
-    `${consequence}. Wanted status lasts 48 hours.`,
+    `${consequence}. Wanted for 48 hours${wantedBounty?.amount ? ` · ${wantedBounty.amount} Aura bounty live` : ''}.`,
     'CHAOS_FAILED'
   );
   return true;
@@ -446,6 +464,8 @@ const claimChaosSurvival = async (friendship, event, userId, now = new Date()) =
       $set: {
         'chaos.level': nextLevel,
         'chaos.activeEvent': null,
+        'chaos.wantedUserId': null,
+        'chaos.wantedStartedAt': null,
         'chaos.wantedUntil': null,
         'chaos.lastConsequence': null,
         'chaos.nextEventAt': nextEventAt
@@ -473,6 +493,28 @@ const refreshChaosState = async (friendship, now = new Date()) => {
   }
 
   if (friendship.season?.endsAt && new Date(friendship.season.endsAt) <= now) {
+    return friendship;
+  }
+
+  if (friendship.chaos?.wantedUntil && !friendship.chaos?.wantedUserId) {
+    const legacyFailure = await ContractEvent.findOne({
+      friendshipId: friendship._id,
+      type: 'CHAOS_FAILED',
+      userId: { $ne: null }
+    }).sort({ createdAt: -1 }).select('userId createdAt');
+
+    if (legacyFailure?.userId) {
+      friendship.chaos.wantedUserId = legacyFailure.userId;
+      friendship.chaos.wantedStartedAt = legacyFailure.createdAt || now;
+      friendship.chaos.nextEventAt = null;
+      await friendship.save();
+    }
+  }
+
+  if (friendship.chaos?.wantedUserId) {
+    await ensureWantedBounty(friendship, now).catch((error) => {
+      console.error('Could not ensure Wanted bounty:', error.message);
+    });
     return friendship;
   }
 
@@ -655,6 +697,20 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
     auraBonus += Number(chaosEvent.payload?.auraBonus) || 0;
   }
 
+  let wantedCleared = false;
+  if (
+    template.id === 'CHAOS' &&
+    friendship.chaos?.wantedUserId &&
+    idString(friendship.chaos.wantedUserId) === idString(userId)
+  ) {
+    friendship.chaos.wantedUserId = null;
+    friendship.chaos.wantedStartedAt = null;
+    friendship.chaos.wantedUntil = null;
+    friendship.chaos.lastConsequence = null;
+    scheduleNextChaos(friendship, new Date());
+    wantedCleared = true;
+  }
+
   const previousLevel = friendship.duoLevel || 1;
   friendship.duoXP = (friendship.duoXP || 0) + xp;
   const duo = syncDuoState(friendship);
@@ -697,7 +753,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
     await notifyBoth(friendship, `Duo Level ${duo.level}`, `You unlocked “${duo.title}”.`, 'DUO_LEVEL_UP', userId);
   }
 
-  return { xp, auraBonus, duo, chaosResolved, worldEvent: world };
+  return { xp, auraBonus, duo, chaosResolved, wantedCleared, worldEvent: world };
 };
 
 const buildRecap = async (friendship) => {
@@ -770,6 +826,8 @@ const runItBack = async (friendship) => {
   }
   if (friendship.templateId === 'CHAOS') {
     friendship.chaos.activeEvent = null;
+    friendship.chaos.wantedUserId = null;
+    friendship.chaos.wantedStartedAt = null;
     friendship.chaos.wantedUntil = null;
     friendship.chaos.lastConsequence = null;
     scheduleNextChaos(friendship, now);
