@@ -1,13 +1,33 @@
-const buckets = new Map();
+const crypto = require('crypto');
 
-const cleanup = () => {
-  const now = Date.now();
+const buckets = new Map();
+const MAX_BUCKETS = 10000;
+const TARGET_BUCKETS_AFTER_PRUNE = 8000;
+
+const hashKey = (value) => crypto
+  .createHash('sha256')
+  .update(String(value || 'unknown'))
+  .digest('hex')
+  .slice(0, 32);
+
+const cleanup = (now = Date.now()) => {
   for (const [key, entry] of buckets.entries()) {
     if (entry.resetAt <= now) buckets.delete(key);
   }
 };
 
-const cleanupTimer = setInterval(cleanup, 10 * 60 * 1000);
+const enforceCapacity = (now) => {
+  cleanup(now);
+  if (buckets.size < MAX_BUCKETS) return;
+
+  const oldest = [...buckets.entries()]
+    .sort((left, right) => left[1].lastSeenAt - right[1].lastSeenAt)
+    .slice(0, Math.max(1, buckets.size - TARGET_BUCKETS_AFTER_PRUNE));
+
+  for (const [key] of oldest) buckets.delete(key);
+};
+
+const cleanupTimer = setInterval(() => cleanup(), 10 * 60 * 1000);
 cleanupTimer.unref?.();
 
 const defaultKey = (req) => req.ip || req.socket?.remoteAddress || 'unknown';
@@ -18,33 +38,39 @@ const createRateLimiter = ({
   max = 30,
   keyGenerator = defaultKey,
   message = 'Too many requests. Try again later.'
-} = {}) => (
-  function rateLimit(req, res, next) {
+} = {}) => {
+  const safeWindowMs = Math.max(1000, Number(windowMs) || 15 * 60 * 1000);
+  const safeMax = Math.max(1, Math.floor(Number(max) || 30));
+
+  return function rateLimit(req, res, next) {
     const now = Date.now();
     const rawKey = keyGenerator(req);
-    const key = name + ':' + String(rawKey || 'unknown');
+    const key = `${name}:${hashKey(rawKey)}`;
     let entry = buckets.get(key);
 
     if (!entry || entry.resetAt <= now) {
-      entry = { count: 0, resetAt: now + windowMs };
+      enforceCapacity(now);
+      entry = { count: 0, resetAt: now + safeWindowMs, lastSeenAt: now };
       buckets.set(key, entry);
     }
 
     entry.count += 1;
-    const remaining = Math.max(0, max - entry.count);
-    res.setHeader('RateLimit-Limit', String(max));
+    entry.lastSeenAt = now;
+
+    const remaining = Math.max(0, safeMax - entry.count);
+    res.setHeader('RateLimit-Limit', String(safeMax));
     res.setHeader('RateLimit-Remaining', String(remaining));
     res.setHeader('RateLimit-Reset', String(Math.ceil(entry.resetAt / 1000)));
 
-    if (entry.count > max) {
+    if (entry.count > safeMax) {
       const retryAfter = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
       res.setHeader('Retry-After', String(retryAfter));
       return res.status(429).json({ msg: message });
     }
 
     return next();
-  }
-);
+  };
+};
 
 module.exports = {
   createRateLimiter
