@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import './Modal.css';
@@ -52,7 +53,7 @@ export const Modal = ({
         transition: { type: 'spring', duration: .3, bounce: 0 }
       };
 
-  return (
+  const modal = (
     <AnimatePresence initial={false}>
       {isOpen && (
         <div className="modal-root" role="presentation">
@@ -88,4 +89,6 @@ export const Modal = ({
       )}
     </AnimatePresence>
   );
+
+  return typeof document === 'undefined' ? modal : createPortal(modal, document.body);
 };
