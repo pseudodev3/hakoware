@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
+import { SelectMenu } from '../../shared/components/SelectMenu';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
@@ -367,23 +368,38 @@ export const YouView = ({ friendships, showToast }) => {
                 <article className="inventory-card" key={cardId}>
                   <div className="inventory-copy"><strong>{card.name}</strong><span>{count} owned</span></div>
                   {cardId === 'STEAL' && (
-                    <select value={stealTarget} onChange={(event) => setStealTarget(event.target.value)} aria-label="Choose bankrupt contract">
-                      <option value="">{bankrupt.length ? 'Choose target' : 'No bankrupt partners'}</option>
-                      {bankrupt.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
-                    </select>
+                    <SelectMenu
+                      value={stealTarget}
+                      onChange={setStealTarget}
+                      ariaLabel="Choose bankrupt contract"
+                      placeholder={bankrupt.length ? 'Choose target' : 'No bankrupt partners'}
+                      disabled={bankrupt.length === 0}
+                      placement="top"
+                      options={bankrupt.map((friendship) => ({ value: friendship._id, label: partnerName(friendship) }))}
+                    />
                   )}
                   {cardId === 'STEAL' && stealTarget && <span className="inventory-hint">Takes 10% of their current Aura · creates a public Grudge</span>}
                   {cardId === 'SIGNAL_FLARE' && (
-                    <select value={signalTarget} onChange={(event) => setSignalTarget(event.target.value)} aria-label="Choose contract for Signal Flare">
-                      <option value="">{friendships.length ? 'Choose contract' : 'No active contracts'}</option>
-                      {friendships.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
-                    </select>
+                    <SelectMenu
+                      value={signalTarget}
+                      onChange={setSignalTarget}
+                      ariaLabel="Choose contract for Signal Flare"
+                      placeholder={friendships.length ? 'Choose contract' : 'No active contracts'}
+                      disabled={friendships.length === 0}
+                      placement="top"
+                      options={friendships.map((friendship) => ({ value: friendship._id, label: partnerName(friendship) }))}
+                    />
                   )}
                   {cardId === 'CHAOS_TICKET' && (
-                    <select value={chaosTarget} onChange={(event) => setChaosTarget(event.target.value)} aria-label="Choose Chaos Contract">
-                      <option value="">{chaosContracts.length ? 'Choose Chaos Contract' : 'No ready Chaos Contract'}</option>
-                      {chaosContracts.map((friendship) => <option key={friendship._id} value={friendship._id}>{partnerName(friendship)}</option>)}
-                    </select>
+                    <SelectMenu
+                      value={chaosTarget}
+                      onChange={setChaosTarget}
+                      ariaLabel="Choose Chaos Contract"
+                      placeholder={chaosContracts.length ? 'Choose Chaos Contract' : 'No ready Chaos Contract'}
+                      disabled={chaosContracts.length === 0}
+                      placement="top"
+                      options={chaosContracts.map((friendship) => ({ value: friendship._id, label: partnerName(friendship) }))}
+                    />
                   )}
                   {cardId === 'PURIFY' && !hasDebt && <span className="inventory-hint">No debt to clear</span>}
                   <Button variant="secondary" size="sm" loading={busy === 'use-' + cardId} disabled={disabled} onClick={() => useOwnedCard(cardId)}>Use</Button>
