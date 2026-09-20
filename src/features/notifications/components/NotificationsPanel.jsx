@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, Check, Clock, MessageSquare, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
+import { Bell, Check, CheckCheck, Clock, MessageSquare, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
 import {
   deleteNotification,
   getUserNotifications,
@@ -18,6 +18,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   const cachedNotifications = peekUserNotifications().filter((notification) => notification.type !== 'CONTRACT_INVITE');
   const [notifications, setNotifications] = useState(cachedNotifications);
   const [loading, setLoading] = useState(cachedNotifications.length === 0);
+  const [markingAll, setMarkingAll] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
   const loadNotifications = async ({ force = false } = {}) => {
@@ -49,19 +50,61 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
+  const applyLocalNotifications = (next) => {
+    setNotifications(next);
+    onUnreadCountChange?.(next.filter((notification) => !notification.read).length);
+  };
+
   const handleMarkAsRead = async (id) => {
-    await markNotificationAsRead(id);
-    await loadNotifications({ force: true });
+    const previous = notifications;
+    const next = notifications.map((notification) => (
+      String(notification.id || notification._id) === String(id)
+        ? { ...notification, read: true }
+        : notification
+    ));
+    applyLocalNotifications(next);
+
+    const result = await markNotificationAsRead(id);
+    if (result?.success === false) {
+      applyLocalNotifications(previous);
+      showToast?.(result.error || 'Could not mark notification as read', 'ERROR');
+      return;
+    }
+
+    void loadNotifications({ force: true });
   };
 
   const handleMarkAllRead = async () => {
-    await markAllNotificationsAsRead();
-    await loadNotifications({ force: true });
+    if (markingAll || !notifications.some((notification) => !notification.read)) return;
+
+    const previous = notifications;
+    setMarkingAll(true);
+    applyLocalNotifications(notifications.map((notification) => ({ ...notification, read: true })));
+
+    const result = await markAllNotificationsAsRead();
+    if (result?.success === false) {
+      applyLocalNotifications(previous);
+      showToast?.(result.error || 'Could not mark notifications as read', 'ERROR');
+    } else {
+      void loadNotifications({ force: true });
+    }
+
+    setMarkingAll(false);
   };
 
   const handleDelete = async (id) => {
-    await deleteNotification(id);
-    await loadNotifications({ force: true });
+    const previous = notifications;
+    const next = notifications.filter((notification) => String(notification.id || notification._id) !== String(id));
+    applyLocalNotifications(next);
+
+    const result = await deleteNotification(id);
+    if (result?.success === false) {
+      applyLocalNotifications(previous);
+      showToast?.(result.error || 'Could not delete notification', 'ERROR');
+      return;
+    }
+
+    void loadNotifications({ force: true });
   };
 
   const handleRespond = async (id, action) => {
@@ -152,7 +195,12 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                 <h3>Activity</h3>
               </div>
               <div className="panel-header-actions">
-                {unreadCount > 0 && <button className="mark-all-btn" onClick={handleMarkAllRead}>Mark all read</button>}
+                {unreadCount > 0 && (
+                  <button className="mark-all-btn" onClick={handleMarkAllRead} disabled={markingAll} aria-label="Mark all notifications as read">
+                    <CheckCheck size={14} strokeWidth={1.9} aria-hidden="true" />
+                    <span>{markingAll ? 'Marking…' : 'Mark all read'}</span>
+                  </button>
+                )}
                 <button className="close-panel" onClick={onClose} aria-label="Close notifications"><X size={19} strokeWidth={1.8} /></button>
               </div>
             </header>
@@ -186,38 +234,48 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                 <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No notifications.</p></div>
               ) : (
                 <div className="notification-list">
-                  {notifications.map((notification) => (
-                    <div key={notification.id || notification._id} className={`notification-item ${notification.read ? 'read' : 'unread'}`}>
-                      <div className={`item-icon ${getTone(notification.type)}`}>{getIcon(notification.type)}</div>
-                      <div className="item-body">
-                        <div className="item-header">
-                          <span className="item-type">{formatType(notification.type)}</span>
-                          <span className="item-time">{formatTime(notification.createdAt)}</span>
+                  <AnimatePresence initial={false}>
+                    {notifications.map((notification) => (
+                      <motion.div
+                        layout={shouldReduceMotion ? false : 'position'}
+                        key={notification.id || notification._id}
+                        className={`notification-item ${notification.read ? 'read' : 'unread'}`}
+                        initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                        animate={{ opacity: notification.read ? .76 : 1, y: 0 }}
+                        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: .99 }}
+                        transition={{ duration: shouldReduceMotion ? .08 : .16, ease: [0.2, 0, 0, 1] }}
+                      >
+                        <div className={`item-icon ${getTone(notification.type)}`}>{getIcon(notification.type)}</div>
+                        <div className="item-body">
+                          <div className="item-header">
+                            <span className="item-type">{formatType(notification.type)}</span>
+                            <span className="item-time">{formatTime(notification.createdAt)}</span>
+                          </div>
+                          <p className="item-msg">{notification.message}</p>
                         </div>
-                        <p className="item-msg">{notification.message}</p>
-                      </div>
-                      <div className="item-actions">
-                        {!notification.read && (
+                        <div className="item-actions">
+                          {!notification.read && (
+                            <button
+                              className="action-icon"
+                              onClick={() => handleMarkAsRead(notification.id || notification._id)}
+                              aria-label="Mark notification as read"
+                              title="Mark read"
+                            >
+                              <Check size={14} strokeWidth={1.9} />
+                            </button>
+                          )}
                           <button
-                            className="action-icon"
-                            onClick={() => handleMarkAsRead(notification.id || notification._id)}
-                            aria-label="Mark notification as read"
-                            title="Mark read"
+                            className="action-icon delete"
+                            onClick={() => handleDelete(notification.id || notification._id)}
+                            aria-label="Delete notification"
+                            title="Delete"
                           >
-                            <Check size={14} strokeWidth={1.9} />
+                            <Trash2 size={14} strokeWidth={1.9} />
                           </button>
-                        )}
-                        <button
-                          className="action-icon delete"
-                          onClick={() => handleDelete(notification.id || notification._id)}
-                          aria-label="Delete notification"
-                          title="Delete"
-                        >
-                          <Trash2 size={14} strokeWidth={1.9} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
             </div>
