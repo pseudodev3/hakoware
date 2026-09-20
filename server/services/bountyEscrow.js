@@ -3,6 +3,7 @@ const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const { recordEvent } = require('./contractGame');
+const { partnerEscrowAmount } = require('./wantedBounty');
 
 const HOUR = 60 * 60 * 1000;
 const HUNT_WINDOW_HOURS = 12;
@@ -74,25 +75,39 @@ const refundBounty = async (bounty, reason) => {
   );
   if (!closed) return false;
 
-  await addAura(
-    closed.senderId,
-    closed.amount,
-    'BOUNTY_REFUND',
-    `${reason}: ${closed.targetName}`,
-    { bountyId: closed._id, friendshipId: closed.friendshipId }
-  );
+  const partnerRefund = partnerEscrowAmount(closed);
+  if (closed.senderId && partnerRefund > 0) {
+    await addAura(
+      closed.senderId,
+      partnerRefund,
+      'BOUNTY_REFUND',
+      `${reason}: ${closed.targetName}`,
+      { bountyId: closed._id, friendshipId: closed.friendshipId }
+    );
+  }
+
   await returnHunterBond(closed, reason);
-  await recordEvent(closed.friendshipId, 'BOUNTY_REFUND', {
-    userId: closed.senderId,
-    aura: closed.amount,
-    metadata: { amount: closed.amount, targetId: closed.targetId, targetName: closed.targetName, reason }
+  await recordEvent(closed.friendshipId, partnerRefund > 0 ? 'BOUNTY_REFUND' : 'BOUNTY_CLOSED', {
+    userId: closed.senderId || closed.targetId,
+    aura: partnerRefund,
+    metadata: {
+      amount: closed.amount,
+      refundedPartnerAura: partnerRefund,
+      chaosAmount: Number(closed.chaosAmount) || 0,
+      targetId: closed.targetId,
+      targetName: closed.targetName,
+      reason
+    }
   }).catch(() => null);
-  await Notification.create({
-    toUserId: closed.senderId,
-    type: 'BOUNTY_REFUND',
-    title: `+${closed.amount} Aura refunded`,
-    message: `${reason}. Your bounty on ${closed.targetName} was returned.`
-  }).catch(() => null);
+
+  if (closed.senderId && partnerRefund > 0) {
+    await Notification.create({
+      toUserId: closed.senderId,
+      type: 'BOUNTY_REFUND',
+      title: `+${partnerRefund} Aura refunded`,
+      message: `${reason}. Your contribution on ${closed.targetName} was returned.`
+    }).catch(() => null);
+  }
   return true;
 };
 
@@ -120,7 +135,13 @@ const payHuntedBounty = async (bounty) => {
     claimed.amount,
     'BOUNTY_REWARD',
     `Proof accepted: ${claimed.targetName} credited your pressure`,
-    { bountyId: claimed._id, friendshipId: claimed.friendshipId, hunterRep: repDelta }
+    {
+      bountyId: claimed._id,
+      friendshipId: claimed.friendshipId,
+      hunterRep: repDelta,
+      chaosAmount: Number(claimed.chaosAmount) || 0,
+      partnerAmount: partnerEscrowAmount(claimed)
+    }
   );
   await returnHunterBond(claimed, 'proof accepted');
   await recordEvent(claimed.friendshipId, 'BOUNTY_REWARD', {
@@ -128,6 +149,8 @@ const payHuntedBounty = async (bounty) => {
     aura: claimed.amount,
     metadata: {
       amount: claimed.amount,
+      chaosAmount: Number(claimed.chaosAmount) || 0,
+      partnerAmount: partnerEscrowAmount(claimed),
       targetId: claimed.targetId,
       targetName: claimed.targetName,
       hunterId: hunter._id,
@@ -136,21 +159,26 @@ const payHuntedBounty = async (bounty) => {
     }
   }).catch(() => null);
 
-  await Promise.all([
+  const notifications = [
     Notification.create({
       toUserId: hunter._id,
       type: 'BOUNTY_REWARD',
       title: `+${claimed.amount} Aura · proof accepted`,
       message: `${claimed.targetName} credited your pressure. +${repDelta} Hunter Rep.`
-    }).catch(() => null),
-    Notification.create({
+    }).catch(() => null)
+  ];
+
+  if (claimed.senderId) {
+    notifications.push(Notification.create({
       toUserId: claimed.senderId,
       fromUserId: hunter._id,
       type: 'BOUNTY_REWARD',
       title: 'Bounty collected',
       message: `${hunter.displayName} got ${claimed.targetName} to check in and received ${claimed.amount} Aura.`
-    }).catch(() => null)
-  ]);
+    }).catch(() => null));
+  }
+
+  await Promise.all(notifications);
   return { outcome: 'CLAIMED', bounty: claimed, repDelta };
 };
 
@@ -170,19 +198,24 @@ const resolveTargetEscape = async (bounty, reason = 'Target checked in without c
   );
   if (!closed) return false;
 
-  await addAura(
-    closed.senderId,
-    closed.amount,
-    'BOUNTY_REFUND',
-    `Target escaped: ${closed.targetName}`,
-    { bountyId: closed._id, friendshipId: closed.friendshipId }
-  );
+  const partnerRefund = partnerEscrowAmount(closed);
+  if (closed.senderId && partnerRefund > 0) {
+    await addAura(
+      closed.senderId,
+      partnerRefund,
+      'BOUNTY_REFUND',
+      `Target escaped: ${closed.targetName}`,
+      { bountyId: closed._id, friendshipId: closed.friendshipId }
+    );
+  }
   await returnHunterBond(closed, 'target escaped');
   await recordEvent(closed.friendshipId, 'BOUNTY_ESCAPED', {
     userId: closed.targetId,
-    aura: closed.amount,
+    aura: partnerRefund,
     metadata: {
       amount: closed.amount,
+      refundedPartnerAura: partnerRefund,
+      chaosAmount: Number(closed.chaosAmount) || 0,
       hunterId: closed.hunterId || null,
       pressureSent: Boolean(closed.pressureSentAt),
       repDelta,
@@ -190,20 +223,24 @@ const resolveTargetEscape = async (bounty, reason = 'Target checked in without c
     }
   }).catch(() => null);
 
-  await Promise.all([
-    Notification.create({
+  const notifications = [];
+  if (closed.senderId && partnerRefund > 0) {
+    notifications.push(Notification.create({
       toUserId: closed.senderId,
       type: 'BOUNTY_REFUND',
       title: `${closed.targetName} escaped`,
-      message: `They checked in without crediting a hunter. ${closed.amount} Aura returned.`
-    }).catch(() => null),
-    closed.hunterId ? Notification.create({
+      message: `They checked in. Your ${partnerRefund} Aura contribution was returned.`
+    }).catch(() => null));
+  }
+  if (closed.hunterId) {
+    notifications.push(Notification.create({
       toUserId: closed.hunterId,
       type: 'BOUNTY_REFUND',
       title: 'Target escaped',
       message: `${closed.targetName} checked in without crediting your pressure. Your bond was returned${repDelta ? ` · +${repDelta} Hunter Rep for sending pressure` : ''}.`
-    }).catch(() => null) : Promise.resolve()
-  ]);
+    }).catch(() => null));
+  }
+  if (notifications.length) await Promise.all(notifications);
 
   return { outcome: 'ESCAPED', bounty: closed, repDelta };
 };
