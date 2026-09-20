@@ -61,6 +61,13 @@ const gameTemplate = (value) => {
   return TEMPLATES[id] || null;
 };
 
+const hasCheckedInThisSeason = (friendship, perspective) => {
+  const seasonStartedAt = new Date(friendship?.season?.startedAt || 0).getTime();
+  const lastInteractionAt = new Date(perspective?.lastInteraction || 0).getTime();
+  if (!(seasonStartedAt > 0)) return lastInteractionAt > 0;
+  return lastInteractionAt > seasonStartedAt;
+};
+
 router.get('/meta', auth, (req, res) => {
   res.json({ templates: Object.values(TEMPLATES), worldEvent: getWorldEvent() });
 });
@@ -306,7 +313,9 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const now = new Date();
     const lastInteraction = new Date(friendship[key].lastInteraction || 0);
     const hoursSince = (now - lastInteraction) / 3600000;
-    if (hoursSince < 20) return res.status(400).json({ msg: 'You already checked in today' });
+    if (hasCheckedInThisSeason(friendship, friendship[key]) && hoursSince < 20) {
+      return res.status(400).json({ msg: 'You already checked in today' });
+    }
 
     const debtBefore = syncDebtState(friendship[key], now);
     const recoveryStarted = debtBefore.isBankrupt;
