@@ -168,6 +168,25 @@ const sendWelcomeEmail = async (userEmail, userName) => {
   });
 };
 
+const sendPriorityNotificationEmail = async (userEmail, userName, title, message) => {
+  const cleanName = safeInlineText(userName) || 'Player';
+  const cleanTitle = safeInlineText(title) || 'Hakoware alert';
+  const cleanMessage = safeInlineText(message);
+  return send({
+    to: userEmail,
+    subject: `Hakoware · ${cleanTitle}`,
+    text: `${cleanName}, ${cleanTitle}. ${cleanMessage}${frontendUrl ? `\n\nOpen Hakoware: ${frontendUrl}` : ''}`,
+    html: shell({
+      eyebrow: 'Priority alert',
+      title: escapeHtml(cleanTitle),
+      body: `<p style="margin:0">${escapeHtml(cleanMessage)}</p>`,
+      actionLabel: frontendUrl ? 'Open Hakoware' : null,
+      actionUrl: frontendUrl || null,
+      footnote: 'This email was sent because this event can change an active contract, bounty, debt, or Aura state.'
+    })
+  });
+};
+
 const sendFriendRequestEmail = async (toEmail, fromName, requiresSignup = false) => {
   const cleanName = safeInlineText(fromName) || 'Someone';
   const safeName = escapeHtml(cleanName);
@@ -194,5 +213,6 @@ module.exports = {
   verifyEmailTransport,
   sendResetPasswordEmail,
   sendWelcomeEmail,
-  sendFriendRequestEmail
+  sendFriendRequestEmail,
+  sendPriorityNotificationEmail
 };

@@ -1,9 +1,9 @@
 const ContractEvent = require('../models/ContractEvent');
 const Friendship = require('../models/Friendship');
-const Notification = require('../models/Notification');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
 const { syncDebtState } = require('./debtState');
+const { createNotification } = require('./notificationDelivery');
 const { ensureWantedBounty } = require('./wantedBounty');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -187,7 +187,7 @@ const activateSeason = async (friendship, now = new Date()) => {
 
 const notifyBoth = async (friendship, title, message, type = 'GAME_EVENT', fromUserId = null) => {
   const ids = [friendship.user1, friendship.user2].map(idString).filter(Boolean);
-  await Promise.all(ids.map((toUserId) => Notification.create({
+  await Promise.all(ids.map((toUserId) => createNotification({
     toUserId,
     fromUserId,
     type,

@@ -5,7 +5,6 @@ const Bounty = require('../models/Bounty');
 const Friendship = require('../models/Friendship');
 const User = require('../models/User');
 const AuraTransaction = require('../models/AuraTransaction');
-const Notification = require('../models/Notification');
 const {
   HUNT_WINDOW_HOURS,
   listingFeeFor,
@@ -17,6 +16,7 @@ const {
 const { recordEvent, refreshGameState } = require('../services/contractGame');
 const { calculateDebtState, syncDebtState } = require('../services/debtState');
 const { bountyArenaView } = require('../services/clientViews');
+const { createNotification } = require('../services/notificationDelivery');
 const { sendRouteError } = require('../services/httpError');
 const { MAX_BOUNTY, partnerEscrowAmount, wantedStateFor } = require('../services/wantedBounty');
 
@@ -167,7 +167,7 @@ router.post('/', auth, async (req, res) => {
           targetName: target.displayName
         }
       });
-      await Notification.create({
+      await createNotification({
         toUserId: target._id,
         fromUserId: sender._id,
         type: 'BOUNTY_PLACED',
@@ -258,7 +258,7 @@ router.post('/', auth, async (req, res) => {
       aura: -totalCost,
       metadata: { amount, listingFee, targetId: target._id, targetName: target.displayName }
     });
-    await Notification.create({
+    await createNotification({
       toUserId: target._id,
       fromUserId: sender._id,
       type: 'BOUNTY_PLACED',
@@ -450,7 +450,7 @@ router.post('/:id/hunt', auth, async (req, res) => {
       aura: -bond,
       metadata: { amount: bounty.amount, bond, targetId: bounty.targetId, targetName: bounty.targetName }
     });
-    await Notification.create({
+    await createNotification({
       toUserId: bounty.targetId,
       fromUserId: hunter._id,
       type: 'BOUNTY_HUNTING',
@@ -491,7 +491,7 @@ router.post('/:id/pressure', auth, async (req, res) => {
       userId: req.user.id,
       metadata: { bountyId: bounty._id, moveId: move.id, targetId: bounty.targetId, huntExpiresAt: bounty.huntExpiresAt }
     });
-    await Notification.create({
+    await createNotification({
       toUserId: bounty.targetId,
       fromUserId: req.user.id,
       type: 'BOUNTY_PRESSURE',
