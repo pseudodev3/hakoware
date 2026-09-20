@@ -117,7 +117,11 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
                   ? `Credit ${bounty.hunterName} only if their pressure brought you back. Otherwise, escape.`
                   : bounty.status === 'HUNTING'
                     ? `${bounty.hunterName || 'A hunter'} picked this up. Check in to escape.`
-                    : 'No proof yet. Check in to close the bounty and return escrow.'}
+                    : bounty?.chaosAmount > 0
+                      ? bounty?.partnerAmount > 0
+                        ? 'No proof yet. Check in to escape; partner Aura returns.'
+                        : 'No proof yet. Check in to escape before a hunter gets paid.'
+                      : 'No proof yet. Check in to close the bounty and return escrow.'}
               </p>
             </div>
           </div>
