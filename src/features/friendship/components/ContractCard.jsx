@@ -51,7 +51,8 @@ const normalStateDetail = (status) => {
 const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
   const seasonStart = new Date(seasonStartedAt || 0).getTime();
   const lastInteraction = new Date(perspective?.lastInteraction || 0).getTime();
-  return seasonStart > 0 && lastInteraction > seasonStart;
+  if (!(seasonStart > 0)) return lastInteraction > 0;
+  return lastInteraction > seasonStart;
 };
 
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
@@ -161,7 +162,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         detail: `${name} already checked in. Match them.`,
         context: '',
         tone: 'good',
-        meta: [`${stats.limit}d rule`, 'First duo cycle']
+        meta: [`${stats.limit}d rule`, 'First check-in']
       };
     } else {
       displayState = {
@@ -170,7 +171,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         detail: 'Your first check-in is in. Now they need theirs.',
         context: '',
         tone: 'good',
-        meta: [`${stats.limit}d rule`, 'First duo cycle']
+        meta: [`${stats.limit}d rule`, 'First check-in']
       };
     }
   }
