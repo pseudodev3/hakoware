@@ -64,7 +64,8 @@ const gameTemplate = (value) => {
 const hasCheckedInThisSeason = (friendship, perspective) => {
   const seasonStartedAt = new Date(friendship?.season?.startedAt || 0).getTime();
   const lastInteractionAt = new Date(perspective?.lastInteraction || 0).getTime();
-  return seasonStartedAt > 0 && lastInteractionAt > seasonStartedAt;
+  if (!(seasonStartedAt > 0)) return lastInteractionAt > 0;
+  return lastInteractionAt > seasonStartedAt;
 };
 
 router.get('/meta', auth, (req, res) => {
