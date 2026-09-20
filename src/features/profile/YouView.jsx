@@ -88,7 +88,7 @@ export const YouView = ({ friendships, showToast }) => {
 
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
-  const chaosContracts = useMemo(() => friendships.filter((friendship) => friendship.templateId === 'CHAOS' && friendship.status === 'ACTIVE' && !friendship.chaos?.activeEvent), [friendships]);
+  const chaosContracts = useMemo(() => friendships.filter((friendship) => friendship.templateId === 'CHAOS' && friendship.status === 'ACTIVE' && !friendship.chaos?.activeEvent && !friendship.chaos?.wantedUserId), [friendships]);
   const inventory = user.inventory || [];
   const appearsOnShameBoard = !user.privacySettings?.optOutPublicBankruptcy;
   const strongest = useMemo(
