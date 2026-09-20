@@ -12,6 +12,7 @@ const WANTED_BOUNTY_BY_LEVEL = Object.freeze({
   5: 100
 });
 
+const idString = (value) => String(value?._id || value || '');
 const clampChaosLevel = (level) => Math.max(1, Math.min(5, Number(level) || 1));
 const chaosBountyAmountForLevel = (level) => WANTED_BOUNTY_BY_LEVEL[clampChaosLevel(level)];
 
@@ -37,7 +38,7 @@ const wantedStateFor = (wantedUntil, now = new Date()) => {
 };
 
 const wantedTargetName = (friendship, targetId) => (
-  String(friendship.user1) === String(targetId)
+  idString(friendship.user1) === idString(targetId)
     ? friendship.user1DisplayName
     : friendship.user2DisplayName
 ) || 'Hakoware player';
@@ -56,7 +57,8 @@ const ensureWantedBounty = async (friendship, now = new Date()) => {
   const existing = await Bounty.findOne({
     friendshipId: friendship._id,
     targetId,
-    status: { $in: OPEN_STATUSES }
+    status: { $in: OPEN_STATUSES },
+    expiresAt: { $gt: now }
   });
 
   if (existing) {
