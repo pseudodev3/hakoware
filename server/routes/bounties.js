@@ -303,12 +303,15 @@ router.get('/active', auth, async (req, res) => {
     return res.json(bounties.map((bounty) => {
       const friendship = friendshipById.get(String(bounty.friendshipId));
       let targetBankrupt = false;
+      let viewerIsPartner = false;
       if (friendship) {
         const targetIsUser1 = String(friendship.user1) === String(bounty.targetId);
         const perspective = targetIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
+        const partnerId = targetIsUser1 ? friendship.user2 : friendship.user1;
         targetBankrupt = Boolean(calculateDebtState(perspective)?.isBankrupt);
+        viewerIsPartner = String(partnerId) === String(req.user.id);
       }
-      return bountyArenaView({ ...bounty, targetBankrupt }, req.user.id);
+      return bountyArenaView({ ...bounty, targetBankrupt, viewerIsPartner }, req.user.id);
     }));
   } catch (err) {
     console.error('Load bounties failed:', err.message);
