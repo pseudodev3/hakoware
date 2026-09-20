@@ -88,9 +88,22 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const activeChaos = friendship.chaos?.activeEvent;
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
   const checkinBlocked = bountyLoading || bountySyncError;
+  const actions = pressureReady ? (
+    <div className="checkin-proof-actions">
+      <Button type="button" variant="secondary" disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(false)}>Escape</Button>
+      <Button variant="aura" icon={ShieldCheck} disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(true)}>Credit {bounty.hunterName}</Button>
+    </div>
+  ) : (
+    <div className="checkin-actions">
+      <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+      <Button variant="aura" icon={Check} disabled={checkinBlocked} loading={loading || bountyLoading} onClick={() => handleCheckin(false)}>
+        {bountyLoading ? 'Syncing Arena…' : hasOpenBounty ? 'Check in & escape' : 'Check in'}
+      </Button>
+    </div>
+  );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Check in with ${friend.displayName}`} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Check in with ${friend.displayName}`} size="md" footer={actions}>
       <div className="checkin-content">
         {isChaosTarget && (
           <div className="checkin-chaos">
@@ -154,19 +167,6 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
             : 'One check-in every 20h. Resets your side + earns Duo XP.'}
         </p>
 
-        {pressureReady ? (
-          <div className="checkin-proof-actions">
-            <Button type="button" variant="secondary" disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(false)}>Escape</Button>
-            <Button variant="aura" icon={ShieldCheck} disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(true)}>Credit {bounty.hunterName}</Button>
-          </div>
-        ) : (
-          <div className="checkin-actions">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button variant="aura" icon={Check} disabled={checkinBlocked} loading={loading || bountyLoading} onClick={() => handleCheckin(false)}>
-              {bountyLoading ? 'Syncing Arena…' : hasOpenBounty ? 'Check in & escape' : 'Check in'}
-            </Button>
-          </div>
-        )}
       </div>
     </Modal>
   );
