@@ -166,9 +166,7 @@ export const Arena = ({ friendships, showToast }) => {
                   : null;
               const fundingBreakdown = bounty.chaosAmount > 0
                 ? `${bounty.chaosAmount} Chaos${bounty.partnerAmount > 0 ? ` + ${bounty.partnerAmount} Partner` : ''}`
-                : bounty.partnerAmount > 0
-                  ? `${bounty.partnerAmount} Partner`
-                  : null;
+                : null;
 
               return (
                 <article className={`bounty-item ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''}`} key={bounty._id || bounty.id}>
