@@ -166,12 +166,16 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
     const wantedLabel = mostWanted ? 'Most Wanted' : 'Wanted';
     displayState = wantedTargetsCurrentUser
       ? {
-          label: wantedLabel,
+          label: stats.isBankrupt ? `${wantedLabel} · Bankrupt` : wantedLabel,
           hero: mostWanted ? 'Arena open' : formatTimeLeft(friendship.chaos.wantedUntil),
           detail: `${consequence}. A public Chaos bounty is on you.`,
-          context: mostWanted ? 'Check in to escape.' : 'Check in before this escalates.',
+          context: stats.isBankrupt
+            ? 'Bankrupt · partner Aura can raise the bounty. Check in to escape.'
+            : mostWanted
+              ? 'Check in to escape.'
+              : 'Check in before this escalates.',
           tone: 'chaos',
-          meta: [`Season ${seasonNumber}`, wantedLabel]
+          meta: [`Season ${seasonNumber}`, wantedLabel, ...(stats.isBankrupt ? ['Bankrupt'] : [])]
         }
       : {
           label: wantedLabel,
