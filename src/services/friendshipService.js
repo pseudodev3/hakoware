@@ -28,13 +28,15 @@ export const getContractMeta = async () => api.get('/friendships/meta');
 export const getContractRecap = async (friendshipId) => api.get(`/friendships/${friendshipId}/recap`);
 export const runContractBack = async (friendshipId) => api.post(`/friendships/${friendshipId}/run-it-back`);
 
-export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null, bountyDecision = null, voiceNoteId = null) => {
+export const performCheckin = async (friendshipId, source = 'TEXT', bountyCreditId = null, bountyDecision = null, voiceNoteId = null, social = {}) => {
   try {
     const response = await api.post(`/friendships/${friendshipId}/checkin`, {
       source,
       bountyCreditId,
       bountyDecision,
-      voiceNoteId
+      voiceNoteId,
+      checkinStatus: social.checkinStatus || null,
+      note: social.note || null
     });
     invalidateContractBounty(friendshipId);
     return {
@@ -75,6 +77,26 @@ export const reactToLatestCheckin = async (friendshipId, reaction) => {
 export const pokeContract = async (friendshipId) => {
   try {
     const response = await api.post(`/friendships/${friendshipId}/poke`);
+    return { success: true, ...response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+
+export const replyToLatestCheckin = async (friendshipId, text) => {
+  try {
+    const response = await api.post(`/friendships/${friendshipId}/reply-checkin`, { text });
+    return { success: true, ...response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+
+export const respondToContractMoment = async (friendshipId, momentId, value) => {
+  try {
+    const response = await api.post(`/friendships/${friendshipId}/moments/${momentId}/respond`, { value });
     return { success: true, ...response };
   } catch (error) {
     return { success: false, error: error.message };

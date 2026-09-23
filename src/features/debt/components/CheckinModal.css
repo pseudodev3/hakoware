@@ -24,6 +24,60 @@
 .checkin-meta small { color:var(--text-muted); font-size:.6rem; }
 .checkin-meta strong { margin-top:2px; color:var(--text-secondary); font-size:.72rem; font-weight:620; }
 .grace-dot { width:8px; height:8px; flex:0 0 auto; border-radius:50%; background:var(--aura-gold); }
+.checkin-social { display:flex; flex-direction:column; gap:9px; }
+.checkin-social-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.checkin-social-heading span { color:var(--text-secondary); font-size:.68rem; font-weight:630; }
+.checkin-social-heading small { color:var(--text-faint); font-size:.55rem; }
+.checkin-statuses { display:flex; flex-wrap:wrap; gap:6px; }
+.checkin-statuses button {
+  min-height:34px;
+  padding:0 10px;
+  border-radius:9px;
+  color:var(--text-muted);
+  background:var(--surface-soft);
+  border:1px solid transparent;
+  font-size:.63rem;
+  font-weight:590;
+}
+.checkin-statuses button.active {
+  color:var(--text-primary);
+  background:var(--aura-gold-soft);
+  border-color:color-mix(in srgb,var(--aura-gold) 24%,var(--border-subtle));
+}
+.checkin-note-field { position:relative; display:block; }
+.checkin-note-field > span {
+  position:absolute;
+  left:11px;
+  top:7px;
+  z-index:1;
+  color:var(--text-faint);
+  font-family:var(--font-mono);
+  font-size:.48rem;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.checkin-note-field input {
+  width:100%;
+  min-height:52px;
+  padding:20px 44px 7px 11px;
+  border-radius:11px;
+  color:var(--text-primary);
+  background:var(--surface-input);
+  border:1px solid var(--border-subtle);
+  outline:none;
+  font:inherit;
+  font-size:.68rem;
+}
+.checkin-note-field input:focus { border-color:color-mix(in srgb,var(--aura-gold) 34%,var(--border-active)); }
+.checkin-note-field input::placeholder { color:var(--text-faint); }
+.checkin-note-field > small {
+  position:absolute;
+  right:10px;
+  bottom:9px;
+  color:var(--text-faint);
+  font-family:var(--font-mono);
+  font-size:.48rem;
+}
 .checkin-note { color:var(--text-muted); font-size:.66rem; line-height:1.55; }
 .checkin-actions, .checkin-proof-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; }
 .checkin-actions .btn, .checkin-proof-actions .btn { width:100%; min-width:0; }

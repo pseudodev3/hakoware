@@ -667,7 +667,7 @@ const prepareCheckinGame = async (friendship, userId, source = 'TEXT') => {
   return { chaosEvent: null };
 };
 
-const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared = {}) => {
+const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared = {}, social = {}) => {
   const template = getTemplate(friendship.templateId);
   const world = getWorldEvent();
   const voice = String(source).toUpperCase() === 'VOICE';
@@ -716,11 +716,17 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
   const duo = syncDuoState(friendship);
   await friendship.save();
 
-  await recordEvent(friendship._id, voice ? 'VOICE_CHECKIN' : 'CHECKIN', {
+  const checkinEvent = await recordEvent(friendship._id, voice ? 'VOICE_CHECKIN' : 'CHECKIN', {
     userId,
     xp,
     aura: auraBonus,
-    metadata: { source: voice ? 'VOICE' : 'TEXT', worldEvent: world.id, season: friendship.season?.number }
+    metadata: {
+      source: voice ? 'VOICE' : 'TEXT',
+      worldEvent: world.id,
+      season: friendship.season?.number,
+      checkinStatus: social.checkinStatus || null,
+      note: social.note || null
+    }
   });
 
   if (chaosResolved && chaosEvent) {
@@ -753,7 +759,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
     await notifyBoth(friendship, `Duo Level ${duo.level}`, `You unlocked “${duo.title}”.`, 'DUO_LEVEL_UP', userId);
   }
 
-  return { xp, auraBonus, duo, chaosResolved, wantedCleared, worldEvent: world };
+  return { xp, auraBonus, duo, chaosResolved, wantedCleared, worldEvent: world, checkinEventId: checkinEvent?._id || null };
 };
 
 const buildRecap = async (friendship) => {

@@ -9,6 +9,7 @@ const { verifyEmailTransport } = require('./services/emailService');
 const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
 const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
+const { startMomentWorker, stopMomentWorker } = require('./services/momentWorker');
 const securityHeaders = require('./middleware/securityHeaders');
 const requestGuard = require('./middleware/requestGuard');
 
@@ -129,13 +130,14 @@ async function start() {
   startDebtWorker();
   startChaosWorker();
   startVoiceCleanupWorker();
+  startMomentWorker();
 }
 
 async function shutdown(signal) {
   console.log(`${signal} received, shutting down gracefully`);
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker()]);
+  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker(), stopMomentWorker()]);
   if (server) await new Promise((resolve) => server.close(resolve));
   await mongoose.connection.close();
   process.exit(0);

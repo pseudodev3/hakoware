@@ -7,7 +7,9 @@ import {
   getSocialPresence,
   getUserFriendships,
   pokeContract,
-  reactToLatestCheckin
+  reactToLatestCheckin,
+  replyToLatestCheckin,
+  respondToContractMoment
 } from './services/friendshipService';
 import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
@@ -104,7 +106,10 @@ function MainApp({ showToast }) {
 
   const markPulseSeen = () => {
     if (!user) return;
-    localStorage.setItem(socialWindow().key, new Date().toISOString());
+    const windowState = socialWindow();
+    const seenAt = new Date().toISOString();
+    localStorage.setItem(windowState.key, seenAt);
+    windowState.since = seenAt;
   };
 
   const loadData = async () => {
@@ -168,6 +173,21 @@ function MainApp({ showToast }) {
     return undefined;
   }, [isAuthenticated, bootstrapData?.generatedAt]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !user) return undefined;
+
+    const refreshSocial = () => {
+      if (document.visibilityState === 'visible') void loadSocial();
+    };
+    const interval = window.setInterval(refreshSocial, 60000);
+    document.addEventListener('visibilitychange', refreshSocial);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshSocial);
+    };
+  }, [isAuthenticated, user?.uid, user?.id, user?._id]);
+
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
       setActiveTab('arena');
@@ -184,7 +204,33 @@ function MainApp({ showToast }) {
 
     if (type === 'POKE') {
       const result = await pokeContract(friendshipId);
-      showToast(result.success ? 'Poked them.' : result.error || 'Could not poke them', result.success ? 'SUCCESS' : 'ERROR');
+      const pokeMessage = result.success
+        ? result.mutualMenace
+          ? result.hotSeat
+            ? 'Mutual Menace. Something woke up.'
+            : 'Mutual Menace.'
+          : 'Poked them.'
+        : result.error || 'Could not poke them';
+      showToast(pokeMessage, result.success ? 'SUCCESS' : 'ERROR');
+      if (result.success) await loadSocial();
+      return result;
+    }
+
+    if (type === 'REPLY') {
+      const result = await replyToLatestCheckin(friendshipId, payload);
+      showToast(result.success ? 'Reply sent.' : result.error || 'Could not reply', result.success ? 'SUCCESS' : 'ERROR');
+      if (result.success) await loadSocial();
+      return result;
+    }
+
+    if (type === 'MOMENT_RESPONSE') {
+      const result = await respondToContractMoment(friendshipId, payload?.momentId, payload?.value);
+      const message = result.success
+        ? result.moment?.status === 'RESOLVED'
+          ? 'Hot Seat revealed.'
+          : 'Answer locked. Waiting on them.'
+        : result.error || 'Could not answer';
+      showToast(message, result.success ? 'SUCCESS' : 'ERROR');
       if (result.success) await loadSocial();
       return result;
     }

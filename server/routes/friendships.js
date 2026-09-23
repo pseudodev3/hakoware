@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const VoiceNote = require('../models/VoiceNote');
 const ContractReaction = require('../models/ContractReaction');
+const ContractMoment = require('../models/ContractMoment');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const {
   refundOpenBountiesForFriendship,
@@ -34,11 +35,17 @@ const { recapView } = require('../services/clientViews');
 const { sendRouteError } = require('../services/httpError');
 const {
   POKE_COOLDOWN_MS,
+  MUTUAL_MENACE_MS,
   REACTIONS,
+  REPLY_MAX_LENGTH,
   buildSocialPresence,
   findLatestPartnerCheckin,
-  latestOwnPoke
+  latestOwnPoke,
+  findReplyForCheckin,
+  findRecentPartnerPoke,
+  findRecentMutualPoke
 } = require('../services/socialPresence');
+const { createBrewingHotSeat, respondToMoment } = require('../services/contractMoments');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -148,6 +155,81 @@ router.post('/:id/react-checkin', auth, async (req, res) => {
   }
 });
 
+router.post('/:id/reply-checkin', auth, async (req, res) => {
+  try {
+    const rawText = String(req.body.text || '').trim();
+    if (!rawText) return res.status(400).json({ msg: 'Write a tiny reply first' });
+    if (rawText.length > REPLY_MAX_LENGTH) {
+      return res.status(400).json({ msg: `Keep replies under ${REPLY_MAX_LENGTH} characters` });
+    }
+
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const checkin = await findLatestPartnerCheckin(friendship, req.user.id);
+    if (!checkin) return res.status(409).json({ msg: 'There is no recent partner check-in to reply to' });
+
+    const existing = await findReplyForCheckin(friendship._id, checkin._id, req.user.id);
+    if (existing) return res.status(409).json({ msg: 'You already replied to this check-in' });
+
+    const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
+    const actor = await User.findById(req.user.id).select('displayName');
+
+    const replyEvent = await recordEvent(friendship._id, 'CHECKIN_REPLY', {
+      userId: req.user.id,
+      metadata: {
+        text: rawText,
+        targetUserId: String(partnerId),
+        checkinEventId: String(checkin._id)
+      }
+    });
+
+    await Notification.create({
+      toUserId: partnerId,
+      fromUserId: req.user.id,
+      type: 'CHECKIN_REPLY',
+      title: 'Check-in reply',
+      message: `${actor?.displayName || 'Your contract partner'} replied “${rawText}”`,
+      friendshipId: friendship._id
+    });
+
+    return res.json({
+      success: true,
+      reply: {
+        id: replyEvent._id,
+        text: rawText,
+        createdAt: replyEvent.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('Reply to check-in failed:', err.message);
+    return sendRouteError(res, err, 'Could not reply to this check-in');
+  }
+});
+
+router.post('/:id/moments/:momentId/respond', auth, async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const moment = await respondToMoment(
+      friendship,
+      req.user.id,
+      req.params.momentId,
+      req.body.value
+    );
+
+    return res.json({ success: true, moment });
+  } catch (err) {
+    console.error('Respond to contract moment failed:', err.message);
+    return sendRouteError(res, err, 'Could not answer this moment');
+  }
+});
+
 router.post('/:id/poke', auth, async (req, res) => {
   try {
     const friendship = await Friendship.findById(req.params.id);
@@ -157,19 +239,28 @@ router.post('/:id/poke', auth, async (req, res) => {
     }
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
 
-    const lastPoke = await latestOwnPoke(friendship._id, req.user.id);
+    const now = new Date();
+    const [lastPoke, recentPartnerPoke] = await Promise.all([
+      latestOwnPoke(friendship._id, req.user.id),
+      findRecentPartnerPoke(friendship, req.user.id, now)
+    ]);
+
     if (lastPoke) {
       const nextAvailableAt = new Date(new Date(lastPoke.createdAt).getTime() + POKE_COOLDOWN_MS);
-      if (nextAvailableAt > new Date()) {
+      if (nextAvailableAt > now) {
         return res.status(429).json({ msg: 'You already poked them. Give it a little time.', nextAvailableAt });
       }
     }
 
     const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
-    const now = new Date();
+    const existingMutual = recentPartnerPoke
+      ? await findRecentMutualPoke(friendship._id, recentPartnerPoke.createdAt)
+      : null;
+    const mutualTriggered = Boolean(recentPartnerPoke && !existingMutual);
+    const mutualExpiresAt = mutualTriggered ? new Date(now.getTime() + MUTUAL_MENACE_MS) : null;
 
-    await Promise.all([
+    const writes = [
       recordEvent(friendship._id, 'POKE', {
         userId: req.user.id,
         metadata: { targetUserId: String(partnerId) }
@@ -177,16 +268,37 @@ router.post('/:id/poke', auth, async (req, res) => {
       Notification.create({
         toUserId: partnerId,
         fromUserId: req.user.id,
-        type: 'POKE',
-        title: 'Poke',
-        message: `${actor?.displayName || 'Your contract partner'} poked you. Your move.`,
+        type: mutualTriggered ? 'MUTUAL_POKE' : 'POKE',
+        title: mutualTriggered ? 'Mutual Menace' : 'Poke',
+        message: mutualTriggered
+          ? `${actor?.displayName || 'Your contract partner'} poked you back. Mutual Menace is live.`
+          : `${actor?.displayName || 'Your contract partner'} poked you. Your move.`,
         friendshipId: friendship._id
       })
-    ]);
+    ];
+
+    if (mutualTriggered) {
+      writes.push(recordEvent(friendship._id, 'MUTUAL_POKE', {
+        userId: req.user.id,
+        metadata: {
+          partnerPokeEventId: String(recentPartnerPoke._id),
+          expiresAt: mutualExpiresAt
+        }
+      }));
+    }
+
+    await Promise.all(writes);
+
+    let hotSeat = null;
+    if (mutualTriggered) {
+      hotSeat = await createBrewingHotSeat(friendship, req.user.id, now);
+    }
 
     return res.json({
       success: true,
-      nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS)
+      nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS),
+      mutualMenace: mutualTriggered ? { expiresAt: mutualExpiresAt } : null,
+      hotSeat: hotSeat ? { status: hotSeat.status, unlockAt: hotSeat.unlockAt } : null
     });
   } catch (err) {
     console.error('Poke contract failed:', err.message);
@@ -402,6 +514,10 @@ router.post('/:id/checkin', auth, async (req, res) => {
 
     const source = String(req.body.source || 'TEXT').toUpperCase() === 'VOICE' ? 'VOICE' : 'TEXT';
     const voiceNoteId = req.body.voiceNoteId ? String(req.body.voiceNoteId) : null;
+    const allowedCheckinStatuses = new Set(['ALIVE', 'LOCKED_IN', 'BARELY', 'CHAOS']);
+    const rawCheckinStatus = String(req.body.checkinStatus || '').trim().toUpperCase();
+    const checkinStatus = allowedCheckinStatuses.has(rawCheckinStatus) ? rawCheckinStatus : null;
+    const note = String(req.body.note || '').trim().slice(0, 40) || null;
     let pendingVoiceNote = null;
 
     if (source === 'VOICE') {
@@ -467,7 +583,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
       friendship[key].recoveryRequired = false;
     }
 
-    const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
+    const game = await completeCheckinGame(friendship, req.user.id, source, prepared, { checkinStatus, note });
 
     if (pendingVoiceNote) {
       const committedVoice = await VoiceNote.findOneAndUpdate(
@@ -509,11 +625,13 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
     const actorName = actor?.displayName || 'Your contract partner';
+    const statusLabel = checkinStatus ? checkinStatus.toLowerCase().replace('_', ' ') : null;
+    const socialSuffix = `${statusLabel ? ` · ${statusLabel}` : ''}${note ? ` · “${note}”` : ''}`;
     const recoveryMessage = recoveryStarted
-      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP.`
+      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP${socialSuffix}.`
       : recoveryCompleted
-        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP.`
-        : `${actorName} checked in. +${game.xp} Duo XP.`;
+        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP${socialSuffix}.`
+        : `${actorName} checked in. +${game.xp} Duo XP${socialSuffix}.`;
 
     await Notification.create({
       toUserId: otherUserId,
@@ -602,6 +720,7 @@ router.delete('/:id', auth, async (req, res) => {
     });
     await Promise.all([
       ContractReaction.deleteMany({ friendshipId: friendship._id }),
+      ContractMoment.deleteMany({ friendshipId: friendship._id }),
       friendship.deleteOne()
     ]);
     return res.json({ success: true });

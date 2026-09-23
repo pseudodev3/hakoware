@@ -770,6 +770,33 @@ A focused pass adds ambient life between the 20h progression check-ins without c
 - active-contract bounty/pressure state is warmed in the background after contract sync so opening Check in should not normally block on “Syncing Arena…”;
 - the check-in modal consumes cached verification immediately, then quietly revalidates; the server remains authoritative if Arena state changes before submission.
 
+### Open social loops
+
+The next retention pass should be understood as **unfinished business**, not extra buttons:
+
+- text check-ins can carry a lightweight status: `alive`, `locked in`, `barely`, or `chaos`;
+- text check-ins can also include one optional note up to 40 characters;
+- a partner can send exactly one 40-character reply to the latest recent check-in; it is not a chat thread and cannot branch;
+- reactions remain available alongside the one-shot reply;
+- if a partner pokes you within the mutual window, **Poke back** is available even if your daily check-in is still due;
+- two reciprocal pokes within 2h create **Mutual Menace** for 3h;
+- Mutual Menace can wake a timed **Hot Seat** moment;
+- Hot Seat brews for 15–35 minutes, then opens for 12h;
+- a dedicated backend moment worker advances brewing/open timers every ~60s by default, so Hot Seat evolves while both players are away;
+- each person answers independently and answers stay hidden until both are locked;
+- the resolved reveal remains visible on the contract for 6h;
+- Hot Seat prompts should be socially spicy / revealing, but non-explicit and safe for a general-audience relationship product;
+- timed moments are scoped to the current season and removed when the contract ends;
+- Home prioritizes open Hot Seat / Mutual Menace states above ordinary clear contracts;
+- when Hot Seat opens, the worker creates in-app notifications for both players;
+- social presence also revalidates every minute while the app is foregrounded and immediately when the app becomes visible again.
+
+Retention rule:
+
+**A starts something → B discovers/responds later → A has a reason to come back for the outcome.**
+
+Do not add a prediction/wager mechanic.
+
 Product rule:
 
 **one meaningful progression action per day, many tiny social responses throughout the day.**

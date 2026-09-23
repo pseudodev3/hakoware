@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Check, Flame, Mic, MoreHorizontal, Share2, Trophy } from 'lucide-react';
+import { Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { getContractSides } from '../contractState';
 import { shareHakoware } from '../../../lib/share';
@@ -40,6 +40,14 @@ const formatTimeLeft = (date) => {
   return `${Math.ceil(hours / 24)}d left`;
 };
 
+const formatMomentTime = (date) => {
+  const remaining = new Date(date).getTime() - Date.now();
+  if (remaining <= 0) return 'now';
+  const minutes = Math.ceil(remaining / 60000);
+  if (minutes < 60) return `${minutes}m`;
+  return `${Math.ceil(minutes / 60)}h`;
+};
+
 const normalStateDetail = (status) => {
   if (status.label === 'Clear') return 'You are both on track.';
   if (status.label === 'Due soon') return 'The check-in window is getting tight.';
@@ -58,6 +66,8 @@ const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
 export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, socialState = null }) => {
   const [chaosShareState, setChaosShareState] = useState('');
   const [socialBusy, setSocialBusy] = useState('');
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyText, setReplyText] = useState('');
   const reactionOptions = ['💀', '🤝', '👀', '😭'];
   const { partner: friend, ownPerspective: perspective, partnerPerspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
@@ -94,16 +104,32 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       : `${partnerPossessive} next check-in gets 2× Duo XP +10. They need to beat the clock.`
     : activeChaos?.description || '';
   const chaosTargetLabel = chaosTargetsCurrentUser ? 'Your move' : `${name}'s move`;
+  const moment = socialState?.moment || null;
 
   const runSocialAction = async (type, payload = null) => {
-    if (socialBusy) return;
+    if (socialBusy) return null;
     setSocialBusy(type);
     try {
-      await onAction?.(type, friendship, payload);
+      return await onAction?.(type, friendship, payload);
     } finally {
       setSocialBusy('');
     }
   };
+
+  const submitReply = async (event) => {
+    event.preventDefault();
+    const text = replyText.trim();
+    if (!text || socialState?.reply || socialBusy) return;
+    const result = await runSocialAction('REPLY', text);
+    if (result?.success) {
+      setReplyText('');
+      setReplyOpen(false);
+    }
+  };
+
+  const partnerCheckinStatus = socialState?.latestPartnerCheckin?.checkinStatus
+    ? String(socialState.latestPartnerCheckin.checkinStatus).toLowerCase().replace('_', ' ')
+    : null;
 
   const shareChaos = async () => {
     if (!activeChaos || chaosShareState === 'PREPARING') return;
@@ -301,6 +327,63 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         </div>
       )}
 
+      {!compact && moment && (
+        <div className={`contract-moment ${moment.status.toLowerCase()}`}>
+          {moment.status === 'BREWING' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Hot Seat</strong>
+                <span>opens in {formatMomentTime(moment.unlockAt)}</span>
+              </div>
+              <p>Something is brewing. You both have unfinished business.</p>
+            </>
+          )}
+
+          {moment.status === 'OPEN' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Hot Seat</strong>
+                <span>{moment.answered ? 'answer locked' : 'your turn'}</span>
+              </div>
+              <p className="contract-moment-prompt">{moment.prompt}</p>
+              {moment.answered ? (
+                <div className="contract-moment-wait">
+                  <span>You picked <b>{moment.yourAnswer}</b></span>
+                  <small>{moment.partnerAnswered ? 'Revealing…' : `Waiting on ${name}.`}</small>
+                </div>
+              ) : (
+                <div className="contract-moment-options">
+                  {(moment.options || []).map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      disabled={socialBusy === 'MOMENT_RESPONSE'}
+                      onClick={() => runSocialAction('MOMENT_RESPONSE', { momentId: moment.id, value: option })}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {moment.status === 'RESOLVED' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Hot Seat revealed</strong>
+                <span>both answered</span>
+              </div>
+              <p className="contract-moment-prompt">{moment.prompt}</p>
+              <div className="contract-moment-reveal">
+                <span>You <b>{moment.yourAnswer || '—'}</b></span>
+                <span>{name} <b>{moment.partnerAnswer || '—'}</b></span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {!compact && (
         <>
           <div className="contract-actions">
@@ -330,15 +413,23 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
             )}
 
             {!seasonDone && !activeChaos && !partnerBankrupt && (
-              checkedInToday ? (
+              (checkedInToday || socialState?.pokeBackAvailable || socialState?.mutualMenace) ? (
                 <button
                   type="button"
                   className="contract-secondary-action"
-                  disabled={socialBusy === 'POKE' || socialState?.canPoke === false}
+                  disabled={socialBusy === 'POKE' || Boolean(socialState?.mutualMenace) || socialState?.canPoke === false}
                   onClick={() => runSocialAction('POKE')}
                 >
                   <Bell size={16} strokeWidth={1.6} />
-                  {socialBusy === 'POKE' ? 'Poking…' : socialState?.canPoke === false ? 'Poked' : 'Poke'}
+                  {socialBusy === 'POKE'
+                    ? 'Poking…'
+                    : socialState?.mutualMenace
+                      ? 'Mutual menace'
+                      : socialState?.pokeBackAvailable
+                        ? 'Poke back'
+                        : socialState?.canPoke === false
+                          ? 'Poked'
+                          : 'Poke'}
                 </button>
               ) : (
                 <button type="button" className="contract-secondary-action" onClick={() => onAction('VOICE_CHECKIN', friendship)}>
@@ -362,23 +453,61 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
           </div>
 
           {!seasonDone && socialState?.latestPartnerCheckin && (
-            <div className="contract-reaction-row">
-              <span>{name} checked in · react</span>
-              <div className="contract-reactions" aria-label={`React to ${name}'s check-in`}>
-                {reactionOptions.map((reaction) => (
+            <div className="contract-social-thread">
+              <div className="contract-checkin-glimpse">
+                <div>
+                  <strong>{name} checked in{partnerCheckinStatus ? ` · ${partnerCheckinStatus}` : ''}</strong>
+                  {socialState.latestPartnerCheckin.note && <p>“{socialState.latestPartnerCheckin.note}”</p>}
+                </div>
+                {!socialState.reply && (
                   <button
                     type="button"
-                    key={reaction}
-                    className={socialState?.reaction === reaction ? 'active' : ''}
-                    disabled={Boolean(socialBusy)}
-                    onClick={() => runSocialAction('REACT', reaction)}
-                    aria-label={`React ${reaction}`}
-                    aria-pressed={socialState?.reaction === reaction}
+                    className="contract-reply-toggle"
+                    onClick={() => setReplyOpen((value) => !value)}
+                    aria-expanded={replyOpen}
                   >
-                    {reaction}
+                    <MessageCircle size={14} strokeWidth={1.7} />
+                    Reply
                   </button>
-                ))}
+                )}
               </div>
+
+              <div className="contract-social-tools">
+                <div className="contract-reactions" aria-label={`React to ${name}'s check-in`}>
+                  {reactionOptions.map((reaction) => (
+                    <button
+                      type="button"
+                      key={reaction}
+                      className={socialState?.reaction === reaction ? 'active' : ''}
+                      disabled={Boolean(socialBusy)}
+                      onClick={() => runSocialAction('REACT', reaction)}
+                      aria-label={`React ${reaction}`}
+                      aria-pressed={socialState?.reaction === reaction}
+                    >
+                      {reaction}
+                    </button>
+                  ))}
+                </div>
+                {socialState.reply && <span className="contract-reply-sent">You replied “{socialState.reply.text}”</span>}
+              </div>
+
+              {replyOpen && !socialState.reply && (
+                <form className="contract-reply-form" onSubmit={submitReply}>
+                  <input
+                    type="text"
+                    value={replyText}
+                    maxLength={40}
+                    onChange={(event) => setReplyText(event.target.value.slice(0, 40))}
+                    placeholder="one tiny reply…"
+                    aria-label={`Reply to ${name}'s check-in`}
+                    autoComplete="off"
+                  />
+                  <span>{replyText.length}/40</span>
+                  <button type="submit" disabled={!replyText.trim() || socialBusy === 'REPLY'} aria-label="Send reply">
+                    <Send size={15} strokeWidth={1.8} />
+                  </button>
+                </form>
+              )}
             </div>
           )}
         </>
