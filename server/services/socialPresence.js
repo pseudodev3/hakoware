@@ -171,7 +171,9 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
 
     const actorId = idString(event.userId);
     const isViewer = actorId === idString(userId);
-    if (!state.latestPartnerCheckin && !isViewer && ['CHECKIN', 'VOICE_CHECKIN'].includes(event.type)) {
+    const seasonStart = friendship.season?.startedAt ? new Date(friendship.season.startedAt) : null;
+    const isCurrentSeasonEvent = !seasonStart || new Date(event.createdAt) >= seasonStart;
+    if (!state.latestPartnerCheckin && !isViewer && isCurrentSeasonEvent && ['CHECKIN', 'VOICE_CHECKIN'].includes(event.type)) {
       state.latestPartnerCheckin = {
         eventId: idString(event._id),
         createdAt: event.createdAt,
