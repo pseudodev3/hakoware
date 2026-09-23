@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const VoiceNote = require('../models/VoiceNote');
 const ContractReaction = require('../models/ContractReaction');
+const ContractMoment = require('../models/ContractMoment');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const {
   refundOpenBountiesForFriendship,
@@ -719,6 +720,7 @@ router.delete('/:id', auth, async (req, res) => {
     });
     await Promise.all([
       ContractReaction.deleteMany({ friendshipId: friendship._id }),
+      ContractMoment.deleteMany({ friendshipId: friendship._id }),
       friendship.deleteOne()
     ]);
     return res.json({ success: true });
