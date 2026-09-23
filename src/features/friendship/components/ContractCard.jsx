@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Flame, Mic, MoreHorizontal, Share2, Trophy } from 'lucide-react';
+import { Bell, Check, Flame, Mic, MoreHorizontal, Share2, Trophy } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { getContractSides } from '../contractState';
 import { shareHakoware } from '../../../lib/share';
@@ -55,8 +55,10 @@ const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
   return lastInteraction > seasonStart;
 };
 
-export const ContractCard = ({ friendship, currentUserId, onAction, compact = false }) => {
+export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, socialState = null }) => {
   const [chaosShareState, setChaosShareState] = useState('');
+  const [socialBusy, setSocialBusy] = useState('');
+  const reactionOptions = ['💀', '🤝', '👀', '😭'];
   const { partner: friend, ownPerspective: perspective, partnerPerspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
   if (!stats || !friend) return null;
@@ -92,6 +94,16 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       : `${partnerPossessive} next check-in gets 2× Duo XP +10. They need to beat the clock.`
     : activeChaos?.description || '';
   const chaosTargetLabel = chaosTargetsCurrentUser ? 'Your move' : `${name}'s move`;
+
+  const runSocialAction = async (type, payload = null) => {
+    if (socialBusy) return;
+    setSocialBusy(type);
+    try {
+      await onAction?.(type, friendship, payload);
+    } finally {
+      setSocialBusy('');
+    }
+  };
 
   const shareChaos = async () => {
     if (!activeChaos || chaosShareState === 'PREPARING') return;
@@ -290,51 +302,86 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       )}
 
       {!compact && (
-        <div className="contract-actions">
-          <button type="button" className="contract-report-link" onClick={() => onAction('RECAP', friendship)}>
-            {seasonDone ? 'Season report' : 'Report'}
-          </button>
-
-          <div className="contract-action-spacer" aria-hidden="true" />
-
-          {!seasonDone && activeChaos && (
-            <button
-              type="button"
-              className="contract-secondary-action"
-              onClick={shareChaos}
-              disabled={chaosShareState === 'PREPARING'}
-            >
-              <Share2 size={16} strokeWidth={1.6} />
-              {chaosShareState === 'PREPARING' ? 'Preparing…' : chaosShareState === 'COPIED' ? 'Copied' : chaosShareState === 'SHARED' ? 'Shared' : 'Share'}
+        <>
+          <div className="contract-actions">
+            <button type="button" className="contract-report-link" onClick={() => onAction('RECAP', friendship)}>
+              {seasonDone ? 'Season report' : 'Report'}
             </button>
+
+            <div className="contract-action-spacer" aria-hidden="true" />
+
+            {!seasonDone && activeChaos && (
+              <button
+                type="button"
+                className="contract-secondary-action"
+                onClick={shareChaos}
+                disabled={chaosShareState === 'PREPARING'}
+              >
+                <Share2 size={16} strokeWidth={1.6} />
+                {chaosShareState === 'PREPARING' ? 'Preparing…' : chaosShareState === 'COPIED' ? 'Copied' : chaosShareState === 'SHARED' ? 'Shared' : 'Share'}
+              </button>
+            )}
+
+            {!seasonDone && !activeChaos && partnerBankrupt && (
+              <button type="button" className="contract-secondary-action danger" onClick={() => onAction('ARENA', friendship)}>
+                <Flame size={16} strokeWidth={1.6} />
+                Arena
+              </button>
+            )}
+
+            {!seasonDone && !activeChaos && !partnerBankrupt && (
+              checkedInToday ? (
+                <button
+                  type="button"
+                  className="contract-secondary-action"
+                  disabled={socialBusy === 'POKE' || socialState?.canPoke === false}
+                  onClick={() => runSocialAction('POKE')}
+                >
+                  <Bell size={16} strokeWidth={1.6} />
+                  {socialBusy === 'POKE' ? 'Poking…' : socialState?.canPoke === false ? 'Poked' : 'Poke'}
+                </button>
+              ) : (
+                <button type="button" className="contract-secondary-action" onClick={() => onAction('VOICE_CHECKIN', friendship)}>
+                  <Mic size={16} strokeWidth={1.6} />
+                  Voice
+                </button>
+              )
+            )}
+
+            {seasonDone ? (
+              <button type="button" className="contract-primary-action" onClick={() => onAction('RECAP', friendship)}>
+                <Trophy size={16} strokeWidth={1.6} />
+                View recap
+              </button>
+            ) : (
+              <button type="button" className="contract-primary-action" disabled={checkedInToday} onClick={() => onAction('CHECKIN', friendship)}>
+                <Check size={16} strokeWidth={1.6} />
+                {checkedInToday ? 'Checked in' : 'Check in'}
+              </button>
+            )}
+          </div>
+
+          {!seasonDone && socialState?.latestPartnerCheckin && (
+            <div className="contract-reaction-row">
+              <span>{name} checked in · react</span>
+              <div className="contract-reactions" aria-label={`React to ${name}'s check-in`}>
+                {reactionOptions.map((reaction) => (
+                  <button
+                    type="button"
+                    key={reaction}
+                    className={socialState?.reaction === reaction ? 'active' : ''}
+                    disabled={Boolean(socialBusy)}
+                    onClick={() => runSocialAction('REACT', reaction)}
+                    aria-label={`React ${reaction}`}
+                    aria-pressed={socialState?.reaction === reaction}
+                  >
+                    {reaction}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
-
-          {!seasonDone && !activeChaos && partnerBankrupt && (
-            <button type="button" className="contract-secondary-action danger" onClick={() => onAction('ARENA', friendship)}>
-              <Flame size={16} strokeWidth={1.6} />
-              Arena
-            </button>
-          )}
-
-          {!seasonDone && !activeChaos && !partnerBankrupt && (
-            <button type="button" className="contract-secondary-action" disabled={checkedInToday} onClick={() => onAction('VOICE_CHECKIN', friendship)}>
-              <Mic size={16} strokeWidth={1.6} />
-              Voice
-            </button>
-          )}
-
-          {seasonDone ? (
-            <button type="button" className="contract-primary-action" onClick={() => onAction('RECAP', friendship)}>
-              <Trophy size={16} strokeWidth={1.6} />
-              View recap
-            </button>
-          ) : (
-            <button type="button" className="contract-primary-action" disabled={checkedInToday} onClick={() => onAction('CHECKIN', friendship)}>
-              <Check size={16} strokeWidth={1.6} />
-              {checkedInToday ? 'Checked in' : 'Check in'}
-            </button>
-          )}
-        </div>
+        </>
       )}
     </article>
   );

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Clock3, Plus, Swords, UserPlus, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { ContractCard } from '../friendship/components/ContractCard';
@@ -42,7 +42,7 @@ const priority = (friendship, userId) => {
 };
 
 
-export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, socialPresence = { pulse: [], contracts: {} }, onPulseSeen }) => {
   const userId = user.uid || user.id || user._id;
   const sorted = [...friendships].sort((a, b) => priority(b, userId) - priority(a, userId));
   const bankruptPartners = friendships.map((friendship) => getBankruptPartner(friendship, userId)).filter(Boolean);
@@ -66,6 +66,21 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     ? `hakoware-season-briefing:${firstSeasonBriefing._id || firstSeasonBriefing.id}:1`
     : null;
   const showSeasonBriefing = Boolean(briefingKey && localStorage.getItem(briefingKey) !== 'seen');
+
+  const pulse = socialPresence?.pulse || [];
+
+  useEffect(() => {
+    if (!pulse.length) return undefined;
+    const timer = window.setTimeout(() => onPulseSeen?.(), 1200);
+    return () => window.clearTimeout(timer);
+  }, [pulse.map((item) => item.id).join('|'), onPulseSeen]);
+
+  const pulseTime = (value) => {
+    const diff = Math.max(0, Date.now() - new Date(value).getTime());
+    if (diff < 60 * 1000) return 'now';
+    if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60000)}m`;
+    return `${Math.floor(diff / 3600000)}h`;
+  };
 
   const dismissSeasonBriefing = () => {
     if (briefingKey) localStorage.setItem(briefingKey, 'seen');
@@ -146,6 +161,24 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </button>
       )}
 
+      {pulse.length > 0 && (
+        <section className="circle-pulse" aria-label="While you were gone">
+          <div className="circle-pulse-heading">
+            <span>While you were gone</span>
+            <small>{pulse.length} new</small>
+          </div>
+          <div className="circle-pulse-list">
+            {pulse.slice(0, 4).map((item) => (
+              <div className={`circle-pulse-row ${item.tone || 'neutral'}`} key={item.id}>
+                <i aria-hidden="true" />
+                <span>{item.text}</span>
+                <time dateTime={item.createdAt}>{pulseTime(item.createdAt)}</time>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="circle-contracts" aria-label={hot.length ? 'Contracts needing attention' : 'Active contracts'}>
         {visible.map((friendship) => (
           <ContractCard
@@ -153,6 +186,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             friendship={friendship}
             currentUserId={userId}
             onAction={onAction}
+            socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
           />
         ))}
       </section>

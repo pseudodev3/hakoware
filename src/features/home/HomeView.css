@@ -13,6 +13,17 @@
 .circle-pending-link strong { color:var(--text-primary); }
 .circle-pending-link:active { transform:scale(.99); }
 .circle-contracts { display:flex; flex-direction:column; gap:12px; }
+.circle-pulse { padding:11px 2px 12px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.circle-pulse-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
+.circle-pulse-heading span { color:var(--text-secondary); font-size:.65rem; font-weight:640; }
+.circle-pulse-heading small { color:var(--text-faint); font-family:var(--font-mono); font-size:.5rem; text-transform:uppercase; letter-spacing:.06em; }
+.circle-pulse-list { display:flex; flex-direction:column; }
+.circle-pulse-row { min-height:32px; display:grid; grid-template-columns:7px minmax(0,1fr) auto; align-items:center; gap:8px; color:var(--text-muted); font-size:.64rem; line-height:1.35; }
+.circle-pulse-row i { width:5px; height:5px; border-radius:50%; background:var(--text-faint); }
+.circle-pulse-row.good i { background:var(--aura-green); }
+.circle-pulse-row.gold i { background:var(--aura-gold); }
+.circle-pulse-row.danger i { background:var(--aura-red); }
+.circle-pulse-row time { color:var(--text-faint); font-family:var(--font-mono); font-size:.5rem; }
 .circle-season-briefing { margin:5px 2px 0; padding:14px 0 0; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; border-top:1px solid var(--border-subtle); }
 .circle-season-briefing > div { min-width:0; }
 .circle-season-briefing span { color:var(--aura-green); font-family:var(--font-mono); font-size:.51rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }

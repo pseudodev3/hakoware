@@ -3,7 +3,7 @@ import { AlertTriangle, Check, Clock3, ShieldCheck, Sparkles, Target } from 'luc
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
-import { getContractBounty } from '../../../services/bountyService';
+import { getContractBounty, peekContractBounty } from '../../../services/bountyService';
 import { useDebt } from '../../../hooks/useDebt';
 import './CheckinModal.css';
 
@@ -21,19 +21,30 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   useEffect(() => {
     let active = true;
     const loadBounty = async () => {
-      if (!isOpen || !friendship) {
+      const friendshipId = friendship?._id || friendship?.id;
+      if (!isOpen || !friendshipId) {
         setBounty(null);
         setBountySyncError(false);
         setBountyLoading(false);
         return;
       }
-      setBountyLoading(true);
+
+      const cached = peekContractBounty(friendshipId);
+      const hasWarmState = cached !== undefined;
+
+      if (hasWarmState) {
+        setBounty(cached || null);
+        setBountyLoading(false);
+      } else {
+        setBountyLoading(true);
+      }
       setBountySyncError(false);
+
       try {
-        const result = await getContractBounty(friendship._id || friendship.id);
+        const result = await getContractBounty(friendshipId, { force: hasWarmState });
         if (active) setBounty(result || null);
       } catch {
-        if (active) {
+        if (active && !hasWarmState) {
           setBounty(null);
           setBountySyncError(true);
         }
@@ -41,7 +52,8 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
         if (active) setBountyLoading(false);
       }
     };
-    loadBounty();
+
+    void loadBounty();
     return () => { active = false; };
   }, [isOpen, friendship?._id, friendship?.id]);
 
@@ -80,6 +92,13 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
       onClose?.();
     } else {
       showToast?.(result.error || 'Could not check in', 'ERROR');
+      try {
+        const refreshedBounty = await getContractBounty(friendship._id || friendship.id, { force: true });
+        setBounty(refreshedBounty || null);
+        setBountySyncError(false);
+      } catch {
+        // Keep the current UI state; the server already rejected the unsafe submission.
+      }
     }
     setLoading(false);
   };

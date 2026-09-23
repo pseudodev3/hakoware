@@ -17,7 +17,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {} }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -117,7 +117,15 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
           <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active contracts.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Start one</Button></div>
         ) : (
           <div className="contracts-grid">
-            {orderedFriendships.map((friendship) => <ContractCard key={friendship._id || friendship.id} friendship={friendship} currentUserId={userId} onAction={onAction} />)}
+            {orderedFriendships.map((friendship) => (
+              <ContractCard
+                key={friendship._id || friendship.id}
+                friendship={friendship}
+                currentUserId={userId}
+                onAction={onAction}
+                socialState={socialContracts?.[friendship._id || friendship.id]}
+              />
+            ))}
           </div>
         )}
       </section>

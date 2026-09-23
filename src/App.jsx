@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useAuth } from './contexts/AuthContext';
-import { getContractMeta, getUserFriendships } from './services/friendshipService';
+import {
+  getContractMeta,
+  getSocialPresence,
+  getUserFriendships,
+  pokeContract,
+  reactToLatestCheckin
+} from './services/friendshipService';
 import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
 import { ClaimUsername, Login, Signup } from './features/auth/Auth';
@@ -20,7 +26,7 @@ import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
 import { LegalPage } from './features/legal/LegalPage';
 import { returnToFounderSession } from './services/testLabService';
-import { prefetchWarmTabs } from './services/prefetchService';
+import { prefetchCheckinState, prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
@@ -57,15 +63,48 @@ function MainApp({ showToast }) {
   const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
+  const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
+  const socialSinceRef = useRef(null);
 
   const applyBootstrap = (payload) => {
     if (!payload) return;
     const contracts = payload.contracts || {};
-    setFriendships(contracts.active || []);
+    const activeContracts = contracts.active || [];
+    setFriendships(activeContracts);
+    prefetchCheckinState(activeContracts);
     setPendingReceived(contracts.pendingReceived || []);
     setPendingSent(contracts.pendingSent || []);
     setPendingExternal(contracts.pendingExternal || []);
     if (payload.meta) setContractMeta(payload.meta);
+  };
+
+
+  const socialWindow = () => {
+    const userId = String(user?.uid || user?.id || user?._id || '');
+    const key = `hakoware-pulse-seen:${userId}`;
+    if (!socialSinceRef.current || socialSinceRef.current.userId !== userId) {
+      socialSinceRef.current = {
+        userId,
+        key,
+        since: localStorage.getItem(key) || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      };
+    }
+    return socialSinceRef.current;
+  };
+
+  const loadSocial = async () => {
+    if (!isAuthenticated || !user) return;
+    try {
+      const data = await getSocialPresence(socialWindow().since);
+      setSocialPresence(data || { pulse: [], contracts: {} });
+    } catch (error) {
+      console.error('Could not load social presence:', error);
+    }
+  };
+
+  const markPulseSeen = () => {
+    if (!user) return;
+    localStorage.setItem(socialWindow().key, new Date().toISOString());
   };
 
   const loadData = async () => {
@@ -77,6 +116,7 @@ function MainApp({ showToast }) {
 
       if (refreshed.success) {
         applyBootstrap(refreshed.data);
+        void loadSocial();
         const nextBalance = Number(refreshed.user?.auraBalance ?? oldBalance) || 0;
         if (nextBalance > oldBalance) {
           showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
@@ -90,11 +130,14 @@ function MainApp({ showToast }) {
         getContractMeta()
       ]);
 
-      setFriendships(contracts.active || []);
+      const activeContracts = contracts.active || [];
+      setFriendships(activeContracts);
+      prefetchCheckinState(activeContracts);
       setPendingReceived(contracts.pendingReceived || []);
       setPendingSent(contracts.pendingSent || []);
       setPendingExternal(contracts.pendingExternal || []);
       setContractMeta(meta || { templates: [], worldEvent: null });
+      void loadSocial();
 
       await getUserAura({ force: true }).catch((auraError) => {
         console.error('Fallback Aura sync failed:', auraError);
@@ -117,6 +160,7 @@ function MainApp({ showToast }) {
 
     if (bootstrapData) {
       applyBootstrap(bootstrapData);
+      void loadSocial();
       return prefetchWarmTabs();
     }
 
@@ -124,13 +168,30 @@ function MainApp({ showToast }) {
     return undefined;
   }, [isAuthenticated, bootstrapData?.generatedAt]);
 
-  const handleAction = (type, friendship) => {
+  const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
       setActiveTab('arena');
-      return;
+      return { success: true };
     }
+
+    const friendshipId = friendship?._id || friendship?.id;
+    if (type === 'REACT') {
+      const result = await reactToLatestCheckin(friendshipId, payload);
+      showToast(result.success ? `Reacted ${payload}` : result.error || 'Could not react', result.success ? 'SUCCESS' : 'ERROR');
+      if (result.success) await loadSocial();
+      return result;
+    }
+
+    if (type === 'POKE') {
+      const result = await pokeContract(friendshipId);
+      showToast(result.success ? 'Poked them.' : result.error || 'Could not poke them', result.success ? 'SUCCESS' : 'ERROR');
+      if (result.success) await loadSocial();
+      return result;
+    }
+
     setSelectedFriendship(friendship);
     if (['CHECKIN', 'VOICE_CHECKIN', 'SETTINGS', 'RECAP'].includes(type)) setModalType(type);
+    return { success: true };
   };
 
   const closeModal = () => {
@@ -183,6 +244,8 @@ function MainApp({ showToast }) {
             onAction={handleAction}
             onAddFriend={() => setModalType('ADD_FRIEND')}
             onNavigate={setActiveTab}
+            socialPresence={socialPresence}
+            onPulseSeen={markPulseSeen}
           />
         )}
 
@@ -199,6 +262,7 @@ function MainApp({ showToast }) {
             onRefresh={loadData}
             onNavigate={setActiveTab}
             showToast={showToast}
+            socialContracts={socialPresence.contracts}
           />
         )}
 
