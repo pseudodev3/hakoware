@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
 import { fetchResource, invalidateResource, peekResource } from '../lib/resourceCache';
-import { getBountyMeta, getHunterProfile } from './bountyService';
+import { getBountyMeta, getContractBounty, getHunterProfile } from './bountyService';
 import { getAuraCards, getMyGrudges, getPublicGrudges, getUserAura } from './auraService';
 import { RESOURCE_KEYS } from './bootstrapService';
 
@@ -49,6 +49,30 @@ export const getYouSnapshot = ({ force = false } = {}) => fetchResource(
 
 export const peekYouSnapshot = () => peekResource(RESOURCE_KEYS.you);
 export const invalidateYouSnapshot = () => invalidateResource(RESOURCE_KEYS.you);
+
+
+export const prefetchCheckinState = (friendships = []) => {
+  const ids = [...new Set(
+    (friendships || [])
+      .filter((friendship) => friendship?.status === 'ACTIVE' && friendship?.season?.status !== 'COMPLETE')
+      .map((friendship) => friendship?._id || friendship?.id)
+      .filter(Boolean)
+  )].slice(0, 8);
+
+  if (!ids.length) return () => {};
+
+  const run = () => {
+    void Promise.allSettled(ids.map((friendshipId) => getContractBounty(friendshipId)));
+  };
+
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    const id = window.requestIdleCallback(run, { timeout: 900 });
+    return () => window.cancelIdleCallback?.(id);
+  }
+
+  const id = window.setTimeout(run, 180);
+  return () => window.clearTimeout(id);
+};
 
 export const prefetchWarmTabs = () => {
   const run = () => {
