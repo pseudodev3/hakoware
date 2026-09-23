@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import { invalidateContractBounty } from './bountyService';
 
 export const sendFriendInvitation = async (friendIdentifier, limit, templateId = 'DONT_GHOST') => {
   try {
@@ -35,6 +36,7 @@ export const performCheckin = async (friendshipId, source = 'TEXT', bountyCredit
       bountyDecision,
       voiceNoteId
     });
+    invalidateContractBounty(friendshipId);
     return {
       success: true,
       game: response.game || null,
