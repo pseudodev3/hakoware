@@ -125,7 +125,10 @@ const createBrewingHotSeat = async (friendship, startedByUserId, now = new Date(
     status: { $in: ['BREWING', 'OPEN', 'RESOLVED'] }
   }).sort({ createdAt: -1 });
 
-  if (recent) return refreshMoment(recent, now);
+  if (recent) {
+    if (recent.status === 'RESOLVED') return null;
+    return refreshMoment(recent, now);
+  }
 
   const prompt = randomPrompt();
   const brewMinutes = 15 + Math.floor(Math.random() * 21);
