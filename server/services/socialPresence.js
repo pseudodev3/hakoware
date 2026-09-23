@@ -21,6 +21,13 @@ const SOCIAL_EVENT_TYPES = new Set([
   'HOT_SEAT_OPENED',
   'HOT_SEAT_ANSWERED',
   'HOT_SEAT_REVEALED',
+  'SPLIT_DECISION_BREWING',
+  'SPLIT_DECISION_OPENED',
+  'SPLIT_DECISION_ANSWERED',
+  'SPLIT_DECISION_REVEALED',
+  'DOUBLE_DARE_STARTED',
+  'DOUBLE_DARE_SENT',
+  'DOUBLE_DARE_REVEALED',
   'CHAOS_TRIGGERED',
   'CHAOS_SURVIVED',
   'CHAOS_FAILED',
@@ -51,7 +58,16 @@ const formatPulseEvent = (event, friendship, viewerId) => {
   if (!friendship || !SOCIAL_EVENT_TYPES.has(event.type)) return null;
   const actorId = idString(event.userId);
   const viewer = idString(viewerId);
-  if (['CHECKIN', 'VOICE_CHECKIN', 'POKE', 'CHECKIN_REACTION', 'CHECKIN_REPLY', 'HOT_SEAT_ANSWERED'].includes(event.type) && actorId === viewer) return null;
+  if ([
+    'CHECKIN',
+    'VOICE_CHECKIN',
+    'POKE',
+    'CHECKIN_REACTION',
+    'CHECKIN_REPLY',
+    'HOT_SEAT_ANSWERED',
+    'SPLIT_DECISION_ANSWERED',
+    'DOUBLE_DARE_SENT'
+  ].includes(event.type) && actorId === viewer) return null;
 
   const actor = actorNameFor(event, friendship);
   const partner = partnerNameFor(friendship, viewerId);
@@ -95,6 +111,34 @@ const formatPulseEvent = (event, friendship, viewerId) => {
     case 'HOT_SEAT_REVEALED':
       text = `Hot Seat revealed with ${partner}.`;
       tone = 'good';
+      break;
+    case 'SPLIT_DECISION_BREWING':
+      text = `Split Decision started brewing with ${partner}.`;
+      tone = 'gold';
+      break;
+    case 'SPLIT_DECISION_OPENED':
+      text = `Split Decision is open with ${partner}.`;
+      tone = 'gold';
+      break;
+    case 'SPLIT_DECISION_ANSWERED':
+      text = `${actor} picked a side. Your choice is still open.`;
+      tone = 'gold';
+      break;
+    case 'SPLIT_DECISION_REVEALED':
+      text = `Split Decision resolved with ${partner}.`;
+      tone = 'good';
+      break;
+    case 'DOUBLE_DARE_STARTED':
+      text = `Double Dare started with ${partner}.`;
+      tone = 'gold';
+      break;
+    case 'DOUBLE_DARE_SENT':
+      text = `${actor} sent you a Double Dare.`;
+      tone = 'gold';
+      break;
+    case 'DOUBLE_DARE_REVEALED':
+      text = `Double Dare resolved with ${partner}.`;
+      tone = metadata.outcome === 'Accept' ? 'good' : 'neutral';
       break;
     case 'CHECKIN_REACTION':
       text = `${actor} reacted ${metadata.reaction || '👀'} to a check-in.`;
