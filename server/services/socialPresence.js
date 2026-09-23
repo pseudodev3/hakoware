@@ -205,6 +205,7 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
 
   const ids = active.map((item) => item._id);
   const since = boundedSince(sinceValue);
+  const momentViews = await getMomentViews(userId, active);
   const stateCutoff = new Date(Date.now() - Math.max(REACTION_WINDOW_MS, POKE_COOLDOWN_MS));
   const events = await ContractEvent.find({
     friendshipId: { $in: ids },
@@ -294,7 +295,6 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
       && state.canPoke;
   });
 
-  const momentViews = await getMomentViews(userId, active);
   Object.entries(momentViews).forEach(([friendshipId, moment]) => {
     if (contractState[friendshipId]) contractState[friendshipId].moment = moment;
   });
