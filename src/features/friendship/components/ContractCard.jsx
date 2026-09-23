@@ -413,7 +413,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
             )}
 
             {!seasonDone && !activeChaos && !partnerBankrupt && (
-              checkedInToday ? (
+              (checkedInToday || socialState?.pokeBackAvailable || socialState?.mutualMenace) ? (
                 <button
                   type="button"
                   className="contract-secondary-action"
