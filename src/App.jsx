@@ -206,7 +206,9 @@ function MainApp({ showToast }) {
       const result = await pokeContract(friendshipId);
       const pokeMessage = result.success
         ? result.mutualMenace
-          ? 'Mutual Menace. Something woke up.'
+          ? result.hotSeat
+            ? 'Mutual Menace. Something woke up.'
+            : 'Mutual Menace.'
           : 'Poked them.'
         : result.error || 'Could not poke them';
       showToast(pokeMessage, result.success ? 'SUCCESS' : 'ERROR');
