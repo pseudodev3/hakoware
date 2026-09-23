@@ -402,6 +402,10 @@ router.post('/:id/checkin', auth, async (req, res) => {
 
     const source = String(req.body.source || 'TEXT').toUpperCase() === 'VOICE' ? 'VOICE' : 'TEXT';
     const voiceNoteId = req.body.voiceNoteId ? String(req.body.voiceNoteId) : null;
+    const allowedCheckinStatuses = new Set(['ALIVE', 'LOCKED_IN', 'BARELY', 'CHAOS']);
+    const rawCheckinStatus = String(req.body.checkinStatus || '').trim().toUpperCase();
+    const checkinStatus = allowedCheckinStatuses.has(rawCheckinStatus) ? rawCheckinStatus : null;
+    const note = String(req.body.note || '').trim().slice(0, 40) || null;
     let pendingVoiceNote = null;
 
     if (source === 'VOICE') {
@@ -467,7 +471,7 @@ router.post('/:id/checkin', auth, async (req, res) => {
       friendship[key].recoveryRequired = false;
     }
 
-    const game = await completeCheckinGame(friendship, req.user.id, source, prepared);
+    const game = await completeCheckinGame(friendship, req.user.id, source, prepared, { checkinStatus, note });
 
     if (pendingVoiceNote) {
       const committedVoice = await VoiceNote.findOneAndUpdate(
@@ -509,11 +513,13 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
     const actorName = actor?.displayName || 'Your contract partner';
+    const statusLabel = checkinStatus ? checkinStatus.toLowerCase().replace('_', ' ') : null;
+    const socialSuffix = `${statusLabel ? ` · ${statusLabel}` : ''}${note ? ` · “${note}”` : ''}`;
     const recoveryMessage = recoveryStarted
-      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP.`
+      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP.${socialSuffix}`
       : recoveryCompleted
-        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP.`
-        : `${actorName} checked in. +${game.xp} Duo XP.`;
+        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP.${socialSuffix}`
+        : `${actorName} checked in. +${game.xp} Duo XP.${socialSuffix}`;
 
     await Notification.create({
       toUserId: otherUserId,
