@@ -751,6 +751,29 @@ The strongest product question is now:
 
 **Does the relationship loop feel fun/tense/shareable enough that one person brings another person in and both keep returning?**
 
+The next retention signal after first mutual check-in is:
+
+**Does either person come back the next day without being manually reminded?**
+
+### Social-presence retention pass
+
+A focused pass adds ambient life between the 20h progression check-ins without changing debt/XP pacing:
+
+- Home can show a restrained **While you were gone** pulse from recent contract events;
+- the pulse is not a generic feed and should stay high-signal / short;
+- players can react to a partner's recent check-in with one of four lightweight reactions: 💀 / 🤝 / 👀 / 😭;
+- reactions are social-only: no Duo XP, Aura, debt, or progression effect;
+- after a player checks in, the ordinary secondary action becomes **Poke** instead of a dead disabled Voice action;
+- pokes are social-only, mutual-contract-only, and limited to one per contract every 4 hours;
+- reactions and pokes create in-app notifications, not urgent transactional email;
+- check-in remains the meaningful once-per-20h progression action.
+
+Product rule:
+
+**one meaningful progression action per day, many tiny social responses throughout the day.**
+
+Do not turn this into chat, followers, a public social feed, or notification spam.
+
 ## 25. Social-safety design rule
 
 Hakoware intentionally uses mischievous mechanics:
