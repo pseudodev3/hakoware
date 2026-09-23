@@ -372,46 +372,67 @@ const getMomentViews = async (userId, friendships) => {
 };
 
 const resolveSharedMoment = async (moment, friendship, userId, answer) => {
-  const viewerId = idString(userId);
-  if ((moment.responses || []).some((item) => idString(item.userId) === viewerId)) {
-    const error = new Error('Your answer is already locked');
-    error.status = 409;
-    throw error;
-  }
-
   if (!(moment.options || []).includes(answer)) {
     const error = new Error(`Choose one of the ${typeLabel(moment.type)} answers`);
     error.status = 400;
     throw error;
   }
 
-  moment.responses.push({ userId, value: answer, answeredAt: new Date() });
+  const answeredAt = new Date();
+  const updated = await ContractMoment.findOneAndUpdate(
+    {
+      _id: moment._id,
+      status: 'OPEN',
+      'responses.userId': { $ne: userId }
+    },
+    {
+      $push: { responses: { userId, value: answer, answeredAt } }
+    },
+    { new: true }
+  );
+
+  if (!updated) {
+    const error = new Error('Your answer is already locked');
+    error.status = 409;
+    throw error;
+  }
+
+  moment = updated;
   const partnerId = partnerIdFor(friendship, userId);
   const actor = await User.findById(userId).select('displayName');
   const prefix = eventPrefix(moment.type);
   const label = typeLabel(moment.type);
 
   if (moment.responses.length >= 2) {
-    moment.status = 'RESOLVED';
-    moment.resolvedAt = new Date();
-    await moment.save();
+    const resolvedAt = new Date();
+    const resolved = await ContractMoment.findOneAndUpdate(
+      {
+        _id: moment._id,
+        status: 'OPEN',
+        'responses.1': { $exists: true }
+      },
+      { $set: { status: 'RESOLVED', resolvedAt } },
+      { new: true }
+    );
 
-    await Promise.all([
-      recordMomentEvent(friendship._id, `${prefix}_REVEALED`, userId, {
-        momentId: String(moment._id),
-        promptId: moment.promptId
-      }).catch(() => null),
-      Notification.create({
-        toUserId: partnerId,
-        fromUserId: userId,
-        type: `${prefix}_REVEALED`,
-        title: `${label} revealed`,
-        message: 'Both choices are in. Go see the reveal.',
-        friendshipId: friendship._id
-      }).catch(() => null)
-    ]);
+    moment = resolved || await ContractMoment.findById(moment._id);
+    if (resolved) {
+      await Promise.all([
+        recordMomentEvent(friendship._id, `${prefix}_REVEALED`, userId, {
+          momentId: String(moment._id),
+          promptId: moment.promptId
+        }).catch(() => null),
+        Notification.create({
+          toUserId: partnerId,
+          fromUserId: userId,
+          type: `${prefix}_REVEALED`,
+          title: `${label} revealed`,
+          message: 'Both choices are in. Go see the reveal.',
+          friendshipId: friendship._id
+        }).catch(() => null)
+      ]);
+    }
   } else {
-    await moment.save();
     await Promise.all([
       recordMomentEvent(friendship._id, `${prefix}_ANSWERED`, userId, {
         momentId: String(moment._id)
@@ -435,15 +456,8 @@ const resolveDoubleDare = async (moment, friendship, userId, answer) => {
   const starterId = idString(moment.startedByUserId);
   const isStarter = viewerId === starterId;
   const starterResponse = (moment.responses || []).find((item) => idString(item.userId) === starterId);
-  const ownResponse = (moment.responses || []).find((item) => idString(item.userId) === viewerId);
   const partnerId = partnerIdFor(friendship, userId);
   const actor = await User.findById(userId).select('displayName');
-
-  if (ownResponse) {
-    const error = new Error(isStarter ? 'You already sent this dare' : 'You already answered this dare');
-    error.status = 409;
-    throw error;
-  }
 
   if (!starterResponse) {
     if (!isStarter) {
@@ -457,10 +471,30 @@ const resolveDoubleDare = async (moment, friendship, userId, answer) => {
       throw error;
     }
 
-    moment.responses.push({ userId, value: answer, answeredAt: new Date() });
-    moment.metadata = { ...(moment.metadata || {}), stage: 'SENT', dare: answer };
-    await moment.save();
+    const updated = await ContractMoment.findOneAndUpdate(
+      {
+        _id: moment._id,
+        status: 'OPEN',
+        startedByUserId: userId,
+        'responses.userId': { $ne: userId }
+      },
+      {
+        $push: { responses: { userId, value: answer, answeredAt: new Date() } },
+        $set: {
+          'metadata.stage': 'SENT',
+          'metadata.dare': answer
+        }
+      },
+      { new: true }
+    );
 
+    if (!updated) {
+      const error = new Error('You already sent this dare');
+      error.status = 409;
+      throw error;
+    }
+
+    moment = updated;
     await Promise.all([
       recordMomentEvent(friendship._id, 'DOUBLE_DARE_SENT', userId, {
         momentId: String(moment._id),
@@ -491,12 +525,35 @@ const resolveDoubleDare = async (moment, friendship, userId, answer) => {
     throw error;
   }
 
-  moment.responses.push({ userId, value: answer, answeredAt: new Date() });
-  moment.status = 'RESOLVED';
-  moment.resolvedAt = new Date();
-  moment.metadata = { ...(moment.metadata || {}), stage: 'RESOLVED', outcome: answer };
-  await moment.save();
+  const resolvedAt = new Date();
+  const resolved = await ContractMoment.findOneAndUpdate(
+    {
+      _id: moment._id,
+      status: 'OPEN',
+      $and: [
+        { 'responses.userId': moment.startedByUserId },
+        { 'responses.userId': { $ne: userId } }
+      ]
+    },
+    {
+      $push: { responses: { userId, value: answer, answeredAt: resolvedAt } },
+      $set: {
+        status: 'RESOLVED',
+        resolvedAt,
+        'metadata.stage': 'RESOLVED',
+        'metadata.outcome': answer
+      }
+    },
+    { new: true }
+  );
 
+  if (!resolved) {
+    const error = new Error('This dare already moved on');
+    error.status = 409;
+    throw error;
+  }
+
+  moment = resolved;
   const starterUserId = moment.startedByUserId;
   await Promise.all([
     recordMomentEvent(friendship._id, 'DOUBLE_DARE_REVEALED', userId, {
