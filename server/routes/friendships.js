@@ -34,13 +34,17 @@ const { recapView } = require('../services/clientViews');
 const { sendRouteError } = require('../services/httpError');
 const {
   POKE_COOLDOWN_MS,
+  MUTUAL_MENACE_MS,
   REACTIONS,
   REPLY_MAX_LENGTH,
   buildSocialPresence,
   findLatestPartnerCheckin,
   latestOwnPoke,
-  findReplyForCheckin
+  findReplyForCheckin,
+  findRecentPartnerPoke,
+  findRecentMutualPoke
 } = require('../services/socialPresence');
+const { createBrewingHotSeat, respondToMoment } = require('../services/contractMoments');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -204,6 +208,27 @@ router.post('/:id/reply-checkin', auth, async (req, res) => {
   }
 });
 
+router.post('/:id/moments/:momentId/respond', auth, async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const moment = await respondToMoment(
+      friendship,
+      req.user.id,
+      req.params.momentId,
+      req.body.value
+    );
+
+    return res.json({ success: true, moment });
+  } catch (err) {
+    console.error('Respond to contract moment failed:', err.message);
+    return sendRouteError(res, err, 'Could not answer this moment');
+  }
+});
+
 router.post('/:id/poke', auth, async (req, res) => {
   try {
     const friendship = await Friendship.findById(req.params.id);
@@ -213,19 +238,28 @@ router.post('/:id/poke', auth, async (req, res) => {
     }
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
 
-    const lastPoke = await latestOwnPoke(friendship._id, req.user.id);
+    const now = new Date();
+    const [lastPoke, recentPartnerPoke] = await Promise.all([
+      latestOwnPoke(friendship._id, req.user.id),
+      findRecentPartnerPoke(friendship, req.user.id, now)
+    ]);
+
     if (lastPoke) {
       const nextAvailableAt = new Date(new Date(lastPoke.createdAt).getTime() + POKE_COOLDOWN_MS);
-      if (nextAvailableAt > new Date()) {
+      if (nextAvailableAt > now) {
         return res.status(429).json({ msg: 'You already poked them. Give it a little time.', nextAvailableAt });
       }
     }
 
     const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
     const actor = await User.findById(req.user.id).select('displayName');
-    const now = new Date();
+    const existingMutual = recentPartnerPoke
+      ? await findRecentMutualPoke(friendship._id, recentPartnerPoke.createdAt)
+      : null;
+    const mutualTriggered = Boolean(recentPartnerPoke && !existingMutual);
+    const mutualExpiresAt = mutualTriggered ? new Date(now.getTime() + MUTUAL_MENACE_MS) : null;
 
-    await Promise.all([
+    const writes = [
       recordEvent(friendship._id, 'POKE', {
         userId: req.user.id,
         metadata: { targetUserId: String(partnerId) }
@@ -233,16 +267,37 @@ router.post('/:id/poke', auth, async (req, res) => {
       Notification.create({
         toUserId: partnerId,
         fromUserId: req.user.id,
-        type: 'POKE',
-        title: 'Poke',
-        message: `${actor?.displayName || 'Your contract partner'} poked you. Your move.`,
+        type: mutualTriggered ? 'MUTUAL_POKE' : 'POKE',
+        title: mutualTriggered ? 'Mutual Menace' : 'Poke',
+        message: mutualTriggered
+          ? `${actor?.displayName || 'Your contract partner'} poked you back. Mutual Menace is live.`
+          : `${actor?.displayName || 'Your contract partner'} poked you. Your move.`,
         friendshipId: friendship._id
       })
-    ]);
+    ];
+
+    if (mutualTriggered) {
+      writes.push(recordEvent(friendship._id, 'MUTUAL_POKE', {
+        userId: req.user.id,
+        metadata: {
+          partnerPokeEventId: String(recentPartnerPoke._id),
+          expiresAt: mutualExpiresAt
+        }
+      }));
+    }
+
+    await Promise.all(writes);
+
+    let hotSeat = null;
+    if (mutualTriggered) {
+      hotSeat = await createBrewingHotSeat(friendship, req.user.id, now);
+    }
 
     return res.json({
       success: true,
-      nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS)
+      nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS),
+      mutualMenace: mutualTriggered ? { expiresAt: mutualExpiresAt } : null,
+      hotSeat: hotSeat ? { status: hotSeat.status, unlockAt: hotSeat.unlockAt } : null
     });
   } catch (err) {
     console.error('Poke contract failed:', err.message);
