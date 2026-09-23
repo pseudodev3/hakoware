@@ -279,15 +279,7 @@ const respondToMoment = async (friendship, userId, momentId, value) => {
         promptId: moment.promptId
       }).catch(() => null),
       Notification.create({
-        toUserId: friendship.user1,
-        fromUserId: userId,
-        type: 'HOT_SEAT_REVEALED',
-        title: 'Hot Seat revealed',
-        message: 'Both answers are in. Go see what happened.',
-        friendshipId: friendship._id
-      }).catch(() => null),
-      Notification.create({
-        toUserId: friendship.user2,
+        toUserId: partnerId,
         fromUserId: userId,
         type: 'HOT_SEAT_REVEALED',
         title: 'Hot Seat revealed',
