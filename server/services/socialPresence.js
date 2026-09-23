@@ -4,6 +4,7 @@ const ContractReaction = require('../models/ContractReaction');
 const HOUR = 60 * 60 * 1000;
 const POKE_COOLDOWN_MS = 4 * HOUR;
 const REACTION_WINDOW_MS = 36 * HOUR;
+const REPLY_MAX_LENGTH = 40;
 const MAX_PULSE_AGE_MS = 48 * HOUR;
 const REACTIONS = Object.freeze(['💀', '🤝', '👀', '😭']);
 const SOCIAL_EVENT_TYPES = new Set([
@@ -11,6 +12,7 @@ const SOCIAL_EVENT_TYPES = new Set([
   'VOICE_CHECKIN',
   'POKE',
   'CHECKIN_REACTION',
+  'CHECKIN_REPLY',
   'CHAOS_TRIGGERED',
   'CHAOS_SURVIVED',
   'CHAOS_FAILED',
@@ -41,7 +43,7 @@ const formatPulseEvent = (event, friendship, viewerId) => {
   if (!friendship || !SOCIAL_EVENT_TYPES.has(event.type)) return null;
   const actorId = idString(event.userId);
   const viewer = idString(viewerId);
-  if (['CHECKIN', 'VOICE_CHECKIN', 'POKE', 'CHECKIN_REACTION'].includes(event.type) && actorId === viewer) return null;
+  if (['CHECKIN', 'VOICE_CHECKIN', 'POKE', 'CHECKIN_REACTION', 'CHECKIN_REPLY'].includes(event.type) && actorId === viewer) return null;
 
   const actor = actorNameFor(event, friendship);
   const partner = partnerNameFor(friendship, viewerId);
@@ -51,19 +53,27 @@ const formatPulseEvent = (event, friendship, viewerId) => {
 
   switch (event.type) {
     case 'CHECKIN':
-      text = `${actor} checked in.`;
+    case 'VOICE_CHECKIN': {
+      const vibe = metadata.checkinStatus
+        ? ` · ${String(metadata.checkinStatus).toLowerCase().replace('_', ' ')}`
+        : '';
+      const note = metadata.note ? ` · “${metadata.note}”` : '';
+      text = event.type === 'VOICE_CHECKIN'
+        ? `${actor} sent a voice check-in${vibe}${note}.`
+        : `${actor} checked in${vibe}${note}.`;
       tone = 'good';
       break;
-    case 'VOICE_CHECKIN':
-      text = `${actor} sent a voice check-in.`;
-      tone = 'good';
-      break;
+    }
     case 'POKE':
       text = `${actor} poked you.`;
       tone = 'gold';
       break;
     case 'CHECKIN_REACTION':
       text = `${actor} reacted ${metadata.reaction || '👀'} to a check-in.`;
+      tone = 'gold';
+      break;
+    case 'CHECKIN_REPLY':
+      text = `${actor} replied “${metadata.text || ''}”`;
       tone = 'gold';
       break;
     case 'CHAOS_TRIGGERED':
@@ -138,6 +148,13 @@ const latestOwnPoke = async (friendshipId, userId) => ContractEvent.findOne({
   type: 'POKE'
 }).sort({ createdAt: -1 }).lean();
 
+const findReplyForCheckin = async (friendshipId, checkinEventId, userId) => ContractEvent.findOne({
+  friendshipId,
+  userId,
+  type: 'CHECKIN_REPLY',
+  'metadata.checkinEventId': String(checkinEventId)
+}).sort({ createdAt: -1 }).lean();
+
 const buildSocialPresence = async (userId, friendships, sinceValue) => {
   const active = friendships.filter((item) => item.status === 'ACTIVE');
   if (!active.length) return { pulse: [], contracts: {} };
@@ -157,6 +174,7 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
   const contractState = Object.fromEntries(active.map((item) => [idString(item._id), {
     latestPartnerCheckin: null,
     reaction: null,
+    reply: null,
     canPoke: true,
     pokeAvailableAt: null,
     lastPokeFromPartnerAt: null
@@ -177,7 +195,9 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
       state.latestPartnerCheckin = {
         eventId: idString(event._id),
         createdAt: event.createdAt,
-        source: event.type === 'VOICE_CHECKIN' ? 'VOICE' : 'TEXT'
+        source: event.type === 'VOICE_CHECKIN' ? 'VOICE' : 'TEXT',
+        checkinStatus: event.metadata?.checkinStatus || null,
+        note: event.metadata?.note || null
       };
       partnerCheckinIds.push(event._id);
     }
@@ -206,6 +226,21 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     });
   }
 
+  const ownReplies = events.filter((event) => (
+    event.type === 'CHECKIN_REPLY' && idString(event.userId) === idString(userId)
+  ));
+  Object.values(contractState).forEach((state) => {
+    const eventId = state.latestPartnerCheckin?.eventId;
+    if (!eventId) return;
+    const reply = ownReplies.find((item) => String(item.metadata?.checkinEventId || '') === eventId);
+    if (reply) {
+      state.reply = {
+        text: reply.metadata?.text || '',
+        createdAt: reply.createdAt
+      };
+    }
+  });
+
   const pulse = events
     .filter((event) => new Date(event.createdAt) >= since)
     .map((event) => formatPulseEvent(event, friendshipById.get(idString(event.friendshipId)), userId))
@@ -218,7 +253,9 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
 module.exports = {
   POKE_COOLDOWN_MS,
   REACTIONS,
+  REPLY_MAX_LENGTH,
   buildSocialPresence,
   findLatestPartnerCheckin,
-  latestOwnPoke
+  latestOwnPoke,
+  findReplyForCheckin
 };
