@@ -315,6 +315,21 @@
   text-align:left;
 }
 .contract-moment-options button:disabled { opacity:.42; }
+.contract-moment-options.long { grid-template-columns:1fr; }
+.contract-moment-options.long button {
+  min-height:40px;
+  line-height:1.35;
+}
+.contract-moment-options.decision { grid-template-columns:1fr 1fr; }
+.contract-moment-dare {
+  margin-top:7px !important;
+  padding-left:10px;
+  color:var(--text-secondary) !important;
+  border-left:2px solid color-mix(in srgb,var(--aura-gold) 42%,transparent);
+  font-size:.66rem !important;
+  font-weight:610;
+  line-height:1.45 !important;
+}
 .contract-moment-wait,
 .contract-moment-reveal {
   margin-top:8px;
