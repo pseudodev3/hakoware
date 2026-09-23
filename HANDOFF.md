@@ -767,6 +767,8 @@ A focused pass adds ambient life between the 20h progression check-ins without c
 - pokes are social-only, mutual-contract-only, and limited to one per contract every 4 hours;
 - reactions and pokes create in-app notifications, not urgent transactional email;
 - check-in remains the meaningful once-per-20h progression action.
+- active-contract bounty/pressure state is warmed in the background after contract sync so opening Check in should not normally block on “Syncing Arena…”;
+- the check-in modal consumes cached verification immediately, then quietly revalidates; the server remains authoritative if Arena state changes before submission.
 
 Product rule:
 
