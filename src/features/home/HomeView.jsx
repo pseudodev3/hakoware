@@ -31,10 +31,14 @@ const WORLD_RULE_COPY = {
   ANOMALY_SEASON: 'Chaos cycles faster'
 };
 
-const priority = (friendship, userId) => {
+const priority = (friendship, userId, socialContracts = {}) => {
+  const social = socialContracts?.[friendship._id || friendship.id];
   if (getBankruptPartner(friendship, userId)) return 60000;
   if (friendship.chaos?.activeEvent) return 50000;
+  if (social?.moment?.status === 'OPEN') return 46000;
+  if (social?.mutualMenace) return 44000;
   if (friendship.season?.status === 'COMPLETE') return 40000;
+  if (social?.moment?.status === 'BREWING') return 1500;
   const state = contractState(friendship, userId);
   if (state.debt > 0) return 10000 + state.debt * 100 + state.daysMissed;
   if (state.daysLeft <= 1) return 1000 + (1 - state.daysLeft) * 10;
@@ -44,11 +48,19 @@ const priority = (friendship, userId) => {
 
 export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, socialPresence = { pulse: [], contracts: {} }, onPulseSeen }) => {
   const userId = user.uid || user.id || user._id;
-  const sorted = [...friendships].sort((a, b) => priority(b, userId) - priority(a, userId));
+  const socialContracts = socialPresence?.contracts || {};
+  const sorted = [...friendships].sort((a, b) => priority(b, userId, socialContracts) - priority(a, userId, socialContracts));
   const bankruptPartners = friendships.map((friendship) => getBankruptPartner(friendship, userId)).filter(Boolean);
   const hot = sorted.filter((friendship) => {
     const state = contractState(friendship, userId);
-    return getBankruptPartner(friendship, userId) || friendship.chaos?.activeEvent || friendship.season?.status === 'COMPLETE' || state.debt > 0 || state.daysLeft <= 1;
+    const social = socialContracts?.[friendship._id || friendship.id];
+    return getBankruptPartner(friendship, userId)
+      || friendship.chaos?.activeEvent
+      || social?.moment?.status === 'OPEN'
+      || Boolean(social?.mutualMenace)
+      || friendship.season?.status === 'COMPLETE'
+      || state.debt > 0
+      || state.daysLeft <= 1;
   });
   const visible = (hot.length ? hot : sorted).slice(0, 3);
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
