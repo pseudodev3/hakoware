@@ -54,3 +54,27 @@ export const respondToInvitation = async (friendshipId, action) => {
     return { success: false, error: error.message };
   }
 };
+
+
+export const getSocialPresence = async (since) => {
+  const query = since ? `?since=${encodeURIComponent(since)}` : '';
+  return api.get(`/friendships/social${query}`);
+};
+
+export const reactToLatestCheckin = async (friendshipId, reaction) => {
+  try {
+    const response = await api.post(`/friendships/${friendshipId}/react-checkin`, { reaction });
+    return { success: true, ...response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const pokeContract = async (friendshipId) => {
+  try {
+    const response = await api.post(`/friendships/${friendshipId}/poke`);
+    return { success: true, ...response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
