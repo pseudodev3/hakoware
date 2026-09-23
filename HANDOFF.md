@@ -782,12 +782,14 @@ The next retention pass should be understood as **unfinished business**, not ext
 - two reciprocal pokes within 2h create **Mutual Menace** for 3h;
 - Mutual Menace can wake a timed **Hot Seat** moment;
 - Hot Seat brews for 15–35 minutes, then opens for 12h;
+- a dedicated backend moment worker advances brewing/open timers every ~60s by default, so Hot Seat evolves while both players are away;
 - each person answers independently and answers stay hidden until both are locked;
 - the resolved reveal remains visible on the contract for 6h;
 - Hot Seat prompts should be socially spicy / revealing, but non-explicit and safe for a general-audience relationship product;
 - timed moments are scoped to the current season and removed when the contract ends;
 - Home prioritizes open Hot Seat / Mutual Menace states above ordinary clear contracts;
-- social presence revalidates every minute while the app is foregrounded and immediately when the app becomes visible again.
+- when Hot Seat opens, the worker creates in-app notifications for both players;
+- social presence also revalidates every minute while the app is foregrounded and immediately when the app becomes visible again.
 
 Retention rule:
 
