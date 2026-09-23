@@ -26,7 +26,7 @@ import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
 import { LegalPage } from './features/legal/LegalPage';
 import { returnToFounderSession } from './services/testLabService';
-import { prefetchWarmTabs } from './services/prefetchService';
+import { prefetchCheckinState, prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
@@ -69,7 +69,9 @@ function MainApp({ showToast }) {
   const applyBootstrap = (payload) => {
     if (!payload) return;
     const contracts = payload.contracts || {};
-    setFriendships(contracts.active || []);
+    const activeContracts = contracts.active || [];
+    setFriendships(activeContracts);
+    prefetchCheckinState(activeContracts);
     setPendingReceived(contracts.pendingReceived || []);
     setPendingSent(contracts.pendingSent || []);
     setPendingExternal(contracts.pendingExternal || []);
@@ -128,7 +130,9 @@ function MainApp({ showToast }) {
         getContractMeta()
       ]);
 
-      setFriendships(contracts.active || []);
+      const activeContracts = contracts.active || [];
+      setFriendships(activeContracts);
+      prefetchCheckinState(activeContracts);
       setPendingReceived(contracts.pendingReceived || []);
       setPendingSent(contracts.pendingSent || []);
       setPendingExternal(contracts.pendingExternal || []);
