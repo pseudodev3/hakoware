@@ -143,7 +143,7 @@ const createBrewingHotSeat = async (friendship, startedByUserId, now = new Date(
     responses: [],
     unlockAt,
     expiresAt,
-    metadata: { trigger: 'MUTUAL_POKE' }
+    metadata: { trigger: 'MUTUAL_POKE', season: Number(friendship.season?.number) || 1 }
   });
 
   await recordMomentEvent(friendship._id, 'HOT_SEAT_BREWING', startedByUserId, {
@@ -223,6 +223,9 @@ const getMomentViews = async (userId, friendships) => {
     if (views[friendshipId]) continue;
     const friendship = friendshipById.get(friendshipId);
     if (!friendship) continue;
+    const momentSeason = Number(moment.metadata?.season) || 1;
+    const currentSeason = Number(friendship.season?.number) || 1;
+    if (momentSeason !== currentSeason) continue;
     views[friendshipId] = momentView(moment, friendship, userId);
   }
   return views;
