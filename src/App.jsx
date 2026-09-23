@@ -225,7 +225,12 @@ function MainApp({ showToast }) {
 
     if (type === 'MOMENT_RESPONSE') {
       const result = await respondToContractMoment(friendshipId, payload?.momentId, payload?.value);
-      showToast(result.success ? 'Answer locked.' : result.error || 'Could not answer', result.success ? 'SUCCESS' : 'ERROR');
+      const message = result.success
+        ? result.moment?.status === 'RESOLVED'
+          ? 'Hot Seat revealed.'
+          : 'Answer locked. Waiting on them.'
+        : result.error || 'Could not answer';
+      showToast(message, result.success ? 'SUCCESS' : 'ERROR');
       if (result.success) await loadSocial();
       return result;
     }
