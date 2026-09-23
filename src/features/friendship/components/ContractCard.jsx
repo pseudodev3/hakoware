@@ -40,6 +40,14 @@ const formatTimeLeft = (date) => {
   return `${Math.ceil(hours / 24)}d left`;
 };
 
+const formatMomentTime = (date) => {
+  const remaining = new Date(date).getTime() - Date.now();
+  if (remaining <= 0) return 'now';
+  const minutes = Math.ceil(remaining / 60000);
+  if (minutes < 60) return `${minutes}m`;
+  return `${Math.ceil(minutes / 60)}h`;
+};
+
 const normalStateDetail = (status) => {
   if (status.label === 'Clear') return 'You are both on track.';
   if (status.label === 'Due soon') return 'The check-in window is getting tight.';
@@ -96,6 +104,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       : `${partnerPossessive} next check-in gets 2× Duo XP +10. They need to beat the clock.`
     : activeChaos?.description || '';
   const chaosTargetLabel = chaosTargetsCurrentUser ? 'Your move' : `${name}'s move`;
+  const moment = socialState?.moment || null;
 
   const runSocialAction = async (type, payload = null) => {
     if (socialBusy) return null;
@@ -318,6 +327,63 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         </div>
       )}
 
+      {!compact && moment && (
+        <div className={`contract-moment ${moment.status.toLowerCase()}`}>
+          {moment.status === 'BREWING' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Hot Seat</strong>
+                <span>opens in {formatMomentTime(moment.unlockAt)}</span>
+              </div>
+              <p>Something is brewing. You both have unfinished business.</p>
+            </>
+          )}
+
+          {moment.status === 'OPEN' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Hot Seat</strong>
+                <span>{moment.answered ? 'answer locked' : 'your turn'}</span>
+              </div>
+              <p className="contract-moment-prompt">{moment.prompt}</p>
+              {moment.answered ? (
+                <div className="contract-moment-wait">
+                  <span>You picked <b>{moment.yourAnswer}</b></span>
+                  <small>{moment.partnerAnswered ? 'Revealing…' : `Waiting on ${name}.`}</small>
+                </div>
+              ) : (
+                <div className="contract-moment-options">
+                  {(moment.options || []).map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      disabled={socialBusy === 'MOMENT_RESPONSE'}
+                      onClick={() => runSocialAction('MOMENT_RESPONSE', { momentId: moment.id, value: option })}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {moment.status === 'RESOLVED' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Hot Seat revealed</strong>
+                <span>both answered</span>
+              </div>
+              <p className="contract-moment-prompt">{moment.prompt}</p>
+              <div className="contract-moment-reveal">
+                <span>You <b>{moment.yourAnswer || '—'}</b></span>
+                <span>{name} <b>{moment.partnerAnswer || '—'}</b></span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {!compact && (
         <>
           <div className="contract-actions">
@@ -351,11 +417,19 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
                 <button
                   type="button"
                   className="contract-secondary-action"
-                  disabled={socialBusy === 'POKE' || socialState?.canPoke === false}
+                  disabled={socialBusy === 'POKE' || Boolean(socialState?.mutualMenace) || socialState?.canPoke === false}
                   onClick={() => runSocialAction('POKE')}
                 >
                   <Bell size={16} strokeWidth={1.6} />
-                  {socialBusy === 'POKE' ? 'Poking…' : socialState?.canPoke === false ? 'Poked' : 'Poke'}
+                  {socialBusy === 'POKE'
+                    ? 'Poking…'
+                    : socialState?.mutualMenace
+                      ? 'Mutual menace'
+                      : socialState?.pokeBackAvailable
+                        ? 'Poke back'
+                        : socialState?.canPoke === false
+                          ? 'Poked'
+                          : 'Poke'}
                 </button>
               ) : (
                 <button type="button" className="contract-secondary-action" onClick={() => onAction('VOICE_CHECKIN', friendship)}>
