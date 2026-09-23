@@ -259,6 +259,78 @@
   transition:width 150ms var(--ease-out);
 }
 
+.contract-moment {
+  margin-top:13px;
+  padding:10px 0 2px;
+  border-top:1px solid color-mix(in srgb,var(--aura-gold) 16%,var(--border-subtle));
+}
+.contract-moment.brewing { color:var(--text-muted); }
+.contract-moment.open { border-top-color:color-mix(in srgb,var(--aura-gold) 28%,var(--border-subtle)); }
+.contract-moment.resolved { border-top-color:color-mix(in srgb,var(--aura-green) 24%,var(--border-subtle)); }
+.contract-moment-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.contract-moment-head strong {
+  color:var(--aura-gold);
+  font-family:var(--font-mono);
+  font-size:.54rem;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+.contract-moment.resolved .contract-moment-head strong { color:var(--aura-green); }
+.contract-moment-head span {
+  color:var(--text-faint);
+  font-family:var(--font-mono);
+  font-size:.49rem;
+  text-transform:uppercase;
+}
+.contract-moment > p {
+  margin-top:5px;
+  color:var(--text-muted);
+  font-size:.63rem;
+  line-height:1.45;
+}
+.contract-moment .contract-moment-prompt {
+  color:var(--text-secondary);
+  font-size:.68rem;
+  font-weight:610;
+}
+.contract-moment-options {
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.contract-moment-options button {
+  min-height:36px;
+  padding:0 9px;
+  border-radius:9px;
+  color:var(--text-secondary);
+  background:var(--surface-soft);
+  border:1px solid var(--border-subtle);
+  font-size:.6rem;
+  text-align:left;
+}
+.contract-moment-options button:disabled { opacity:.42; }
+.contract-moment-wait,
+.contract-moment-reveal {
+  margin-top:8px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:var(--text-muted);
+  font-size:.6rem;
+}
+.contract-moment-wait small { color:var(--text-faint); }
+.contract-moment-wait b,
+.contract-moment-reveal b { color:var(--text-secondary); font-weight:640; }
+.contract-moment-reveal span { min-width:0; }
+.contract-moment-reveal span:last-child { text-align:right; }
+
 .contract-actions {
   margin-top:15px;
   padding-top:12px;
