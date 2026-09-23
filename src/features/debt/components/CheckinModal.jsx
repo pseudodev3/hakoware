@@ -7,16 +7,31 @@ import { getContractBounty, peekContractBounty } from '../../../services/bountyS
 import { useDebt } from '../../../hooks/useDebt';
 import './CheckinModal.css';
 
+const CHECKIN_STATUSES = [
+  { id: 'ALIVE', label: 'alive' },
+  { id: 'LOCKED_IN', label: 'locked in' },
+  { id: 'BARELY', label: 'barely' },
+  { id: 'CHAOS', label: 'chaos' }
+];
+
 export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRefresh, showToast }) => {
   const [loading, setLoading] = useState(false);
   const [bounty, setBounty] = useState(null);
   const [bountyLoading, setBountyLoading] = useState(false);
   const [bountySyncError, setBountySyncError] = useState(false);
+  const [checkinStatus, setCheckinStatus] = useState('ALIVE');
+  const [note, setNote] = useState('');
   const user1Id = friendship?.user1?._id || friendship?.user1;
   const isUser1 = String(user1Id) === String(currentUserId);
   const perspective = isUser1 ? friendship?.user1Perspective : friendship?.user2Perspective;
   const friend = isUser1 ? friendship?.user2 : friendship?.user1;
   const stats = useDebt(perspective);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setCheckinStatus('ALIVE');
+    setNote('');
+  }, [isOpen, friendship?._id, friendship?.id]);
 
   useEffect(() => {
     let active = true;
@@ -72,7 +87,14 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
     setLoading(true);
     const creditId = creditHunter && pressureReady ? bounty._id : null;
     const bountyDecision = pressureReady ? (creditHunter ? 'CREDIT' : 'ESCAPE') : null;
-    const result = await performCheckin(friendship._id || friendship.id, 'TEXT', creditId, bountyDecision);
+    const result = await performCheckin(
+      friendship._id || friendship.id,
+      'TEXT',
+      creditId,
+      bountyDecision,
+      null,
+      { checkinStatus, note: note.trim() }
+    );
     if (result.success) {
       const xp = result.game?.xp;
       const chaos = result.game?.chaosResolved ? ' · anomaly survived' : '';
@@ -178,6 +200,38 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
         <div className="checkin-meta">
           <div><Clock3 size={15} strokeWidth={1.8} /><span><small>Last check-in</small><strong>{lastInteraction ? lastInteraction.toLocaleDateString() : 'Never'}</strong></span></div>
           <div><span className="grace-dot" /><span><small>Grace</small><strong>{stats.limit} day{stats.limit === 1 ? '' : 's'}</strong></span></div>
+        </div>
+
+        <div className="checkin-social">
+          <div className="checkin-social-heading">
+            <span>How are you showing up?</span>
+            <small>Optional vibe + note</small>
+          </div>
+          <div className="checkin-statuses" role="group" aria-label="Check-in status">
+            {CHECKIN_STATUSES.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={checkinStatus === item.id ? 'active' : ''}
+                onClick={() => setCheckinStatus(item.id)}
+                aria-pressed={checkinStatus === item.id}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <label className="checkin-note-field">
+            <span>tiny note</span>
+            <input
+              type="text"
+              value={note}
+              maxLength={40}
+              onChange={(event) => setNote(event.target.value.slice(0, 40))}
+              placeholder="survived this stupid day 😭"
+              autoComplete="off"
+            />
+            <small>{note.length}/40</small>
+          </label>
         </div>
 
         <p className="checkin-note">
