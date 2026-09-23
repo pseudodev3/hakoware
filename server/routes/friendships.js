@@ -600,7 +600,10 @@ router.delete('/:id', auth, async (req, res) => {
       title: 'Contract ended',
       message: `${actor?.displayName || 'Your contract partner'} ended your contract.`
     });
-    await friendship.deleteOne();
+    await Promise.all([
+      ContractReaction.deleteMany({ friendshipId: friendship._id }),
+      friendship.deleteOne()
+    ]);
     return res.json({ success: true });
   } catch (err) {
     console.error('Delete contract failed:', err.message);
