@@ -2,6 +2,7 @@ const ContractMoment = require('../models/ContractMoment');
 const ContractEvent = require('../models/ContractEvent');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Friendship = require('../models/Friendship');
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -99,11 +100,39 @@ const refreshMoment = async (moment, now = new Date()) => {
   if (moment.status === 'BREWING' && new Date(moment.unlockAt) <= now) {
     moment.status = 'OPEN';
     await moment.save();
-    await recordMomentEvent(moment.friendshipId, 'HOT_SEAT_OPENED', null, {
-      momentId: String(moment._id),
-      promptId: moment.promptId,
-      expiresAt: moment.expiresAt
-    }).catch(() => null);
+
+    const friendship = await Friendship.findById(moment.friendshipId)
+      .select('user1 user2 status')
+      .lean();
+
+    const writes = [
+      recordMomentEvent(moment.friendshipId, 'HOT_SEAT_OPENED', null, {
+        momentId: String(moment._id),
+        promptId: moment.promptId,
+        expiresAt: moment.expiresAt
+      }).catch(() => null)
+    ];
+
+    if (friendship?.status === 'ACTIVE') {
+      writes.push(
+        Notification.create({
+          toUserId: friendship.user1,
+          type: 'HOT_SEAT_OPENED',
+          title: 'Hot Seat is open',
+          message: 'No peeking. Lock your answer before the other person does.',
+          friendshipId: moment.friendshipId
+        }).catch(() => null),
+        Notification.create({
+          toUserId: friendship.user2,
+          type: 'HOT_SEAT_OPENED',
+          title: 'Hot Seat is open',
+          message: 'No peeking. Lock your answer before the other person does.',
+          friendshipId: moment.friendshipId
+        }).catch(() => null)
+      );
+    }
+
+    await Promise.all(writes);
   }
 
   if (moment.status === 'OPEN' && new Date(moment.expiresAt) <= now) {
