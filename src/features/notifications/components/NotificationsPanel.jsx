@@ -143,7 +143,11 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       case NOTIFICATION_TYPES.CHECKIN:
       case NOTIFICATION_TYPES.BOUNTY_REWARD: return 'green';
       case NOTIFICATION_TYPES.CHECKIN_REACTION:
-      case NOTIFICATION_TYPES.POKE: return 'gold';
+      case NOTIFICATION_TYPES.CHECKIN_REPLY:
+      case NOTIFICATION_TYPES.POKE:
+      case NOTIFICATION_TYPES.MUTUAL_POKE:
+      case NOTIFICATION_TYPES.HOT_SEAT_ANSWERED:
+      case NOTIFICATION_TYPES.HOT_SEAT_REVEALED: return 'gold';
       case NOTIFICATION_TYPES.LIMIT_CHANGED:
       case NOTIFICATION_TYPES.BOUNTY_REFUND: return 'gold';
       default: return 'neutral';
