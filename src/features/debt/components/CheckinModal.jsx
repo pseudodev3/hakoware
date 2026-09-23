@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Check, Clock3, ShieldCheck, Sparkles, Target } from 'lucide-react';
+import { AlertTriangle, Check, ShieldCheck, Sparkles, Target } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
@@ -126,6 +126,9 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   };
 
   const lastInteraction = perspective?.lastInteraction ? new Date(perspective.lastInteraction) : null;
+  const lastCheckinLabel = lastInteraction
+    ? lastInteraction.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : 'Never';
   const activeChaos = friendship.chaos?.activeEvent;
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
   const checkinBlocked = bountyLoading || bountySyncError;
@@ -183,23 +186,25 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
         <div className="checkin-state">
           <span className={`checkin-debt ${stats.totalDebt > 0 ? 'has-debt' : ''}`}>{stats.totalDebt}</span>
-          <div>
-            <strong>Current debt</strong>
-            <p>
-              {stats.isBankrupt
-                ? `Recovery starts now. Debt drops to ${stats.limit}; one more clean check-in to stabilize.`
-                : stats.isRecovering
-                  ? 'One more check-in completes recovery.'
-                  : stats.totalDebt > 0
-                    ? 'This clears your debt.'
-                    : 'Inside grace period.'}
-            </p>
+          <div className="checkin-state-body">
+            <div className="checkin-state-copy">
+              <strong>Current debt</strong>
+              <p>
+                {stats.isBankrupt
+                  ? `Recovery starts now. Drops to ${stats.limit}; one clean check-in remains.`
+                  : stats.isRecovering
+                    ? 'One more clean check-in completes recovery.'
+                    : stats.totalDebt > 0
+                      ? 'This check-in clears it.'
+                      : 'Inside grace period.'}
+              </p>
+            </div>
+            <div className="checkin-meta" aria-label={`Last check-in ${lastCheckinLabel}. Grace ${stats.limit} day${stats.limit === 1 ? '' : 's'}.`}>
+              <span><small>Last</small><strong>{lastCheckinLabel}</strong></span>
+              <i aria-hidden="true">·</i>
+              <span><small>Grace</small><strong>{stats.limit}d</strong></span>
+            </div>
           </div>
-        </div>
-
-        <div className="checkin-meta">
-          <div><Clock3 size={15} strokeWidth={1.8} /><span><small>Last check-in</small><strong>{lastInteraction ? lastInteraction.toLocaleDateString() : 'Never'}</strong></span></div>
-          <div><span className="grace-dot" /><span><small>Grace</small><strong>{stats.limit} day{stats.limit === 1 ? '' : 's'}</strong></span></div>
         </div>
 
         <div className="checkin-social">
