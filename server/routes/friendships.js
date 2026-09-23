@@ -7,6 +7,7 @@ const PendingInvite = require('../models/PendingInvite');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const VoiceNote = require('../models/VoiceNote');
+const ContractReaction = require('../models/ContractReaction');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const {
   refundOpenBountiesForFriendship,
@@ -31,6 +32,13 @@ const { ensureActiveGameState, loadContractsForUser } = require('../services/con
 const { normalizeUsername } = require('../services/username');
 const { recapView } = require('../services/clientViews');
 const { sendRouteError } = require('../services/httpError');
+const {
+  POKE_COOLDOWN_MS,
+  REACTIONS,
+  buildSocialPresence,
+  findLatestPartnerCheckin,
+  latestOwnPoke
+} = require('../services/socialPresence');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -67,6 +75,124 @@ const hasCheckedInThisSeason = (friendship, perspective) => {
   if (!(seasonStartedAt > 0)) return lastInteractionAt > 0;
   return lastInteractionAt > seasonStartedAt;
 };
+
+router.get('/social', auth, async (req, res) => {
+  try {
+    const friendships = await Friendship.find({
+      status: 'ACTIVE',
+      $or: [{ user1: req.user.id }, { user2: req.user.id }]
+    }).select('user1 user2 user1DisplayName user2DisplayName status season');
+    return res.json(await buildSocialPresence(req.user.id, friendships, req.query.since));
+  } catch (err) {
+    console.error('Load social presence failed:', err.message);
+    return res.status(500).json({ msg: 'Could not load circle activity' });
+  }
+});
+
+router.post('/:id/react-checkin', auth, async (req, res) => {
+  try {
+    const reaction = String(req.body.reaction || '');
+    if (!REACTIONS.includes(reaction)) return res.status(400).json({ msg: 'Choose a valid reaction' });
+
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const checkin = await findLatestPartnerCheckin(friendship, req.user.id);
+    if (!checkin) return res.status(409).json({ msg: 'There is no recent partner check-in to react to' });
+
+    const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
+    let existing = await ContractReaction.findOne({ checkinEventId: checkin._id, fromUserId: req.user.id });
+    const isNew = !existing;
+
+    if (existing) {
+      existing.reaction = reaction;
+      await existing.save();
+    } else {
+      existing = await ContractReaction.create({
+        friendshipId: friendship._id,
+        checkinEventId: checkin._id,
+        fromUserId: req.user.id,
+        toUserId: partnerId,
+        reaction
+      });
+    }
+
+    if (isNew) {
+      const actor = await User.findById(req.user.id).select('displayName');
+      await Promise.all([
+        recordEvent(friendship._id, 'CHECKIN_REACTION', {
+          userId: req.user.id,
+          metadata: {
+            reaction,
+            targetUserId: String(partnerId),
+            checkinEventId: String(checkin._id)
+          }
+        }),
+        Notification.create({
+          toUserId: partnerId,
+          fromUserId: req.user.id,
+          type: 'CHECKIN_REACTION',
+          title: 'Check-in reaction',
+          message: `${actor?.displayName || 'Your contract partner'} reacted ${reaction} to your check-in.`,
+          friendshipId: friendship._id
+        })
+      ]);
+    }
+
+    return res.json({ success: true, reaction: existing.reaction, checkinAt: checkin.createdAt });
+  } catch (err) {
+    console.error('React to check-in failed:', err.message);
+    return sendRouteError(res, err, 'Could not react to check-in');
+  }
+});
+
+router.post('/:id/poke', auth, async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (friendship.status !== 'ACTIVE' || friendship.season?.status !== 'ACTIVE') {
+      return res.status(400).json({ msg: 'This contract is not active' });
+    }
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const lastPoke = await latestOwnPoke(friendship._id, req.user.id);
+    if (lastPoke) {
+      const nextAvailableAt = new Date(new Date(lastPoke.createdAt).getTime() + POKE_COOLDOWN_MS);
+      if (nextAvailableAt > new Date()) {
+        return res.status(429).json({ msg: 'You already poked them. Give it a little time.', nextAvailableAt });
+      }
+    }
+
+    const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
+    const actor = await User.findById(req.user.id).select('displayName');
+    const now = new Date();
+
+    await Promise.all([
+      recordEvent(friendship._id, 'POKE', {
+        userId: req.user.id,
+        metadata: { targetUserId: String(partnerId) }
+      }),
+      Notification.create({
+        toUserId: partnerId,
+        fromUserId: req.user.id,
+        type: 'POKE',
+        title: 'Poke',
+        message: `${actor?.displayName || 'Your contract partner'} poked you. Your move.`,
+        friendshipId: friendship._id
+      })
+    ]);
+
+    return res.json({
+      success: true,
+      nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS)
+    });
+  } catch (err) {
+    console.error('Poke contract failed:', err.message);
+    return sendRouteError(res, err, 'Could not poke this contract');
+  }
+});
 
 router.get('/meta', auth, (req, res) => {
   res.json({ templates: Object.values(TEMPLATES), worldEvent: getWorldEvent() });
