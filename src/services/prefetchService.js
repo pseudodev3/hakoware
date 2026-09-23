@@ -65,12 +65,7 @@ export const prefetchCheckinState = (friendships = []) => {
     void Promise.allSettled(ids.map((friendshipId) => getContractBounty(friendshipId)));
   };
 
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    const id = window.requestIdleCallback(run, { timeout: 900 });
-    return () => window.cancelIdleCallback?.(id);
-  }
-
-  const id = window.setTimeout(run, 180);
+  const id = window.setTimeout(run, 0);
   return () => window.clearTimeout(id);
 };
 
