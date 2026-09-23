@@ -96,54 +96,73 @@ const recordMomentEvent = (friendshipId, type, userId, metadata = {}) => Contrac
 
 const refreshMoment = async (moment, now = new Date()) => {
   if (!moment) return null;
+  let current = moment;
 
-  if (moment.status === 'BREWING' && new Date(moment.unlockAt) <= now) {
-    moment.status = 'OPEN';
-    await moment.save();
+  if (current.status === 'BREWING' && new Date(current.unlockAt) <= now) {
+    const opened = await ContractMoment.findOneAndUpdate(
+      { _id: current._id, status: 'BREWING', unlockAt: { $lte: now } },
+      { $set: { status: 'OPEN' } },
+      { new: true }
+    );
 
-    const friendship = await Friendship.findById(moment.friendshipId)
-      .select('user1 user2 status')
-      .lean();
+    if (opened) {
+      current = opened;
+      const friendship = await Friendship.findById(current.friendshipId)
+        .select('user1 user2 status')
+        .lean();
 
-    const writes = [
-      recordMomentEvent(moment.friendshipId, 'HOT_SEAT_OPENED', null, {
-        momentId: String(moment._id),
-        promptId: moment.promptId,
-        expiresAt: moment.expiresAt
-      }).catch(() => null)
-    ];
-
-    if (friendship?.status === 'ACTIVE') {
-      writes.push(
-        Notification.create({
-          toUserId: friendship.user1,
-          type: 'HOT_SEAT_OPENED',
-          title: 'Hot Seat is open',
-          message: 'No peeking. Lock your answer before the other person does.',
-          friendshipId: moment.friendshipId
-        }).catch(() => null),
-        Notification.create({
-          toUserId: friendship.user2,
-          type: 'HOT_SEAT_OPENED',
-          title: 'Hot Seat is open',
-          message: 'No peeking. Lock your answer before the other person does.',
-          friendshipId: moment.friendshipId
+      const writes = [
+        recordMomentEvent(current.friendshipId, 'HOT_SEAT_OPENED', null, {
+          momentId: String(current._id),
+          promptId: current.promptId,
+          expiresAt: current.expiresAt
         }).catch(() => null)
-      );
+      ];
+
+      if (friendship?.status === 'ACTIVE') {
+        writes.push(
+          Notification.create({
+            toUserId: friendship.user1,
+            type: 'HOT_SEAT_OPENED',
+            title: 'Hot Seat is open',
+            message: 'No peeking. Lock your answer before the other person does.',
+            friendshipId: current.friendshipId
+          }).catch(() => null),
+          Notification.create({
+            toUserId: friendship.user2,
+            type: 'HOT_SEAT_OPENED',
+            title: 'Hot Seat is open',
+            message: 'No peeking. Lock your answer before the other person does.',
+            friendshipId: current.friendshipId
+          }).catch(() => null)
+        );
+      }
+
+      await Promise.all(writes);
+    } else {
+      current = await ContractMoment.findById(current._id);
+      if (!current) return null;
     }
-
-    await Promise.all(writes);
   }
 
-  if (moment.status === 'OPEN' && new Date(moment.expiresAt) <= now) {
-    moment.status = 'EXPIRED';
-    await moment.save();
-    await recordMomentEvent(moment.friendshipId, 'HOT_SEAT_EXPIRED', null, {
-      momentId: String(moment._id)
-    }).catch(() => null);
+  if (current.status === 'OPEN' && new Date(current.expiresAt) <= now) {
+    const expired = await ContractMoment.findOneAndUpdate(
+      { _id: current._id, status: 'OPEN', expiresAt: { $lte: now } },
+      { $set: { status: 'EXPIRED' } },
+      { new: true }
+    );
+
+    if (expired) {
+      current = expired;
+      await recordMomentEvent(current.friendshipId, 'HOT_SEAT_EXPIRED', null, {
+        momentId: String(current._id)
+      }).catch(() => null);
+    } else {
+      current = await ContractMoment.findById(current._id);
+    }
   }
 
-  return moment;
+  return current;
 };
 
 const createBrewingHotSeat = async (friendship, startedByUserId, now = new Date()) => {
@@ -245,11 +264,11 @@ const getMomentViews = async (userId, friendships) => {
     ]
   }).sort({ createdAt: -1 });
 
-  await Promise.all(moments.map((moment) => refreshMoment(moment, now)));
+  const refreshedMoments = (await Promise.all(moments.map((moment) => refreshMoment(moment, now)))).filter(Boolean);
 
   const friendshipById = new Map(friendships.map((item) => [idString(item._id), item]));
   const views = {};
-  for (const moment of moments) {
+  for (const moment of refreshedMoments) {
     if (moment.status === 'EXPIRED') continue;
     const friendshipId = idString(moment.friendshipId);
     if (views[friendshipId]) continue;
@@ -264,16 +283,16 @@ const getMomentViews = async (userId, friendships) => {
 };
 
 const respondToMoment = async (friendship, userId, momentId, value) => {
-  const moment = await ContractMoment.findOne({ _id: momentId, friendshipId: friendship._id });
+  let moment = await ContractMoment.findOne({ _id: momentId, friendshipId: friendship._id });
   if (!moment) {
     const error = new Error('That moment is gone');
     error.status = 404;
     throw error;
   }
 
-  await refreshMoment(moment);
-  if (moment.status !== 'OPEN') {
-    const error = new Error(moment.status === 'BREWING' ? 'Hot Seat is still brewing' : 'That Hot Seat is closed');
+  moment = await refreshMoment(moment);
+  if (!moment || moment.status !== 'OPEN') {
+    const error = new Error(moment?.status === 'BREWING' ? 'Hot Seat is still brewing' : 'That Hot Seat is closed');
     error.status = 409;
     throw error;
   }
