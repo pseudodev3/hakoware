@@ -161,23 +161,27 @@ const refreshMoment = async (moment, now = new Date()) => {
   return current;
 };
 
-const nextMomentType = async (friendshipId) => {
-  const latest = await ContractMoment.findOne({ friendshipId }).sort({ createdAt: -1 }).select('type').lean();
+const nextMomentType = async (friendshipId, season) => {
+  const latest = await ContractMoment.findOne({
+    friendshipId,
+    'metadata.season': season
+  }).sort({ createdAt: -1 }).select('type').lean();
   if (!latest?.type) return MOMENT_ORDER[0];
   const index = MOMENT_ORDER.indexOf(latest.type);
   return MOMENT_ORDER[(index + 1 + MOMENT_ORDER.length) % MOMENT_ORDER.length];
 };
 
 const createMutualMenaceMoment = async (friendship, startedByUserId, now = new Date()) => {
+  const season = Number(friendship.season?.number) || 1;
   const active = await ContractMoment.findOne({
     friendshipId: friendship._id,
-    status: { $in: ['BREWING', 'OPEN'] }
+    status: { $in: ['BREWING', 'OPEN'] },
+    'metadata.season': season
   }).sort({ createdAt: -1 });
 
   if (active) return refreshMoment(active, now);
 
-  const type = await nextMomentType(friendship._id);
-  const season = Number(friendship.season?.number) || 1;
+  const type = await nextMomentType(friendship._id, season);
 
   if (type === 'DOUBLE_DARE') {
     const expiresAt = new Date(now.getTime() + MOMENT_OPEN_MS);
