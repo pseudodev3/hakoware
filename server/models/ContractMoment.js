@@ -8,7 +8,7 @@ const MomentResponseSchema = new mongoose.Schema({
 
 const ContractMomentSchema = new mongoose.Schema({
   friendshipId: { type: mongoose.Schema.Types.ObjectId, ref: 'Friendship', required: true, index: true },
-  type: { type: String, enum: ['HOT_SEAT'], required: true, index: true },
+  type: { type: String, enum: ['HOT_SEAT', 'SPLIT_DECISION', 'DOUBLE_DARE'], required: true, index: true },
   status: { type: String, enum: ['BREWING', 'OPEN', 'RESOLVED', 'EXPIRED'], default: 'BREWING', index: true },
   startedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   promptId: { type: String, required: true },
