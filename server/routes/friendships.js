@@ -628,10 +628,10 @@ router.post('/:id/checkin', auth, async (req, res) => {
     const statusLabel = checkinStatus ? checkinStatus.toLowerCase().replace('_', ' ') : null;
     const socialSuffix = `${statusLabel ? ` · ${statusLabel}` : ''}${note ? ` · “${note}”` : ''}`;
     const recoveryMessage = recoveryStarted
-      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP.${socialSuffix}`
+      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP${socialSuffix}.`
       : recoveryCompleted
-        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP.${socialSuffix}`
-        : `${actorName} checked in. +${game.xp} Duo XP.${socialSuffix}`;
+        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP${socialSuffix}.`
+        : `${actorName} checked in. +${game.xp} Duo XP${socialSuffix}.`;
 
     await Notification.create({
       toUserId: otherUserId,
