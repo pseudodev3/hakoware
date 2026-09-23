@@ -8,7 +8,8 @@ import {
   getUserFriendships,
   pokeContract,
   reactToLatestCheckin,
-  replyToLatestCheckin
+  replyToLatestCheckin,
+  respondToContractMoment
 } from './services/friendshipService';
 import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
@@ -185,7 +186,12 @@ function MainApp({ showToast }) {
 
     if (type === 'POKE') {
       const result = await pokeContract(friendshipId);
-      showToast(result.success ? 'Poked them.' : result.error || 'Could not poke them', result.success ? 'SUCCESS' : 'ERROR');
+      const pokeMessage = result.success
+        ? result.mutualMenace
+          ? 'Mutual Menace. Something woke up.'
+          : 'Poked them.'
+        : result.error || 'Could not poke them';
+      showToast(pokeMessage, result.success ? 'SUCCESS' : 'ERROR');
       if (result.success) await loadSocial();
       return result;
     }
@@ -193,6 +199,13 @@ function MainApp({ showToast }) {
     if (type === 'REPLY') {
       const result = await replyToLatestCheckin(friendshipId, payload);
       showToast(result.success ? 'Reply sent.' : result.error || 'Could not reply', result.success ? 'SUCCESS' : 'ERROR');
+      if (result.success) await loadSocial();
+      return result;
+    }
+
+    if (type === 'MOMENT_RESPONSE') {
+      const result = await respondToContractMoment(friendshipId, payload?.momentId, payload?.value);
+      showToast(result.success ? 'Answer locked.' : result.error || 'Could not answer', result.success ? 'SUCCESS' : 'ERROR');
       if (result.success) await loadSocial();
       return result;
     }
