@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import { fetchResource, invalidateResource, peekResource } from '../lib/resourceCache';
 
 export const createBounty = async (bountyData) => {
   try {
@@ -11,6 +12,15 @@ export const createBounty = async (bountyData) => {
 
 export const getBountyMeta = () => api.get('/bounties/meta');
 export const getHunterProfile = () => api.get('/bounties/hunter-profile');
-export const getContractBounty = (friendshipId) => api.get(`/bounties/contract/${friendshipId}`);
+const contractBountyKey = (friendshipId) => `contract:bounty:${friendshipId}`;
+
+export const getContractBounty = (friendshipId, { force = false } = {}) => fetchResource(
+  contractBountyKey(friendshipId),
+  () => api.get(`/bounties/contract/${friendshipId}`),
+  { ttl: 12000, force }
+);
+
+export const peekContractBounty = (friendshipId) => peekResource(contractBountyKey(friendshipId));
+export const invalidateContractBounty = (friendshipId) => invalidateResource(contractBountyKey(friendshipId));
 export const huntBounty = (bountyId) => api.post(`/bounties/${bountyId}/hunt`);
 export const sendBountyPressure = (bountyId, moveId) => api.post(`/bounties/${bountyId}/pressure`, { moveId });
