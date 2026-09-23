@@ -146,6 +146,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       case NOTIFICATION_TYPES.CHECKIN_REPLY:
       case NOTIFICATION_TYPES.POKE:
       case NOTIFICATION_TYPES.MUTUAL_POKE:
+      case NOTIFICATION_TYPES.HOT_SEAT_OPENED:
       case NOTIFICATION_TYPES.HOT_SEAT_ANSWERED:
       case NOTIFICATION_TYPES.HOT_SEAT_REVEALED: return 'gold';
       case NOTIFICATION_TYPES.LIMIT_CHANGED:
