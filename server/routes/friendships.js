@@ -35,9 +35,11 @@ const { sendRouteError } = require('../services/httpError');
 const {
   POKE_COOLDOWN_MS,
   REACTIONS,
+  REPLY_MAX_LENGTH,
   buildSocialPresence,
   findLatestPartnerCheckin,
-  latestOwnPoke
+  latestOwnPoke,
+  findReplyForCheckin
 } = require('../services/socialPresence');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -145,6 +147,60 @@ router.post('/:id/react-checkin', auth, async (req, res) => {
   } catch (err) {
     console.error('React to check-in failed:', err.message);
     return sendRouteError(res, err, 'Could not react to check-in');
+  }
+});
+
+router.post('/:id/reply-checkin', auth, async (req, res) => {
+  try {
+    const rawText = String(req.body.text || '').trim();
+    if (!rawText) return res.status(400).json({ msg: 'Write a tiny reply first' });
+    if (rawText.length > REPLY_MAX_LENGTH) {
+      return res.status(400).json({ msg: `Keep replies under ${REPLY_MAX_LENGTH} characters` });
+    }
+
+    const friendship = await Friendship.findById(req.params.id);
+    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
+
+    const checkin = await findLatestPartnerCheckin(friendship, req.user.id);
+    if (!checkin) return res.status(409).json({ msg: 'There is no recent partner check-in to reply to' });
+
+    const existing = await findReplyForCheckin(friendship._id, checkin._id, req.user.id);
+    if (existing) return res.status(409).json({ msg: 'You already replied to this check-in' });
+
+    const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
+    const actor = await User.findById(req.user.id).select('displayName');
+
+    const replyEvent = await recordEvent(friendship._id, 'CHECKIN_REPLY', {
+      userId: req.user.id,
+      metadata: {
+        text: rawText,
+        targetUserId: String(partnerId),
+        checkinEventId: String(checkin._id)
+      }
+    });
+
+    await Notification.create({
+      toUserId: partnerId,
+      fromUserId: req.user.id,
+      type: 'CHECKIN_REPLY',
+      title: 'Check-in reply',
+      message: `${actor?.displayName || 'Your contract partner'} replied “${rawText}”`,
+      friendshipId: friendship._id
+    });
+
+    return res.json({
+      success: true,
+      reply: {
+        id: replyEvent._id,
+        text: rawText,
+        createdAt: replyEvent.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('Reply to check-in failed:', err.message);
+    return sendRouteError(res, err, 'Could not reply to this check-in');
   }
 });
 
