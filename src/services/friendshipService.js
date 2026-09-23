@@ -82,3 +82,13 @@ export const pokeContract = async (friendshipId) => {
     return { success: false, error: error.message };
   }
 };
+
+
+export const replyToLatestCheckin = async (friendshipId, text) => {
+  try {
+    const response = await api.post(`/friendships/${friendshipId}/reply-checkin`, { text });
+    return { success: true, ...response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
