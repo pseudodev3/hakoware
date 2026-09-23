@@ -106,7 +106,10 @@ function MainApp({ showToast }) {
 
   const markPulseSeen = () => {
     if (!user) return;
-    localStorage.setItem(socialWindow().key, new Date().toISOString());
+    const windowState = socialWindow();
+    const seenAt = new Date().toISOString();
+    localStorage.setItem(windowState.key, seenAt);
+    windowState.since = seenAt;
   };
 
   const loadData = async () => {
@@ -169,6 +172,21 @@ function MainApp({ showToast }) {
     void loadData();
     return undefined;
   }, [isAuthenticated, bootstrapData?.generatedAt]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return undefined;
+
+    const refreshSocial = () => {
+      if (document.visibilityState === 'visible') void loadSocial();
+    };
+    const interval = window.setInterval(refreshSocial, 60000);
+    document.addEventListener('visibilitychange', refreshSocial);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshSocial);
+    };
+  }, [isAuthenticated, user?.uid, user?.id, user?._id]);
 
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
