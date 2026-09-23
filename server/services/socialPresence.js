@@ -122,11 +122,13 @@ const boundedSince = (value, now = Date.now()) => {
 const findLatestPartnerCheckin = async (friendship, userId) => {
   const partnerId = idString(friendship.user1) === idString(userId) ? friendship.user2 : friendship.user1;
   const cutoff = new Date(Date.now() - REACTION_WINDOW_MS);
+  const seasonStart = friendship.season?.startedAt ? new Date(friendship.season.startedAt) : cutoff;
+  const earliest = seasonStart > cutoff ? seasonStart : cutoff;
   return ContractEvent.findOne({
     friendshipId: friendship._id,
     userId: partnerId,
     type: { $in: ['CHECKIN', 'VOICE_CHECKIN'] },
-    createdAt: { $gte: cutoff }
+    createdAt: { $gte: earliest }
   }).sort({ createdAt: -1 }).lean();
 };
 
