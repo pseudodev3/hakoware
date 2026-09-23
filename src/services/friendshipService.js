@@ -92,3 +92,13 @@ export const replyToLatestCheckin = async (friendshipId, text) => {
     return { success: false, error: error.message };
   }
 };
+
+
+export const respondToContractMoment = async (friendshipId, momentId, value) => {
+  try {
+    const response = await api.post(`/friendships/${friendshipId}/moments/${momentId}/respond`, { value });
+    return { success: true, ...response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
