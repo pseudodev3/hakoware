@@ -60,6 +60,11 @@ const partnerNameFor = (friendship, userId) => (
 );
 
 const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
+const sampleItems = (items, count) => [...items]
+  .map((value) => ({ value, sort: Math.random() }))
+  .sort((a, b) => a.sort - b.sort)
+  .slice(0, count)
+  .map((item) => item.value);
 
 const recordMomentEvent = (friendshipId, type, userId, metadata = {}) => ContractEvent.create({
   friendshipId,
@@ -192,7 +197,7 @@ const createMutualMenaceMoment = async (friendship, startedByUserId, now = new D
       startedByUserId: startedByUserId || null,
       promptId: 'double-dare',
       promptText: 'Pick one to send.',
-      options: DOUBLE_DARES,
+      options: sampleItems(DOUBLE_DARES, 3),
       responses: [],
       unlockAt: now,
       expiresAt,
