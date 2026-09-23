@@ -45,7 +45,7 @@ const {
   findRecentPartnerPoke,
   findRecentMutualPoke
 } = require('../services/socialPresence');
-const { createBrewingHotSeat, respondToMoment } = require('../services/contractMoments');
+const { createMutualMenaceMoment, respondToMoment } = require('../services/contractMoments');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -289,16 +289,21 @@ router.post('/:id/poke', auth, async (req, res) => {
 
     await Promise.all(writes);
 
-    let hotSeat = null;
+    let moment = null;
     if (mutualTriggered) {
-      hotSeat = await createBrewingHotSeat(friendship, req.user.id, now);
+      moment = await createMutualMenaceMoment(friendship, req.user.id, now);
     }
 
     return res.json({
       success: true,
       nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS),
       mutualMenace: mutualTriggered ? { expiresAt: mutualExpiresAt } : null,
-      hotSeat: hotSeat ? { status: hotSeat.status, unlockAt: hotSeat.unlockAt } : null
+      moment: moment ? {
+        type: moment.type,
+        status: moment.status,
+        unlockAt: moment.unlockAt,
+        expiresAt: moment.expiresAt
+      } : null
     });
   } catch (err) {
     console.error('Poke contract failed:', err.message);

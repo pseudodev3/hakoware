@@ -769,6 +769,7 @@ A focused pass adds ambient life between the 20h progression check-ins without c
 - check-in remains the meaningful once-per-20h progression action.
 - active-contract bounty/pressure state is warmed in the background after contract sync so opening Check in should not normally block on “Syncing Arena…”;
 - the check-in modal consumes cached verification immediately, then quietly revalidates; the server remains authoritative if Arena state changes before submission.
+- mobile check-in state hierarchy is intentionally compact: debt/recovery is one row and Last/Grace are inline metadata; do not restore the tall stacked metadata rows.
 
 ### Open social loops
 
@@ -780,8 +781,11 @@ The next retention pass should be understood as **unfinished business**, not ext
 - reactions remain available alongside the one-shot reply;
 - if a partner pokes you within the mutual window, **Poke back** is available even if your daily check-in is still due;
 - two reciprocal pokes within 2h create **Mutual Menace** for 3h;
-- Mutual Menace can wake a timed **Hot Seat** moment;
-- Hot Seat brews for 15–35 minutes, then opens for 12h;
+- Mutual Menace wakes one timed contract moment; moments rotate per contract in the order **Hot Seat → Split Decision → Double Dare** so each mechanic is actually testable;
+- **Hot Seat** brews for 15–35 minutes, then opens for 12h;
+- **Split Decision** brews for 8–20 minutes, gives both players the same two-way social dilemma, hides both choices until they are locked, then reveals whether the duo landed on the same side or split;
+- **Double Dare** opens immediately for the player who completed Mutual Menace: they choose one safe social dare, the partner later accepts or passes, and the result returns through the contract / social pulse;
+- Double Dare is deliberately one exchange, not a dare thread or chat;
 - a dedicated backend moment worker advances brewing/open timers every ~60s by default, so Hot Seat evolves while both players are away;
 - each person answers independently and answers stay hidden until both are locked;
 - the resolved reveal remains visible on the contract for 6h;

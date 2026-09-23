@@ -204,10 +204,17 @@ function MainApp({ showToast }) {
 
     if (type === 'POKE') {
       const result = await pokeContract(friendshipId);
+      const awakened = result.moment?.type === 'SPLIT_DECISION'
+        ? 'Split Decision woke up.'
+        : result.moment?.type === 'DOUBLE_DARE'
+          ? 'Double Dare woke up.'
+          : result.moment?.type === 'HOT_SEAT'
+            ? 'Hot Seat woke up.'
+            : null;
       const pokeMessage = result.success
         ? result.mutualMenace
-          ? result.hotSeat
-            ? 'Mutual Menace. Something woke up.'
+          ? awakened
+            ? `Mutual Menace. ${awakened}`
             : 'Mutual Menace.'
           : 'Poked them.'
         : result.error || 'Could not poke them';
@@ -225,10 +232,20 @@ function MainApp({ showToast }) {
 
     if (type === 'MOMENT_RESPONSE') {
       const result = await respondToContractMoment(friendshipId, payload?.momentId, payload?.value);
+      const resolvedLabel = result.moment?.type === 'SPLIT_DECISION'
+        ? 'Split Decision revealed.'
+        : result.moment?.type === 'DOUBLE_DARE'
+          ? 'Double Dare resolved.'
+          : 'Hot Seat revealed.';
+      const waitingLabel = result.moment?.type === 'DOUBLE_DARE'
+        ? result.moment?.phase === 'WAITING'
+          ? 'Dare sent. Waiting on them.'
+          : 'Choice locked.'
+        : 'Answer locked. Waiting on them.';
       const message = result.success
         ? result.moment?.status === 'RESOLVED'
-          ? 'Hot Seat revealed.'
-          : 'Answer locked. Waiting on them.'
+          ? resolvedLabel
+          : waitingLabel
         : result.error || 'Could not answer';
       showToast(message, result.success ? 'SUCCESS' : 'ERROR');
       if (result.success) await loadSocial();

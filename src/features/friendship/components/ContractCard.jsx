@@ -105,6 +105,11 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
     : activeChaos?.description || '';
   const chaosTargetLabel = chaosTargetsCurrentUser ? 'Your move' : `${name}'s move`;
   const moment = socialState?.moment || null;
+  const momentTitle = moment?.type === 'SPLIT_DECISION'
+    ? 'Split Decision'
+    : moment?.type === 'DOUBLE_DARE'
+      ? 'Double Dare'
+      : 'Hot Seat';
 
   const runSocialAction = async (type, payload = null) => {
     if (socialBusy) return null;
@@ -328,21 +333,21 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
       )}
 
       {!compact && moment && (
-        <div className={`contract-moment ${moment.status.toLowerCase()}`}>
+        <div className={`contract-moment ${moment.status.toLowerCase()} ${String(moment.type || '').toLowerCase().replaceAll('_', '-')}`}>
           {moment.status === 'BREWING' && (
             <>
               <div className="contract-moment-head">
-                <strong>Hot Seat</strong>
+                <strong>{momentTitle}</strong>
                 <span>opens in {formatMomentTime(moment.unlockAt)}</span>
               </div>
-              <p>Something is brewing. You both have unfinished business.</p>
+              <p>{moment.type === 'SPLIT_DECISION' ? 'A choice is loading for both of you.' : 'Something is brewing. You both have unfinished business.'}</p>
             </>
           )}
 
-          {moment.status === 'OPEN' && (
+          {moment.status === 'OPEN' && moment.type !== 'DOUBLE_DARE' && (
             <>
               <div className="contract-moment-head">
-                <strong>Hot Seat</strong>
+                <strong>{momentTitle}</strong>
                 <span>{moment.answered ? 'answer locked' : 'your turn'}</span>
               </div>
               <p className="contract-moment-prompt">{moment.prompt}</p>
@@ -368,17 +373,73 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
             </>
           )}
 
-          {moment.status === 'RESOLVED' && (
+          {moment.status === 'OPEN' && moment.type === 'DOUBLE_DARE' && (
             <>
               <div className="contract-moment-head">
-                <strong>Hot Seat revealed</strong>
-                <span>both answered</span>
+                <strong>Double Dare</strong>
+                <span>{moment.phase === 'PICK' ? 'pick one' : moment.phase === 'RESPOND' ? 'your move' : 'waiting'}</span>
+              </div>
+              <p className="contract-moment-prompt">{moment.prompt}</p>
+              {moment.dare && <p className="contract-moment-dare">“{moment.dare}”</p>}
+              {moment.phase === 'PICK' && (
+                <div className="contract-moment-options long">
+                  {(moment.options || []).map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      disabled={socialBusy === 'MOMENT_RESPONSE'}
+                      onClick={() => runSocialAction('MOMENT_RESPONSE', { momentId: moment.id, value: option })}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {moment.phase === 'RESPOND' && (
+                <div className="contract-moment-options decision">
+                  {(moment.options || []).map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      disabled={socialBusy === 'MOMENT_RESPONSE'}
+                      onClick={() => runSocialAction('MOMENT_RESPONSE', { momentId: moment.id, value: option })}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {moment.phase === 'WAITING' && moment.dare && (
+                <div className="contract-moment-wait">
+                  <span>Dare sent.</span>
+                  <small>Waiting on {name}.</small>
+                </div>
+              )}
+            </>
+          )}
+
+          {moment.status === 'RESOLVED' && moment.type !== 'DOUBLE_DARE' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>{momentTitle} revealed</strong>
+                <span>{moment.type === 'SPLIT_DECISION' ? (moment.matched ? 'same side' : 'split') : 'both answered'}</span>
               </div>
               <p className="contract-moment-prompt">{moment.prompt}</p>
               <div className="contract-moment-reveal">
                 <span>You <b>{moment.yourAnswer || '—'}</b></span>
                 <span>{name} <b>{moment.partnerAnswer || '—'}</b></span>
               </div>
+            </>
+          )}
+
+          {moment.status === 'RESOLVED' && moment.type === 'DOUBLE_DARE' && (
+            <>
+              <div className="contract-moment-head">
+                <strong>Double Dare resolved</strong>
+                <span>{String(moment.outcome || '').toLowerCase()}</span>
+              </div>
+              {moment.dare && <p className="contract-moment-dare">“{moment.dare}”</p>}
+              <p>{moment.outcome === 'Accept' ? (moment.startedByYou ? `${name} accepted it.` : 'You accepted it.') : (moment.startedByYou ? `${name} passed.` : 'You passed.')}</p>
             </>
           )}
         </div>
