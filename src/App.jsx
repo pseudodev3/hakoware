@@ -7,7 +7,8 @@ import {
   getSocialPresence,
   getUserFriendships,
   pokeContract,
-  reactToLatestCheckin
+  reactToLatestCheckin,
+  replyToLatestCheckin
 } from './services/friendshipService';
 import { getUserAura } from './services/auraService';
 import { Layout } from './shared/components/Layout';
@@ -185,6 +186,13 @@ function MainApp({ showToast }) {
     if (type === 'POKE') {
       const result = await pokeContract(friendshipId);
       showToast(result.success ? 'Poked them.' : result.error || 'Could not poke them', result.success ? 'SUCCESS' : 'ERROR');
+      if (result.success) await loadSocial();
+      return result;
+    }
+
+    if (type === 'REPLY') {
+      const result = await replyToLatestCheckin(friendshipId, payload);
+      showToast(result.success ? 'Reply sent.' : result.error || 'Could not reply', result.success ? 'SUCCESS' : 'ERROR');
       if (result.success) await loadSocial();
       return result;
     }
