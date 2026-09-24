@@ -150,7 +150,7 @@
   z-index: 0;
   overflow: hidden;
   opacity: .96;
-  background-image: url('/landing/hakoware-landing-bg-desktop.webp');
+  background-image: url('/landing/hakoware-landing-bg-desktop.webp?v=2');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -948,7 +948,7 @@
     inset: 0 0 auto;
     height: clamp(780px, 108svh, 980px);
     opacity: .98;
-    background-image: url('/landing/hakoware-landing-bg-mobile.webp');
+    background-image: url('/landing/hakoware-landing-bg-mobile.webp?v=2');
     background-position: center top;
     transform: scale(1.01);
     transform-origin: 50% 26%;
