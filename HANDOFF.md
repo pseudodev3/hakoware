@@ -13,6 +13,16 @@
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
+### Landing atmosphere
+
+- Landing hero uses dedicated atmospheric background assets in `public/landing/`.
+- Desktop: `hakoware-landing-bg-desktop.webp`.
+- Mobile under 760px: `hakoware-landing-bg-mobile.webp` with a tall tunnel composition around the content corridor.
+- Mobile artwork fades before the contract-preview area instead of stretching the portrait image through the entire tall hero.
+- Dark mode shows the artwork at near-full strength; light mode keeps the same art direction at low opacity behind an off-white veil for readability.
+- Motion is a very slow background drift and is disabled under `prefers-reduced-motion`.
+- Do not restore the old synthetic orbit/glow hero background unless replacing the approved artwork intentionally.
+
 ## 1. Product in one sentence
 
 Hakoware is a **social-chaos game built around real relationships and recurring contracts**.
