@@ -110,24 +110,41 @@ const chooseHotSeatPrompt = async (friendshipId, season) => {
       'metadata.season': season
     })
       .sort({ createdAt: -1 })
-      .limit(10)
+      .limit(12)
       .select('promptId')
       .lean(),
     ContractMoment.find({ type: 'HOT_SEAT' })
       .sort({ createdAt: -1 })
-      .limit(16)
-      .select('promptId')
+      .limit(80)
+      .select('promptId createdAt')
       .lean()
   ]);
 
   const contractIds = new Set(contractRecent.map((item) => item.promptId).filter(Boolean));
-  const globalIds = new Set(globalRecent.slice(0, 6).map((item) => item.promptId).filter(Boolean));
+  const globalCooldownIds = new Set(globalRecent.slice(0, 18).map((item) => item.promptId).filter(Boolean));
+  const lastGlobalUse = new Map();
 
-  let candidates = HOT_SEAT_PROMPTS.filter((item) => !contractIds.has(item.id) && !globalIds.has(item.id));
-  if (!candidates.length) candidates = HOT_SEAT_PROMPTS.filter((item) => !contractIds.has(item.id));
-  if (!candidates.length) candidates = HOT_SEAT_PROMPTS;
+  globalRecent.forEach((item, index) => {
+    if (item.promptId && !lastGlobalUse.has(item.promptId)) {
+      lastGlobalUse.set(item.promptId, index);
+    }
+  });
 
-  return randomItem(candidates);
+  let candidates = HOT_SEAT_PROMPTS.filter((item) => !contractIds.has(item.id) && !globalCooldownIds.has(item.id));
+
+  if (!candidates.length) {
+    candidates = HOT_SEAT_PROMPTS.filter((item) => !contractIds.has(item.id));
+  }
+
+  if (!candidates.length) {
+    candidates = HOT_SEAT_PROMPTS;
+  }
+
+  const leastRecentlyUsed = [...candidates]
+    .sort((a, b) => (lastGlobalUse.get(b.id) ?? Number.MAX_SAFE_INTEGER) - (lastGlobalUse.get(a.id) ?? Number.MAX_SAFE_INTEGER))
+    .slice(0, Math.min(8, candidates.length));
+
+  return randomItem(leastRecentlyUsed);
 };
 
 const recordMomentEvent = (friendshipId, type, userId, metadata = {}) => ContractEvent.create({
