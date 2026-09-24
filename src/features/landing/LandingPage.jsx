@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
+import { LANDING_DESKTOP_BG } from './landingDesktopBackground';
 import './LandingPage.css';
 
 const GAME_MODES = [
@@ -102,7 +103,11 @@ export const LandingPage = ({ onEnter }) => {
 
       <main>
         <section className="lp-hero">
-          <div className="lp-hero-grid" aria-hidden="true" />
+          <div
+            className="lp-hero-grid"
+            aria-hidden="true"
+            style={{ '--lp-desktop-bg': `url("${LANDING_DESKTOP_BG}")` }}
+          />
           <div className="lp-hero-shell">
             <div className="lp-hero-copy">
               <div className="lp-season-marker" aria-label="Season system live. Chaos included.">

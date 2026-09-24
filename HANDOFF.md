@@ -15,13 +15,14 @@
 
 ### Landing atmosphere
 
-- Landing hero uses dedicated atmospheric background assets in `public/landing/`.
-- Desktop: `hakoware-landing-bg-desktop.webp`.
-- Mobile under 760px: `hakoware-landing-bg-mobile.webp` with a tall tunnel composition around the content corridor.
+- Landing hero uses the approved moody red / gold / green atmosphere with a deliberately quiet content corridor.
+- Desktop uses the higher-quality bundled artwork exported by `src/features/landing/landingDesktopBackground.js`; do not fall back to the old aggressively compressed desktop WebP for the hero.
+- Desktop hero composition is intentionally calmer than mobile: restrained headline scale, wider copy column, and a smaller floating contract preview so the page reads as a product landing page rather than a poster.
+- Mobile under 760px keeps `public/landing/hakoware-landing-bg-mobile.webp` with the approved tall tunnel composition around the content corridor.
 - Mobile artwork fades before the contract-preview area instead of stretching the portrait image through the entire tall hero.
-- Dark mode shows the artwork at near-full strength; light mode keeps the same art direction at low opacity behind an off-white veil for readability.
+- Dark mode shows the artwork at near-full strength; light mode keeps the same art direction behind a center readability veil.
 - Motion is a very slow background drift and is disabled under `prefers-reduced-motion`.
-- Do not restore the old synthetic orbit/glow hero background unless replacing the approved artwork intentionally.
+- Do not change the approved mobile hero while solving desktop-only composition issues.
 
 ## 1. Product in one sentence
 
