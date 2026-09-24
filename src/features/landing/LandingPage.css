@@ -16,6 +16,21 @@
   --lp-danger-border: rgba(201,78,88,.2);
 }
 
+:root[data-theme='light'] .lp-hero {
+  background: #f4f0e7;
+}
+
+:root[data-theme='light'] .lp-hero-grid {
+  opacity: .24;
+  filter: saturate(.68) contrast(.82);
+}
+
+:root[data-theme='light'] .lp-hero::before {
+  background:
+    radial-gradient(ellipse 58% 72% at 48% 43%, rgba(244,240,231,.42) 0%, rgba(244,240,231,.68) 58%, rgba(244,240,231,.9) 100%),
+    linear-gradient(180deg, rgba(244,240,231,.32), rgba(244,240,231,.74));
+}
+
 .lp-nav {
   position: fixed;
   z-index: 1200;
@@ -109,71 +124,62 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  background: #090a08;
 }
 
 .lp-hero::before {
   content: '';
   position: absolute;
-  top: -28rem;
-  left: 56%;
-  width: 76rem;
-  height: 76rem;
-  transform: translateX(-50%);
-  border-radius: 50%;
+  inset: 0;
+  z-index: 1;
   background:
-    radial-gradient(circle at 50% 46%, var(--aura-gold-glow), transparent 64%),
-    radial-gradient(circle at 36% 64%, color-mix(in srgb, var(--aura-gold-glow) 34%, transparent), transparent 58%);
-  opacity: .54;
+    radial-gradient(ellipse 56% 68% at 48% 43%, rgba(0,0,0,.02) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.24) 100%),
+    linear-gradient(180deg, rgba(0,0,0,.06) 0%, rgba(0,0,0,.02) 58%, rgba(0,0,0,.2) 100%);
   pointer-events: none;
 }
 
 .lp-hero-grid {
   position: absolute;
   inset: 0;
+  z-index: 0;
   overflow: hidden;
   opacity: .96;
-  background:
-    radial-gradient(ellipse 58rem 24rem at -13% -3%, color-mix(in srgb, var(--aura-gold-glow) 26%, transparent) 0 44%, transparent 44.4%),
-    radial-gradient(ellipse 64rem 30rem at 105% 27%, transparent 0 54%, var(--lp-orbit-line) 54.2% 54.35%, transparent 54.55%),
-    radial-gradient(ellipse 58rem 22rem at 92% 30%, transparent 0 64%, color-mix(in srgb, var(--lp-orbit-line) 66%, transparent) 64.2% 64.32%, transparent 64.52%),
-    radial-gradient(ellipse 46rem 18rem at -10% 74%, transparent 0 59%, color-mix(in srgb, var(--lp-orbit-line) 58%, transparent) 59.2% 59.34%, transparent 59.54%),
-    radial-gradient(ellipse 72rem 34rem at 79% 93%, color-mix(in srgb, var(--aura-gold-glow) 15%, transparent) 0 38%, transparent 38.5%);
-  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.92) 70%, transparent 100%);
-  pointer-events: none;
-}
-
-.lp-hero-grid::before,
-.lp-hero-grid::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
+  background-image: url('/landing/hakoware-landing-bg-desktop.webp');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transform: scale(1.015);
+  transform-origin: 50% 44%;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 80%, rgba(0,0,0,.82) 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 80%, rgba(0,0,0,.82) 90%, transparent 100%);
+  animation: lp-atmosphere-drift 22s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
 .lp-hero-grid::before {
-  width: 66rem;
-  height: 24rem;
-  top: -6rem;
-  left: -34rem;
-  transform: rotate(-16deg);
-  border: 1px solid color-mix(in srgb, var(--lp-orbit-line) 78%, transparent);
-  box-shadow:
-    0 0 0 5.5rem color-mix(in srgb, var(--surface-soft) 22%, transparent),
-    0 0 0 11rem color-mix(in srgb, var(--surface-soft) 10%, transparent);
-  opacity: .72;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 48% 62% at 48% 42%, rgba(0,0,0,.03), rgba(0,0,0,.2) 100%),
+    linear-gradient(90deg, rgba(0,0,0,.08), transparent 18%, transparent 82%, rgba(0,0,0,.08));
+  pointer-events: none;
 }
 
 .lp-hero-grid::after {
-  width: 70rem;
-  height: 29rem;
-  right: -37rem;
-  bottom: -9rem;
-  transform: rotate(18deg);
-  border: 1px solid color-mix(in srgb, var(--lp-orbit-line) 64%, transparent);
-  box-shadow:
-    0 0 0 7rem color-mix(in srgb, var(--aura-gold-glow) 10%, transparent),
-    inset 0 0 0 9rem color-mix(in srgb, var(--surface-soft) 14%, transparent);
-  opacity: .64;
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: .08;
+  background-image: radial-gradient(rgba(255,255,255,.32) .45px, transparent .55px);
+  background-size: 5px 5px;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+@keyframes lp-atmosphere-drift {
+  from { transform: scale(1.015) translate3d(0,0,0); }
+  to { transform: scale(1.03) translate3d(0,-5px,0); }
 }
 
 .lp-hero-shell {
@@ -932,9 +938,22 @@
   .lp-brand > div { display: none; }
   .lp-nav-actions .btn-ghost { display: none; }
   .lp-hero { min-height: auto; padding: 108px 16px 68px; }
-  .lp-hero-grid { opacity: .9; }
-  .lp-hero-grid::before { width: 44rem; height: 17rem; top: -4rem; left: -28rem; }
-  .lp-hero-grid::after { width: 47rem; height: 20rem; right: -31rem; bottom: -4rem; }
+  .lp-hero-grid {
+    inset: 0 0 auto;
+    height: clamp(780px, 108svh, 980px);
+    opacity: .98;
+    background-image: url('/landing/hakoware-landing-bg-mobile.webp');
+    background-position: center top;
+    transform: scale(1.01);
+    transform-origin: 50% 26%;
+    mask-image: linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.78) 84%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.78) 84%, transparent 100%);
+  }
+  .lp-hero-grid::before {
+    background:
+      radial-gradient(ellipse 54% 72% at 50% 40%, rgba(0,0,0,.02), rgba(0,0,0,.12) 74%, rgba(0,0,0,.22) 100%),
+      linear-gradient(90deg, rgba(0,0,0,.04), transparent 20%, transparent 80%, rgba(0,0,0,.04));
+  }
   .lp-hero h1 { font-size: clamp(3rem,15vw,4.85rem); }
   .lp-hero-copy > p { margin-top: 22px; font-size: .94rem; }
   .lp-hero-actions { align-items: stretch; flex-direction: column; }
@@ -991,6 +1010,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .lp-hero-grid { animation: none; transform: none; }
   .lp-mode-card:hover,
   .lp-theme-toggle:active { transform: none !important; }
 }
