@@ -790,6 +790,7 @@ The next retention pass should be understood as **unfinished business**, not ext
 - each person answers independently and answers stay hidden until both are locked;
 - the resolved reveal remains visible on the contract for 6h;
 - Hot Seat prompts should be socially spicy / revealing, but non-explicit and safe for a general-audience relationship product;
+- Hot Seat uses a broad prompt bank and anti-repeat selection: avoid the contract's last 12 Hot Seat prompts and the platform's most recent 18 prompt IDs, then bias toward globally least-recently-used prompts; both sides of the same Hot Seat still receive the same prompt by design;
 - timed moments are scoped to the current season and removed when the contract ends;
 - Home prioritizes open Hot Seat / Mutual Menace states above ordinary clear contracts;
 - when Hot Seat opens, the worker creates in-app notifications for both players;
