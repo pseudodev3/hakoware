@@ -21,14 +21,20 @@
 }
 
 :root[data-theme='light'] .lp-hero-grid {
-  opacity: .24;
-  filter: saturate(.68) contrast(.82);
+  opacity: .54;
+  filter: saturate(.78) brightness(1.08) contrast(.9);
 }
 
 :root[data-theme='light'] .lp-hero::before {
   background:
-    radial-gradient(ellipse 58% 72% at 48% 43%, rgba(244,240,231,.42) 0%, rgba(244,240,231,.68) 58%, rgba(244,240,231,.9) 100%),
-    linear-gradient(180deg, rgba(244,240,231,.32), rgba(244,240,231,.74));
+    radial-gradient(
+      ellipse 54% 66% at 50% 42%,
+      rgba(244,240,231,.9) 0%,
+      rgba(244,240,231,.82) 42%,
+      rgba(244,240,231,.46) 68%,
+      rgba(244,240,231,.2) 100%
+    ),
+    linear-gradient(180deg, rgba(244,240,231,.12) 0%, rgba(244,240,231,.06) 70%, rgba(244,240,231,.2) 100%);
 }
 
 .lp-nav {
