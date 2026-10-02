@@ -5,10 +5,9 @@ const AfterHoursActivitySchema = new mongoose.Schema({
   publicId: {
     type: String,
     unique: true,
-    index: true,
     default: () => crypto.randomBytes(12).toString('hex')
   },
-  uniqueKey: { type: String, unique: true, sparse: true, index: true },
+  uniqueKey: { type: String, unique: true, sparse: true },
   scopeKey: { type: String, required: true, index: true },
   roundKey: { type: String, required: true, index: true },
   type: { type: String, enum: ['ANSWER', 'CALLOUT'], required: true, index: true },
@@ -17,7 +16,7 @@ const AfterHoursActivitySchema = new mongoose.Schema({
   promptId: { type: String, required: true },
   promptText: { type: String, required: true, maxlength: 240 },
   choice: { type: String, default: null, maxlength: 100 },
-  createdAt: { type: Date, default: Date.now, index: true }
+  createdAt: { type: Date, default: Date.now }
 }, { versionKey: false });
 
 AfterHoursActivitySchema.index({ scopeKey: 1, createdAt: -1 });
