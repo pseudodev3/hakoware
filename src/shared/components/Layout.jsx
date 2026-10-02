@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Home, LogOut, Moon, Plus, Sun, Swords, Users, UserRound } from 'lucide-react';
+import { Bell, Home, LogOut, Moon, Plus, Radio, Sun, Swords, Users, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -7,6 +7,7 @@ import './Layout.css';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
+  { id: 'afterHours', label: 'After Hours', mobileLabel: 'After', icon: Radio },
   { id: 'contracts', label: 'Contracts', icon: Users },
   { id: 'arena', label: 'Arena', icon: Swords },
   { id: 'you', label: 'You', icon: UserRound }
@@ -48,7 +49,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
               aria-current={activeTab === item.id ? 'page' : undefined}
             >
               <item.icon size={19} strokeWidth={1.8} />
-              <span>{item.label}</span>
+              <span>{item.mobileLabel || item.label}</span>
             </button>
           ))}
         </nav>

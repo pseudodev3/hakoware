@@ -24,6 +24,7 @@ import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal'
 import { LandingPage } from './features/landing/LandingPage';
 import { HomeView } from './features/home/HomeView';
 import { Arena } from './features/arena/components/Arena';
+import { AfterHoursView } from './features/afterHours/AfterHoursView';
 import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
 import { LegalPage } from './features/legal/LegalPage';
@@ -329,6 +330,7 @@ function MainApp({ showToast }) {
           />
         )}
 
+        {activeTab === 'afterHours' && <AfterHoursView user={user} showToast={showToast} />}
         {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
         {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
       </motion.div>

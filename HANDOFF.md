@@ -48,17 +48,45 @@ Do not turn Hakoware into a SaaS dashboard, CRM, habit tracker, or card soup.
 Main tabs:
 
 - Home
+- After Hours
 - Contracts
 - Arena
 - You
+
+### After Hours
+
+After Hours is Hakoware's first public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, or generic chatroom.
+
+Current vertical slice:
+
+- one public live room;
+- only users who enter the room count as present;
+- one coordinated `Pick a Side` prompt is live for everyone at a time;
+- the room event rotates every 10 minutes;
+- people lock one answer per round, then see the room split;
+- structured room feed shows recent answers and call-outs;
+- users can react to other people's answers with the fixed Hakoware reaction set;
+- after picking a side, a user can publicly call out somebody who is currently around and has not answered that round;
+- no unrestricted stranger DMs;
+- no swiping / matching / dating language;
+- no free-form public posting in this first slice;
+- test / Founder Lab users are isolated from the live room;
+- public room payloads use usernames / display names and public activity IDs rather than exposing raw user IDs;
+- room presence expires quickly and old room data is TTL-cleaned.
+
+Product rule:
+
+**The room/activity is the primary object. Strangers are participants inside it, not cards to browse.**
+
+The first question to validate is whether a user with quiet contracts will voluntarily enter After Hours, participate, react/call someone out, and linger or return.
 
 Founder tooling:
 
 - `/founder`
 
-Current product direction is **UX refinement, clarity, interaction quality, and activation** — not adding lots of new mechanics.
+Current product direction remains **clarity, interaction quality, activation, and retention**, with one deliberate expansion: After Hours is being tested as a public stranger-social layer so Hakoware has something alive to enter when existing contracts are quiet.
 
-The user explicitly wants the existing game to feel more understandable and more buttery/smooth before expanding scope.
+Do not respond to retention problems by spraying unrelated mechanics across the product. Expand After Hours only when the live-room behavior earns it.
 
 ## 3. Current visual / interaction direction
 
