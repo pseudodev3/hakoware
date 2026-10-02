@@ -235,9 +235,9 @@ Friction rules added in the social-conversion pass:
 - a brand-new user with no contracts gets two activation paths on Home: **Start a contract** or **After Hours**; do not force “bring a friend first” now that stranger discovery exists;
 - the old three-item onboarding rail is compressed to one short rule line.
 
-### Home contract card variant
+### Compact contract card variant
 
-Home now uses a **reference-style compact horizontal contract card** inspired by the approved visual reference. This treatment is **Home-only**.
+Home and the Contracts page now use the **same reference-style compact horizontal contract card** inspired by the approved visual reference.
 
 Locked anatomy:
 
@@ -253,8 +253,9 @@ Rules:
 - primary/secondary/settings actions are circular icon buttons on desktop and remain compact on mobile;
 - important states such as Chaos, Wanted, bankruptcy, recovery, season completion, or live social moments may add one restrained expansion row;
 - partner check-in reactions/reply stay collapsed until the social action is opened;
-- **do not apply this card skin to After Hours, Arena, You, notifications, or the Contracts management view**;
-- the Contracts page continues using the fuller management card because it is the place for detail/reporting.
+- the display-name sparkle/star has been removed; identity should stay clean and let state/accent carry the visual character;
+- **do not apply this card skin to After Hours, Arena, You, or notifications**;
+- Contracts keeps its surrounding management sections (pending, waiting, summaries), but active contracts use the same compact reference card as Home.
 
 The goal is less copy and faster scanning, not hiding consequential state.
 
