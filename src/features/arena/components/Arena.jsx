@@ -171,7 +171,12 @@ export const Arena = ({ friendships, showToast }) => {
 
               return (
                 <article className={`bounty-item ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''}`} key={bounty._id || bounty.id}>
-                  <div className="bounty-avatar">{bounty.targetName?.[0]?.toUpperCase() || '?'}</div>
+                  <UserAvatar
+                    person={{ displayName: bounty.targetName, avatar: bounty.targetAvatar }}
+                    size="sm"
+                    className="bounty-avatar user-avatar-round"
+                    decorative
+                  />
                   <div className="bounty-copy">
                     <div className="bounty-title-row">
                       <strong>{bounty.targetName}</strong>
