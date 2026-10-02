@@ -98,8 +98,12 @@ app.get('/', (req, res) => res.json({ service: 'hakoware-api', status: 'ok' }));
 app.use((err, req, res, next) => {
   if (err?.message === 'Origin not allowed by CORS') return res.status(403).json({ msg: 'Origin not allowed' });
   if (err instanceof SyntaxError && 'body' in err) return res.status(400).json({ msg: 'Invalid JSON body' });
-  if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ msg: 'Audio file is too large' });
+  if (err?.code === 'LIMIT_FILE_SIZE') {
+    const avatarUpload = String(req.originalUrl || '').includes('/api/users/avatar');
+    return res.status(413).json({ msg: avatarUpload ? 'Avatar image is too large' : 'Audio file is too large' });
+  }
   if (err?.message === 'Only supported audio uploads are allowed') return res.status(415).json({ msg: 'Only supported audio uploads are allowed' });
+  if (err?.message === 'Use a JPG, PNG, or WebP image') return res.status(415).json({ msg: 'Use a JPG, PNG, or WebP image' });
   console.error(err);
   return res.status(500).json({ msg: 'Server error' });
 });
