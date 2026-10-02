@@ -7,8 +7,9 @@
 .circle-first-title h1 { font-size:1.8rem; line-height:1.05; letter-spacing:-.045em; font-weight:680; }
 .circle-first-title p { margin-top:5px; color:var(--text-muted); font-size:.78rem; }
 .circle-first-header > .btn { grid-column:2; grid-row:1; align-self:start; }
-.circle-all-contracts { grid-column:2; grid-row:2; min-height:30px; display:inline-flex; align-items:center; justify-content:flex-end; gap:5px; color:var(--text-secondary); font-size:.69rem; font-weight:580; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.circle-all-contracts:active { transform:scale(.96); }
+.circle-secondary-actions { grid-column:2; grid-row:2; display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+.circle-secondary-actions button { min-height:30px; display:inline-flex; align-items:center; gap:5px; color:var(--text-secondary); font-size:.66rem; font-weight:590; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.circle-secondary-actions button:active { transform:scale(.96); }
 .circle-pending-link { min-height:42px; padding:0 2px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--aura-gold); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); font-size:.71rem; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .circle-pending-link strong { color:var(--text-primary); }
 .circle-pending-link:active { transform:scale(.99); }
@@ -46,12 +47,13 @@
 .first-contract-copy strong { color:var(--text-primary); text-transform:capitalize; }
 .first-contract-actions { display:flex; align-items:center; gap:8px; }
 .pending-count-note { margin-top:14px; color:var(--text-muted); font-size:.68rem; }
+.pending-count-button { padding:0; text-align:left; background:transparent; }
 .onboarding-rail { margin-top:34px; padding-top:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; border-top:1px solid var(--border-subtle); }
 .onboarding-rail span { color:var(--text-muted); font-size:.68rem; line-height:1.5; }
 .onboarding-rail b { display:block; margin-bottom:4px; color:var(--aura-gold); font-family:var(--font-mono); font-size:.6rem; font-weight:600; }
 
 @media (hover:hover) and (pointer:fine) {
-  .circle-all-contracts:hover,.circle-grow button:hover { color:var(--text-primary); }
+  .circle-secondary-actions button:hover,.circle-grow button:hover { color:var(--text-primary); }
   .circle-pending-link:hover { color:var(--aura-gold-strong); }
   .circle-season-briefing button:hover { color:var(--text-primary); background:var(--surface-soft); }
 }
@@ -72,7 +74,8 @@
 @media (max-width:430px) {
   .circle-first-title h1 { font-size:1.67rem; }
   .circle-first-title p { font-size:.74rem; }
-  .circle-all-contracts { font-size:.66rem; }
+  .circle-secondary-actions { gap:8px; }
+  .circle-secondary-actions button { font-size:.63rem; }
   .circle-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .circle-summary .circle-world-rule { grid-column:1 / -1; }
 }
