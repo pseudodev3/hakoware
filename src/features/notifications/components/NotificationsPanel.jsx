@@ -138,6 +138,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       case NOTIFICATION_TYPES.BOUNTY_REWARD: return <Zap size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.BOUNTY_REFUND: return <RotateCcw size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT:
+      case NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN:
       case NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE: return <Radio size={16} strokeWidth={1.8} />;
       default: return <Bell size={16} strokeWidth={1.8} />;
     }
@@ -168,6 +169,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       case NOTIFICATION_TYPES.LIMIT_CHANGED:
       case NOTIFICATION_TYPES.BOUNTY_REFUND:
       case NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT:
+      case NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN:
       case NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE: return 'gold';
       default: return 'neutral';
     }
@@ -279,7 +281,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                           <p className="item-msg">{notification.message}</p>
                         </div>
                         <div className="item-actions">
-                          {[NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT, NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE].includes(notification.type) && (
+                          {[NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT, NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE].includes(notification.type) && (
                             <button
                               className="action-icon"
                               onClick={() => openAfterHours(notification)}
