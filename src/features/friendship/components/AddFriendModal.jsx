@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, AtSign, BookOpen, Check, Clock3, Copy, Dice5, Du
 import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { sendFriendInvitation } from '../../../services/friendshipService';
 import { shareHakoware } from '../../../lib/share';
 import './AddFriendModal.css';
@@ -105,10 +106,10 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     setStepError('');
     const effectiveLimit = selected.id === 'CUSTOM' ? limit : selected.limit;
     const result = await sendFriendInvitation(friendIdentifier, effectiveLimit, selected.id, source);
-    if (result.success && result.inviteReady) {
+    if (result.success && result.inviteReady && result.requiresSignup) {
       setShareInvite({ ...result, modeName: selected.name });
       await onRefresh?.();
-      showToast?.('Contract ready to share', 'SUCCESS');
+      showToast?.('Invite ready to share', 'SUCCESS');
     } else if (result.success) {
       showToast?.(`${selected.name} request sent`, 'SUCCESS');
       reset();
@@ -220,7 +221,14 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           {step === 2 && (
             <section className="contract-step-panel">
               <div className="mode-intro">
-                <div><p className="mode-kicker">{friendIdentifier}</p><strong>Pick a contract.</strong></div>
+                <div className="mode-person">
+                  {prefillPerson && <UserAvatar person={prefillPerson} size="sm" decorative />}
+                  <div>
+                    <p className="mode-kicker">{prefillPerson?.displayName || friendIdentifier}</p>
+                    {prefillPerson?.username && <small>@{prefillPerson.username}</small>}
+                    <strong>Pick a contract.</strong>
+                  </div>
+                </div>
                 <span>Seasons + Duo XP</span>
               </div>
 
