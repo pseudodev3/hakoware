@@ -36,7 +36,7 @@ const usernamesFromContracts = (friendships, ownUsername) => {
   return names;
 };
 
-export const AfterHoursView = ({ user, friendships = [], onStartContract, showToast }) => {
+export const AfterHoursView = ({ user, friendships = [], focusActivityId = null, onFocusHandled, onStartContract, showToast }) => {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
@@ -77,6 +77,22 @@ export const AfterHoursView = ({ user, friendships = [], onStartContract, showTo
     if (!endsAt || endsAt > now || busy) return;
     void loadRoom({ quiet: true });
   }, [now, room?.roomEvent?.endsAt, busy, loadRoom]);
+
+  useEffect(() => {
+    if (!focusActivityId || !room?.feed?.length) return undefined;
+    const id = window.requestAnimationFrame(() => {
+      const target = document.querySelector(`[data-after-hours-activity="${CSS.escape(String(focusActivityId))}"]`);
+      if (!target) {
+        onFocusHandled?.();
+        return;
+      }
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('is-focused');
+      window.setTimeout(() => target.classList.remove('is-focused'), 1800);
+      onFocusHandled?.();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [focusActivityId, room?.feed, onFocusHandled]);
 
   const event = room?.roomEvent || null;
   const secondsLeft = Math.max(0, Math.ceil((new Date(event?.endsAt || 0).getTime() - now) / 1000));
@@ -450,7 +466,11 @@ export const AfterHoursView = ({ user, friendships = [], onStartContract, showTo
                   && !isOwn;
 
                 return (
-                  <article className={`after-hours-feed-item is-${String(item.type || '').toLowerCase().replaceAll('_', '-')}`} key={item.id}>
+                  <article
+                  className={`after-hours-feed-item is-${String(item.type || '').toLowerCase().replaceAll('_', '-')}`}
+                  key={item.id}
+                  data-after-hours-activity={item.id}
+                >
                     <button
                       type="button"
                       className="after-hours-feed-person"
