@@ -715,7 +715,7 @@
   -webkit-tap-highlight-color:transparent;
   transition:transform 140ms var(--ease-out), color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), opacity 140ms var(--ease-out);
 }
-.home-contract-action:active:not(:disabled) { transform:scale(.94); }
+.home-contract-action:active:not(:disabled) { transform:scale(.96); }
 .home-contract-action.primary {
   color:var(--aura-gold);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-gold) 34%,var(--border-subtle));
@@ -862,6 +862,47 @@
   white-space:nowrap;
   color:var(--text-faint);
   font-size:.58rem;
+}
+
+.home-contract-first-duo,.home-contract-discovery,.home-contract-arrival {
+  grid-column:1 / -1;
+  min-width:0;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--border-subtle);
+}
+.home-contract-first-duo { display:flex; align-items:center; gap:10px; }
+.home-contract-pair { display:flex; flex:0 0 auto; padding-right:5px; }
+.home-contract-pair .user-avatar { width:30px; height:30px; border-radius:50%; }
+.home-contract-pair .user-avatar + .user-avatar { margin-left:-8px; outline:3px solid var(--contract-theme-surface); }
+.home-contract-first-copy { min-width:0; flex:1; }
+.home-contract-first-copy small { display:block; color:var(--aura-gold); font-size:.58rem; }
+.home-contract-first-copy strong { display:block; margin-top:3px; color:var(--text-primary); font-size:.88rem; letter-spacing:-.02em; }
+.home-contract-first-copy p { margin-top:3px; color:var(--text-secondary); font-size:.66rem; line-height:1.5; overflow-wrap:anywhere; }
+.home-contract-first-respond { min-height:44px; display:flex; align-items:center; gap:6px; color:var(--aura-gold); font-size:.68rem; font-weight:600; }
+.home-contract-first-dismiss,.home-contract-arrival button { width:44px; height:44px; flex:0 0 auto; display:grid; place-items:center; color:var(--text-muted); border-radius:10px; }
+.home-contract-discovery { width:100%; min-height:52px; padding-bottom:2px; display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left; color:var(--aura-gold); }
+.home-contract-discovery > span { min-width:0; }
+.home-contract-discovery strong { display:block; font-size:.67rem; font-weight:630; }
+.home-contract-discovery small { display:block; margin-top:3px; color:var(--text-secondary); font-size:.66rem; line-height:1.45; overflow-wrap:anywhere; }
+.home-contract-discovery > svg { flex:0 0 auto; }
+.home-contract-arrival { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.home-contract-arrival p { min-width:0; padding-top:12px; color:var(--text-primary); font-size:.72rem; line-height:1.5; overflow-wrap:anywhere; }
+.home-contract-reveal { min-width:0; display:flex; flex-wrap:wrap; gap:8px 18px; }
+.home-contract-reveal span { min-width:0; color:var(--text-secondary); font-size:.68rem; line-height:1.5; overflow-wrap:anywhere; }
+.home-contract-reveal strong { color:var(--text-primary); }
+.home-contract-first-respond,.home-contract-first-dismiss,.home-contract-discovery,.home-contract-arrival button { transition:transform 140ms cubic-bezier(0.2,0,0,1), color 140ms cubic-bezier(0.2,0,0,1); }
+.home-contract-first-respond:active,.home-contract-first-dismiss:active,.home-contract-discovery:active,.home-contract-arrival button:active { transform:scale(.96); }
+.home-contract-first-respond:focus-visible,.home-contract-first-dismiss:focus-visible,.home-contract-discovery:focus-visible,.home-contract-arrival button:focus-visible,.home-contract-card:focus-visible { outline:2px solid var(--aura-gold); outline-offset:3px; }
+
+@media (max-width:720px) {
+  .home-contract-first-duo { display:grid; grid-template-columns:auto minmax(0,1fr) 44px; gap:6px 8px; }
+  .home-contract-first-respond { grid-column:2; grid-row:2; justify-self:start; }
+  .home-contract-first-dismiss { grid-column:3; grid-row:1; align-self:start; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .home-contract-first-respond,.home-contract-first-dismiss,.home-contract-discovery,.home-contract-arrival button { transition:none; }
+  .home-contract-first-respond:active,.home-contract-first-dismiss:active,.home-contract-discovery:active,.home-contract-arrival button:active,.home-contract-action:active:not(:disabled) { transform:none; }
 }
 
 @media (hover:hover) and (pointer:fine) {

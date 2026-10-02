@@ -25,7 +25,12 @@
 .circle-pulse-heading span { color:var(--text-secondary); font-size:.65rem; font-weight:640; }
 .circle-pulse-heading small { color:var(--text-faint); font-family:var(--font-mono); font-size:.5rem; text-transform:uppercase; letter-spacing:.06em; }
 .circle-pulse-list { display:flex; flex-direction:column; }
-.circle-pulse-row { min-height:32px; display:grid; grid-template-columns:7px minmax(0,1fr) auto; align-items:center; gap:8px; color:var(--text-muted); font-size:.64rem; line-height:1.35; }
+.circle-pulse-row { width:100%; min-height:44px; padding:6px 0; display:grid; grid-template-columns:7px minmax(0,1fr) auto 14px; align-items:center; gap:8px; color:var(--text-secondary); text-align:left; font-size:.68rem; line-height:1.45; transition:color 140ms cubic-bezier(0.2,0,0,1); }
+.circle-pulse-row > span { min-width:0; overflow-wrap:anywhere; }
+.circle-pulse-row > svg { color:var(--text-muted); }
+.circle-pulse-heading button,.circle-pulse-more { min-height:44px; color:var(--text-muted); font-size:.65rem; }
+.circle-pulse-more { color:var(--text-secondary); }
+.circle-pulse-row:focus-visible,.circle-pulse-heading button:focus-visible,.circle-pulse-more:focus-visible { outline:2px solid var(--aura-gold); outline-offset:3px; border-radius:4px; }
 .circle-pulse-row i { width:5px; height:5px; border-radius:50%; background:var(--text-faint); }
 .circle-pulse-row.good i { background:var(--aura-green); }
 .circle-pulse-row.gold i { background:var(--aura-gold); }

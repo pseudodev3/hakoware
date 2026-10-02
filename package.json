@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:circle-activity": "node scripts/checkCircleActivity.mjs"
   },
   "dependencies": {
     "framer-motion": "12.35.0",

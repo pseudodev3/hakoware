@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy, X } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { getContractSides } from '../contractState';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { shareHakoware } from '../../../lib/share';
 import { buildChaosShareImage } from '../../../lib/chaosShare';
+import { activityLabel } from '../../../lib/circleActivity';
 import './ContractCard.css';
 
 const MODE_NAMES = {
@@ -64,11 +65,18 @@ const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
   return lastInteraction > seasonStart;
 };
 
-export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, referenceLayout = false, socialState = null }) => {
+export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, referenceLayout = false, socialState = null, onActivitySeen, focusActivity = null, onContractOpen }) => {
   const [chaosShareState, setChaosShareState] = useState('');
   const [socialBusy, setSocialBusy] = useState('');
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [openedActivity, setOpenedActivity] = useState(null);
+  const cardRef = useRef(null);
+  useEffect(() => {
+    if (!focusActivity?.item) return;
+    setOpenedActivity(focusActivity.item);
+    if (focusActivity.item.id === socialState?.latestPartnerCheckin?.eventId) setReplyOpen(true);
+  }, [focusActivity?.item, socialState?.latestPartnerCheckin?.eventId]);
   const reactionOptions = ['💀', '🤝', '👀', '😭'];
   const { partner: friend, ownPerspective: perspective, partnerPerspective, partnerDebt } = getContractSides(friendship, currentUserId);
   const stats = useDebt(perspective);
@@ -106,6 +114,21 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
     : activeChaos?.description || '';
   const chaosTargetLabel = chaosTargetsCurrentUser ? 'Your move' : `${name}'s move`;
   const moment = socialState?.moment || null;
+  const newActivity = socialState?.unseenActivity?.[0] || null;
+  const firstMutualCheckin = socialState?.firstMutualCheckin || null;
+  const urgentState = Boolean(seasonDone || activeChaos || wanted || partnerBankrupt
+    || stats.isBankrupt || stats.isRecovering || stats.totalDebt > 0);
+  const ownPerson = String(friendship.user1?._id || friendship.user1) === String(currentUserId)
+    ? friendship.user1 : friendship.user2;
+
+  const openActivity = (item) => {
+    if (!item) return;
+    setOpenedActivity(item);
+    if (item.id === socialState?.latestPartnerCheckin?.eventId) setReplyOpen(true);
+    onContractOpen?.();
+    cardRef.current?.focus({ preventScroll: true });
+    onActivitySeen?.([item]);
+  };
   const momentTitle = moment?.type === 'SPLIT_DECISION'
     ? 'Split Decision'
     : moment?.type === 'DOUBLE_DARE'
@@ -189,7 +212,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
     meta: [`${stats.limit}d rule`, `Season ${seasonNumber}`, seasonTimeLeft]
   };
 
-  if (firstDuoCycleOpen) {
+  if (firstDuoCycleOpen && !urgentState) {
     if (!ownCheckedInThisSeason && !partnerCheckedInThisSeason) {
       displayState = {
         label: 'Season 1 live',
@@ -285,6 +308,15 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
   const hideDuo = seasonDone || chaosTargetsCurrentUser;
 
+  if (newActivity && !urgentState && !firstDuoCycleOpen && !moment) {
+    displayState = {
+      ...displayState,
+      hero: activityLabel(newActivity.type),
+      label: status.detail,
+      tone: 'good'
+    };
+  }
+
   if (referenceLayout) {
     const seasonStartedAt = new Date(season.startedAt || 0).getTime();
     const seasonDay = seasonStartedAt > 0
@@ -306,6 +338,11 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
     const runHomeSecondary = () => {
       if (hasPartnerCheckin) {
+        if (!replyOpen) {
+          onContractOpen?.();
+          const checkin = socialState.recentActivity?.find((item) => item.id === socialState.latestPartnerCheckin.eventId);
+          if (checkin) onActivitySeen?.([checkin]);
+        }
         setReplyOpen((value) => !value);
         return;
       }
@@ -347,7 +384,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
               : 'Voice check-in';
 
     return (
-      <article className={`contract-card home-contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''}`}>
+      <article ref={cardRef} id={`contract-${friendship._id || friendship.id}`} tabIndex={-1} aria-label={`Contract with ${name}`} className={`contract-card home-contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''}`}>
         <UserAvatar person={friend} size="lg" className="home-contract-avatar" decorative />
 
         <div className="home-contract-content">
@@ -424,12 +461,55 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
           </button>
         </div>
 
+        {firstMutualCheckin && !urgentState && (
+          <div className="home-contract-first-duo">
+            <div className="home-contract-pair" aria-hidden="true">
+              <UserAvatar person={ownPerson} size="sm" decorative />
+              <UserAvatar person={friend} size="sm" decorative />
+            </div>
+            <div className="home-contract-first-copy">
+              <small>First check-in together</small>
+              <strong>Both showed up.</strong>
+              <p>You + {name} · {firstMutualCheckin.xp} Duo XP together.</p>
+            </div>
+            {hasPartnerCheckin && <button type="button" className="home-contract-first-respond" onClick={() => {
+              onContractOpen?.();
+              setReplyOpen(true);
+              const checkin = socialState.recentActivity?.find((item) => item.id === socialState.latestPartnerCheckin.eventId);
+              onActivitySeen?.([firstMutualCheckin, ...(checkin ? [checkin] : [])]);
+            }}>React / reply <ArrowRight size={14} strokeWidth={1.6} aria-hidden="true" /></button>}
+            <button type="button" className="home-contract-first-dismiss" onClick={() => {
+              cardRef.current?.focus({ preventScroll: true });
+              onActivitySeen?.([firstMutualCheckin]);
+            }} aria-label="Dismiss first shared check-in"><X size={16} strokeWidth={1.6} /></button>
+          </div>
+        )}
+
+        {newActivity && !(firstMutualCheckin && !urgentState && hasPartnerCheckin
+          && newActivity.id === socialState.latestPartnerCheckin.eventId) && (
+          <button type="button" className="home-contract-discovery" onClick={() => openActivity(newActivity)}>
+            <span><strong>{activityLabel(newActivity.type)}</strong><small>{newActivity.text}</small></span>
+            <ArrowRight size={16} strokeWidth={1.6} aria-hidden="true" />
+          </button>
+        )}
+
+        {openedActivity && (
+          <div className="home-contract-arrival">
+            <p>{openedActivity.text}</p>
+            <button type="button" onClick={() => {
+              setOpenedActivity(null);
+              cardRef.current?.focus({ preventScroll: true });
+            }} aria-label="Close activity"><X size={16} strokeWidth={1.6} /></button>
+          </div>
+        )}
+
         {exceptionalState && (
           <div className={`home-contract-exception ${displayState.tone}`}>
             <div>
-              <strong>{moment ? momentTitle : displayState.label}</strong>
-              <p>{moment?.prompt || displayState.detail}</p>
-              {!moment && displayState.context && <small>{displayState.context}</small>}
+              <strong>{moment && !urgentState ? momentTitle : displayState.label}</strong>
+              <p>{moment && !urgentState ? moment.prompt : displayState.detail}</p>
+              {(!moment || urgentState) && displayState.context && <small>{displayState.context}</small>}
+              {moment && urgentState && <small>{momentTitle} · {moment.prompt}</small>}
             </div>
 
             {moment?.status === 'OPEN' && moment.type !== 'DOUBLE_DARE' && !moment.answered && (
@@ -464,6 +544,18 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
             {moment?.status === 'OPEN' && moment.answered && (
               <small className="home-contract-waiting">{moment.partnerAnswered ? 'Revealing…' : `Waiting on ${name}.`}</small>
+            )}
+            {moment?.status === 'RESOLVED' && moment.type !== 'DOUBLE_DARE' && (
+              <div className="home-contract-reveal">
+                <span>You <strong>{moment.yourAnswer || '—'}</strong></span>
+                <span>{name} <strong>{moment.partnerAnswer || '—'}</strong></span>
+              </div>
+            )}
+            {moment?.type === 'DOUBLE_DARE' && moment.dare && (
+              <div className="home-contract-reveal">
+                <span>“{moment.dare}”</span>
+                {moment.status === 'RESOLVED' && <strong>{moment.startedByYou ? `${name} ${moment.outcome === 'Accept' ? 'accepted' : 'passed'}.` : `You ${moment.outcome === 'Accept' ? 'accepted' : 'passed'}.`}</strong>}
+              </div>
             )}
           </div>
         )}

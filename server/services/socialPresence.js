@@ -1,6 +1,7 @@
 const ContractEvent = require('../models/ContractEvent');
 const ContractReaction = require('../models/ContractReaction');
 const { getMomentViews } = require('./contractMoments');
+const { getFirstMutualPayoffs } = require('./duoActivation');
 
 const HOUR = 60 * 60 * 1000;
 const POKE_COOLDOWN_MS = 4 * HOUR;
@@ -249,7 +250,10 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
 
   const ids = active.map((item) => item._id);
   const since = boundedSince(sinceValue);
-  const momentViews = await getMomentViews(userId, active);
+  const [momentViews, firstMutualPayoffs] = await Promise.all([
+    getMomentViews(userId, active),
+    getFirstMutualPayoffs(active)
+  ]);
   const stateCutoff = new Date(Date.now() - Math.max(REACTION_WINDOW_MS, POKE_COOLDOWN_MS));
   const events = await ContractEvent.find({
     friendshipId: { $in: ids },
@@ -270,7 +274,9 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     lastPokeFromPartnerAt: null,
     pokeBackAvailable: false,
     mutualMenace: null,
-    moment: null
+    moment: null,
+    firstMutualCheckin: firstMutualPayoffs[idString(item._id)] || null,
+    recentActivity: []
   }]));
 
   const partnerCheckinIds = [];
@@ -284,7 +290,10 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     const isViewer = actorId === idString(userId);
     const seasonStart = friendship.season?.startedAt ? new Date(friendship.season.startedAt) : null;
     const isCurrentSeasonEvent = !seasonStart || new Date(event.createdAt) >= seasonStart;
-    if (!state.latestPartnerCheckin && !isViewer && isCurrentSeasonEvent && ['CHECKIN', 'VOICE_CHECKIN'].includes(event.type)) {
+    const activity = isCurrentSeasonEvent && formatPulseEvent(event, friendship, userId);
+    if (activity && state.recentActivity.length < 12) state.recentActivity.push(activity);
+    if (!state.latestPartnerCheckin && !isViewer && isCurrentSeasonEvent
+      && new Date(event.createdAt) >= stateCutoff && ['CHECKIN', 'VOICE_CHECKIN'].includes(event.type)) {
       state.latestPartnerCheckin = {
         eventId: idString(event._id),
         createdAt: event.createdAt,
@@ -362,7 +371,7 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     .filter((event) => new Date(event.createdAt) >= since)
     .map((event) => formatPulseEvent(event, friendshipById.get(idString(event.friendshipId)), userId))
     .filter(Boolean)
-    .slice(0, 6);
+    .slice(0, 30);
 
   return { pulse, contracts: contractState };
 };

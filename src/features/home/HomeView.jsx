@@ -3,7 +3,7 @@ import { ArrowRight, Clock3, Plus, Radio, Swords, UserPlus, X } from 'lucide-rea
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
 import { ContractCard } from '../friendship/components/ContractCard';
-import { getBankruptPartner } from '../friendship/contractState';
+import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 
 const contractState = (friendship, userId) => {
@@ -34,28 +34,41 @@ const WORLD_RULE_COPY = {
 
 const priority = (friendship, userId, socialContracts = {}) => {
   const social = socialContracts?.[friendship._id || friendship.id];
-  if (getBankruptPartner(friendship, userId)) return 60000;
+  const { ownDebt } = getContractSides(friendship, userId);
+  if (getBankruptPartner(friendship, userId) || ownDebt?.isBankrupt) return 60000;
+  if (friendship.chaos?.wantedUserId && friendship.chaos?.wantedUntil) return 55000;
   if (friendship.chaos?.activeEvent) return 50000;
+  if (friendship.season?.status === 'COMPLETE') return 49000;
+  if (ownDebt?.isRecovering) return 48000;
+  const state = contractState(friendship, userId);
+  if (state.debt > 0) return 47000 + Math.min(state.debt, 9) * 100;
   if (social?.moment?.status === 'OPEN') return 46000;
   if (social?.mutualMenace) return 44000;
-  if (friendship.season?.status === 'COMPLETE') return 40000;
+  if (social?.firstMutualCheckin) return 30000;
+  if (social?.unseenActivity?.length) return 20000;
   if (social?.moment?.status === 'BREWING') return 1500;
-  const state = contractState(friendship, userId);
-  if (state.debt > 0) return 10000 + state.debt * 100 + state.daysMissed;
   if (state.daysLeft <= 1) return 1000 + (1 - state.daysLeft) * 10;
   return -state.daysLeft;
 };
 
 
-export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onPulseSeen }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onActivitySeen }) => {
   const userId = user.uid || user.id || user._id;
   const socialContracts = socialPresence?.contracts || {};
-  const sorted = [...friendships].sort((a, b) => priority(b, userId, socialContracts) - priority(a, userId, socialContracts));
+  const newestActivityAt = (friendship) => {
+    const state = socialContracts[friendship._id || friendship.id];
+    return new Date(state?.firstMutualCheckin?.createdAt || state?.unseenActivity?.[0]?.createdAt || 0).getTime();
+  };
+  const sorted = [...friendships].sort((a, b) => priority(b, userId, socialContracts) - priority(a, userId, socialContracts)
+    || newestActivityAt(b) - newestActivityAt(a));
   const bankruptPartners = friendships.map((friendship) => getBankruptPartner(friendship, userId)).filter(Boolean);
   const hot = sorted.filter((friendship) => {
     const state = contractState(friendship, userId);
     const social = socialContracts?.[friendship._id || friendship.id];
     return getBankruptPartner(friendship, userId)
+      || getContractSides(friendship, userId).ownDebt?.isBankrupt
+      || getContractSides(friendship, userId).ownDebt?.isRecovering
+      || (friendship.chaos?.wantedUserId && friendship.chaos?.wantedUntil)
       || friendship.chaos?.activeEvent
       || social?.moment?.status === 'OPEN'
       || Boolean(social?.mutualMenace)
@@ -63,7 +76,15 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       || state.debt > 0
       || state.daysLeft <= 1;
   });
-  const visible = (hot.length ? hot : sorted).slice(0, 3);
+  const [focusedActivity, setFocusedActivity] = useState(null);
+  const [showAllPulse, setShowAllPulse] = useState(false);
+  const visible = sorted.slice(0, 3);
+  const focusedContract = sorted.find((item) => String(item._id || item.id) === focusedActivity?.friendshipId);
+  if (focusedContract && !visible.includes(focusedContract)) visible.push(focusedContract);
+  const newCount = sorted.filter((item) => {
+    const social = socialContracts[item._id || item.id];
+    return social?.firstMutualCheckin || social?.unseenActivity?.length;
+  }).length;
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
   const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
   const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
@@ -82,12 +103,22 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const showSeasonBriefing = Boolean(briefingKey && localStorage.getItem(briefingKey) !== 'seen');
 
   const pulse = socialPresence?.pulse || [];
+  const shownPulse = showAllPulse ? pulse : pulse.slice(0, 4);
 
   useEffect(() => {
-    if (!pulse.length) return undefined;
-    const timer = window.setTimeout(() => onPulseSeen?.(), 1200);
-    return () => window.clearTimeout(timer);
-  }, [pulse.map((item) => item.id).join('|'), onPulseSeen]);
+    if (!focusedActivity) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const card = document.getElementById(`contract-${focusedActivity.friendshipId}`);
+      card?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      card?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusedActivity]);
+
+  const openPulse = (item) => {
+    setFocusedActivity({ friendshipId: item.friendshipId, item });
+    onActivitySeen?.([item]);
+  };
 
   const pulseTime = (value) => {
     const diff = Math.max(0, Date.now() - new Date(value).getTime());
@@ -193,7 +224,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       <header className="circle-first-header">
         <div className="circle-first-title">
           <h1>Your circle</h1>
-          <p>{hot.length ? hot.length + ' need' + (hot.length === 1 ? 's' : '') + ' attention.' : friendships.length + ' active · all clear.'}</p>
+          <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active.`}{newCount > 0 ? ` ${newCount} with something new.` : !hot.length ? ' All clear.' : ''}</p>
         </div>
         <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>New</Button>
         <div className="circle-secondary-actions">
@@ -234,17 +265,19 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <section className="circle-pulse" aria-label="While you were gone">
           <div className="circle-pulse-heading">
             <span>While you were gone</span>
-            <small>{pulse.length} new</small>
+            <button type="button" onClick={() => onActivitySeen?.(shownPulse)} aria-label={`Dismiss these ${shownPulse.length} updates`}>Dismiss shown</button>
           </div>
           <div className="circle-pulse-list">
-            {pulse.slice(0, 4).map((item) => (
-              <div className={`circle-pulse-row ${item.tone || 'neutral'}`} key={item.id}>
+            {shownPulse.map((item) => (
+              <button type="button" className={`circle-pulse-row ${item.tone || 'neutral'}`} key={item.id} onClick={() => openPulse(item)}>
                 <i aria-hidden="true" />
                 <span>{item.text}</span>
                 <time dateTime={item.createdAt}>{pulseTime(item.createdAt)}</time>
-              </div>
+                <ArrowRight size={14} strokeWidth={1.6} aria-hidden="true" />
+              </button>
             ))}
           </div>
+          {pulse.length > 4 && <button className="circle-pulse-more" type="button" onClick={() => setShowAllPulse((value) => !value)}>{showAllPulse ? 'Show less' : `See ${pulse.length - 4} more`}</button>}
         </section>
       )}
 
@@ -257,6 +290,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             onAction={onAction}
             referenceLayout
             socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
+            onActivitySeen={onActivitySeen}
+            onContractOpen={() => setFocusedActivity({ friendshipId: String(friendship._id || friendship.id) })}
+            focusActivity={focusedActivity?.friendshipId === String(friendship._id || friendship.id) ? focusedActivity : null}
           />
         ))}
       </section>

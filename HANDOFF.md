@@ -16,92 +16,58 @@
 
 ## Current continuation checkpoint — 2026-10-02
 
-This is the first section to read when resuming in a new chat.
+Current production/main:
 
-Current production/main before the open After Hours pass:
+- PR #78, `Turn After Hours into a social room with Aura`, is merged.
+- Exact squash SHA: `a5189133b778ea9ff0d99ab5af2e6f3cd81e8631`.
+- Exact merged SHA passed GitHub validation and deployed successfully on both Vercel and Railway.
+- The After Hours social-room version is the production baseline: Shout / Hot Take / Confession / Ask, one-level replies, Aura Spark / Burn, short notes, and the secondary Room Question.
+- Its real iPhone interaction checklist below still needs device testing.
 
-- `main`: `43908fb9e769273c6a20069c351e3ae65a6a72a2`
-- PR #76 is merged: compact reference cards now also render on the Contracts page and the decorative display-name star was removed.
-- PR #77 is merged: Arena targets + public/personal Grudges now use the cleaner person-first card language.
-- The **only open Hakoware PR at this checkpoint is PR #78**:
-  - title: `Turn After Hours into a social room with Aura`
-  - branch: `feat/after-hours-social-aura`
-  - base: `main`
-  - branch was 0 behind main before this handoff refresh;
-  - implementation CI passed on the finished feature head;
-  - Vercel preview deployed successfully on the finished feature head;
-  - after any handoff-only commit, re-check the new exact head before merging.
+The user asked to strengthen retention by improving the first mutual payoff and making unseen partner activity easy to discover on Home.
 
-PR #78 is the current unfinished production step. Do **not** start a second After Hours implementation branch unless #78 has been merged or intentionally abandoned.
+Current implementation branch: `feat/first-duo-payoff`.
 
-### What PR #78 changes
+### First shared payoff + Home activity discovery
 
-After Hours is no longer primarily “quizzes / complete a room task.”
+- A small **Both showed up** reveal appears inside the existing compact contract card after each participant's first real check-in in Season 1.
+- The server derives it from actual check-in events, including text / voice, and shows the sum of those two events' existing Duo XP. It does not grant a new reward.
+- Season activation timestamps, pokes, and one person's repeated check-ins cannot complete it.
+- The reveal is available for 48h after the second person's first check-in, so old pairs are not celebrated retroactively.
+- React / reply opens the existing check-in response controls. The reveal can also be dismissed.
+- Home keeps bankruptcy, Wanted, Chaos, debt/recovery, season completion, and open moments ahead of ordinary social updates.
+- A fresh shared payoff and unseen partner activity rank above quiet contracts. Equal-priority social updates sort by recency.
+- Home fills its three card slots from the sorted circle instead of hiding all quieter contracts whenever one contract needs attention.
+- **While you were gone** entries are actionable: opening an entry reveals the exact update on its contract, brings that card into view, and moves keyboard focus to it. A focused contract outside the three-card limit is appended without removing danger cards.
+- Compact cards now show both answers on resolved Hot Seat / Split Decision and the outcome of a resolved Double Dare.
+- Danger instructions remain visible even when a social moment also exists.
+- The old 1.2-second automatic seen timer and global seen timestamp are removed. Opening/dismissing one event acknowledges only that event.
+- Acknowledgements are per-account and persist in local browser storage, including through polling/reloads. They do **not** synchronize across devices.
+- Activity is bounded to 48h, with up to 30 pulse entries and 12 recent entries per contract. Check-in reactions/replies retain the existing 36h availability window.
 
-The locked product rule is:
+### Validation / next checks
 
-**People create the entertainment. Aura gives it weight.**
+- `npm run check:circle-activity` checks selective acknowledgement, reload persistence, account isolation, corrupt/unavailable storage, and expiry.
+- `cd server && npm run check:duo-activation` checks real two-person activation, old-season exclusion, text + voice XP, duplicate actions, and payoff expiry.
+- Both checks are part of repository CI.
+- Browser checks used local fixtures: 320px / 390px / desktop, light + dark, reduced motion, activity routing to hidden contracts, keyboard focus, replies, reload persistence, danger ordering, and resolved answers.
+- Production frontend build, production dependency audits, payload checks, and hardening checks passed locally.
+- Full lint has three pre-existing hook-name errors in `YouView.jsx`; changed frontend files pass the lint error check.
+- Not verified: physical iPhone behavior and a real two-account MongoDB end-to-end journey.
+- Finish exact-head CI before opening the PR. Merge only when explicitly requested, then verify both exact merged deployments.
 
-The first coherent social-room version includes:
+### After Hours device checklist
 
-- **Shout**
-- **Hot Take** with `real / nonsense`
-- **Confession**, optionally anonymous
-- **Ask**
-- one-level public replies;
-- existing reactions;
-- **Aura Spark**:
-  - exactly 1 Aura moves sender → author;
-  - no Aura is minted;
-  - one Spark per person per item;
-  - sender daily cap + per-recipient cap;
-- **Aura Burn** on your own post:
-  - fixed `5 / 10 / 25` Aura values;
-  - Aura is destroyed;
-  - visual spectacle only, never extra reach/ranking;
-- stranger interaction sheet now prioritizes:
-  - recent non-anonymous room activity;
-  - **Leave a note**;
-  - contextual Tag in;
-  - Start contract;
-- short notes are notification-based, rate-limited, and **not a DM thread**;
-- old Pick a Side is demoted to a compact Room Question;
-- ANSWER/CALLOUT quiz noise is kept out of the main social feed;
-- Challenges remain available but optional;
-- pure spectating counts as a successful After Hours session.
-
-Privacy / abuse boundaries that must remain:
-
-- anonymous confession identity is never exposed in public payloads;
-- anonymous confession activity must not contribute to visible per-person recent-post counts;
-- Spark copy/ledger copy must not leak an anonymous confession author;
-- no DMs;
-- no reply-to-reply;
-- no follower system;
-- no swipe/match/dating framing;
-- no “do X actions for Aura” task loop;
-- no paid reach;
-- no fake users/activity;
-- Founder/test room isolation remains intact.
-
-### What to test after PR #78 merges
-
-Use real iPhone behavior as the primary UX signal:
-
-1. create each post type;
-2. anonymous confession stays anonymous to everybody else;
-3. Hot Take voting works and author cannot vote own take;
-4. one public reply per user works and cannot branch;
-5. Aura Spark deducts 1 from sender and adds 1 to author;
-6. Spark caps stop obvious farming;
-7. Aura Burn deducts only the selected fixed amount;
-8. short notes arrive as notifications and do not create a chat thread;
-9. person sheet feels interaction-first, not “start contract with stranger” first;
-10. Pick a Side feels secondary to people-created content;
-11. no raw IDs/private anonymous identity leak through the client payload;
-12. Start contract conversion still works from identified After Hours people.
-
-If a new chat starts before #78 is merged, continue by inspecting PR #78 and its exact head first. If it is already merged, inspect the merged SHA and deployment before doing more After Hours work.
+1. Create each post type.
+2. Verify anonymous Confessions stay anonymous to everyone else.
+3. Vote on a Hot Take; the author cannot vote on their own take.
+4. Reply once per user; replies cannot branch.
+5. Spark transfers exactly 1 Aura and enforces daily / per-recipient caps.
+6. Burn deducts only the selected 5 / 10 / 25 Aura.
+7. Notes arrive as notifications and do not create a chat thread.
+8. Person sheets prioritize interaction; Room Question stays secondary.
+9. Check client payloads for private/anonymous identity leaks.
+10. Start contract conversion still works for identified participants.
 
 ### Landing atmosphere
 
@@ -979,15 +945,15 @@ Arena targets + public/personal Grudges moved to the cleaner person-first visual
 Merged SHA / current main before #78:
 `43908fb9e769273c6a20069c351e3ae65a6a72a2`
 
-### PR #78 — OPEN
+### PR #78 — merged
 `Turn After Hours into a social room with Aura`
 
 Branch:
 `feat/after-hours-social-aura`
 
-This is the only open product PR at this checkpoint. It contains the new Shout / Hot Take / Confession / Ask social model, one-level replies, Aura Spark, Aura Burn, interaction-first stranger sheet, and the demoted Room Question.
+Merged SHA: `a5189133b778ea9ff0d99ab5af2e6f3cd81e8631`. It contains the Shout / Hot Take / Confession / Ask social model, one-level replies, Aura Spark, Aura Burn, interaction-first stranger sheet, and the demoted Room Question.
 
-Do not call PR #78 production until it is merged and the exact merged frontend/backend deployments are verified.
+The exact merged frontend/backend deployments were verified successful on 2026-10-02. Continue from the current checkpoint at the top of this file.
 
 ## 22. Development workflow
 
