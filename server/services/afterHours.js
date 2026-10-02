@@ -120,16 +120,6 @@ const buildReactionState = (reactions, viewerId) => {
   return { counts, viewerReaction };
 };
 
-const buildReactionState = (reactions, viewerId) => {
-  const counts = Object.fromEntries(REACTIONS.map((reaction) => [reaction, 0]));
-  let viewerReaction = null;
-  reactions.forEach((item) => {
-    if (counts[item.reaction] !== undefined) counts[item.reaction] += 1;
-    if (idString(item.userId) === idString(viewerId)) viewerReaction = item.reaction;
-  });
-  return { counts, viewerReaction };
-};
-
 const buildSparkState = (sparks, viewerId) => ({
   total: sparks.reduce((sum, item) => sum + (Number(item.amount) || 0), 0),
   viewerSparked: sparks.some((item) => idString(item.fromUserId) === idString(viewerId))
