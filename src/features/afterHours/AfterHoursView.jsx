@@ -38,6 +38,12 @@ const POST_MODES = [
 
 const SOCIAL_POST_TYPES = new Set(['SHOUT', 'HOT_TAKE', 'CONFESSION', 'QUESTION']);
 
+const postTypeLabel = (type) => ({
+  HOT_TAKE: 'HOT TAKE',
+  CONFESSION: 'CONFESSION',
+  QUESTION: 'ASK'
+}[type] || null);
+
 const usernamesFromContracts = (friendships, ownUsername) => {
   const names = new Set();
   (friendships || []).forEach((friendship) => {
