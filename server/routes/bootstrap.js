@@ -22,7 +22,7 @@ router.get('/', auth, async (req, res) => {
       Notification.find({ toUserId: req.user.id })
         .sort({ createdAt: -1 })
         .limit(50)
-        .select('_id type title message read createdAt')
+        .select('_id type title message afterHoursActivityId read createdAt')
         .lean()
     ]);
 
