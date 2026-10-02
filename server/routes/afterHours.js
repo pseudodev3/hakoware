@@ -382,7 +382,7 @@ router.post('/callout', calloutLimiter, async (req, res) => {
     notify({
       toUserId: target._id,
       fromUserId: actor._id,
-      type: 'AFTER_HOURS_CALLOUT',
+      type: 'AFTER_HOURS_TAG_IN',
       title: 'After Hours',
       message: `${actor.displayName} tagged you into the live Pick a Side. Your turn before the room moves on.`,
       afterHoursActivityId: tagActivity.publicId
