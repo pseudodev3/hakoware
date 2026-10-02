@@ -2,8 +2,17 @@
 .you-circle-first { gap:16px; }
 .profile-aura-area { padding:4px 2px 2px; display:flex; flex-direction:column; gap:12px; }
 .profile-identity { display:grid; grid-template-columns:52px minmax(0,1fr) auto; align-items:center; gap:13px; }
-.identity-avatar { width:52px; height:52px; flex:0 0 auto; display:grid; place-items:center; border-radius:14px; background:var(--surface-soft); box-shadow:inset 0 0 0 1px var(--border-subtle); color:var(--text-primary); font-size:1rem; font-weight:700; }
+.profile-avatar-control { position:relative; width:52px; height:52px; }
+.profile-avatar-button { position:relative; width:52px; height:52px; padding:0; border-radius:14px; }
+.profile-avatar-button:disabled { opacity:.62; cursor:default; }
+.identity-avatar { width:52px; height:52px; border-radius:14px; background:var(--surface-soft); box-shadow:inset 0 0 0 1px var(--border-subtle); }
+.profile-avatar-camera { position:absolute; right:-3px; bottom:-3px; width:22px; height:22px; display:grid; place-items:center; border-radius:8px; color:#151006; background:var(--aura-gold); box-shadow:0 0 0 3px var(--bg-primary); }
+.profile-avatar-input { position:absolute; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; }
 .identity-copy { min-width:0; }
+.identity-photo-actions { margin-top:5px; display:flex; align-items:center; gap:9px; }
+.identity-photo-actions button { padding:0; color:var(--aura-gold); background:transparent; font-size:.58rem; font-weight:620; }
+.identity-photo-actions button.remove { color:var(--text-faint); }
+.identity-photo-actions button:disabled { opacity:.5; cursor:default; }
 .identity-copy h1 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1.55rem; font-weight:650; letter-spacing:-.035em; }
 .identity-copy > p:last-child { margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.7rem; }
 .profile-aura-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(190px,.72fr); align-items:end; gap:22px; }
@@ -112,7 +121,9 @@
   .you-view { padding-top:1px; gap:16px; }
   .profile-aura-area { gap:10px; }
   .profile-identity { grid-template-columns:46px minmax(0,1fr) auto; gap:10px; }
+  .profile-avatar-control,.profile-avatar-button { width:46px; height:46px; }
   .identity-avatar { width:46px; height:46px; border-radius:12px; }
+  .profile-avatar-camera { width:20px; height:20px; border-radius:7px; }
   .identity-copy h1 { font-size:1.42rem; }
   .profile-identity .btn { min-height:38px; padding-inline:10px; font-size:.67rem; }
   .profile-aura-row { grid-template-columns:minmax(0,1fr) 136px; gap:14px; }
