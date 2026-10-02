@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Clock3, Flame, Plus, Search, ShieldCheck, Sword, Target, Zap } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { CreateBountyModal } from './CreateBountyModal';
 import { PressureMoveModal } from './PressureMoveModal';
 import { huntBounty, sendBountyPressure } from '../../../services/bountyService';
@@ -170,7 +171,12 @@ export const Arena = ({ friendships, showToast }) => {
 
               return (
                 <article className={`bounty-item ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''}`} key={bounty._id || bounty.id}>
-                  <div className="bounty-avatar">{bounty.targetName?.[0]?.toUpperCase() || '?'}</div>
+                  <UserAvatar
+                    person={{ displayName: bounty.targetName, avatar: bounty.targetAvatar }}
+                    size="sm"
+                    className="bounty-avatar user-avatar-round"
+                    decorative
+                  />
                   <div className="bounty-copy">
                     <div className="bounty-title-row">
                       <strong>{bounty.targetName}</strong>
@@ -228,7 +234,7 @@ export const Arena = ({ friendships, showToast }) => {
             {loading ? <div className="arena-empty">Loading board…</div> : shame.length === 0 ? <div className="arena-empty">Nobody is bankrupt right now.</div> : shame.map((person, index) => (
               <article className="shame-item-new" key={person.username || `${person.displayName}:${index}`}>
                 <span className="shame-rank">{String(index + 1).padStart(2, '0')}</span>
-                <div className="bounty-avatar">{person.displayName?.[0]?.toUpperCase() || '?'}</div>
+                <UserAvatar person={person} size="sm" className="bounty-avatar user-avatar-round" decorative />
                 <div className="bounty-copy"><strong>{person.displayName}</strong><span>{person.username ? `@${person.username}` : 'Hakoware player'}</span></div>
                 <strong className="shame-debt">{person.totalDebt} debt</strong>
               </article>

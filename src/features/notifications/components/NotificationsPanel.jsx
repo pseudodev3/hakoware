@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, Check, CheckCheck, Clock, MessageSquare, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
+import { Bell, Check, CheckCheck, Clock, MessageSquare, Radio, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
 import {
   deleteNotification,
   getUserNotifications,
@@ -14,7 +14,7 @@ import { Button } from '../../../shared/components/Button';
 import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
 import './NotificationsPanel.css';
 
-export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, showToast }) => {
+export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, onNavigate, showToast }) => {
   const cachedNotifications = peekUserNotifications().filter((notification) => notification.type !== 'CONTRACT_INVITE');
   const [notifications, setNotifications] = useState(cachedNotifications);
   const [loading, setLoading] = useState(cachedNotifications.length === 0);
@@ -107,6 +107,13 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     void loadNotifications({ force: true });
   };
 
+  const openAfterHours = async (notification) => {
+    const id = notification.id || notification._id;
+    if (!notification.read) await handleMarkAsRead(id);
+    onNavigate?.('afterHours');
+    onClose?.();
+  };
+
   const handleRespond = async (id, action) => {
     const result = await respondToInvitation(id, action);
     if (result.success) {
@@ -128,6 +135,8 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       case NOTIFICATION_TYPES.BOUNTY_HUNTING: return <Swords size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.BOUNTY_REWARD: return <Zap size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.BOUNTY_REFUND: return <RotateCcw size={16} strokeWidth={1.8} />;
+      case NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT:
+      case NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE: return <Radio size={16} strokeWidth={1.8} />;
       default: return <Bell size={16} strokeWidth={1.8} />;
     }
   };
@@ -155,7 +164,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       case NOTIFICATION_TYPES.DOUBLE_DARE_SENT:
       case NOTIFICATION_TYPES.DOUBLE_DARE_REVEALED: return 'gold';
       case NOTIFICATION_TYPES.LIMIT_CHANGED:
-      case NOTIFICATION_TYPES.BOUNTY_REFUND: return 'gold';
+      case NOTIFICATION_TYPES.BOUNTY_REFUND:
+      case NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT:
+      case NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE: return 'gold';
       default: return 'neutral';
     }
   };
@@ -266,6 +277,16 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
                           <p className="item-msg">{notification.message}</p>
                         </div>
                         <div className="item-actions">
+                          {[NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT, NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE].includes(notification.type) && (
+                            <button
+                              className="action-icon"
+                              onClick={() => openAfterHours(notification)}
+                              aria-label="Open After Hours"
+                              title="Open After Hours"
+                            >
+                              <Radio size={14} strokeWidth={1.9} />
+                            </button>
+                          )}
                           {!notification.read && (
                             <button
                               className="action-icon"

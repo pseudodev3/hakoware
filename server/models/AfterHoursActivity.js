@@ -10,12 +10,14 @@ const AfterHoursActivitySchema = new mongoose.Schema({
   uniqueKey: { type: String, unique: true, sparse: true },
   scopeKey: { type: String, required: true, index: true },
   roundKey: { type: String, required: true, index: true },
-  type: { type: String, enum: ['ANSWER', 'CALLOUT'], required: true, index: true },
+  type: { type: String, enum: ['ANSWER', 'CALLOUT', 'SHOUT', 'CHALLENGE', 'CHALLENGE_JOIN'], required: true, index: true },
   actorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   targetUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
+  parentActivityId: { type: mongoose.Schema.Types.ObjectId, ref: 'AfterHoursActivity', default: null, index: true },
   promptId: { type: String, required: true },
   promptText: { type: String, required: true, maxlength: 240 },
   choice: { type: String, default: null, maxlength: 100 },
+  text: { type: String, default: null, maxlength: 120 },
   createdAt: { type: Date, default: Date.now }
 }, { versionKey: false });
 

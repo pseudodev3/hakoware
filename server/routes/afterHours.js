@@ -3,13 +3,17 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const AfterHoursPresence = require('../models/AfterHoursPresence');
 const AfterHoursActivity = require('../models/AfterHoursActivity');
 const AfterHoursReaction = require('../models/AfterHoursReaction');
 const { normalizeUsername } = require('../services/username');
 const {
   ACTIVE_MS,
+  FEED_MS,
   REACTIONS,
+  SHOUT_MAX_LENGTH,
+  challengeById,
   currentRound,
   scopeFor,
   touchPresence,
@@ -27,9 +31,25 @@ const readLimiter = createRateLimiter({
 const actionLimiter = createRateLimiter({
   name: 'after-hours-action',
   windowMs: 10 * 60 * 1000,
-  max: 30,
+  max: 40,
   keyGenerator: (req) => req.user?.id || req.ip,
   message: 'Too much room chaos at once. Try again shortly.'
+});
+
+const shoutLimiter = createRateLimiter({
+  name: 'after-hours-shout',
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: 'Give the room a second before shouting again.'
+});
+
+const challengeLimiter = createRateLimiter({
+  name: 'after-hours-challenge',
+  windowMs: 60 * 60 * 1000,
+  max: 12,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: 'Too many challenges at once. Let the room breathe.'
 });
 
 const calloutLimiter = createRateLimiter({
@@ -43,6 +63,12 @@ const calloutLimiter = createRateLimiter({
 const loadActor = async (userId) => User.findById(userId)
   .select('_id displayName username usernameNormalized avatar isTestAccount testOwnerId')
   .lean();
+
+const notify = (payload) => {
+  void Notification.create(payload).catch((error) => {
+    console.warn('After Hours notification failed:', error.message);
+  });
+};
 
 router.use(auth);
 
@@ -97,6 +123,142 @@ router.post('/answer', actionLimiter, async (req, res) => {
   }
 });
 
+router.post('/shout', shoutLimiter, async (req, res) => {
+  try {
+    const actor = await loadActor(req.user.id);
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+
+    const text = String(req.body.text || '').replace(/\s+/g, ' ').trim();
+    if (!text) return res.status(400).json({ msg: 'Say something first' });
+    if (text.length > SHOUT_MAX_LENGTH) {
+      return res.status(400).json({ msg: `Keep it under ${SHOUT_MAX_LENGTH} characters` });
+    }
+
+    const scopeKey = scopeFor(actor);
+    const recent = await AfterHoursActivity.exists({
+      scopeKey,
+      type: 'SHOUT',
+      actorId: actor._id,
+      createdAt: { $gte: new Date(Date.now() - 30 * 1000) }
+    });
+    if (recent) return res.status(429).json({ msg: 'Give the room a few seconds.' });
+
+    const round = currentRound();
+    await AfterHoursActivity.create({
+      scopeKey,
+      roundKey: round.roundKey,
+      type: 'SHOUT',
+      actorId: actor._id,
+      promptId: 'room-shout',
+      promptText: 'Room shout',
+      text
+    });
+
+    await touchPresence(actor);
+    return res.json(await buildRoomSnapshot(actor));
+  } catch (error) {
+    console.error('After Hours shout failed:', error.message);
+    return res.status(500).json({ msg: 'Could not shout into the room' });
+  }
+});
+
+router.post('/challenge', challengeLimiter, async (req, res) => {
+  try {
+    const actor = await loadActor(req.user.id);
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+
+    const challenge = challengeById(String(req.body.promptId || ''));
+    if (!challenge) return res.status(400).json({ msg: 'Pick one of the room challenges' });
+
+    const scopeKey = scopeFor(actor);
+    const recent = await AfterHoursActivity.exists({
+      scopeKey,
+      type: 'CHALLENGE',
+      actorId: actor._id,
+      createdAt: { $gte: new Date(Date.now() - 2 * 60 * 1000) }
+    });
+    if (recent) return res.status(429).json({ msg: 'Let your last challenge breathe first.' });
+
+    const round = currentRound();
+    await AfterHoursActivity.create({
+      scopeKey,
+      roundKey: round.roundKey,
+      type: 'CHALLENGE',
+      actorId: actor._id,
+      promptId: challenge.id,
+      promptText: challenge.text,
+      text: challenge.text
+    });
+
+    await touchPresence(actor);
+    return res.json(await buildRoomSnapshot(actor));
+  } catch (error) {
+    console.error('After Hours challenge failed:', error.message);
+    return res.status(500).json({ msg: 'Could not throw that challenge' });
+  }
+});
+
+router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
+  try {
+    const actor = await loadActor(req.user.id);
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+
+    const responseText = String(req.body.text || '').replace(/\s+/g, ' ').trim();
+    if (!responseText) return res.status(400).json({ msg: 'Answer the challenge first' });
+    if (responseText.length > SHOUT_MAX_LENGTH) {
+      return res.status(400).json({ msg: `Keep it under ${SHOUT_MAX_LENGTH} characters` });
+    }
+
+    const scopeKey = scopeFor(actor);
+    const challenge = await AfterHoursActivity.findOne({
+      publicId: req.params.activityId,
+      scopeKey,
+      type: 'CHALLENGE',
+      createdAt: { $gte: new Date(Date.now() - FEED_MS) }
+    }).lean();
+    if (!challenge) return res.status(404).json({ msg: 'That challenge is gone' });
+    if (String(challenge.actorId) === String(actor._id)) {
+      return res.status(400).json({ msg: 'That one is already yours' });
+    }
+
+    const uniqueKey = `challenge-join:${scopeKey}:${challenge._id}:${actor._id}`;
+    const existing = await AfterHoursActivity.exists({ uniqueKey });
+    if (existing) return res.status(409).json({ msg: 'You already joined that challenge' });
+
+    try {
+      await AfterHoursActivity.create({
+        uniqueKey,
+        scopeKey,
+        roundKey: challenge.roundKey,
+        type: 'CHALLENGE_JOIN',
+        actorId: actor._id,
+        targetUserId: challenge.actorId,
+        parentActivityId: challenge._id,
+        promptId: challenge.promptId,
+        promptText: challenge.promptText,
+        text: responseText
+      });
+    } catch (error) {
+      if (error?.code === 11000) return res.status(409).json({ msg: 'You already joined that challenge' });
+      throw error;
+    }
+
+    notify({
+      toUserId: challenge.actorId,
+      fromUserId: actor._id,
+      type: 'AFTER_HOURS_CHALLENGE',
+      title: 'After Hours',
+      message: `${actor.displayName} answered your After Hours challenge.`
+    });
+
+    await touchPresence(actor);
+    return res.json(await buildRoomSnapshot(actor));
+  } catch (error) {
+    console.error('After Hours challenge join failed:', error.message);
+    return res.status(500).json({ msg: 'Could not join that challenge' });
+  }
+});
+
 router.post('/feed/:activityId/react', actionLimiter, async (req, res) => {
   try {
     const actor = await loadActor(req.user.id);
@@ -109,7 +271,7 @@ router.post('/feed/:activityId/react', actionLimiter, async (req, res) => {
     const activity = await AfterHoursActivity.findOne({
       publicId: req.params.activityId,
       scopeKey,
-      type: 'ANSWER'
+      createdAt: { $gte: new Date(Date.now() - FEED_MS) }
     }).lean();
     if (!activity) return res.status(404).json({ msg: 'That room moment is gone' });
     if (String(activity.actorId) === String(actor._id)) return res.status(400).json({ msg: 'React to somebody else' });
@@ -170,10 +332,6 @@ router.post('/callout', calloutLimiter, async (req, res) => {
     });
     if (!activePresence) return res.status(409).json({ msg: 'They just left the room' });
 
-    if (String(target._id) === String(actor._id)) {
-      return res.status(400).json({ msg: 'You cannot call yourself out' });
-    }
-
     const round = currentRound();
     const actorAnswered = await AfterHoursActivity.exists({
       scopeKey,
@@ -210,6 +368,14 @@ router.post('/callout', calloutLimiter, async (req, res) => {
       if (error?.code === 11000) return res.status(409).json({ msg: 'You already called them out this round' });
       throw error;
     }
+
+    notify({
+      toUserId: target._id,
+      fromUserId: actor._id,
+      type: 'AFTER_HOURS_CALLOUT',
+      title: 'After Hours',
+      message: `${actor.displayName} called you out. Pick a side before the room moves on.`
+    });
 
     await touchPresence(actor);
     return res.json(await buildRoomSnapshot(actor));

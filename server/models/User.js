@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   password: { type: String, required: true },
   avatar: { type: String, default: null },
+  avatarStorageKey: { type: String, default: null },
   nenType: { type: String, enum: ['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST', null], default: null },
   inventory: [{ type: String }],
   auraBalance: { type: Number, default: 0, min: 0 },

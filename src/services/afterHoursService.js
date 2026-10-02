@@ -6,6 +6,18 @@ export const answerAfterHours = async (roundKey, choice) => (
   api.post('/after-hours/answer', { roundKey, choice })
 );
 
+export const shoutAfterHours = async (text) => (
+  api.post('/after-hours/shout', { text })
+);
+
+export const throwAfterHoursChallenge = async (promptId) => (
+  api.post('/after-hours/challenge', { promptId })
+);
+
+export const joinAfterHoursChallenge = async (activityId, text) => (
+  api.post(`/after-hours/feed/${activityId}/join`, { text })
+);
+
 export const reactAfterHours = async (activityId, reaction) => (
   api.post(`/after-hours/feed/${activityId}/react`, { reaction })
 );

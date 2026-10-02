@@ -55,30 +55,45 @@ Main tabs:
 
 ### After Hours
 
-After Hours is Hakoware's first public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, or generic chatroom.
+After Hours is Hakoware's public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, or generic chatroom.
 
-Current vertical slice:
+Current product shape:
 
-- one public live room;
+- the **feed is the room**; people and what they do are the primary surface;
 - only users who enter the room count as present;
-- one coordinated `Pick a Side` prompt is live for everyone at a time;
-- the room event rotates every 10 minutes;
-- people lock one answer per round, then see the room split;
-- structured room feed shows recent answers and call-outs;
-- users can react to other people's answers with the fixed Hakoware reaction set;
-- after picking a side, a user can publicly call out somebody who is currently around and has not answered that round;
+- honest live presence expires after roughly 5 minutes; do not fake users or activity;
+- real room activity remains visible for roughly 3 hours so the room still has residue with a small userbase;
+- users can leave one-line public **Shouts** with strict length/rate limits;
+- users can throw one of the rotating lightweight **Challenges**;
+- answering a challenge requires an actual one-line response, which creates its own feed moment and notifies the challenge owner;
+- one coordinated `Pick a Side` event still rotates every 10 minutes, but it is a compact pinned room event rather than the definition of the page;
+- room activity supports the fixed Hakoware reaction set;
+- after picking a side, a user can publicly call out somebody currently around who has not answered that event;
+- call-outs create an in-app notification with a direct action back into After Hours;
+- test / Founder Lab users remain isolated from the live room;
+- public room payloads use usernames / display names and public activity IDs rather than raw user IDs;
+- old room data is TTL-cleaned;
 - no unrestricted stranger DMs;
 - no swiping / matching / dating language;
-- no free-form public posting in this first slice;
-- test / Founder Lab users are isolated from the live room;
-- public room payloads use usernames / display names and public activity IDs rather than exposing raw user IDs;
-- room presence expires quickly and old room data is TTL-cleaned.
+- no fake city, house, or life-sim layer;
+- no threaded public chat. Shouts and challenge responses are deliberately short-lived social residue.
 
 Product rule:
 
 **The room/activity is the primary object. Strangers are participants inside it, not cards to browse.**
 
-The first question to validate is whether a user with quiet contracts will voluntarily enter After Hours, participate, react/call someone out, and linger or return.
+The question to validate is no longer “does Pick a Side work?” It is: **when contracts are quiet, will users leave something in After Hours, touch what somebody else left, and come back when another person touches theirs?**
+
+### Avatars
+
+- every account can add, change, or remove an avatar from **You**;
+- the client center-crops and compresses the selected image to a 512×512 JPEG before upload;
+- the server caps upload size and only accepts JPG, PNG, or WebP with matching magic bytes; SVG is intentionally not accepted;
+- avatar objects use the existing Railway/S3-compatible private bucket infrastructure;
+- avatar object keys never enter client payloads;
+- public delivery uses the username avatar endpoint plus a cache-busting version in the user avatar URL;
+- shared `UserAvatar` rendering is used across profile, app chrome, contracts, After Hours, live bounties, and the Shame Board;
+- initials remain the fallback if a user has no avatar or an image cannot load.
 
 Founder tooling:
 
