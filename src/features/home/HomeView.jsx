@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Clock3, Plus, Swords, UserPlus, X } from 'lucide-react';
+import { ArrowRight, Clock3, Plus, Radio, Swords, UserPlus, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
 import { ContractCard } from '../friendship/components/ContractCard';
@@ -178,12 +178,11 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <p className="eyebrow">You’re in, {identity}</p>
           <h1>Start with one person.</h1>
-          <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
-          <div className="onboarding-rail" aria-label="How your first contract starts">
-            <span><b>01</b> Pick a person</span>
-            <span><b>02</b> Set the rules</span>
-            <span><b>03</b> Check in together</span>
+          <div className="first-contract-actions">
+            <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
+            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>After Hours</Button>
           </div>
+          <p className="onboarding-short-rule">Someone you know, or someone you run into. Contract → check in → don’t disappear.</p>
         </section>
       </div>
     );
