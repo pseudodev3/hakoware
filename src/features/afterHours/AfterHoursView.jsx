@@ -369,6 +369,30 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     );
   };
 
+  const renderSpark = (item, isOwn) => {
+    const totalSparked = Number(item.spark?.total) || 0;
+    const alreadySparked = Boolean(item.spark?.viewerSparked);
+    if (isOwn) {
+      return totalSparked > 0 ? (
+        <span className="after-hours-spark-count"><Sparkles size={13} strokeWidth={1.8} /> {totalSparked} Aura</span>
+      ) : null;
+    }
+    return (
+      <button
+        type="button"
+        className={alreadySparked ? 'after-hours-spark is-sparked' : 'after-hours-spark'}
+        disabled={Boolean(busy) || alreadySparked || viewerAuraBalance < sparkAmount}
+        onClick={() => submitSpark(item.id)}
+        aria-label={alreadySparked ? 'Already Sparked' : 'Send Aura Spark'}
+        title={alreadySparked ? 'Sparked' : sparkAmount + ' Aura'}
+      >
+        <Sparkles size={13} strokeWidth={1.8} />
+        <span>{alreadySparked ? 'Sparked' : 'Spark'}</span>
+        {totalSparked > 0 && <small>{totalSparked}</small>}
+      </button>
+    );
+  };
+
   const selectedPresence = selectedPerson ? presenceFor(selectedPerson) : null;
   const selectedHasContract = selectedPerson ? hasContractWith(selectedPerson) : false;
   const canTagSelected = Boolean(
@@ -377,6 +401,14 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     && !selectedPresence.answeredCurrent
     && !selectedPresence.isYou
   );
+
+  const selectedRecentPosts = selectedPerson
+    ? (room.feed || []).filter((item) => (
+        SOCIAL_POST_TYPES.has(item.type)
+        && !item.anonymous
+        && String(item.actor?.username || '').toLowerCase() === String(selectedPerson.username || '').toLowerCase()
+      )).slice(0, 2)
+    : [];
 
   return (
     <>
