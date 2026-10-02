@@ -107,9 +107,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     void loadNotifications({ force: true });
   };
 
-  const openAfterHours = async (notification) => {
+  const openAfterHours = (notification) => {
     const id = notification.id || notification._id;
-    if (!notification.read) await handleMarkAsRead(id);
+    if (!notification.read) void handleMarkAsRead(id);
     onNavigate?.('afterHours', {
       focusActivityId: notification.afterHoursActivityId || null
     });
