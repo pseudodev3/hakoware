@@ -115,18 +115,19 @@ export const Arena = ({ friendships, showToast }) => {
       <header className="arena-hero">
         <div>
           <p className="eyebrow">Arena</p>
-          <h1>Bankruptcy and Chaos open the Arena.</h1>
-          <p>Bankrupt partners can be bountied. Fail a Chaos anomaly and Hakoware puts you on the board automatically.</p>
+          <h1>Live pressure.</h1>
+          <p>Bounties, hunts, grudges.</p>
         </div>
-        <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)} disabled={bankruptFriendships.length === 0}>
-          {bankruptFriendships.length === 0 ? 'No bankrupt targets' : 'Place bounty'}
-        </Button>
+        {bankruptFriendships.length > 0 && (
+          <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)}>
+            Place bounty
+          </Button>
+        )}
       </header>
 
 
       <div className="arena-meta-line" aria-label="Arena summary">
-        <span><b>{hunterProfile.rank || 'Rookie Hunter'}</b> · {hunterProfile.rep || 0} Rep · {hunterProfile.successfulHunts || 0} closes</span>
-        <span><b>{hunterProfile.auraCollected || 0}</b> Aura collected</span>
+        <span><b>{hunterProfile.rank || 'Rookie Hunter'}</b> · {hunterProfile.rep || 0} Rep</span>
         <span><b>{openTargets}</b> open target{openTargets === 1 ? '' : 's'}</span>
         <span><b>{bountyPool}</b> Aura on the board</span>
         {grudges.length > 0 && <span><b>{grudges.length}</b> grudge{grudges.length === 1 ? '' : 's'}</span>}
@@ -143,7 +144,9 @@ export const Arena = ({ friendships, showToast }) => {
         <section className="arena-panel">
           <div className="arena-panel-head">
             <div><Target size={18} strokeWidth={1.8} /><strong>Live hunts</strong></div>
-            <label className="arena-search"><Search size={15} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a target" /></label>
+            {bounties.length > 6 && (
+              <label className="arena-search"><Search size={15} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a target" /></label>
+            )}
           </div>
           <div className="arena-list">
             {loading ? <div className="arena-empty">Loading Arena…</div> : filtered.length === 0 ? <div className="arena-empty">{search ? 'No matching targets.' : 'No active bounties.'}</div> : filtered.map((bounty) => {
