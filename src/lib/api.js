@@ -1,6 +1,14 @@
 export const API_BASE_URL = (import.meta.env.API_URL || '').trim().replace(/\/+$/, '');
 const API_URL = `${API_BASE_URL}/api`;
 
+export const resolveApiMediaUrl = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^(?:https?:|data:|blob:)/i.test(raw)) return raw;
+  if (raw.startsWith('/api/')) return `${API_BASE_URL}${raw}`;
+  return raw;
+};
+
 const handleResponse = async (response) => {
   const contentType = response.headers.get('content-type');
   const isJson = contentType && contentType.includes('application/json');
