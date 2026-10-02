@@ -237,6 +237,8 @@ router.post('/post', socialPostLimiter, async (req, res) => {
         description: `Burned ${burnAmount} Aura on an After Hours post`,
         idempotencyKey: `after-hours-burn:${createdActivity._id}`,
         metadata: { afterHoursActivityId: createdActivity.publicId, postType: type }
+      }).catch((ledgerError) => {
+        console.warn('After Hours burn ledger write failed:', ledgerError.message);
       });
     }
 
@@ -429,7 +431,9 @@ router.post('/feed/:activityId/spark', sparkLimiter, async (req, res) => {
         userId: actor._id,
         amount: -SPARK_AMOUNT,
         type: 'AFTER_HOURS_SPARK_SENT',
-        description: `Sparked ${recipient.displayName} in After Hours`,
+        description: activity.type === 'CONFESSION' && activity.anonymous
+          ? 'Sparked an anonymous confession in After Hours'
+          : `Sparked ${recipient.displayName} in After Hours`,
         idempotencyKey: `after-hours-spark-out:${spark._id}`,
         metadata: { afterHoursActivityId: activity.publicId }
       }),
@@ -441,7 +445,10 @@ router.post('/feed/:activityId/spark', sparkLimiter, async (req, res) => {
         idempotencyKey: `after-hours-spark-in:${spark._id}`,
         metadata: { afterHoursActivityId: activity.publicId }
       })
-    ]);
+    ].map((operation) => operation.catch((ledgerError) => {
+      console.warn('After Hours Spark ledger write failed:', ledgerError.message);
+      return null;
+    })));
 
     const sparkTotal = await AfterHoursSpark.countDocuments({ activityId: activity._id });
     await Notification.findOneAndUpdate(
