@@ -17,7 +17,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {} }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, onActivitySeen }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -125,6 +125,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
                 onAction={onAction}
                 referenceLayout
                 socialState={socialContracts?.[friendship._id || friendship.id]}
+                onActivitySeen={onActivitySeen}
               />
             ))}
           </div>

@@ -38,6 +38,9 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Check circle activity acknowledgement
+        run: npm run check:circle-activity
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
@@ -55,3 +58,7 @@ jobs:
       - name: Check client payload minimization
         working-directory: server
         run: npm run check:client-payloads
+
+      - name: Check first mutual check-in
+        working-directory: server
+        run: npm run check:duo-activation

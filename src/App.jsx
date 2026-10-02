@@ -31,6 +31,7 @@ import { LegalPage } from './features/legal/LegalPage';
 import { returnToFounderSession } from './services/testLabService';
 import { prefetchCheckinState, prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
+import { applyCircleSeen, markCircleSeen, readCircleSeen } from './lib/circleActivity';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
 
@@ -69,7 +70,7 @@ function MainApp({ showToast }) {
   const [contractPrefill, setContractPrefill] = useState(null);
   const [afterHoursFocusId, setAfterHoursFocusId] = useState(null);
   const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
-  const socialSinceRef = useRef(null);
+  const circleSeenRef = useRef({ userId: null, items: {} });
 
   const applyBootstrap = (payload) => {
     if (!payload) return;
@@ -84,35 +85,35 @@ function MainApp({ showToast }) {
   };
 
 
-  const socialWindow = () => {
+  const circleSeen = () => {
     const userId = String(user?.uid || user?.id || user?._id || '');
-    const key = `hakoware-pulse-seen:${userId}`;
-    if (!socialSinceRef.current || socialSinceRef.current.userId !== userId) {
-      socialSinceRef.current = {
+    if (circleSeenRef.current.userId !== userId) {
+      circleSeenRef.current = {
         userId,
-        key,
-        since: localStorage.getItem(key) || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        items: readCircleSeen(localStorage, userId)
       };
     }
-    return socialSinceRef.current;
+    return circleSeenRef.current;
   };
 
   const loadSocial = async () => {
     if (!isAuthenticated || !user) return;
     try {
-      const data = await getSocialPresence(socialWindow().since);
-      setSocialPresence(data || { pulse: [], contracts: {} });
+      const viewerId = String(user.uid || user.id || user._id);
+      circleSeen();
+      const data = await getSocialPresence(new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
+      if (circleSeenRef.current.userId && circleSeenRef.current.userId !== viewerId) return;
+      setSocialPresence(applyCircleSeen(data || { pulse: [], contracts: {} }, circleSeen().items));
     } catch (error) {
       console.error('Could not load social presence:', error);
     }
   };
 
-  const markPulseSeen = () => {
+  const markActivitySeen = (items) => {
     if (!user) return;
-    const windowState = socialWindow();
-    const seenAt = new Date().toISOString();
-    localStorage.setItem(windowState.key, seenAt);
-    windowState.since = seenAt;
+    const state = circleSeen();
+    state.items = markCircleSeen(localStorage, state.userId, state.items, items);
+    setSocialPresence((current) => applyCircleSeen(current, state.items));
   };
 
   const loadData = async () => {
@@ -324,7 +325,7 @@ function MainApp({ showToast }) {
             onRefresh={loadData}
             showToast={showToast}
             socialPresence={socialPresence}
-            onPulseSeen={markPulseSeen}
+            onActivitySeen={markActivitySeen}
           />
         )}
 
@@ -342,6 +343,7 @@ function MainApp({ showToast }) {
             onNavigate={navigateTo}
             showToast={showToast}
             socialContracts={socialPresence.contracts}
+            onActivitySeen={markActivitySeen}
           />
         )}
 
