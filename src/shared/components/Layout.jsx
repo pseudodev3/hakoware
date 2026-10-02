@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Bell, Home, LogOut, Moon, Plus, Radio, Sun, UserRound } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Bell, Home, LogOut, Moon, Plus, Radio, ScrollText, Sun, Swords, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -16,16 +16,24 @@ const SECONDARY_LABELS = {
   contracts: 'Contracts',
   arena: 'Arena'
 };
+const CIRCLE_ITEMS = [
+  { id: 'contracts', label: 'Contracts', icon: ScrollText },
+  { id: 'arena', label: 'Arena', icon: Swords }
+];
 
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
   const { user, logout, bootstrapData } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(bootstrapData?.notifications?.unreadCount || 0);
   const [theme, setTheme] = useState(getInitialTheme);
+  const shellRef = useRef(null);
+  const circleContext = ['home', 'contracts', 'arena'].includes(activeTab);
+  const closeNotifications = useCallback(() => setShowNotifications(false), []);
   const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || SECONDARY_LABELS[activeTab] || 'Hakoware';
   const totalBadge = unreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => { if (shellRef.current) shellRef.current.inert = showNotifications; }, [showNotifications]);
   useEffect(() => {
     if (bootstrapData?.notifications) {
       setUnreadCount(bootstrapData.notifications.unreadCount || 0);
@@ -37,7 +45,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
   const themeLabel = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
 
   return (
-    <div className="app-layout">
+    <div ref={shellRef} className={`app-layout ${circleContext ? 'circle-context' : ''}`}>
       <aside className="sidebar">
         <div className="sidebar-brand">
           <img className="brand-mark" src="/hakoware-mark-v2.png" alt="" />
@@ -59,6 +67,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         </nav>
 
         <div className="sidebar-footer">
+          {circleContext && <nav className="sidebar-circle-links" aria-label="Circle destinations">
+            {CIRCLE_ITEMS.map((item) => <button type="button" key={item.id} className={activeTab === item.id ? 'active' : ''} onClick={() => onTabChange(item.id)} aria-current={activeTab === item.id ? 'page' : undefined}>
+              <item.icon size={17} strokeWidth={1.8} /><span>{item.label}</span>
+            </button>)}
+          </nav>}
           <button className="new-contract-btn" onClick={onAddFriend}>
             <Plus size={18} strokeWidth={2} />
             <span>New contract</span>
@@ -105,11 +118,17 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         <div className="scroll-content">{children}</div>
       </main>
 
-      <nav className="mobile-nav" aria-label="Main navigation">
+      <div className="mobile-dock">
+        {circleContext && <nav className="mobile-circle-shortcuts" aria-label="Circle destinations">
+          {CIRCLE_ITEMS.map((item) => <button type="button" key={item.id} className={activeTab === item.id ? 'active' : ''} onClick={() => onTabChange(item.id)} aria-current={activeTab === item.id ? 'page' : undefined}>
+            <item.icon size={17} strokeWidth={1.8} /><span>{item.label}</span>
+          </button>)}
+        </nav>}
+        <nav className="mobile-nav" aria-label="Main navigation">
         {NAV_ITEMS.map((item) => (
           <button
             key={item.id}
-            className={`mobile-nav-item ${activeTab === item.id ? 'active' : ''}`}
+            className={`mobile-nav-item ${activeTab === item.id || (item.id === 'home' && circleContext) ? 'active' : ''}`}
             onClick={() => onTabChange(item.id)}
             aria-current={activeTab === item.id ? 'page' : undefined}
           >
@@ -117,11 +136,12 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
             <span>{item.label}</span>
           </button>
         ))}
-      </nav>
+        </nav>
+      </div>
 
       <NotificationsPanel
         isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
+        onClose={closeNotifications}
         onUnreadCountChange={setUnreadCount}
         pendingInvitations={pendingInvitations}
         onRefresh={onRefresh}

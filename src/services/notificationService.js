@@ -41,7 +41,7 @@ export const NOTIFICATION_TYPES = {
   SEASON_COMPLETED: 'SEASON_COMPLETED'
 };
 
-export const getUserNotifications = async ({ force = false } = {}) => {
+export const getUserNotifications = async ({ force = false, throwOnError = false } = {}) => {
   try {
     return await fetchResource(
       RESOURCE_KEYS.notifications,
@@ -49,6 +49,7 @@ export const getUserNotifications = async ({ force = false } = {}) => {
       { ttl: 15000, force }
     );
   } catch (error) {
+    if (throwOnError) throw error;
     console.error('Error getting notifications:', error);
     return peekResource(RESOURCE_KEYS.notifications) || [];
   }

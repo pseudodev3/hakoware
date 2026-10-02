@@ -1,133 +1,156 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, Check, CheckCheck, Clock, MessageSquare, Radio, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
-import {
-  deleteNotification,
-  getUserNotifications,
-  peekUserNotifications,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  NOTIFICATION_TYPES
-} from '../../../services/notificationService';
+import { Bell, Check, CheckCheck, Clock, MessageSquare, MoreHorizontal, Radio, RotateCcw, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap, ArrowUpRight } from 'lucide-react';
+import { deleteNotification, getUserNotifications, peekUserNotifications, markAllNotificationsAsRead, markNotificationAsRead, NOTIFICATION_TYPES } from '../../../services/notificationService';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { Button } from '../../../shared/components/Button';
 import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
 import './NotificationsPanel.css';
 
+const notificationId = (item) => String(item.id || item._id);
+const destinationFor = (type = '') => {
+  if (type.startsWith('AFTER_HOURS_')) return 'afterHours';
+  if (type.startsWith('BOUNTY_')) return 'arena';
+  if (type === 'VOICE_NOTE') return 'voice';
+  return 'contracts';
+};
+const dayGroup = (value) => {
+  const date = new Date(value);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return 'Earlier';
+};
+
 export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, onNavigate, showToast }) => {
-  const cachedNotifications = peekUserNotifications().filter((notification) => notification.type !== 'CONTRACT_INVITE');
-  const [notifications, setNotifications] = useState(cachedNotifications);
-  const [loading, setLoading] = useState(cachedNotifications.length === 0);
-  const [markingAll, setMarkingAll] = useState(false);
+  const [notifications, setNotifications] = useState(() => peekUserNotifications().filter((item) => item.type !== 'CONTRACT_INVITE'));
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const [expanded, setExpanded] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const itemsRef = useRef(notifications);
+  const requestRef = useRef(0);
+  const inFlightRef = useRef(null);
+  const keyHandlerRef = useRef(null);
+  const dialogRef = useRef(null);
+  const countCallback = useRef(onUnreadCountChange);
+  countCallback.current = onUnreadCountChange;
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
   const shouldReduceMotion = useReducedMotion();
 
-  const loadNotifications = async ({ force = false } = {}) => {
-    try {
-      const data = await getUserNotifications({ force });
-      const visible = (data || []).filter((notification) => notification.type !== 'CONTRACT_INVITE');
-      setNotifications(visible);
-      onUnreadCountChange?.(visible.filter((notification) => !notification.read).length);
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadNotifications();
-    const interval = setInterval(() => loadNotifications({ force: true }), 30000);
-    return () => clearInterval(interval);
+  const applyItems = useCallback((next) => {
+    itemsRef.current = next;
+    setNotifications(next);
+    countCallback.current?.(next.filter((item) => !item.read).length);
   }, []);
-
+  const loadNotifications = useCallback(async ({ force = false } = {}) => {
+    if (busyRef.current) return;
+    const request = ++requestRef.current;
+    setLoading(true);
+    try {
+      const pending = getUserNotifications({ force, throwOnError: true });
+      inFlightRef.current = pending;
+      const data = await pending;
+      if (request !== requestRef.current || busyRef.current) return;
+      applyItems((data || []).filter((item) => item.type !== 'CONTRACT_INVITE'));
+      setLoadError(false);
+    } catch {
+      if (request === requestRef.current) setLoadError(true);
+    } finally {
+      if (request === requestRef.current) setLoading(false);
+    }
+  }, [applyItems]);
+  useEffect(() => {
+    void loadNotifications();
+    const interval = setInterval(() => void loadNotifications({ force: true }), 30000);
+    return () => { clearInterval(interval); requestRef.current += 1; };
+  }, [loadNotifications]);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 640px)');
+    const update = () => setMobile(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
   useEffect(() => {
     if (!isOpen) return undefined;
-    loadNotifications({ force: true });
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, onClose]);
-
-  const applyLocalNotifications = (next) => {
-    setNotifications(next);
-    onUnreadCountChange?.(next.filter((notification) => !notification.read).length);
-  };
-
-  const handleMarkAsRead = async (id) => {
-    const previous = notifications;
-    const next = notifications.map((notification) => (
-      String(notification.id || notification._id) === String(id)
-        ? { ...notification, read: true }
-        : notification
-    ));
-    applyLocalNotifications(next);
-
-    const result = await markNotificationAsRead(id);
-    if (result?.success === false) {
-      applyLocalNotifications(previous);
-      showToast?.(result.error || 'Could not mark notification as read', 'ERROR');
-      return;
-    }
-
+    setExpanded(null);
     void loadNotifications({ force: true });
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event) => keyHandlerRef.current?.(event);
+    document.addEventListener('keydown', onKeyDown);
+    const frame = requestAnimationFrame(() => dialogRef.current?.querySelector('.close-panel')?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      requestAnimationFrame(() => { if (previousFocus?.isConnected) previousFocus.focus(); });
+    };
+  }, [isOpen, loadNotifications]);
+  const onDialogKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      if (expanded) setExpanded(null); else onClose();
+    }
+    if (event.key !== 'Tab') return;
+    const controls = [...dialogRef.current.querySelectorAll('button:not(:disabled), [href], [tabindex="0"]')];
+    const first = controls[0]; const last = controls[controls.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) { event.preventDefault(); last?.focus(); }
+    if (!event.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) { event.preventDefault(); first?.focus(); }
   };
-
-  const handleMarkAllRead = async () => {
-    if (markingAll || !notifications.some((notification) => !notification.read)) return;
-
-    const previous = notifications;
-    setMarkingAll(true);
-    applyLocalNotifications(notifications.map((notification) => ({ ...notification, read: true })));
-
-    const result = await markAllNotificationsAsRead();
-    if (result?.success === false) {
-      applyLocalNotifications(previous);
-      showToast?.(result.error || 'Could not mark notifications as read', 'ERROR');
-    } else {
+  keyHandlerRef.current = onDialogKeyDown;
+  // Serialize mutations so failed writes can restore their snapshot without undoing another action.
+  const mutate = async (operation, optimistic, failure) => {
+    if (busyRef.current) return;
+    busyRef.current = true; setBusy(true); requestRef.current += 1; setLoading(false);
+    const previous = itemsRef.current;
+    const previousLoad = inFlightRef.current;
+    applyItems(optimistic(previous));
+    try {
+      const result = await operation();
+      if (result?.success === false) throw new Error(result.error || failure);
+    } catch (error) {
+      applyItems(previous);
+      showToast?.(error.message || failure, 'ERROR');
+    } finally {
+      await previousLoad?.catch(() => {});
+      busyRef.current = false; setBusy(false);
       void loadNotifications({ force: true });
     }
-
-    setMarkingAll(false);
   };
-
-  const handleDelete = async (id) => {
-    const previous = notifications;
-    const next = notifications.filter((notification) => String(notification.id || notification._id) !== String(id));
-    applyLocalNotifications(next);
-
-    const result = await deleteNotification(id);
-    if (result?.success === false) {
-      applyLocalNotifications(previous);
-      showToast?.(result.error || 'Could not delete notification', 'ERROR');
-      return;
-    }
-
-    void loadNotifications({ force: true });
+  const handleMarkAsRead = (id) => mutate(() => markNotificationAsRead(id), (items) => items.map((item) => notificationId(item) === id ? { ...item, read: true } : item), 'Could not mark activity as read');
+  const handleMarkAllRead = () => mutate(markAllNotificationsAsRead, (items) => items.map((item) => ({ ...item, read: true })), 'Could not mark activity as read');
+  const handleDelete = (id) => {
+    setExpanded(null);
+    dialogRef.current?.querySelector('.close-panel')?.focus();
+    return mutate(() => deleteNotification(id), (items) => items.filter((item) => notificationId(item) !== id), 'Could not delete activity');
   };
-
-  const openAfterHours = (notification) => {
-    const id = notification.id || notification._id;
-    if (!notification.read) void handleMarkAsRead(id);
-    const isTagIn = [NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT]
-      .includes(notification.type);
-    onNavigate?.('afterHours', {
-      focusActivityId: isTagIn ? 'room-event' : (notification.afterHoursActivityId || null)
-    });
-    onClose?.();
+  const openNotification = (notification) => {
+    if (busyRef.current) return;
+    if (!notification.read) void handleMarkAsRead(notificationId(notification));
+    const destination = destinationFor(notification.type);
+    if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
+    const roomEvent = [NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT].includes(notification.type);
+    onNavigate?.(destination, destination === 'afterHours' ? { focusActivityId: roomEvent ? 'room-event' : (notification.afterHoursActivityId || null) } : undefined);
+    onClose();
   };
-
   const handleRespond = async (id, action) => {
-    const result = await respondToInvitation(id, action);
-    if (result.success) {
+    if (busyRef.current) return;
+    busyRef.current = true; setBusy(true); requestRef.current += 1;
+    try {
+      const result = await respondToInvitation(id, action);
+      if (!result.success) throw new Error(result.error || 'Could not respond to contract');
       showToast?.(action === 'ACCEPT' ? 'Contract accepted' : 'Contract declined', 'SUCCESS');
       await onRefresh?.();
-    } else {
-      showToast?.(result.error || 'Could not respond to contract', 'ERROR');
-    }
+    } catch (error) { showToast?.(error.message, 'ERROR'); }
+    finally { busyRef.current = false; setBusy(false); void loadNotifications({ force: true }); }
   };
-
   const getIcon = (type) => {
     switch (type) {
       case NOTIFICATION_TYPES.LIMIT_CHANGED: return <Clock size={16} strokeWidth={1.8} />;
@@ -183,7 +206,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     }
   };
 
-  const formatType = (type = '') => type
+  const formatType = (type = '') => type === 'CHECKIN' ? 'Check-in' : type
     .replace(/_/g, ' ')
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
@@ -197,136 +220,62 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     return date.toLocaleDateString();
   };
 
-  const unreadCount = notifications.filter((notification) => !notification.read).length;
-  const panelMotion = shouldReduceMotion
-    ? {
-        initial: { opacity: 0, transform: 'translateX(0%)' },
-        animate: { opacity: 1, transform: 'translateX(0%)' },
-        exit: { opacity: 0, transform: 'translateX(0%)' },
-        transition: { duration: .14, ease: [0.2, 0, 0, 1] }
-      }
-    : {
-        initial: { opacity: 1, transform: 'translateX(100%)' },
-        animate: { opacity: 1, transform: 'translateX(0%)' },
-        exit: { opacity: 1, transform: 'translateX(100%)' },
-        transition: { duration: .24, ease: [0.32, 0.72, 0, 1] }
-      };
-
-  return (
-    <AnimatePresence initial={false}>
-      {isOpen && (
-        <>
-          <motion.div
-            className="panel-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: .16, ease: [0.2, 0, 0, 1] }}
-            onClick={onClose}
-          />
-          <motion.aside className="notifications-panel" aria-label="Notifications" {...panelMotion}>
-            <header className="panel-header">
-              <div className="panel-heading">
-                <h3>Activity</h3>
-              </div>
-              <div className="panel-header-actions">
-                {unreadCount > 0 && (
-                  <button className="mark-all-btn" onClick={handleMarkAllRead} disabled={markingAll} aria-label="Mark all notifications as read">
-                    <CheckCheck size={14} strokeWidth={1.9} aria-hidden="true" />
-                    <span>{markingAll ? 'Marking…' : 'Mark all read'}</span>
-                  </button>
-                )}
-                <button className="close-panel" onClick={onClose} aria-label="Close notifications"><X size={19} strokeWidth={1.8} /></button>
-              </div>
-            </header>
-
-            <div className="panel-content">
-              {pendingInvitations?.length > 0 && (
-                <section className="invitations-section" aria-labelledby="pending-contracts-title">
-                  <div className="panel-section-title">
-                    <UserPlus size={16} strokeWidth={1.8} />
-                    <span id="pending-contracts-title">Invites</span>
-                  </div>
-                  <div className="invitation-list">
-                    {pendingInvitations.map((invitation) => (
-                      <div key={invitation._id} className="invitation-card">
-                        <p><strong>{invitation.user1.displayName}</strong> wants to start a contract.</p>
-                        <div className="invitation-actions">
-                          <Button variant="aura" size="sm" className="flex-1" onClick={() => handleRespond(invitation._id, 'ACCEPT')}>Accept</Button>
-                          <Button variant="secondary" size="sm" onClick={() => handleRespond(invitation._id, 'DECLINE')}>Decline</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              <section className="voice-section"><VoiceNotesInbox /></section>
-
-              {loading && notifications.length === 0 ? (
-                <div className="panel-empty" aria-live="polite"><div className="loading-spinner" /><p>Syncing…</p></div>
-              ) : notifications.length === 0 ? (
-                <div className="panel-empty"><Bell size={34} className="empty-icon" strokeWidth={1.6} /><p>No notifications.</p></div>
-              ) : (
-                <div className="notification-list">
-                  <AnimatePresence initial={false}>
-                    {notifications.map((notification) => (
-                      <motion.div
-                        layout={shouldReduceMotion ? false : 'position'}
-                        key={notification.id || notification._id}
-                        className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                        initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
-                        animate={{ opacity: notification.read ? .76 : 1, y: 0 }}
-                        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: .99 }}
-                        transition={{ duration: shouldReduceMotion ? .08 : .16, ease: [0.2, 0, 0, 1] }}
-                      >
-                        <div className={`item-icon ${getTone(notification.type)}`}>{getIcon(notification.type)}</div>
-                        <div className="item-body">
-                          <div className="item-header">
-                            <span className="item-type">{formatType(notification.type)}</span>
-                            <span className="item-time">{formatTime(notification.createdAt)}</span>
-                          </div>
-                          <p className="item-msg">{notification.message}</p>
-                        </div>
-                        <div className="item-actions">
-                          {[NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT, NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CHALLENGE, NOTIFICATION_TYPES.AFTER_HOURS_REPLY, NOTIFICATION_TYPES.AFTER_HOURS_SPARK, NOTIFICATION_TYPES.AFTER_HOURS_NOTE].includes(notification.type) && (
-                            <button
-                              className="action-icon"
-                              onClick={() => openAfterHours(notification)}
-                              aria-label="Open After Hours"
-                              title="Open After Hours"
-                            >
-                              <Radio size={14} strokeWidth={1.9} />
-                            </button>
-                          )}
-                          {!notification.read && (
-                            <button
-                              className="action-icon"
-                              onClick={() => handleMarkAsRead(notification.id || notification._id)}
-                              aria-label="Mark notification as read"
-                              title="Mark read"
-                            >
-                              <Check size={14} strokeWidth={1.9} />
-                            </button>
-                          )}
-                          <button
-                            className="action-icon delete"
-                            onClick={() => handleDelete(notification.id || notification._id)}
-                            aria-label="Delete notification"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} strokeWidth={1.9} />
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-          </motion.aside>
-        </>
-      )}
-    </AnimatePresence>
-  );
+  const unreadCount = notifications.filter((item) => !item.read).length;
+  const visible = filter === 'unread' ? notifications.filter((item) => !item.read) : notifications;
+  const offset = mobile ? 'translateY(100%)' : 'translateX(100%)';
+  const panelMotion = {
+    initial: { opacity: shouldReduceMotion ? 0 : 1, transform: shouldReduceMotion ? 'none' : offset },
+    animate: { opacity: 1, transform: 'none' },
+    exit: { opacity: shouldReduceMotion ? 0 : 1, transform: shouldReduceMotion ? 'none' : offset },
+    transition: { duration: shouldReduceMotion ? .1 : .24, ease: [0.32, 0.72, 0, 1] }
+  };
+  return createPortal(<AnimatePresence initial={false}>
+    {isOpen && <>
+      <motion.div className="panel-backdrop" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .14 }} onClick={onClose} />
+      <motion.aside ref={dialogRef} className="notifications-panel" role="dialog" aria-modal="true" aria-labelledby="activity-title" {...panelMotion}>
+        <div className="panel-handle" aria-hidden="true" />
+        <header className="panel-header">
+          <div className="panel-heading"><h2 id="activity-title">Activity</h2><p>{unreadCount ? `${unreadCount} unread update${unreadCount === 1 ? '' : 's'}` : 'You’re all caught up'}</p></div>
+          <button className="close-panel" onClick={onClose} aria-label="Close activity"><X size={20} /></button>
+        </header>
+        <div className="activity-filters" role="group" aria-label="Activity filter">
+          {[['all', 'All'], ['unread', `Unread${unreadCount ? ` · ${unreadCount}` : ''}`], ['voice', 'Voice']].map(([id, label]) => <button key={id} aria-pressed={filter === id} onClick={() => { setFilter(id); setExpanded(null); }}>{label}</button>)}
+        </div>
+        <div className="panel-content">
+          {loadError && <div className="activity-sync-error" role="status"><span>Couldn’t sync activity.</span><button disabled={loading} onClick={() => void loadNotifications({ force: true })}>Retry</button></div>}
+          {filter === 'voice' ? <section className="voice-section"><VoiceNotesInbox /></section> : <>
+            {pendingInvitations?.length > 0 && <section className="invitations-section" aria-labelledby="pending-contracts-title">
+              <h3 className="panel-section-title" id="pending-contracts-title"><UserPlus size={16} /> Contract invites</h3>
+              {pendingInvitations.map((invitation) => <div className="invitation-card" key={invitation._id}>
+                <p><strong>{invitation.user1?.displayName || 'Someone'}</strong> wants to start a contract.</p>
+                <div className="invitation-actions"><Button variant="aura" size="sm" disabled={busy} onClick={() => handleRespond(invitation._id, 'ACCEPT')}>Accept</Button><Button variant="secondary" size="sm" disabled={busy} onClick={() => handleRespond(invitation._id, 'DECLINE')}>Decline</Button></div>
+              </div>)}
+            </section>}
+            {loading && !notifications.length ? <div className="panel-empty" role="status"><div className="loading-spinner" /><p>Syncing activity…</p></div> : !visible.length ? <div className="panel-empty"><Bell size={32} strokeWidth={1.5} /><p>{loadError ? 'Your updates will appear here.' : filter === 'unread' ? 'All caught up.' : 'No updates yet.'}</p><span>{filter === 'unread' ? 'You can revisit everything in All.' : 'Check-ins, replies and invites land here.'}</span></div> : ['Today', 'Yesterday', 'Earlier'].map((group) => {
+              const items = visible.filter((item) => dayGroup(item.createdAt) === group);
+              if (!items.length) return null;
+              return <section className="activity-group" key={group} aria-label={group}><h3 className="activity-group-title">{group}</h3><div className="notification-list">
+                {items.map((notification) => {
+                  const id = notificationId(notification); const destination = destinationFor(notification.type);
+                  const destinationLabel = { contracts: 'Contracts', arena: 'Arena', afterHours: 'After Hours', voice: 'Voice inbox' }[destination];
+                  return <article className={`notification-item ${notification.read ? 'read' : 'unread'}`} key={id}>
+                    <button className="notification-open" disabled={busy} onClick={() => openNotification(notification)} aria-label={`${formatType(notification.type)}: ${notification.message}. Open ${destinationLabel}`}>
+                      <span className={`item-icon ${getTone(notification.type)}`} aria-hidden="true">{getIcon(notification.type)}</span>
+                      <span className="item-body"><span className="item-header"><span className="item-type">{formatType(notification.type)}</span>{!notification.read && <span className="unread-dot" aria-label="Unread" />}</span><span className="item-msg">{notification.message}</span><span className="item-meta"><time dateTime={notification.createdAt}>{formatTime(notification.createdAt)}</time><span>·</span><span>{destinationLabel}</span><ArrowUpRight size={12} aria-hidden="true" /></span></span>
+                    </button>
+                    <button className="activity-more" disabled={busy} aria-label={`More options for ${formatType(notification.type)}`} aria-expanded={expanded === id} aria-controls={`activity-options-${id}`} onClick={() => setExpanded(expanded === id ? null : id)}><MoreHorizontal size={20} /></button>
+                    {expanded === id && <div className="activity-options" id={`activity-options-${id}`}>
+                      {!notification.read && <button disabled={busy} onClick={() => void handleMarkAsRead(id)}><Check size={16} /> Mark read</button>}
+                      <button className="activity-delete" disabled={busy} onClick={() => void handleDelete(id)}><Trash2 size={16} /> Delete</button>
+                    </div>}
+                  </article>;
+                })}
+              </div></section>;
+            })}
+          </>}
+        </div>
+        <footer className="panel-footer"><button className="mark-all-btn" disabled={busy || !unreadCount} onClick={() => void handleMarkAllRead()}><CheckCheck size={18} />{busy ? 'Updating…' : 'Mark all read'}</button><button className="activity-done" onClick={onClose}>Done</button></footer>
+      </motion.aside>
+    </>}
+  </AnimatePresence>, document.body);
 };

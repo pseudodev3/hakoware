@@ -18,15 +18,32 @@
 
 Current production/main:
 
-- PR #78, `Turn After Hours into a social room with Aura`, is merged.
-- Exact squash SHA: `a5189133b778ea9ff0d99ab5af2e6f3cd81e8631`.
+- PR #79, first shared payoff + Home activity discovery, is merged on top of PR #78.
+- Exact squash SHA: `dcc87b459ea6042c1867df787397fbcedecc9fbf`.
 - Exact merged SHA passed GitHub validation and deployed successfully on both Vercel and Railway.
 - The After Hours social-room version is the production baseline: Shout / Hot Take / Confession / Ask, one-level replies, Aura Spark / Burn, short notes, and the secondary Room Question.
 - Its real iPhone interaction checklist below still needs device testing.
 
 The user asked to strengthen retention by improving the first mutual payoff and making unseen partner activity easy to discover on Home.
 
-Current implementation branch: `feat/first-duo-payoff`.
+The first shared payoff implementation below is merged in PR #79.
+
+Current implementation branch: `feat/activity-panel-navigation`.
+
+### Activity panel + reachable circle navigation
+
+- User supplied real iPhone screenshots: the full-screen Activity drawer had stacked read/delete/open buttons and Voice inbox mixed into the feed; Contracts/Arena links were hard to reach near the top of Home.
+- Contracts / Arena now occupy a 44px shortcut row immediately above the three primary tabs on Home, Contracts and Arena. Desktop has equivalent sidebar links. The redundant Home header links are removed.
+- Activity opens as a rounded bottom sheet on phones (up to 88dvh), preserving a side drawer on desktop. Its scroll region leaves the footer reachable.
+- All / Unread / Voice filters separate old voice notes from current updates. Feed rows group into Today / Yesterday / Earlier, use an unread dot, and expose read/delete through one options disclosure.
+- Tapping an update opens Contracts, Arena or After Hours as appropriate; After Hours preserves the existing post or room-event target. Contract notifications open the Contracts list, not a specific card. Voice notifications open Voice inbox.
+- Mark all read and Done are persistent footer actions. New controls have 44px targets, visible keyboard focus, reduced-motion support, and restrained press feedback.
+- The dialog uses a body portal; the app behind it becomes inert, keyboard focus is trapped, Escape works after controls disappear, and focus returns to the bell on close.
+- Mutations serialize with optimistic rollback. In-flight reads are ignored during writes and settled before revalidation; a failed sync keeps the current feed and offers Retry.
+- Existing voice playback and invitation accept/decline remain available.
+- Validation: production build, changed-file lint error check, existing circle activity / payload / duo activation checks. Local browser fixtures cover 320px / 390px / 1280px, light/dark, normal/reduced motion, shortcut routing, unread filtering, successful/failed delete, mark-all, Voice, sync retry, After Hours/Arena routing, focus restoration, Escape and keyboard trapping. Screenshots inspected.
+- Not verified: physical iPhone browser chrome/safe-area behavior or a live two-account journey. Full lint retains the three existing `YouView.jsx` hook-name errors. Existing bundle-size warning remains.
+- Finish exact-head CI before opening one finished PR; merge only on explicit user instruction.
 
 ### First shared payoff + Home activity discovery
 
