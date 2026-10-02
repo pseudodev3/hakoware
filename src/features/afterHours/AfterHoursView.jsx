@@ -400,7 +400,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                   className="after-hours-person-open"
                   disabled={person.isYou}
                   onClick={() => openPerson(person)}
-                  aria-label={person.isYou ? 'You' : `Open @${person.username}`}
+                  aria-label={person.isYou ? 'You' : 'Open @' + person.username}
                 >
                   <UserAvatar person={person} size="sm" decorative />
                   <span>
@@ -408,59 +408,112 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                     <small>@{person.username}</small>
                   </span>
                 </button>
-                {!person.isYou && (
-                  person.answeredCurrent
-                    ? <small>picked</small>
-                    : event.viewerAnswer
-                      ? (
-                        <button
-                          type="button"
-                          className="after-hours-tag-in"
-                          disabled={Boolean(busy)}
-                          onClick={() => submitTagIn(person.username)}
-                          title="Pull them into the current Pick a Side"
-                        >
-                          Tag in
-                        </button>
-                      )
-                      : <small>around</small>
-                )}
+                <small>
+                  {person.recentPostCount > 0
+                    ? person.recentPostCount + (person.recentPostCount === 1 ? ' post' : ' posts')
+                    : 'around'}
+                </small>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="after-hours-composer" aria-label="Say something to After Hours">
-          <UserAvatar person={user} size="md" decorative />
-          <form onSubmit={submitShout}>
-            <input
-              value={shout}
-              onChange={(eventObject) => setShout(eventObject.target.value.slice(0, shoutLimit))}
-              maxLength={shoutLimit}
-              placeholder="Say something to the room…"
-              aria-label="Shout to the room"
-            />
-            <span>{shout.length}/{shoutLimit}</span>
-            <button type="submit" disabled={!shout.trim() || Boolean(busy)} aria-label="Send shout">
-              <Send size={16} strokeWidth={1.9} />
-            </button>
-          </form>
+        <section className="after-hours-post-composer" aria-label="Post to After Hours">
+          <div className="after-hours-post-shell">
+            <UserAvatar person={user} size="md" decorative />
+            <div className="after-hours-post-main">
+              <div className="after-hours-post-modes" role="tablist" aria-label="Post type">
+                {POST_MODES.map((mode) => (
+                  <button
+                    type="button"
+                    key={mode.id}
+                    className={postType === mode.id ? 'active' : ''}
+                    onClick={() => {
+                      setPostType(mode.id);
+                      setPostText('');
+                      setBurnAmount(0);
+                    }}
+                    role="tab"
+                    aria-selected={postType === mode.id}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={submitPost} className="after-hours-post-form">
+                <textarea
+                  value={postText}
+                  onChange={(eventObject) => setPostText(eventObject.target.value.slice(0, postLimit))}
+                  maxLength={postLimit}
+                  rows={2}
+                  placeholder={(POST_MODES.find((mode) => mode.id === postType) || POST_MODES[0]).placeholder}
+                  aria-label="After Hours post"
+                />
+                <div className="after-hours-post-footer">
+                  <div className="after-hours-post-options">
+                    {postType === 'CONFESSION' && (
+                      <button
+                        type="button"
+                        className={postAnonymous ? 'after-hours-anonymous active' : 'after-hours-anonymous'}
+                        onClick={() => setPostAnonymous((value) => !value)}
+                        aria-pressed={postAnonymous}
+                      >
+                        <EyeOff size={13} strokeWidth={1.8} />
+                        {postAnonymous ? 'Anonymous' : 'Use my name'}
+                      </button>
+                    )}
+
+                    <div className="after-hours-burn-picker" aria-label="Aura burn">
+                      <span><Flame size={12} /> Burn</span>
+                      <button
+                        type="button"
+                        className={burnAmount === 0 ? 'active' : ''}
+                        onClick={() => setBurnAmount(0)}
+                      >
+                        none
+                      </button>
+                      {burnOptions.map((amount) => (
+                        <button
+                          type="button"
+                          key={amount}
+                          className={burnAmount === amount ? 'active' : ''}
+                          disabled={viewerAuraBalance < amount}
+                          onClick={() => setBurnAmount(amount)}
+                        >
+                          {amount}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="after-hours-post-send">
+                    <span>{postText.length}/{postLimit} · {viewerAuraBalance} Aura</span>
+                    <button type="submit" disabled={!postText.trim() || Boolean(busy)} aria-label="Post to After Hours">
+                      <Send size={16} strokeWidth={1.9} />
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <button
             type="button"
             className={challengeOpen ? 'after-hours-challenge-toggle is-open' : 'after-hours-challenge-toggle'}
             onClick={() => setChallengeOpen((value) => !value)}
             disabled={Boolean(busy)}
           >
-            <Swords size={16} strokeWidth={1.8} />
-            <span>Challenge</span>
+            <Swords size={15} strokeWidth={1.8} />
+            <span>Throw a challenge</span>
           </button>
         </section>
 
         {challengeOpen && (
           <section className="after-hours-challenge-picker">
             <div className="after-hours-section-label">
-              <span>THROW ONE IN</span>
-              <small>one-shot · no thread</small>
+              <span>CHALLENGE</span>
+              <small>optional · one-shot</small>
             </div>
             <form
               className="after-hours-custom-challenge"
@@ -474,7 +527,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                 value={customChallenge}
                 onChange={(eventObject) => setCustomChallenge(eventObject.target.value.slice(0, challengeLimit))}
                 maxLength={challengeLimit}
-                placeholder="Write your own challenge…"
+                placeholder="Write a challenge…"
                 aria-label="Custom challenge"
               />
               <span>{customChallenge.length}/{challengeLimit}</span>
@@ -497,43 +550,36 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           </section>
         )}
 
-        <section className="after-hours-pin" aria-labelledby="after-hours-question">
-          <div className="after-hours-pin-head">
-            <span><Zap size={13} /> ROOM EVENT · PICK A SIDE</span>
-            <time dateTime={event.endsAt}>{timeLabel}</time>
-          </div>
-          <div className="after-hours-pin-body">
+        <section className="after-hours-pin after-hours-room-question" aria-labelledby="after-hours-question">
+          <div className="after-hours-room-question-copy">
+            <span><HelpCircle size={13} /> ROOM QUESTION</span>
             <h2 id="after-hours-question">{event.text}</h2>
-
-            {!event.viewerAnswer ? (
-              <div className="after-hours-pin-options">
-                {(event.options || []).map((option) => (
-                  <button
-                    type="button"
-                    key={option}
-                    disabled={Boolean(busy)}
-                    onClick={() => submitAnswer(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="after-hours-pin-results">
-                {results.map((result) => (
-                  <div
-                    className={event.viewerAnswer === result.option ? 'is-yours' : ''}
-                    key={result.option}
-                  >
-                    <span>{result.option}</span>
-                    <i><b style={{ width: `${result.percent}%` }} /></i>
-                    <strong>{result.percent}%</strong>
-                  </div>
-                ))}
-              </div>
-            )}
+            <small>{total} answered · {timeLabel}</small>
           </div>
-          <small>{total} answered · Tag in someone around if you want their take.</small>
+
+          {!event.viewerAnswer ? (
+            <div className="after-hours-room-question-options">
+              {(event.options || []).map((option) => (
+                <button
+                  type="button"
+                  key={option}
+                  disabled={Boolean(busy)}
+                  onClick={() => submitAnswer(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="after-hours-room-question-results">
+              {results.map((result) => (
+                <div className={event.viewerAnswer === result.option ? 'is-yours' : ''} key={result.option}>
+                  <span>{result.option}</span>
+                  <strong>{result.percent}%</strong>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="after-hours-feed">
