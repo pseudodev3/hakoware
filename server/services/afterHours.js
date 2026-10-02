@@ -133,8 +133,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
     .map((item) => ({
       ...publicUser(item.userId),
       isYou: idString(item.userId?._id) === idString(user._id),
-      answeredCurrent: answerByUser.has(idString(item.userId?._id)),
-      lastSeenAt: item.lastSeenAt
+      answeredCurrent: answerByUser.has(idString(item.userId?._id))
     }));
 
   const feed = activities
