@@ -29,6 +29,15 @@ const relativeTime = (value) => {
 
 const personLabel = (person) => person?.displayName || person?.username || 'Someone';
 
+const POST_MODES = [
+  { id: 'SHOUT', label: 'Shout', placeholder: 'Say something to the room…' },
+  { id: 'HOT_TAKE', label: 'Hot take', placeholder: 'Drop a take people can judge…' },
+  { id: 'CONFESSION', label: 'Confession', placeholder: 'Say the thing you probably should not…' },
+  { id: 'QUESTION', label: 'Ask', placeholder: 'Ask everybody something…' }
+];
+
+const SOCIAL_POST_TYPES = new Set(['SHOUT', 'HOT_TAKE', 'CONFESSION', 'QUESTION']);
+
 const usernamesFromContracts = (friendships, ownUsername) => {
   const names = new Set();
   (friendships || []).forEach((friendship) => {
