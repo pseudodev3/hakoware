@@ -74,13 +74,166 @@
 .you-section-heading h2 { margin-top:2px; color:var(--text-secondary); font-size:.92rem; font-weight:620; letter-spacing:-.02em; }
 .grudge-list,.inventory-list,.transaction-list { overflow:hidden; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .inventory-list { overflow:visible; }
-.grudge-card { padding:12px 0; display:flex; flex-direction:column; gap:7px; }
-.grudge-card + .grudge-card { border-top:1px solid var(--border-subtle); }
-.grudge-card-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
-.grudge-card-top strong { color:var(--text-primary); font-size:.78rem; font-weight:630; }
-.grudge-card-top span { flex:0 0 auto; color:var(--aura-red); font-family:var(--font-mono); font-size:.62rem; }
-.grudge-card p { max-width:68ch; color:var(--text-muted); font-size:.67rem; line-height:1.5; text-wrap:pretty; }
-.grudge-card > .btn { align-self:flex-start; margin-top:2px; }
+
+.grudge-list {
+  padding:9px 0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  border-top:0;
+  border-bottom:0;
+}
+
+.grudge-card {
+  position:relative;
+  overflow:hidden;
+  min-height:116px;
+  padding:14px;
+  display:grid;
+  grid-template-columns:64px minmax(0,1fr) auto;
+  align-items:center;
+  gap:13px;
+  border-radius:16px;
+  background:
+    linear-gradient(100deg,color-mix(in srgb,var(--aura-red) 5%,transparent),transparent 42%),
+    var(--bg-card);
+  box-shadow:inset 0 0 0 1px var(--border-subtle);
+}
+.grudge-card.revenge-ready {
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-red) 28%,var(--border-subtle));
+}
+.grudge-card::after {
+  content:'';
+  position:absolute;
+  top:-96px;
+  right:-70px;
+  width:260px;
+  height:210px;
+  opacity:.16;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 56% 52%,transparent 0 56%,color-mix(in srgb,var(--aura-red) 36%,transparent) 56.2% 56.7%,transparent 57% 100%),
+    radial-gradient(ellipse at 72% 62%,transparent 0 70%,color-mix(in srgb,var(--aura-gold) 30%,transparent) 70.2% 70.7%,transparent 71% 100%);
+}
+.grudge-card > * {
+  position:relative;
+  z-index:1;
+}
+
+.grudge-person-avatar {
+  width:64px;
+  height:64px;
+  border-radius:15px;
+  background:var(--surface-soft);
+  box-shadow:inset 0 0 0 1px var(--border-active);
+}
+
+.grudge-card-main {
+  min-width:0;
+}
+.grudge-card-top {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.grudge-card-top strong {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-primary);
+  font-size:.92rem;
+  font-weight:650;
+  letter-spacing:-.02em;
+}
+.grudge-card-top span {
+  flex:0 0 auto;
+  color:var(--aura-red);
+  font-family:var(--font-mono);
+  font-size:.46rem;
+  font-weight:740;
+  letter-spacing:.06em;
+}
+.grudge-card-top span.ready {
+  color:var(--aura-gold);
+}
+.grudge-card-main > p {
+  margin-top:7px;
+  max-width:58ch;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-secondary);
+  font-size:.65rem;
+  line-height:1.45;
+}
+.grudge-card-meta {
+  margin-top:8px;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px 10px;
+}
+.grudge-card-meta span {
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  color:var(--text-muted);
+  font-size:.55rem;
+}
+
+.grudge-card-side {
+  min-width:138px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:9px;
+}
+.grudge-card-amount {
+  display:grid;
+  grid-template-columns:auto auto;
+  justify-content:end;
+  align-items:center;
+  gap:1px 5px;
+  color:var(--aura-red);
+}
+.grudge-card-amount svg {
+  grid-row:1;
+  grid-column:1;
+}
+.grudge-card-amount strong {
+  grid-row:1;
+  grid-column:2;
+  font-family:var(--font-mono);
+  font-size:.82rem;
+  font-weight:650;
+  font-variant-numeric:tabular-nums;
+}
+.grudge-card-amount small {
+  grid-row:2;
+  grid-column:1 / -1;
+  color:var(--text-muted);
+  font-size:.49rem;
+  text-align:right;
+}
+.grudge-card-side .btn {
+  min-height:34px;
+  padding-inline:10px;
+  font-size:.57rem;
+}
+.grudge-action-state {
+  min-height:32px;
+  padding:0 9px;
+  display:inline-flex;
+  align-items:center;
+  border-radius:9px;
+  color:var(--text-muted);
+  background:var(--surface-soft);
+  box-shadow:inset 0 0 0 1px var(--border-subtle);
+  font-size:.55rem;
+  font-weight:620;
+}
 .inventory-card { min-height:62px; padding:9px 0; display:flex; align-items:center; gap:10px; }
 .inventory-card + .inventory-card { border-top:1px solid var(--border-subtle); }
 .inventory-card .inventory-copy { flex:1; min-width:0; display:flex; flex-direction:column; }
@@ -113,11 +266,59 @@
 .account-logout-label { flex:0 0 auto; color:var(--aura-red); font-size:.64rem; font-weight:620; }
 
 @media (hover:hover) and (pointer:fine) {
+  .grudge-card {
+    transition:background-color 140ms var(--ease-out),box-shadow 140ms var(--ease-out);
+  }
+  .grudge-card:hover {
+    background-color:var(--bg-card-hover);
+    box-shadow:inset 0 0 0 1px var(--border-active),var(--shadow-card);
+  }
   .privacy-row:hover,.account-logout-row:hover { background:color-mix(in srgb,var(--surface-soft) 48%,transparent); }
   .aura-market-item { transition:background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
   .aura-market-item:hover { background:var(--bg-card-hover); box-shadow:inset 0 0 0 1px var(--border-active), var(--shadow-card); }
 }
 @media (max-width:620px) {
+  .grudge-card {
+    min-height:0;
+    padding:12px;
+    grid-template-columns:54px minmax(0,1fr);
+    gap:9px 11px;
+    border-radius:15px;
+  }
+  .grudge-card::after {
+    top:-102px;
+    right:-104px;
+    opacity:.12;
+  }
+  .grudge-person-avatar {
+    width:54px;
+    height:54px;
+    border-radius:13px;
+    align-self:start;
+  }
+  .grudge-card-main > p {
+    margin-top:5px;
+    font-size:.61rem;
+  }
+  .grudge-card-meta {
+    margin-top:6px;
+    gap:5px 8px;
+  }
+  .grudge-card-side {
+    grid-column:2;
+    min-width:0;
+    width:100%;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .grudge-card-amount {
+    justify-content:start;
+  }
+  .grudge-card-amount small {
+    text-align:left;
+  }
   .you-view { padding-top:1px; gap:16px; }
   .profile-aura-area { gap:10px; }
   .profile-identity { grid-template-columns:46px minmax(0,1fr) auto; gap:10px; }
