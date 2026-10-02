@@ -288,7 +288,7 @@ export const AfterHoursView = ({ user, showToast }) => {
                   <small className="after-hours-you">you</small>
                 ) : person.answeredCurrent ? (
                   <small>picked</small>
-                ) : (
+                ) : event.viewerAnswer ? (
                   <button
                     type="button"
                     disabled={Boolean(busy)}
@@ -296,6 +296,8 @@ export const AfterHoursView = ({ user, showToast }) => {
                   >
                     Call out
                   </button>
+                ) : (
+                  <small>around</small>
                 )}
               </div>
             ))}
