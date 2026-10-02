@@ -1,9 +1,9 @@
 import { api } from '../lib/api';
 import { invalidateContractBounty } from './bountyService';
 
-export const sendFriendInvitation = async (friendIdentifier, limit, templateId = 'DONT_GHOST') => {
+export const sendFriendInvitation = async (friendIdentifier, limit, templateId = 'DONT_GHOST', source = 'DIRECT') => {
   try {
-    const response = await api.post('/friendships', { friendIdentifier, limit, templateId });
+    const response = await api.post('/friendships', { friendIdentifier, limit, templateId, source });
     if (response?.inviteReady || response?.requiresSignup) {
       return {
         success: true,
