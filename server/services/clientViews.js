@@ -226,13 +226,15 @@ const bountyArenaView = (value, viewerId) => {
   return view;
 };
 
-const publicGrudgeView = (friendship) => {
+const publicGrudgeView = (friendship, identities = {}) => {
   const data = toPlain(friendship);
   const grudge = data.grudge || {};
   return {
     friendshipId: publicKey(data._id, 'grudge'),
     claimantName: grudge.claimantName,
+    claimantAvatar: identities.claimantAvatar || null,
     victimName: grudge.victimName,
+    victimAvatar: identities.victimAvatar || null,
     createdAt: grudge.createdAt,
     expiresAt: grudge.expiresAt,
     originalClaimAmount: Number(grudge.originalClaimAmount) || 0

@@ -91,7 +91,20 @@ router.get('/grudges/public', auth, async (req, res) => {
       'grudge.revengeUsed': { $ne: true },
       'grudge.expiresAt': { $gt: now }
     }).sort({ 'grudge.createdAt': -1 }).limit(100).lean();
-    return res.json(friendships.map(publicGrudgeView));
+
+    const participantIds = [...new Set(friendships.flatMap((friendship) => [
+      String(friendship.grudge?.claimantId || ''),
+      String(friendship.grudge?.victimId || '')
+    ]).filter(Boolean))];
+    const participants = participantIds.length
+      ? await User.find({ _id: { $in: participantIds } }).select('_id avatar').lean()
+      : [];
+    const avatarById = new Map(participants.map((person) => [String(person._id), person.avatar || null]));
+
+    return res.json(friendships.map((friendship) => publicGrudgeView(friendship, {
+      claimantAvatar: avatarById.get(String(friendship.grudge?.claimantId || '')) || null,
+      victimAvatar: avatarById.get(String(friendship.grudge?.victimId || '')) || null
+    })));
   } catch (err) {
     console.error('Load public grudges failed:', err.message);
     return res.status(500).json({ msg: 'Could not load grudges' });
@@ -111,12 +124,24 @@ router.get('/grudges/me', auth, async (req, res) => {
 
     await Promise.all(friendships.map((friendship) => refreshGameState(friendship)));
 
+    const participantIds = [...new Set(friendships.flatMap((friendship) => [
+      String(friendship.grudge?.claimantId || ''),
+      String(friendship.grudge?.victimId || '')
+    ]).filter(Boolean))];
+    const participants = participantIds.length
+      ? await User.find({ _id: { $in: participantIds } }).select('_id avatar').lean()
+      : [];
+    const avatarById = new Map(participants.map((person) => [String(person._id), person.avatar || null]));
+
     return res.json(friendships.map((friendship) => {
       const isVictim = String(friendship.grudge.victimId) === String(req.user.id);
       const claimantIsUser1 = String(friendship.grudge.claimantId) === String(friendship.user1);
       const claimantPerspective = claimantIsUser1 ? friendship.user1Perspective : friendship.user2Perspective;
       return {
-        ...publicGrudgeView(friendship),
+        ...publicGrudgeView(friendship, {
+          claimantAvatar: avatarById.get(String(friendship.grudge?.claimantId || '')) || null,
+          victimAvatar: avatarById.get(String(friendship.grudge?.victimId || '')) || null
+        }),
         friendshipId: friendship._id,
         role: isVictim ? 'VICTIM' : 'CLAIMANT',
         revengeReady: isVictim && friendship.season?.status === 'ACTIVE' && Boolean(claimantPerspective?.isBankrupt),

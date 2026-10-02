@@ -21,6 +21,234 @@
 .arena-search input { width:100%; min-width:0; border:0; outline:none; background:none; color:var(--text-primary); font-size:.72rem; }
 .arena-search input::placeholder { color:var(--text-faint); }
 .arena-list { padding:0; }
+
+.arena-target-card,
+.arena-grudge-card {
+  position:relative;
+  overflow:hidden;
+  min-height:126px;
+  padding:16px;
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr) auto;
+  align-items:center;
+  gap:15px;
+  border-radius:18px;
+  background:
+    linear-gradient(100deg, color-mix(in srgb,var(--aura-red) 4%,transparent), transparent 38%),
+    var(--bg-card);
+  box-shadow:inset 0 0 0 1px var(--border-subtle);
+  transition:background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+.arena-target-card + .arena-target-card,
+.arena-grudge-card + .arena-grudge-card {
+  margin-top:9px;
+}
+.arena-target-card::after,
+.arena-grudge-card::after {
+  content:'';
+  position:absolute;
+  z-index:0;
+  top:-94px;
+  right:-68px;
+  width:300px;
+  height:220px;
+  pointer-events:none;
+  opacity:.18;
+  background:
+    radial-gradient(ellipse at 54% 52%,transparent 0 53%,color-mix(in srgb,var(--aura-gold) 42%,transparent) 53.2% 53.6%,transparent 54% 100%),
+    radial-gradient(ellipse at 68% 61%,transparent 0 67%,color-mix(in srgb,var(--aura-red) 28%,transparent) 67.2% 67.6%,transparent 68% 100%);
+}
+.arena-target-card > *,
+.arena-grudge-card > * {
+  position:relative;
+  z-index:1;
+}
+
+.arena-target-card.hunting-item {
+  background:
+    linear-gradient(100deg,color-mix(in srgb,var(--aura-blue) 8%,transparent),transparent 40%),
+    var(--bg-card);
+}
+.arena-target-card.proof-armed-item {
+  background:
+    linear-gradient(100deg,color-mix(in srgb,var(--aura-gold) 7%,transparent),transparent 42%),
+    var(--bg-card);
+}
+.arena-target-card.wanted-item {
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-red) 24%,var(--border-subtle));
+}
+
+.arena-target-avatar {
+  width:72px;
+  height:72px;
+  border-radius:16px;
+  background:var(--surface-soft);
+  box-shadow:inset 0 0 0 1px var(--border-active);
+}
+.arena-target-main,
+.arena-grudge-main {
+  min-width:0;
+}
+.arena-target-title {
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.arena-target-title > strong {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-primary);
+  font-size:1rem;
+  line-height:1.05;
+  font-weight:660;
+  letter-spacing:-.025em;
+}
+.arena-target-main > p,
+.arena-grudge-main > p {
+  max-width:62ch;
+  margin-top:7px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-secondary);
+  font-size:.67rem;
+  line-height:1.45;
+}
+.arena-grudge-main > p b {
+  color:var(--text-primary);
+  font-weight:640;
+}
+.arena-target-meta {
+  margin-top:9px;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px 11px;
+}
+.arena-target-meta span,
+.arena-grudge-main > span {
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  color:var(--text-muted);
+  font-size:.56rem;
+}
+.arena-target-meta span:first-child {
+  color:var(--aura-gold);
+  font-family:var(--font-mono);
+  font-weight:620;
+}
+.arena-grudge-main > span {
+  margin-top:8px;
+}
+
+.arena-target-side {
+  min-width:110px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:10px;
+}
+.arena-target-reward,
+.arena-grudge-amount {
+  display:grid;
+  grid-template-columns:auto auto;
+  align-items:center;
+  justify-content:end;
+  gap:1px 5px;
+  color:var(--aura-gold);
+}
+.arena-target-reward svg,
+.arena-grudge-amount svg {
+  grid-row:1;
+  grid-column:1;
+}
+.arena-target-reward strong,
+.arena-grudge-amount strong {
+  grid-row:1;
+  grid-column:2;
+  font-family:var(--font-mono);
+  font-size:.92rem;
+  line-height:1;
+  font-weight:650;
+  font-variant-numeric:tabular-nums;
+}
+.arena-target-reward small,
+.arena-grudge-amount small {
+  grid-row:2;
+  grid-column:1 / -1;
+  color:var(--text-muted);
+  font-size:.5rem;
+  text-align:right;
+}
+
+.arena-target-cta,
+.arena-target-state {
+  min-height:36px;
+  padding:0 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border-radius:10px;
+  font-size:.57rem;
+  font-weight:650;
+}
+.arena-target-cta {
+  color:#171009;
+  background:var(--aura-gold);
+  transition:transform 140ms var(--ease-out),background-color 140ms var(--ease-out);
+}
+.arena-target-cta.danger {
+  color:var(--aura-red);
+  background:var(--aura-red-glow);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--aura-red) 20%,transparent);
+}
+.arena-target-cta:active {
+  transform:scale(.96);
+}
+.arena-target-state {
+  color:var(--text-muted);
+  background:var(--surface-soft);
+  box-shadow:inset 0 0 0 1px var(--border-subtle);
+}
+.arena-target-state.danger {
+  color:var(--aura-red);
+}
+
+.arena-grudge-card {
+  grid-template-columns:74px minmax(0,1fr) auto;
+  background:
+    linear-gradient(100deg,color-mix(in srgb,var(--aura-red) 6%,transparent),transparent 40%),
+    var(--bg-card);
+}
+.arena-grudge-avatars {
+  width:74px;
+  height:74px;
+  position:relative;
+}
+.arena-grudge-avatar.victim {
+  width:66px;
+  height:66px;
+  border-radius:16px;
+}
+.arena-grudge-avatar.claimant {
+  position:absolute;
+  right:0;
+  bottom:0;
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  box-shadow:0 0 0 3px var(--bg-card),inset 0 0 0 1px var(--border-active);
+}
+.arena-grudge-amount {
+  min-width:88px;
+  color:var(--aura-red);
+}
 .bounty-item, .shame-item-new { min-height:72px; padding:10px 4px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border-subtle); transition:background-color 140ms var(--ease-out); }
 .bounty-item.hunting-item { background:color-mix(in srgb,var(--aura-blue-glow) 35%,transparent); }
 .bounty-item.proof-armed-item { background:color-mix(in srgb,var(--aura-gold-soft) 42%,transparent); }
@@ -73,6 +301,17 @@
 .pressure-footer p { max-width:300px; color:var(--text-faint); font-size:.58rem; line-height:1.45; }
 
 @media (hover:hover) and (pointer:fine) {
+  .arena-target-card:hover,
+  .arena-grudge-card:hover {
+    background-color:var(--bg-card-hover);
+    box-shadow:inset 0 0 0 1px var(--border-active),var(--shadow-card);
+  }
+  .arena-target-cta:hover {
+    background:var(--aura-gold-strong);
+  }
+  .arena-target-cta.danger:hover {
+    background:color-mix(in srgb,var(--aura-red-glow) 72%,var(--aura-red) 8%);
+  }
   .hunt-button:hover { background:color-mix(in srgb,var(--aura-red-glow) 72%,var(--aura-red) 8%); }
   .pressure-button:hover { background:var(--aura-gold-strong); }
   .bounty-item:hover, .shame-item-new:hover { background:var(--surface-soft); }
@@ -80,6 +319,80 @@
 }
 
 @media (max-width:720px) {
+  .arena-target-card,
+  .arena-grudge-card {
+    min-height:0;
+    padding:13px;
+    grid-template-columns:58px minmax(0,1fr);
+    gap:10px 11px;
+    border-radius:16px;
+  }
+  .arena-target-card::after,
+  .arena-grudge-card::after {
+    top:-102px;
+    right:-112px;
+    opacity:.13;
+  }
+  .arena-target-avatar {
+    width:58px;
+    height:58px;
+    border-radius:14px;
+    align-self:start;
+  }
+  .arena-target-title > strong {
+    font-size:.88rem;
+  }
+  .arena-target-main > p,
+  .arena-grudge-main > p {
+    margin-top:5px;
+    font-size:.62rem;
+  }
+  .arena-target-meta {
+    margin-top:7px;
+  }
+  .arena-target-side {
+    grid-column:2;
+    min-width:0;
+    width:100%;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:9px;
+  }
+  .arena-target-reward,
+  .arena-grudge-amount {
+    justify-content:start;
+  }
+  .arena-target-reward small,
+  .arena-grudge-amount small {
+    text-align:left;
+  }
+  .arena-target-cta,
+  .arena-target-state {
+    min-height:34px;
+  }
+  .arena-grudge-card {
+    grid-template-columns:60px minmax(0,1fr);
+  }
+  .arena-grudge-avatars {
+    width:60px;
+    height:60px;
+    align-self:start;
+  }
+  .arena-grudge-avatar.victim {
+    width:54px;
+    height:54px;
+    border-radius:14px;
+  }
+  .arena-grudge-avatar.claimant {
+    width:27px;
+    height:27px;
+    border-radius:9px;
+  }
+  .arena-grudge-amount {
+    grid-column:2;
+    margin-top:-2px;
+  }
   .arena-view { gap:17px; }
   .arena-hero { align-items:flex-start; flex-direction:column; gap:13px; padding-top:2px; }
   .arena-hero h1 { font-size:2.08rem; }
