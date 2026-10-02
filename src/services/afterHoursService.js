@@ -25,3 +25,24 @@ export const reactAfterHours = async (activityId, reaction) => (
 export const tagInAfterHours = async (username) => (
   api.post('/after-hours/callout', { username })
 );
+
+
+export const createAfterHoursPost = ({ type = 'SHOUT', text = '', anonymous = false, burnAmount = 0 } = {}) => (
+  api.post('/after-hours/post', { type, text, anonymous, burnAmount })
+);
+
+export const replyAfterHours = (activityId, text) => (
+  api.post(`/after-hours/feed/${activityId}/reply`, { text })
+);
+
+export const voteAfterHours = (activityId, vote) => (
+  api.post(`/after-hours/feed/${activityId}/vote`, { vote })
+);
+
+export const sparkAfterHours = (activityId) => (
+  api.post(`/after-hours/feed/${activityId}/spark`)
+);
+
+export const leaveAfterHoursNote = (username, text) => (
+  api.post('/after-hours/note', { username, text })
+);
