@@ -255,7 +255,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             friendship={friendship}
             currentUserId={userId}
             onAction={onAction}
-            homeReference
+            referenceLayout
             socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
           />
         ))}
