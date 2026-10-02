@@ -738,7 +738,6 @@
 .home-contract-exception,
 .home-contract-social {
   grid-column:1 / -1;
-  grid-row:2;
   margin-top:14px;
   padding-top:12px;
   border-top:1px solid color-mix(in srgb,var(--border-subtle) 75%,transparent);
@@ -1007,7 +1006,6 @@
   .home-contract-exception,
   .home-contract-social {
     grid-column:1 / -1;
-    grid-row:3;
     margin-top:12px;
     padding-top:10px;
   }
