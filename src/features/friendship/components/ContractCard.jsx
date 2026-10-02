@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { getContractSides } from '../contractState';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { shareHakoware } from '../../../lib/share';
 import { buildChaosShareImage } from '../../../lib/chaosShare';
 import './ContractCard.css';
@@ -287,9 +288,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   return (
     <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
       <div className="contract-main">
-        <div className="contract-avatar" aria-hidden="true">
-          {friend.avatar ? <img src={friend.avatar} alt="" /> : <span>{name[0]?.toUpperCase()}</span>}
-        </div>
+        <UserAvatar person={friend} size="md" className="contract-avatar" decorative />
 
         <div className="contract-identity">
           <h3>{name}</h3>
