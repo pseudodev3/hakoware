@@ -198,7 +198,7 @@ function MainApp({ showToast }) {
 
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
-      setActiveTab('arena');
+      navigateTo('arena');
       return { success: true };
     }
 
