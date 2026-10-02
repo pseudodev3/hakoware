@@ -207,12 +207,29 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </div>
       </header>
 
-      {pendingInvitations.length > 0 && (
-        <button className="circle-pending-link" type="button" onClick={() => onNavigate('contracts')}>
-          <span><strong>{pendingInvitations.length}</strong> challenge{pendingInvitations.length === 1 ? '' : 's'} waiting</span>
-          <ArrowRight size={16} strokeWidth={1.6} />
-        </button>
-      )}
+      {pendingInvitations.length > 0 && (() => {
+        const invitation = pendingInvitations[0];
+        const id = invitation?._id || invitation?.id;
+        const inviter = invitation?.user1?.username
+          ? `@${invitation.user1.username}`
+          : (invitation?.user1?.displayName || 'Someone');
+        return (
+          <div className="circle-pending-link">
+            <span><strong>{inviter}</strong> challenged you{pendingInvitations.length > 1 ? ` · +${pendingInvitations.length - 1}` : ''}</span>
+            <div>
+              <button type="button" className="circle-pending-review" onClick={() => onNavigate('contracts')}>Review</button>
+              <button
+                type="button"
+                className="circle-pending-accept"
+                disabled={respondingInviteId === id}
+                onClick={() => respondToPending(invitation, 'ACCEPT')}
+              >
+                {respondingInviteId === id ? 'Accepting…' : 'Accept'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {pulse.length > 0 && (
         <section className="circle-pulse" aria-label="While you were gone">
