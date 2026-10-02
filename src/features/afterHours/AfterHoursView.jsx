@@ -598,7 +598,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
 
             <div className="after-hours-person-sheet-actions">
               {selectedHasContract ? (
-                <div className="after-hours-existing-contract">Already in your circle.</div>
+                <div className="after-hours-existing-contract">A contract already exists.</div>
               ) : (
                 <button type="button" className="after-hours-start-contract" onClick={() => startContract(selectedPerson)}>
                   Start contract <ArrowRight size={15} strokeWidth={1.8} />
