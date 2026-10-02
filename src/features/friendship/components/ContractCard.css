@@ -579,12 +579,6 @@
   letter-spacing:-.035em;
   font-weight:660;
 }
-.home-contract-name-row > span {
-  flex:0 0 auto;
-  color:var(--aura-gold);
-  font-size:.93rem;
-}
-
 .home-contract-line {
   margin-top:8px;
   overflow:hidden;
