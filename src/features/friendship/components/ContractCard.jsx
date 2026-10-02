@@ -64,7 +64,7 @@ const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
   return lastInteraction > seasonStart;
 };
 
-export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, homeReference = false, socialState = null }) => {
+export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, referenceLayout = false, socialState = null }) => {
   const [chaosShareState, setChaosShareState] = useState('');
   const [socialBusy, setSocialBusy] = useState('');
   const [replyOpen, setReplyOpen] = useState(false);
@@ -285,7 +285,7 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
 
   const hideDuo = seasonDone || chaosTargetsCurrentUser;
 
-  if (homeReference) {
+  if (referenceLayout) {
     const seasonStartedAt = new Date(season.startedAt || 0).getTime();
     const seasonDay = seasonStartedAt > 0
       ? Math.max(1, Math.floor((Date.now() - seasonStartedAt) / 86400000) + 1)
@@ -353,7 +353,6 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
         <div className="home-contract-content">
           <div className="home-contract-name-row">
             <h3>{name}</h3>
-            <span aria-hidden="true">✦</span>
           </div>
           <p className="home-contract-line">{displayState.hero}</p>
           <div className={`home-contract-state ${displayState.tone}`}>
