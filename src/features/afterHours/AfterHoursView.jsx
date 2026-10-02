@@ -637,56 +637,170 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           ) : (
             <div className="after-hours-feed-list">
               {room.feed.map((item) => {
-                const isOwn = String(item.actor?.username || '').toLowerCase() === ownUsername;
+                const isOwn = Boolean(item.isOwn);
+                const isSocialPost = SOCIAL_POST_TYPES.has(item.type);
                 const answeredYourChallenge = item.type === 'CHALLENGE_JOIN'
                   && String(item.target?.username || '').toLowerCase() === ownUsername
                   && !isOwn;
+                const viewerReplied = Boolean((item.replies || []).some((reply) => reply.isOwn));
+                const typeLabel = postTypeLabel(item.type);
 
                 return (
                   <article
-                  className={`after-hours-feed-item is-${String(item.type || '').toLowerCase().replaceAll('_', '-')}`}
-                  key={item.id}
-                  data-after-hours-activity={item.id}
-                >
-                    <button
-                      type="button"
-                      className="after-hours-feed-person"
-                      disabled={isOwn}
-                      onClick={() => openPerson(item.actor)}
-                      aria-label={isOwn ? 'You' : `Open @${item.actor?.username}`}
-                    >
-                      <UserAvatar person={item.actor} size="md" decorative />
-                    </button>
+                    className={
+                      'after-hours-feed-item is-' + String(item.type || '').toLowerCase().replaceAll('_', '-')
+                      + (item.burnAmount > 0 ? ' is-burned' : '')
+                    }
+                    key={item.id}
+                    data-after-hours-activity={item.id}
+                  >
+                    {item.anonymous ? (
+                      <div className="after-hours-anonymous-avatar" aria-label={isOwn ? 'Your anonymous confession' : 'Anonymous confession'}>
+                        <EyeOff size={18} strokeWidth={1.7} />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="after-hours-feed-person"
+                        disabled={isOwn}
+                        onClick={() => openPerson(item.actor)}
+                        aria-label={isOwn ? 'You' : 'Open @' + item.actor?.username}
+                      >
+                        <UserAvatar person={item.actor} size="md" decorative />
+                      </button>
+                    )}
+
                     <div className="after-hours-feed-copy">
                       <div className="after-hours-feed-meta">
-                        <button type="button" disabled={isOwn} onClick={() => openPerson(item.actor)}>
-                          <strong>{personLabel(item.actor)}</strong>
-                          <span>@{item.actor.username}</span>
-                        </button>
+                        {item.anonymous ? (
+                          <div className="after-hours-anonymous-meta">
+                            <strong>{isOwn ? 'Anonymous · you' : 'Anonymous'}</strong>
+                          </div>
+                        ) : (
+                          <button type="button" disabled={isOwn} onClick={() => openPerson(item.actor)}>
+                            <strong>{personLabel(item.actor)}</strong>
+                            <span>@{item.actor.username}</span>
+                          </button>
+                        )}
+                        {typeLabel && <span className="after-hours-post-type">{typeLabel}</span>}
                         <time>{relativeTime(item.createdAt)}</time>
                       </div>
 
-                      {item.type === 'SHOUT' && (
-                        <p className="after-hours-shout">“{item.text}”</p>
-                      )}
-
-                      {item.type === 'ANSWER' && (
+                      {isSocialPost && (
                         <>
-                          <p>picked <b>{item.choice}</b></p>
-                          <small>{item.promptText}</small>
-                        </>
-                      )}
+                          <p className="after-hours-social-post">“{item.text}”</p>
 
-                      {item.type === 'CALLOUT' && (
-                        <>
-                          <p><b>tagged @{item.target?.username} in</b> for the live Pick a Side.</p>
-                          <small>{item.promptText}</small>
+                          {item.burnAmount > 0 && (
+                            <div className="after-hours-burn-badge">
+                              <Flame size={13} strokeWidth={1.9} />
+                              <span>{item.burnAmount} Aura burned</span>
+                            </div>
+                          )}
+
+                          {item.type === 'HOT_TAKE' && (
+                            <div className="after-hours-hot-take-vote" aria-label="Judge this hot take">
+                              {['REAL', 'NONSENSE'].map((vote) => {
+                                const selected = item.vote?.viewerVote === vote;
+                                const showResult = isOwn || Boolean(item.vote?.viewerVote);
+                                const percent = vote === 'REAL' ? item.vote?.realPercent : item.vote?.nonsensePercent;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={vote}
+                                    className={selected ? 'selected' : ''}
+                                    disabled={isOwn || Boolean(busy)}
+                                    onClick={() => submitVote(item.id, vote)}
+                                    aria-pressed={selected}
+                                  >
+                                    <span>{vote === 'REAL' ? 'real' : 'nonsense'}</span>
+                                    {showResult && <strong>{Number(percent) || 0}%</strong>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {(item.replies || []).length > 0 && (
+                            <div className="after-hours-reply-list">
+                              {(item.replies || []).map((reply) => {
+                                const replyOwn = Boolean(reply.isOwn);
+                                return (
+                                  <div className="after-hours-reply" key={reply.id}>
+                                    <button
+                                      type="button"
+                                      className="after-hours-reply-person"
+                                      disabled={replyOwn}
+                                      onClick={() => openPerson(reply.actor)}
+                                      aria-label={replyOwn ? 'You' : 'Open @' + reply.actor?.username}
+                                    >
+                                      <UserAvatar person={reply.actor} size="sm" decorative />
+                                    </button>
+                                    <div className="after-hours-reply-copy">
+                                      <div className="after-hours-reply-meta">
+                                        <strong>{replyOwn ? 'You' : personLabel(reply.actor)}</strong>
+                                        {!replyOwn && <span>@{reply.actor?.username}</span>}
+                                        <time>{relativeTime(reply.createdAt)}</time>
+                                      </div>
+                                      <p>{reply.text}</p>
+                                      <div className="after-hours-reply-tools">
+                                        {renderReactions(reply, replyOwn)}
+                                        {renderSpark(reply, replyOwn)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {replyOpenId === item.id && !viewerReplied && !isOwn && item.canReply && (
+                            <form
+                              className="after-hours-public-reply-form"
+                              onSubmit={(eventObject) => {
+                                eventObject.preventDefault();
+                                void submitReply(item.id);
+                              }}
+                            >
+                              <input
+                                autoFocus
+                                value={replyText}
+                                onChange={(eventObject) => setReplyText(eventObject.target.value.slice(0, replyLimit))}
+                                maxLength={replyLimit}
+                                placeholder="One public reply…"
+                                aria-label="Reply publicly"
+                              />
+                              <span>{replyText.length}/{replyLimit}</span>
+                              <button type="submit" disabled={!replyText.trim() || Boolean(busy)}>
+                                <Send size={14} strokeWidth={1.9} />
+                              </button>
+                            </form>
+                          )}
+
+                          <div className="after-hours-social-tools">
+                            {renderReactions(item, isOwn)}
+                            {renderSpark(item, isOwn)}
+                            {!isOwn && item.canReply && !viewerReplied && (
+                              <button
+                                type="button"
+                                className={replyOpenId === item.id ? 'after-hours-reply-toggle active' : 'after-hours-reply-toggle'}
+                                onClick={() => {
+                                  setReplyOpenId((current) => current === item.id ? null : item.id);
+                                  setReplyText('');
+                                }}
+                              >
+                                <MessageCircle size={13} strokeWidth={1.8} />
+                                <span>Reply</span>
+                                {item.replyCount > 0 && <small>{item.replyCount}</small>}
+                              </button>
+                            )}
+                            {viewerReplied && <span className="after-hours-replied-state">replied</span>}
+                          </div>
                         </>
                       )}
 
                       {item.type === 'CHALLENGE' && (
                         <div className="after-hours-challenge">
-                          <span>THREW A CHALLENGE</span>
+                          <span>CHALLENGE</span>
                           <p>{item.text}</p>
                           <div>
                             <small>{item.joinCount || 0} answered</small>
@@ -725,6 +839,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                               </button>
                             </form>
                           )}
+                          {renderReactions(item, isOwn)}
                         </div>
                       )}
 
@@ -742,10 +857,9 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                               Start contract <ArrowRight size={14} strokeWidth={1.8} />
                             </button>
                           )}
+                          {renderReactions(item, isOwn)}
                         </>
                       )}
-
-                      {renderReactions(item, isOwn)}
                     </div>
                   </article>
                 );
