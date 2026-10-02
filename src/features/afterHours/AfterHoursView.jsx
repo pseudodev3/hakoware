@@ -1,13 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Radio, RefreshCw, Send, Swords, Users, Zap } from 'lucide-react';
+import { ArrowRight, EyeOff, Flame, HelpCircle, MessageCircle, Radio, RefreshCw, Send, Sparkles, Swords, Users, Zap } from 'lucide-react';
 import {
   answerAfterHours,
+  createAfterHoursPost,
   getAfterHours,
   joinAfterHoursChallenge,
+  leaveAfterHoursNote,
   reactAfterHours,
-  shoutAfterHours,
+  replyAfterHours,
+  sparkAfterHours,
   tagInAfterHours,
-  throwAfterHoursChallenge
+  throwAfterHoursChallenge,
+  voteAfterHours
 } from '../../services/afterHoursService';
 import { Modal } from '../../shared/components/Modal';
 import { UserAvatar } from '../../shared/components/UserAvatar';
@@ -41,7 +45,14 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
   const [now, setNow] = useState(Date.now());
-  const [shout, setShout] = useState('');
+  const [postType, setPostType] = useState('SHOUT');
+  const [postText, setPostText] = useState('');
+  const [postAnonymous, setPostAnonymous] = useState(true);
+  const [burnAmount, setBurnAmount] = useState(0);
+  const [replyOpenId, setReplyOpenId] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
   const [challengeOpen, setChallengeOpen] = useState(false);
   const [customChallenge, setCustomChallenge] = useState('');
   const [challengeReplyId, setChallengeReplyId] = useState(null);
@@ -102,7 +113,12 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
   const timeLabel = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`;
   const ownUsername = String(user?.username || '').toLowerCase();
   const shoutLimit = Number(room?.composer?.shoutMaxLength) || 88;
+  const postLimit = Number(room?.composer?.socialPostMaxLength) || 160;
+  const replyLimit = Number(room?.composer?.replyMaxLength) || 100;
   const challengeLimit = Number(room?.composer?.challengeMaxLength) || 96;
+  const burnOptions = room?.composer?.burnOptions || [5, 10, 25];
+  const sparkAmount = Number(room?.aura?.sparkAmount) || 1;
+  const viewerAuraBalance = Number(room?.viewerAuraBalance) || 0;
   const total = Number(event?.totalAnswers) || 0;
   const contractedUsernames = useMemo(
     () => usernamesFromContracts(friendships, ownUsername),
@@ -153,16 +169,81 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     }
   };
 
-  const submitShout = async (eventObject) => {
+  const submitPost = async (eventObject) => {
     eventObject.preventDefault();
-    const text = shout.replace(/\s+/g, ' ').trim();
+    const text = postText.replace(/\s+/g, ' ').trim();
     if (!text || busy) return;
-    setBusy('shout');
+    setBusy('post');
     try {
-      setRoom(await shoutAfterHours(text));
-      setShout('');
+      setRoom(await createAfterHoursPost({
+        type: postType,
+        text,
+        anonymous: postType === 'CONFESSION' ? postAnonymous : false,
+        burnAmount
+      }));
+      setPostText('');
+      setBurnAmount(0);
+      showToast?.(burnAmount > 0 ? `Posted · ${burnAmount} Aura burned` : 'Posted.', 'SUCCESS');
     } catch (error) {
-      showToast?.(error.message || 'Could not shout into the room', 'ERROR');
+      showToast?.(error.message || 'Could not post to After Hours', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitReply = async (activityId) => {
+    const text = replyText.replace(/\s+/g, ' ').trim();
+    if (!text || busy) return;
+    setBusy(`reply:${activityId}`);
+    try {
+      setRoom(await replyAfterHours(activityId, text));
+      setReplyOpenId(null);
+      setReplyText('');
+    } catch (error) {
+      showToast?.(error.message || 'Could not reply', 'ERROR');
+      if (error.status === 409) void loadRoom({ quiet: true });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitVote = async (activityId, vote) => {
+    if (busy) return;
+    setBusy(`vote:${activityId}`);
+    try {
+      setRoom(await voteAfterHours(activityId, vote));
+    } catch (error) {
+      showToast?.(error.message || 'Could not vote', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitSpark = async (activityId) => {
+    if (busy) return;
+    setBusy(`spark:${activityId}`);
+    try {
+      setRoom(await sparkAfterHours(activityId));
+      showToast?.(`Spark sent · ${sparkAmount} Aura`, 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not Spark that', 'ERROR');
+      if (error.status === 409) void loadRoom({ quiet: true });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitNote = async (eventObject) => {
+    eventObject.preventDefault();
+    if (!selectedPerson?.username || !noteText.trim() || busy) return;
+    setBusy(`note:${selectedPerson.username}`);
+    try {
+      setRoom(await leaveAfterHoursNote(selectedPerson.username, noteText.trim()));
+      setNoteText('');
+      setNoteOpen(false);
+      showToast?.(`Note left for @${selectedPerson.username}.`, 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not leave that note', 'ERROR');
     } finally {
       setBusy(null);
     }
