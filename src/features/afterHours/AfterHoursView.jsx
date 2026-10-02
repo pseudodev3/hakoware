@@ -1,13 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Radio, RefreshCw, Send, Swords, Users, Zap } from 'lucide-react';
+import { ArrowRight, EyeOff, Flame, HelpCircle, MessageCircle, Radio, RefreshCw, Send, Sparkles, Swords, Users, Zap } from 'lucide-react';
 import {
   answerAfterHours,
+  createAfterHoursPost,
   getAfterHours,
   joinAfterHoursChallenge,
+  leaveAfterHoursNote,
   reactAfterHours,
-  shoutAfterHours,
+  replyAfterHours,
+  sparkAfterHours,
   tagInAfterHours,
-  throwAfterHoursChallenge
+  throwAfterHoursChallenge,
+  voteAfterHours
 } from '../../services/afterHoursService';
 import { Modal } from '../../shared/components/Modal';
 import { UserAvatar } from '../../shared/components/UserAvatar';
@@ -25,6 +29,21 @@ const relativeTime = (value) => {
 
 const personLabel = (person) => person?.displayName || person?.username || 'Someone';
 
+const POST_MODES = [
+  { id: 'SHOUT', label: 'Shout', placeholder: 'Say something to the room…' },
+  { id: 'HOT_TAKE', label: 'Hot take', placeholder: 'Drop a take people can judge…' },
+  { id: 'CONFESSION', label: 'Confession', placeholder: 'Say the thing you probably should not…' },
+  { id: 'QUESTION', label: 'Ask', placeholder: 'Ask everybody something…' }
+];
+
+const SOCIAL_POST_TYPES = new Set(['SHOUT', 'HOT_TAKE', 'CONFESSION', 'QUESTION']);
+
+const postTypeLabel = (type) => ({
+  HOT_TAKE: 'HOT TAKE',
+  CONFESSION: 'CONFESSION',
+  QUESTION: 'ASK'
+}[type] || null);
+
 const usernamesFromContracts = (friendships, ownUsername) => {
   const names = new Set();
   (friendships || []).forEach((friendship) => {
@@ -41,7 +60,14 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
   const [now, setNow] = useState(Date.now());
-  const [shout, setShout] = useState('');
+  const [postType, setPostType] = useState('SHOUT');
+  const [postText, setPostText] = useState('');
+  const [postAnonymous, setPostAnonymous] = useState(true);
+  const [burnAmount, setBurnAmount] = useState(0);
+  const [replyOpenId, setReplyOpenId] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
   const [challengeOpen, setChallengeOpen] = useState(false);
   const [customChallenge, setCustomChallenge] = useState('');
   const [challengeReplyId, setChallengeReplyId] = useState(null);
@@ -102,7 +128,12 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
   const timeLabel = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`;
   const ownUsername = String(user?.username || '').toLowerCase();
   const shoutLimit = Number(room?.composer?.shoutMaxLength) || 88;
+  const postLimit = Number(room?.composer?.socialPostMaxLength) || 160;
+  const replyLimit = Number(room?.composer?.replyMaxLength) || 100;
   const challengeLimit = Number(room?.composer?.challengeMaxLength) || 96;
+  const burnOptions = room?.composer?.burnOptions || [5, 10, 25];
+  const sparkAmount = Number(room?.aura?.sparkAmount) || 1;
+  const viewerAuraBalance = Number(room?.viewerAuraBalance) || 0;
   const total = Number(event?.totalAnswers) || 0;
   const contractedUsernames = useMemo(
     () => usernamesFromContracts(friendships, ownUsername),
@@ -153,16 +184,81 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     }
   };
 
-  const submitShout = async (eventObject) => {
+  const submitPost = async (eventObject) => {
     eventObject.preventDefault();
-    const text = shout.replace(/\s+/g, ' ').trim();
+    const text = postText.replace(/\s+/g, ' ').trim();
     if (!text || busy) return;
-    setBusy('shout');
+    setBusy('post');
     try {
-      setRoom(await shoutAfterHours(text));
-      setShout('');
+      setRoom(await createAfterHoursPost({
+        type: postType,
+        text,
+        anonymous: postType === 'CONFESSION' ? postAnonymous : false,
+        burnAmount
+      }));
+      setPostText('');
+      setBurnAmount(0);
+      showToast?.(burnAmount > 0 ? `Posted · ${burnAmount} Aura burned` : 'Posted.', 'SUCCESS');
     } catch (error) {
-      showToast?.(error.message || 'Could not shout into the room', 'ERROR');
+      showToast?.(error.message || 'Could not post to After Hours', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitReply = async (activityId) => {
+    const text = replyText.replace(/\s+/g, ' ').trim();
+    if (!text || busy) return;
+    setBusy(`reply:${activityId}`);
+    try {
+      setRoom(await replyAfterHours(activityId, text));
+      setReplyOpenId(null);
+      setReplyText('');
+    } catch (error) {
+      showToast?.(error.message || 'Could not reply', 'ERROR');
+      if (error.status === 409) void loadRoom({ quiet: true });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitVote = async (activityId, vote) => {
+    if (busy) return;
+    setBusy(`vote:${activityId}`);
+    try {
+      setRoom(await voteAfterHours(activityId, vote));
+    } catch (error) {
+      showToast?.(error.message || 'Could not vote', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitSpark = async (activityId) => {
+    if (busy) return;
+    setBusy(`spark:${activityId}`);
+    try {
+      setRoom(await sparkAfterHours(activityId));
+      showToast?.(`Spark sent · ${sparkAmount} Aura`, 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not Spark that', 'ERROR');
+      if (error.status === 409) void loadRoom({ quiet: true });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitNote = async (eventObject) => {
+    eventObject.preventDefault();
+    if (!selectedPerson?.username || !noteText.trim() || busy) return;
+    setBusy(`note:${selectedPerson.username}`);
+    try {
+      setRoom(await leaveAfterHoursNote(selectedPerson.username, noteText.trim()));
+      setNoteText('');
+      setNoteOpen(false);
+      showToast?.(`Note left for @${selectedPerson.username}.`, 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not leave that note', 'ERROR');
     } finally {
       setBusy(null);
     }
@@ -273,6 +369,30 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     );
   };
 
+  const renderSpark = (item, isOwn) => {
+    const totalSparked = Number(item.spark?.total) || 0;
+    const alreadySparked = Boolean(item.spark?.viewerSparked);
+    if (isOwn) {
+      return totalSparked > 0 ? (
+        <span className="after-hours-spark-count"><Sparkles size={13} strokeWidth={1.8} /> {totalSparked} Aura</span>
+      ) : null;
+    }
+    return (
+      <button
+        type="button"
+        className={alreadySparked ? 'after-hours-spark is-sparked' : 'after-hours-spark'}
+        disabled={Boolean(busy) || alreadySparked || viewerAuraBalance < sparkAmount}
+        onClick={() => submitSpark(item.id)}
+        aria-label={alreadySparked ? 'Already Sparked' : 'Send Aura Spark'}
+        title={alreadySparked ? 'Sparked' : sparkAmount + ' Aura'}
+      >
+        <Sparkles size={13} strokeWidth={1.8} />
+        <span>{alreadySparked ? 'Sparked' : 'Spark'}</span>
+        {totalSparked > 0 && <small>{totalSparked}</small>}
+      </button>
+    );
+  };
+
   const selectedPresence = selectedPerson ? presenceFor(selectedPerson) : null;
   const selectedHasContract = selectedPerson ? hasContractWith(selectedPerson) : false;
   const canTagSelected = Boolean(
@@ -281,6 +401,14 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     && !selectedPresence.answeredCurrent
     && !selectedPresence.isYou
   );
+
+  const selectedRecentPosts = selectedPerson
+    ? (room.feed || []).filter((item) => (
+        SOCIAL_POST_TYPES.has(item.type)
+        && !item.anonymous
+        && String(item.actor?.username || '').toLowerCase() === String(selectedPerson.username || '').toLowerCase()
+      )).slice(0, 2)
+    : [];
 
   return (
     <>
@@ -310,7 +438,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                   className="after-hours-person-open"
                   disabled={person.isYou}
                   onClick={() => openPerson(person)}
-                  aria-label={person.isYou ? 'You' : `Open @${person.username}`}
+                  aria-label={person.isYou ? 'You' : 'Open @' + person.username}
                 >
                   <UserAvatar person={person} size="sm" decorative />
                   <span>
@@ -318,59 +446,112 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                     <small>@{person.username}</small>
                   </span>
                 </button>
-                {!person.isYou && (
-                  person.answeredCurrent
-                    ? <small>picked</small>
-                    : event.viewerAnswer
-                      ? (
-                        <button
-                          type="button"
-                          className="after-hours-tag-in"
-                          disabled={Boolean(busy)}
-                          onClick={() => submitTagIn(person.username)}
-                          title="Pull them into the current Pick a Side"
-                        >
-                          Tag in
-                        </button>
-                      )
-                      : <small>around</small>
-                )}
+                <small>
+                  {person.recentPostCount > 0
+                    ? person.recentPostCount + (person.recentPostCount === 1 ? ' post' : ' posts')
+                    : 'around'}
+                </small>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="after-hours-composer" aria-label="Say something to After Hours">
-          <UserAvatar person={user} size="md" decorative />
-          <form onSubmit={submitShout}>
-            <input
-              value={shout}
-              onChange={(eventObject) => setShout(eventObject.target.value.slice(0, shoutLimit))}
-              maxLength={shoutLimit}
-              placeholder="Say something to the room…"
-              aria-label="Shout to the room"
-            />
-            <span>{shout.length}/{shoutLimit}</span>
-            <button type="submit" disabled={!shout.trim() || Boolean(busy)} aria-label="Send shout">
-              <Send size={16} strokeWidth={1.9} />
-            </button>
-          </form>
+        <section className="after-hours-post-composer" aria-label="Post to After Hours">
+          <div className="after-hours-post-shell">
+            <UserAvatar person={user} size="md" decorative />
+            <div className="after-hours-post-main">
+              <div className="after-hours-post-modes" role="tablist" aria-label="Post type">
+                {POST_MODES.map((mode) => (
+                  <button
+                    type="button"
+                    key={mode.id}
+                    className={postType === mode.id ? 'active' : ''}
+                    onClick={() => {
+                      setPostType(mode.id);
+                      setPostText('');
+                      setBurnAmount(0);
+                    }}
+                    role="tab"
+                    aria-selected={postType === mode.id}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={submitPost} className="after-hours-post-form">
+                <textarea
+                  value={postText}
+                  onChange={(eventObject) => setPostText(eventObject.target.value.slice(0, postLimit))}
+                  maxLength={postLimit}
+                  rows={2}
+                  placeholder={(POST_MODES.find((mode) => mode.id === postType) || POST_MODES[0]).placeholder}
+                  aria-label="After Hours post"
+                />
+                <div className="after-hours-post-footer">
+                  <div className="after-hours-post-options">
+                    {postType === 'CONFESSION' && (
+                      <button
+                        type="button"
+                        className={postAnonymous ? 'after-hours-anonymous active' : 'after-hours-anonymous'}
+                        onClick={() => setPostAnonymous((value) => !value)}
+                        aria-pressed={postAnonymous}
+                      >
+                        <EyeOff size={13} strokeWidth={1.8} />
+                        {postAnonymous ? 'Anonymous' : 'Use my name'}
+                      </button>
+                    )}
+
+                    <div className="after-hours-burn-picker" aria-label="Aura burn">
+                      <span><Flame size={12} /> Burn</span>
+                      <button
+                        type="button"
+                        className={burnAmount === 0 ? 'active' : ''}
+                        onClick={() => setBurnAmount(0)}
+                      >
+                        none
+                      </button>
+                      {burnOptions.map((amount) => (
+                        <button
+                          type="button"
+                          key={amount}
+                          className={burnAmount === amount ? 'active' : ''}
+                          disabled={viewerAuraBalance < amount}
+                          onClick={() => setBurnAmount(amount)}
+                        >
+                          {amount}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="after-hours-post-send">
+                    <span>{postText.length}/{postLimit} · {viewerAuraBalance} Aura</span>
+                    <button type="submit" disabled={!postText.trim() || Boolean(busy)} aria-label="Post to After Hours">
+                      <Send size={16} strokeWidth={1.9} />
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <button
             type="button"
             className={challengeOpen ? 'after-hours-challenge-toggle is-open' : 'after-hours-challenge-toggle'}
             onClick={() => setChallengeOpen((value) => !value)}
             disabled={Boolean(busy)}
           >
-            <Swords size={16} strokeWidth={1.8} />
-            <span>Challenge</span>
+            <Swords size={15} strokeWidth={1.8} />
+            <span>Throw a challenge</span>
           </button>
         </section>
 
         {challengeOpen && (
           <section className="after-hours-challenge-picker">
             <div className="after-hours-section-label">
-              <span>THROW ONE IN</span>
-              <small>one-shot · no thread</small>
+              <span>CHALLENGE</span>
+              <small>optional · one-shot</small>
             </div>
             <form
               className="after-hours-custom-challenge"
@@ -384,7 +565,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                 value={customChallenge}
                 onChange={(eventObject) => setCustomChallenge(eventObject.target.value.slice(0, challengeLimit))}
                 maxLength={challengeLimit}
-                placeholder="Write your own challenge…"
+                placeholder="Write a challenge…"
                 aria-label="Custom challenge"
               />
               <span>{customChallenge.length}/{challengeLimit}</span>
@@ -407,45 +588,6 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           </section>
         )}
 
-        <section className="after-hours-pin" aria-labelledby="after-hours-question">
-          <div className="after-hours-pin-head">
-            <span><Zap size={13} /> ROOM EVENT · PICK A SIDE</span>
-            <time dateTime={event.endsAt}>{timeLabel}</time>
-          </div>
-          <div className="after-hours-pin-body">
-            <h2 id="after-hours-question">{event.text}</h2>
-
-            {!event.viewerAnswer ? (
-              <div className="after-hours-pin-options">
-                {(event.options || []).map((option) => (
-                  <button
-                    type="button"
-                    key={option}
-                    disabled={Boolean(busy)}
-                    onClick={() => submitAnswer(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="after-hours-pin-results">
-                {results.map((result) => (
-                  <div
-                    className={event.viewerAnswer === result.option ? 'is-yours' : ''}
-                    key={result.option}
-                  >
-                    <span>{result.option}</span>
-                    <i><b style={{ width: `${result.percent}%` }} /></i>
-                    <strong>{result.percent}%</strong>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <small>{total} answered · Tag in someone around if you want their take.</small>
-        </section>
-
         <section className="after-hours-feed">
           <div className="after-hours-section-label after-hours-feed-heading">
             <span>ROOM NOISE</span>
@@ -463,56 +605,170 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           ) : (
             <div className="after-hours-feed-list">
               {room.feed.map((item) => {
-                const isOwn = String(item.actor?.username || '').toLowerCase() === ownUsername;
+                const isOwn = Boolean(item.isOwn);
+                const isSocialPost = SOCIAL_POST_TYPES.has(item.type);
                 const answeredYourChallenge = item.type === 'CHALLENGE_JOIN'
                   && String(item.target?.username || '').toLowerCase() === ownUsername
                   && !isOwn;
+                const viewerReplied = Boolean((item.replies || []).some((reply) => reply.isOwn));
+                const typeLabel = postTypeLabel(item.type);
 
                 return (
                   <article
-                  className={`after-hours-feed-item is-${String(item.type || '').toLowerCase().replaceAll('_', '-')}`}
-                  key={item.id}
-                  data-after-hours-activity={item.id}
-                >
-                    <button
-                      type="button"
-                      className="after-hours-feed-person"
-                      disabled={isOwn}
-                      onClick={() => openPerson(item.actor)}
-                      aria-label={isOwn ? 'You' : `Open @${item.actor?.username}`}
-                    >
-                      <UserAvatar person={item.actor} size="md" decorative />
-                    </button>
+                    className={
+                      'after-hours-feed-item is-' + String(item.type || '').toLowerCase().replaceAll('_', '-')
+                      + (item.burnAmount > 0 ? ' is-burned' : '')
+                    }
+                    key={item.id}
+                    data-after-hours-activity={item.id}
+                  >
+                    {item.anonymous ? (
+                      <div className="after-hours-anonymous-avatar" aria-label={isOwn ? 'Your anonymous confession' : 'Anonymous confession'}>
+                        <EyeOff size={18} strokeWidth={1.7} />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="after-hours-feed-person"
+                        disabled={isOwn}
+                        onClick={() => openPerson(item.actor)}
+                        aria-label={isOwn ? 'You' : 'Open @' + item.actor?.username}
+                      >
+                        <UserAvatar person={item.actor} size="md" decorative />
+                      </button>
+                    )}
+
                     <div className="after-hours-feed-copy">
                       <div className="after-hours-feed-meta">
-                        <button type="button" disabled={isOwn} onClick={() => openPerson(item.actor)}>
-                          <strong>{personLabel(item.actor)}</strong>
-                          <span>@{item.actor.username}</span>
-                        </button>
+                        {item.anonymous ? (
+                          <div className="after-hours-anonymous-meta">
+                            <strong>{isOwn ? 'Anonymous · you' : 'Anonymous'}</strong>
+                          </div>
+                        ) : (
+                          <button type="button" disabled={isOwn} onClick={() => openPerson(item.actor)}>
+                            <strong>{personLabel(item.actor)}</strong>
+                            <span>@{item.actor.username}</span>
+                          </button>
+                        )}
+                        {typeLabel && <span className="after-hours-post-type">{typeLabel}</span>}
                         <time>{relativeTime(item.createdAt)}</time>
                       </div>
 
-                      {item.type === 'SHOUT' && (
-                        <p className="after-hours-shout">“{item.text}”</p>
-                      )}
-
-                      {item.type === 'ANSWER' && (
+                      {isSocialPost && (
                         <>
-                          <p>picked <b>{item.choice}</b></p>
-                          <small>{item.promptText}</small>
-                        </>
-                      )}
+                          <p className="after-hours-social-post">“{item.text}”</p>
 
-                      {item.type === 'CALLOUT' && (
-                        <>
-                          <p><b>tagged @{item.target?.username} in</b> for the live Pick a Side.</p>
-                          <small>{item.promptText}</small>
+                          {item.burnAmount > 0 && (
+                            <div className="after-hours-burn-badge">
+                              <Flame size={13} strokeWidth={1.9} />
+                              <span>{item.burnAmount} Aura burned</span>
+                            </div>
+                          )}
+
+                          {item.type === 'HOT_TAKE' && (
+                            <div className="after-hours-hot-take-vote" aria-label="Judge this hot take">
+                              {['REAL', 'NONSENSE'].map((vote) => {
+                                const selected = item.vote?.viewerVote === vote;
+                                const showResult = isOwn || Boolean(item.vote?.viewerVote);
+                                const percent = vote === 'REAL' ? item.vote?.realPercent : item.vote?.nonsensePercent;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={vote}
+                                    className={selected ? 'selected' : ''}
+                                    disabled={isOwn || Boolean(busy)}
+                                    onClick={() => submitVote(item.id, vote)}
+                                    aria-pressed={selected}
+                                  >
+                                    <span>{vote === 'REAL' ? 'real' : 'nonsense'}</span>
+                                    {showResult && <strong>{Number(percent) || 0}%</strong>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {(item.replies || []).length > 0 && (
+                            <div className="after-hours-reply-list">
+                              {(item.replies || []).map((reply) => {
+                                const replyOwn = Boolean(reply.isOwn);
+                                return (
+                                  <div className="after-hours-reply" key={reply.id}>
+                                    <button
+                                      type="button"
+                                      className="after-hours-reply-person"
+                                      disabled={replyOwn}
+                                      onClick={() => openPerson(reply.actor)}
+                                      aria-label={replyOwn ? 'You' : 'Open @' + reply.actor?.username}
+                                    >
+                                      <UserAvatar person={reply.actor} size="sm" decorative />
+                                    </button>
+                                    <div className="after-hours-reply-copy">
+                                      <div className="after-hours-reply-meta">
+                                        <strong>{replyOwn ? 'You' : personLabel(reply.actor)}</strong>
+                                        {!replyOwn && <span>@{reply.actor?.username}</span>}
+                                        <time>{relativeTime(reply.createdAt)}</time>
+                                      </div>
+                                      <p>{reply.text}</p>
+                                      <div className="after-hours-reply-tools">
+                                        {renderReactions(reply, replyOwn)}
+                                        {renderSpark(reply, replyOwn)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {replyOpenId === item.id && !viewerReplied && !isOwn && item.canReply && (
+                            <form
+                              className="after-hours-public-reply-form"
+                              onSubmit={(eventObject) => {
+                                eventObject.preventDefault();
+                                void submitReply(item.id);
+                              }}
+                            >
+                              <input
+                                autoFocus
+                                value={replyText}
+                                onChange={(eventObject) => setReplyText(eventObject.target.value.slice(0, replyLimit))}
+                                maxLength={replyLimit}
+                                placeholder="One public reply…"
+                                aria-label="Reply publicly"
+                              />
+                              <span>{replyText.length}/{replyLimit}</span>
+                              <button type="submit" disabled={!replyText.trim() || Boolean(busy)}>
+                                <Send size={14} strokeWidth={1.9} />
+                              </button>
+                            </form>
+                          )}
+
+                          <div className="after-hours-social-tools">
+                            {renderReactions(item, isOwn)}
+                            {renderSpark(item, isOwn)}
+                            {!isOwn && item.canReply && !viewerReplied && (
+                              <button
+                                type="button"
+                                className={replyOpenId === item.id ? 'after-hours-reply-toggle active' : 'after-hours-reply-toggle'}
+                                onClick={() => {
+                                  setReplyOpenId((current) => current === item.id ? null : item.id);
+                                  setReplyText('');
+                                }}
+                              >
+                                <MessageCircle size={13} strokeWidth={1.8} />
+                                <span>Reply</span>
+                                {item.replyCount > 0 && <small>{item.replyCount}</small>}
+                              </button>
+                            )}
+                            {viewerReplied && <span className="after-hours-replied-state">replied</span>}
+                          </div>
                         </>
                       )}
 
                       {item.type === 'CHALLENGE' && (
                         <div className="after-hours-challenge">
-                          <span>THREW A CHALLENGE</span>
+                          <span>CHALLENGE</span>
                           <p>{item.text}</p>
                           <div>
                             <small>{item.joinCount || 0} answered</small>
@@ -551,6 +807,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                               </button>
                             </form>
                           )}
+                          {renderReactions(item, isOwn)}
                         </div>
                       )}
 
@@ -568,10 +825,9 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                               Start contract <ArrowRight size={14} strokeWidth={1.8} />
                             </button>
                           )}
+                          {renderReactions(item, isOwn)}
                         </>
                       )}
-
-                      {renderReactions(item, isOwn)}
                     </div>
                   </article>
                 );
@@ -579,6 +835,39 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
             </div>
           )}
         </section>
+
+        <section className="after-hours-pin after-hours-room-question" aria-labelledby="after-hours-question">
+          <div className="after-hours-room-question-copy">
+            <span><HelpCircle size={13} /> ROOM QUESTION</span>
+            <h2 id="after-hours-question">{event.text}</h2>
+            <small>{total} answered · {timeLabel}</small>
+          </div>
+
+          {!event.viewerAnswer ? (
+            <div className="after-hours-room-question-options">
+              {(event.options || []).map((option) => (
+                <button
+                  type="button"
+                  key={option}
+                  disabled={Boolean(busy)}
+                  onClick={() => submitAnswer(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="after-hours-room-question-results">
+              {results.map((result) => (
+                <div className={event.viewerAnswer === result.option ? 'is-yours' : ''} key={result.option}>
+                  <span>{result.option}</span>
+                  <strong>{result.percent}%</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
       </section>
 
       <Modal
@@ -596,13 +885,43 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
               <small>You ran into each other in After Hours.</small>
             </div>
 
+            {selectedRecentPosts.length > 0 && (
+              <div className="after-hours-person-recent">
+                <span>RECENT IN AFTER HOURS</span>
+                {selectedRecentPosts.map((item) => (
+                  <p key={item.id}>“{item.text}”</p>
+                ))}
+              </div>
+            )}
+
             <div className="after-hours-person-sheet-actions">
-              {selectedHasContract ? (
-                <div className="after-hours-existing-contract">A contract already exists.</div>
-              ) : (
-                <button type="button" className="after-hours-start-contract" onClick={() => startContract(selectedPerson)}>
-                  Start contract <ArrowRight size={15} strokeWidth={1.8} />
-                </button>
+              <button
+                type="button"
+                className={noteOpen ? 'after-hours-sheet-note active' : 'after-hours-sheet-note'}
+                onClick={() => {
+                  setNoteOpen((value) => !value);
+                  setNoteText('');
+                }}
+              >
+                <MessageCircle size={14} strokeWidth={1.8} />
+                Leave a note
+              </button>
+
+              {noteOpen && (
+                <form className="after-hours-note-form" onSubmit={submitNote}>
+                  <input
+                    autoFocus
+                    value={noteText}
+                    onChange={(eventObject) => setNoteText(eventObject.target.value.slice(0, 60))}
+                    maxLength={60}
+                    placeholder="One short note. No thread."
+                    aria-label={'Leave a note for @' + selectedPerson.username}
+                  />
+                  <span>{noteText.length}/60</span>
+                  <button type="submit" disabled={!noteText.trim() || Boolean(busy)}>
+                    <Send size={14} strokeWidth={1.8} />
+                  </button>
+                </form>
               )}
 
               {canTagSelected && (
@@ -612,7 +931,15 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                   disabled={Boolean(busy)}
                   onClick={() => submitTagIn(selectedPresence.username)}
                 >
-                  Tag into Pick a Side
+                  Tag into room question
+                </button>
+              )}
+
+              {selectedHasContract ? (
+                <div className="after-hours-existing-contract">A contract already exists.</div>
+              ) : (
+                <button type="button" className="after-hours-start-contract" onClick={() => startContract(selectedPerson)}>
+                  Start contract <ArrowRight size={15} strokeWidth={1.8} />
                 </button>
               )}
             </div>

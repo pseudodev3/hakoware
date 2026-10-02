@@ -7,11 +7,101 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-09-20**
+> Last updated: **2026-10-02**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
+
+
+## Current continuation checkpoint — 2026-10-02
+
+This is the first section to read when resuming in a new chat.
+
+Current production/main before the open After Hours pass:
+
+- `main`: `43908fb9e769273c6a20069c351e3ae65a6a72a2`
+- PR #76 is merged: compact reference cards now also render on the Contracts page and the decorative display-name star was removed.
+- PR #77 is merged: Arena targets + public/personal Grudges now use the cleaner person-first card language.
+- The **only open Hakoware PR at this checkpoint is PR #78**:
+  - title: `Turn After Hours into a social room with Aura`
+  - branch: `feat/after-hours-social-aura`
+  - base: `main`
+  - branch was 0 behind main before this handoff refresh;
+  - implementation CI passed on the finished feature head;
+  - Vercel preview deployed successfully on the finished feature head;
+  - after any handoff-only commit, re-check the new exact head before merging.
+
+PR #78 is the current unfinished production step. Do **not** start a second After Hours implementation branch unless #78 has been merged or intentionally abandoned.
+
+### What PR #78 changes
+
+After Hours is no longer primarily “quizzes / complete a room task.”
+
+The locked product rule is:
+
+**People create the entertainment. Aura gives it weight.**
+
+The first coherent social-room version includes:
+
+- **Shout**
+- **Hot Take** with `real / nonsense`
+- **Confession**, optionally anonymous
+- **Ask**
+- one-level public replies;
+- existing reactions;
+- **Aura Spark**:
+  - exactly 1 Aura moves sender → author;
+  - no Aura is minted;
+  - one Spark per person per item;
+  - sender daily cap + per-recipient cap;
+- **Aura Burn** on your own post:
+  - fixed `5 / 10 / 25` Aura values;
+  - Aura is destroyed;
+  - visual spectacle only, never extra reach/ranking;
+- stranger interaction sheet now prioritizes:
+  - recent non-anonymous room activity;
+  - **Leave a note**;
+  - contextual Tag in;
+  - Start contract;
+- short notes are notification-based, rate-limited, and **not a DM thread**;
+- old Pick a Side is demoted to a compact Room Question;
+- ANSWER/CALLOUT quiz noise is kept out of the main social feed;
+- Challenges remain available but optional;
+- pure spectating counts as a successful After Hours session.
+
+Privacy / abuse boundaries that must remain:
+
+- anonymous confession identity is never exposed in public payloads;
+- anonymous confession activity must not contribute to visible per-person recent-post counts;
+- Spark copy/ledger copy must not leak an anonymous confession author;
+- no DMs;
+- no reply-to-reply;
+- no follower system;
+- no swipe/match/dating framing;
+- no “do X actions for Aura” task loop;
+- no paid reach;
+- no fake users/activity;
+- Founder/test room isolation remains intact.
+
+### What to test after PR #78 merges
+
+Use real iPhone behavior as the primary UX signal:
+
+1. create each post type;
+2. anonymous confession stays anonymous to everybody else;
+3. Hot Take voting works and author cannot vote own take;
+4. one public reply per user works and cannot branch;
+5. Aura Spark deducts 1 from sender and adds 1 to author;
+6. Spark caps stop obvious farming;
+7. Aura Burn deducts only the selected fixed amount;
+8. short notes arrive as notifications and do not create a chat thread;
+9. person sheet feels interaction-first, not “start contract with stranger” first;
+10. Pick a Side feels secondary to people-created content;
+11. no raw IDs/private anonymous identity leak through the client payload;
+12. Start contract conversion still works from identified After Hours people.
+
+If a new chat starts before #78 is merged, continue by inspecting PR #78 and its exact head first. If it is already merged, inspect the merged SHA and deployment before doing more After Hours work.
 
 ### Landing atmosphere
 
@@ -60,38 +150,83 @@ Product rule: **primary navigation is for places users habitually live; systems 
 
 ### After Hours
 
-After Hours is Hakoware's public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, or generic chatroom.
+After Hours is Hakoware's public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, task board, or generic chatroom.
+
+Current product rule:
+
+**People create the entertainment. Aura gives it weight.**
+
+The room should be interesting even when a user has no task to complete and earns nothing for opening it.
 
 Current product shape:
 
-- the **feed is the room**; people and what they do are the primary surface;
-- only users who enter the room count as present;
+- the **feed is the room**; people and what they say/do are the primary surface;
+- only users who actually enter count as present;
 - honest live presence expires after roughly 5 minutes; do not fake users or activity;
 - real room activity remains visible for roughly 3 hours so the room still has residue with a small userbase;
-- users can leave one-line public **Shouts** with strict length/rate limits;
-- users can throw a suggested **Challenge** or write a custom challenge up to 96 characters;
-- answering a challenge requires an actual one-line response, which creates its own feed moment and notifies the challenge owner;
-- one coordinated `Pick a Side` event still rotates every 10 minutes, but it is a compact pinned room event rather than the definition of the page;
-- room activity supports the fixed Hakoware reaction set;
-- after picking a side, a user can **Tag in** somebody currently around who has not answered that event; Tag in means “pull them into this live Pick a Side,” not generic attention-seeking;
-- Tag in / challenge-answer notifications carry room targeting data; **Tag in** returns directly to the live Pick a Side because that is the requested action, while challenge-answer notifications return to the exact response;
-- tapping another person in After Hours opens a lightweight identity sheet with **Start contract** rather than a profile-browsing flow;
-- when somebody answers your challenge, Start contract can appear contextually on that interaction;
-- After Hours → contract opens the existing contract flow with that username prefilled and records `source: AFTER_HOURS` on the `CONTRACT_CREATED` event for conversion measurement;
-- that attribution is **server-verified**, not trusted from the client: both users must have actually been in the same After Hours scope within the 3h room-residue window, otherwise the source is recorded as `DIRECT`;
+- the primary expression modes are:
+  - **Shout** — say something;
+  - **Hot Take** — post a take the room can judge with `real / nonsense`;
+  - **Confession** — public or anonymous;
+  - **Ask** — user-created question for the room;
+- posts can receive the fixed Hakoware reaction set;
+- social posts support **one-level public replies** only:
+  - one reply per user per parent post;
+  - no reply-to-reply;
+  - no infinite threads;
+  - anonymous confession owners cannot reply to their own anonymous confession because that would reveal identity;
+- people can send an **Aura Spark** to a post or reply:
+  - 1 Aura moves from sender → author;
+  - no minting / faucet behavior;
+  - one Spark per person per item;
+  - daily sender cap;
+  - per-recipient daily sender cap;
+  - anonymous confession Spark notifications/ledger copy must not reveal the author to the sender;
+- users may optionally **Burn Aura** on their own post for spectacle:
+  - fixed values only: 5 / 10 / 25 Aura;
+  - burned Aura is destroyed, not transferred;
+  - burning changes presentation only, not ranking/reach;
+- basic posting/replying/reactions remain free;
+- do **not** add “complete X After Hours actions for Aura” quests;
+- the rotating Pick a Side mechanic remains available only as a compact **Room Question**; it no longer defines the page and its ANSWER/CALLOUT activity is not mixed into the main social feed;
+- Challenges remain optional one-shot room objects, not the central retention mechanic;
+- tapping a real identified person opens a lightweight interaction sheet:
+  - recent non-anonymous After Hours activity;
+  - **Leave a note** (short, rate-limited, no message thread);
+  - contextual Tag in;
+  - Start contract;
+- Leave a note is not DM:
+  - max 60 chars;
+  - delivered as a notification;
+  - sender→recipient cooldown;
+  - no inbox conversation thread;
+- when somebody answers your old-style Challenge, Start contract can still appear contextually on that interaction;
+- After Hours → contract opens the existing contract flow with username prefilled and records `source: AFTER_HOURS` only when the backend verifies both users were recently in the same scope;
 - test / Founder Lab users remain isolated from the live room;
-- public room payloads use usernames / display names and public activity IDs rather than raw user IDs;
+- public room payloads use usernames/display names/public activity IDs rather than raw user IDs;
 - old room data is TTL-cleaned;
 - no unrestricted stranger DMs;
-- no swiping / matching / dating language;
+- no follower system;
+- no swipe/match/dating language;
 - no fake city, house, or life-sim layer;
-- no threaded public chat. Shouts and challenge responses are deliberately short-lived social residue.
+- no algorithmic creator economy;
+- no fake crowd/bots.
 
-Product rule:
+Retention principle:
 
-**The room/activity is the primary object. Strangers are participants inside it, not cards to browse.**
+**A successful After Hours session can be pure spectating.**
 
-The question to validate is no longer “does Pick a Side work?” It is: **when contracts are quiet, will users leave something in After Hours, touch what somebody else left, and come back when another person touches theirs?**
+Users should be able to open the room, read funny/weird/dramatic posts, recognize recurring people, see reactions/replies/Aura Sparks, and leave without being pushed into an objective.
+
+The conversion path should feel earned:
+
+**see someone repeatedly → react/reply/note → recognize them → eventually Start contract**
+
+Do not make Start contract the first or loudest interaction with a stranger.
+
+The question to validate is now:
+
+**Will users open After Hours because they are curious what people are saying, then gradually form recurring social familiarity that converts into contracts?**
 
 ### Avatars
 
@@ -794,45 +929,65 @@ Standard deployment truth rule:
 
 The user explicitly wants branches finished before opening PRs to avoid wasting Vercel builds.
 
-## 21. Recent merged PRs
+## 21. Recent merged / open PRs
 
-### PR #53
-Contract-card Figma redesign.
+Older security/gameplay PRs #53–#60 are still part of the baseline described throughout this file.
 
-### PR #54
-Product Design Home + You translation + Orbit motif + market artwork fixes.
+Most relevant recent sequence:
 
-### PR #55
-Narrowly allows Hakoware Vercel preview origins through backend CORS.
+### PR #61
+First-duo activation fix: first check-in is immediately available after season activation and only real in-season check-ins trigger the 20h gate.
 
-### PR #56
-Aura Market light-mode artwork dark-stage fix.
+### PR #67
+Hot Seat prompt variety / anti-repeat selection.
 
-### PR #57
-Wanted / Most Wanted / automatic Chaos bounty / combined bounty system.
+### PR #68–#71
+Landing atmosphere + light mode + artwork fixes + desktop hero refinement.
 
-### PR #58
-High-priority email notifications + duplicate bottom Home CTA removal.
+### PR #73
+After Hours v2 + avatars:
+- feed-first room;
+- real presence/residue;
+- Shouts;
+- custom Challenges;
+- reactions;
+- Tag in;
+- avatar upload/display pipeline.
 
-### PR #59
-Server-side hardening:
-- request guard;
-- safe route errors;
-- audio magic bytes;
-- stronger login throttling;
-- bounded rate limiter;
-- hardening regression checks.
+### PR #74
+Social conversion + friction pass:
+- primary nav reduced to Home / After Hours / You;
+- After Hours person sheet + Start contract conversion;
+- server-verified `source: AFTER_HOURS`;
+- contract creation compressed;
+- direct Home invite acceptance;
+- optional check-in vibe;
+- Arena friction cleanup.
 
-### PR #60
-Current interaction-smoothness pass:
-- mobile Mark all read;
-- optimistic notification actions;
-- notification reflow motion;
-- subtle authenticated tab transition;
-- restrained nav feedback;
-- touch-scroll refinement.
+### PR #75
+Home contract cards changed to the approved compact reference-style layout.
 
-At the time this handoff is being updated, PR #60 is intended to be squash-merged into `main` immediately after final verification.
+### PR #76 — merged
+The same compact contract-card layout now renders on the Contracts page. Decorative display-name star removed.
+
+Merged SHA:
+`0fcc9541b29c5a2aa47f0c14386969825e9310e4`
+
+### PR #77 — merged
+Arena targets + public/personal Grudges moved to the cleaner person-first visual hierarchy.
+
+Merged SHA / current main before #78:
+`43908fb9e769273c6a20069c351e3ae65a6a72a2`
+
+### PR #78 — OPEN
+`Turn After Hours into a social room with Aura`
+
+Branch:
+`feat/after-hours-social-aura`
+
+This is the only open product PR at this checkpoint. It contains the new Shout / Hot Take / Confession / Ask social model, one-level replies, Aura Spark, Aura Burn, interaction-first stranger sheet, and the demoted Room Question.
+
+Do not call PR #78 production until it is merged and the exact merged frontend/backend deployments are verified.
 
 ## 22. Development workflow
 
