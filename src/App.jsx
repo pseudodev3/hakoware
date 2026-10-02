@@ -66,6 +66,7 @@ function MainApp({ showToast }) {
   const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
+  const [contractPrefill, setContractPrefill] = useState(null);
   const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
   const socialSinceRef = useRef(null);
 
@@ -258,9 +259,15 @@ function MainApp({ showToast }) {
     return { success: true };
   };
 
+  const openNewContract = (person = null, source = 'DIRECT') => {
+    setContractPrefill(person ? { person, source } : null);
+    setModalType('ADD_FRIEND');
+  };
+
   const closeModal = () => {
     setModalType(null);
     setSelectedFriendship(null);
+    setContractPrefill(null);
   };
 
   const handleEnter = () => setHasEntered(true);
@@ -286,7 +293,7 @@ function MainApp({ showToast }) {
       <Layout
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      onAddFriend={() => setModalType('ADD_FRIEND')}
+      onAddFriend={() => openNewContract()}
       pendingInvitations={pendingReceived}
       onRefresh={loadData}
       showToast={showToast}
@@ -306,8 +313,10 @@ function MainApp({ showToast }) {
             pendingOutboundCount={pendingSent.length + pendingExternal.length}
             worldEvent={contractMeta.worldEvent}
             onAction={handleAction}
-            onAddFriend={() => setModalType('ADD_FRIEND')}
+            onAddFriend={() => openNewContract()}
             onNavigate={setActiveTab}
+            onRefresh={loadData}
+            showToast={showToast}
             socialPresence={socialPresence}
             onPulseSeen={markPulseSeen}
           />
@@ -322,7 +331,7 @@ function MainApp({ showToast }) {
             pendingExternal={pendingExternal}
             templates={contractMeta.templates}
             onAction={handleAction}
-            onAddFriend={() => setModalType('ADD_FRIEND')}
+            onAddFriend={() => openNewContract()}
             onRefresh={loadData}
             onNavigate={setActiveTab}
             showToast={showToast}
@@ -330,7 +339,14 @@ function MainApp({ showToast }) {
           />
         )}
 
-        {activeTab === 'afterHours' && <AfterHoursView user={user} showToast={showToast} />}
+        {activeTab === 'afterHours' && (
+          <AfterHoursView
+            user={user}
+            friendships={[...friendships, ...pendingReceived, ...pendingSent]}
+            onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}
+            showToast={showToast}
+          />
+        )}
         {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
         {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
       </motion.div>
@@ -341,6 +357,8 @@ function MainApp({ showToast }) {
         onRefresh={loadData}
         showToast={showToast}
         templates={contractMeta.templates}
+        prefillPerson={contractPrefill?.person || null}
+        source={contractPrefill?.source || 'DIRECT'}
       />
 
       <FriendshipSettingsModal
