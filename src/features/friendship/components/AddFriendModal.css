@@ -29,6 +29,9 @@
 .contract-confirm-note { margin-top:16px; color:var(--text-muted); font-size:.67rem; line-height:1.55; }
 .new-contract-actions.single-primary { grid-template-columns:.8fr 1.4fr; }
 .mode-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+.mode-person { min-width:0; display:flex; align-items:center; gap:9px; }
+.mode-person > div { min-width:0; }
+.mode-person small { display:block; margin-top:1px; color:var(--text-muted); font-size:.57rem; }
 .mode-intro strong { display:block; margin-top:3px; font-size:.92rem; font-weight:680; letter-spacing:-.02em; }
 .mode-intro > span { color:var(--text-muted); font-size:.66rem; }
 .mode-kicker { color:var(--aura-gold); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
