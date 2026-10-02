@@ -502,6 +502,31 @@ Partners should see `Your contract` rather than a Hunt CTA on their partner's au
 
 Do not create overlapping bounty documents for Chaos + bankruptcy.
 
+### Arena card language
+
+Arena now borrows the **person-first hierarchy** of the compact contract reference without literally reusing the contract card.
+
+Bounty targets:
+
+**large target avatar → identity + danger state → one-line context → funding/hunt metadata → bounty value + one compact action**
+
+Rules:
+
+- the target/person is visually primary;
+- bounty value and funding breakdown are compact, not separate explanatory boxes;
+- Hunt / Pressure are the only strong CTAs when available;
+- owner/partner/hunted states become small state controls instead of extra panels;
+- Wanted / hunting / proof states may tint the card, but should not create nested containers;
+- mobile keeps the avatar + identity first and moves reward/action beneath the content.
+
+Public Grudges inside Arena use paired identities:
+- victim is the larger avatar;
+- claimant is the smaller overlaid avatar;
+- show only claimed Aura, remaining time, and the bankruptcy condition;
+- no paragraph explaining the entire Grudge system.
+
+Do not apply this Arena card treatment to After Hours or notifications.
+
 ## 14. Notifications and email
 
 In-app notification panel is intentionally compact.
@@ -625,6 +650,23 @@ Light-mode fix:
 - item art sits on a permanent dark mini-stage so transparent/empty image space does not expose pale gutters.
 
 Do not redesign this page again without a concrete UX problem.
+
+### Personal Grudge cards
+
+The Grudge section is a concrete exception to the general “leave You alone” rule because the old version was sentence-heavy and action-state was hard to scan.
+
+Current anatomy:
+
+**other person's avatar → name + Grudge state → one-line history → timer/condition → Aura amount + one action**
+
+Rules:
+
+- always anchor the card on the **other person**, not “A vs B”;
+- victim view says what they took from you and whether revenge is open;
+- claimant view says what you took and reminds you to stay solvent;
+- only show **Return the Favor** when revenge is actually ready;
+- if revenge is not ready, use a quiet state such as `Waiting on them`, not a disabled full CTA;
+- public avatar URLs may be included in the safe Grudge payload, but never expose raw participant IDs just to render identity.
 
 ## 17. Product Design prototype / visual reference
 
