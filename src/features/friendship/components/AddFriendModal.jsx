@@ -51,6 +51,10 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     () => showMoreModes ? modes : modes.filter((mode) => PRIMARY_MODE_IDS.has(mode.id)),
     [modes, showMoreModes]
   );
+  const prefillMatchesIdentifier = Boolean(
+    prefillPerson?.username
+    && friendIdentifier.replace(/^@+/, '').toLowerCase() === String(prefillPerson.username).toLowerCase()
+  );
 
   useEffect(() => {
     if (!isOpen || !prefillPerson?.username) return;
@@ -222,10 +226,10 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
             <section className="contract-step-panel">
               <div className="mode-intro">
                 <div className="mode-person">
-                  {prefillPerson && <UserAvatar person={prefillPerson} size="sm" decorative />}
+                  {prefillMatchesIdentifier && <UserAvatar person={prefillPerson} size="sm" decorative />}
                   <div>
-                    <p className="mode-kicker">{prefillPerson?.displayName || friendIdentifier}</p>
-                    {prefillPerson?.username && <small>@{prefillPerson.username}</small>}
+                    <p className="mode-kicker">{prefillMatchesIdentifier ? (prefillPerson?.displayName || friendIdentifier) : friendIdentifier}</p>
+                    {prefillMatchesIdentifier && prefillPerson?.username && <small>@{prefillPerson.username}</small>}
                     <strong>Pick a contract.</strong>
                   </div>
                 </div>
@@ -294,7 +298,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
               <div className="new-contract-actions">
                 <Button type="button" variant="secondary" icon={ArrowLeft} onClick={() => setStep(1)}>
-                  {prefillPerson ? 'Change person' : 'Person'}
+                  {prefillMatchesIdentifier ? 'Change person' : 'Person'}
                 </Button>
                 <Button type="button" variant={selected?.chaos ? 'danger' : 'aura'} loading={loading} onClick={handleSubmit}>
                   Send contract
