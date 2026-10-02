@@ -203,6 +203,12 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
     const actor = await loadActor(req.user.id);
     if (!actor) return res.status(404).json({ msg: 'User not found' });
 
+    const responseText = String(req.body.text || '').replace(/\s+/g, ' ').trim();
+    if (!responseText) return res.status(400).json({ msg: 'Answer the challenge first' });
+    if (responseText.length > SHOUT_MAX_LENGTH) {
+      return res.status(400).json({ msg: `Keep it under ${SHOUT_MAX_LENGTH} characters` });
+    }
+
     const scopeKey = scopeFor(actor);
     const challenge = await AfterHoursActivity.findOne({
       publicId: req.params.activityId,
@@ -230,7 +236,7 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
         parentActivityId: challenge._id,
         promptId: challenge.promptId,
         promptText: challenge.promptText,
-        text: challenge.text
+        text: responseText
       });
     } catch (error) {
       if (error?.code === 11000) return res.status(409).json({ msg: 'You already joined that challenge' });
@@ -242,7 +248,7 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
       fromUserId: actor._id,
       type: 'AFTER_HOURS_CHALLENGE',
       title: 'After Hours',
-      message: `${actor.displayName} jumped into your challenge.`
+      message: `${actor.displayName} answered your After Hours challenge.`
     });
 
     await touchPresence(actor);
