@@ -201,6 +201,7 @@ const bountyArenaView = (value, viewerId) => {
   const view = {
     _id: data._id,
     targetName: data.targetName,
+    targetAvatar: data.targetAvatar || null,
     amount: Number(data.amount) || 0,
     source,
     chaosAmount,
