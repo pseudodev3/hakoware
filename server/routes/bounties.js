@@ -294,12 +294,19 @@ router.get('/active', auth, async (req, res) => {
       .lean();
 
     const friendshipIds = [...new Set(bounties.map((bounty) => String(bounty.friendshipId)).filter(Boolean))];
-    const friendships = friendshipIds.length
-      ? await Friendship.find({ _id: { $in: friendshipIds } })
-        .select('user1 user2 user1Perspective user2Perspective')
-        .lean()
-      : [];
+    const targetIds = [...new Set(bounties.map((bounty) => String(bounty.targetId)).filter(Boolean))];
+    const [friendships, targets] = await Promise.all([
+      friendshipIds.length
+        ? Friendship.find({ _id: { $in: friendshipIds } })
+          .select('user1 user2 user1Perspective user2Perspective')
+          .lean()
+        : Promise.resolve([]),
+      targetIds.length
+        ? User.find({ _id: { $in: targetIds } }).select('_id avatar').lean()
+        : Promise.resolve([])
+    ]);
     const friendshipById = new Map(friendships.map((friendship) => [String(friendship._id), friendship]));
+    const targetAvatarById = new Map(targets.map((target) => [String(target._id), target.avatar || null]));
 
     return res.json(bounties.map((bounty) => {
       const friendship = friendshipById.get(String(bounty.friendshipId));
@@ -312,7 +319,12 @@ router.get('/active', auth, async (req, res) => {
         targetBankrupt = Boolean(calculateDebtState(perspective)?.isBankrupt);
         viewerIsPartner = String(partnerId) === String(req.user.id);
       }
-      return bountyArenaView({ ...bounty, targetBankrupt, viewerIsPartner }, req.user.id);
+      return bountyArenaView({
+        ...bounty,
+        targetAvatar: targetAvatarById.get(String(bounty.targetId)) || null,
+        targetBankrupt,
+        viewerIsPartner
+      }, req.user.id);
     }));
   } catch (err) {
     console.error('Load bounties failed:', err.message);
