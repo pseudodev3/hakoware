@@ -170,7 +170,19 @@ router.post('/callout', calloutLimiter, async (req, res) => {
     });
     if (!activePresence) return res.status(409).json({ msg: 'They just left the room' });
 
+    if (String(target._id) === String(actor._id)) {
+      return res.status(400).json({ msg: 'You cannot call yourself out' });
+    }
+
     const round = currentRound();
+    const actorAnswered = await AfterHoursActivity.exists({
+      scopeKey,
+      roundKey: round.roundKey,
+      type: 'ANSWER',
+      actorId: actor._id
+    });
+    if (!actorAnswered) return res.status(409).json({ msg: 'Pick a side before calling somebody out' });
+
     const alreadyAnswered = await AfterHoursActivity.exists({
       scopeKey,
       roundKey: round.roundKey,
