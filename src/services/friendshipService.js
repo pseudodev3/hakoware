@@ -1,3 +1,5 @@
+import { invalidateResource } from '../lib/resourceCache';
+import { RESOURCE_KEYS } from './bootstrapService';
 import { api } from '../lib/api';
 import { invalidateContractBounty } from './bountyService';
 
@@ -101,4 +103,23 @@ export const respondToContractMoment = async (friendshipId, momentId, value) => 
   } catch (error) {
     return { success: false, error: error.message };
   }
+};
+
+export const getContractTimeline = (friendshipId, { before = null, focus = null } = {}) => {
+  const query = new URLSearchParams();
+  if (before) query.set('before', before);
+  if (focus) query.set('focus', focus);
+  return api.get(`/friendships/${friendshipId}/timeline${query.size ? '?' + query : ''}`);
+};
+export const sendContractMessage = async (friendshipId, payload) => {
+  const result = await api.post(`/friendships/${friendshipId}/messages`, payload);
+  invalidateContractBounty(friendshipId);
+  return result;
+};
+
+export const markContractTimelineRead = async (friendshipId, eventIds) => {
+  await api.post(`/friendships/${friendshipId}/timeline/read`, { eventIds });
+  invalidateResource(RESOURCE_KEYS.notifications);
+  invalidateResource(RESOURCE_KEYS.bootstrap);
+  window.dispatchEvent(new Event('hakoware-notifications-read'));
 };

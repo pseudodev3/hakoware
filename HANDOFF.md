@@ -18,8 +18,8 @@
 
 Current production/main:
 
-- PR #79, first shared payoff + Home activity discovery, is merged on top of PR #78.
-- Exact squash SHA: `dcc87b459ea6042c1867df787397fbcedecc9fbf`.
+- PR #80, Activity redesign + reachable Contracts/Arena navigation, is merged on top of PR #79 and PR #78.
+- Exact squash SHA: `d699f8558fcb9627c0e99d0faf8c45d3cf6cd5e5`.
 - Exact merged SHA passed GitHub validation and deployed successfully on both Vercel and Railway.
 - The After Hours social-room version is the production baseline: Shout / Hot Take / Confession / Ask, one-level replies, Aura Spark / Burn, short notes, and the secondary Room Question.
 - Its real iPhone interaction checklist below still needs device testing.
@@ -28,7 +28,29 @@ The user asked to strengthen retention by improving the first mutual payoff and 
 
 The first shared payoff implementation below is merged in PR #79.
 
-Current implementation branch: `feat/activity-panel-navigation`.
+Current implementation branch: `feat/friend-spaces`.
+
+### Friend spaces — current implementation
+
+The user explicitly approved simpler clickable friend cards and a persistent place to talk inside each accepted contract. This supersedes the older prohibition on contract chat below. After Hours notes remain short notification-only interactions; strangers still cannot start unrestricted DMs.
+
+- Home and the active Contracts roster use quiet friend cards: identity, latest message/activity preview, one consequential state, and a separate 44px quick Check in / recap action. Home still prioritizes bankruptcy, Chaos, Wanted, recovery, season completion and open moments; it still fills three slots.
+- Tapping a card opens `/circle/<opaque-contract-key>` with text/voice conversation and shared check-in/event history. Reloads, native browser history, card focus restoration and Activity links work. Contract details retain the existing XP, settings, reactions, moments, bounty and season controls behind a Contract toggle; switching views preserves conversation scroll position.
+- Conversation is available only to participants of ACTIVE accepted contracts, including a completed season. Pending / ended / foreign contracts deny access. There are no stranger messages, followers or new public feed.
+- Sending an eligible message also performs the canonical check-in. The 20h cap, XP, Aura, Chaos, debt and two-step bankruptcy recovery rules remain intact. Further messages are social only. Hunter proof still requires explicit Credit / Escape through Check in; Voice Tax requires a voice message or voice check-in.
+- Manual and message check-ins share `server/services/contractCheckin.js`, protected by a database per-contract lease across instances. Text sends use persistent retry keys and unique indexes; committed voice attachments are owned, scoped and single use. A failed progression action does not erase a delivered message.
+- `ContractEvent` MESSAGE records persist text/voice references. Timeline pages contain 40 entries with compound time/id cursors, and support an exact older Activity target outside the current page. Only resolved moment answers are returned. Payloads omit raw metadata, storage keys, sender/recipient IDs and friendship IDs.
+- Voice uses authenticated audio delivery and the existing private storage infrastructure. Message upload purpose permits social voice messages during check-in cooldown while preserving upload validation and pending-object expiry.
+- One unread message notification per recipient/contract points at the newest message. Opening loaded incoming entries marks only their notification targets read; reading an older target cannot clear a newer message. Message visibility waits for notification persistence to avoid read/notification races.
+- Home social presence includes incoming message discovery and bounded recent message previews without crowding out state events. Shared payoff and selective local activity acknowledgement remain; acknowledgement is still per account/browser, not cross-device.
+- Phone conversations hide the bottom navigation while the composer is in use. Visual viewport sizing keeps it above the keyboard, with 16px inputs, safe-area spacing, 44px controls, visible focus and reduced-motion support. Polling pauses in the background and refreshes on foreground return.
+- CI adds `check:friend-spaces`, using an isolated real MongoDB 8.0.12 and authenticated Express routes. `mongodb-memory-server-core` is development-only and has no deployment postinstall binary download.
+- Validation: production build, changed-file lint error check, circle activity, client payloads, duo activation and server hardening checks. MongoDB tests cover authorization, idempotency, simultaneous manual/message check-ins, 20h caps, voice ownership/expiry/reuse, Voice Tax, explicit hunter proof, two-step recovery, notification targeting/read races, hidden/resolved answers, same-timestamp pagination and ended-contract denial.
+- Local browser fixtures cover 320×844, 390×844, 390×600 and 1280×844; light/dark, reduced/normal motion, text delivery uncertainty + retry, actual MediaRecorder capture, authenticated playback, older history, details, reload, return focus and older Activity targets. Activity regression passes all four prior widths/themes. Screenshots inspected. Additional browser checks pass for simulated keyboard shrink, scroll restoration, switching from details to a new Activity target inside the same friend space, and ended-contract composer removal. These are not physical iPhone verification.
+- Not verified: physical iPhone/Safari microphone and browser chrome, live two-account delivery, or real object-storage playback. Existing three `YouView.jsx` hook-name lint errors and bundle-size warning remain.
+- Finish exact-head CI before opening one finished PR. Merge only on explicit user instruction, then verify the exact merged frontend/backend deployments.
+
+Activity/navigation below is merged in PR #80.
 
 ### Activity panel + reachable circle navigation
 
@@ -36,7 +58,7 @@ Current implementation branch: `feat/activity-panel-navigation`.
 - Contracts / Arena now occupy a 44px shortcut row immediately above the three primary tabs on Home, Contracts and Arena. Desktop has equivalent sidebar links. The redundant Home header links are removed.
 - Activity opens as a rounded bottom sheet on phones (up to 88dvh), preserving a side drawer on desktop. Its scroll region leaves the footer reachable.
 - All / Unread / Voice filters separate old voice notes from current updates. Feed rows group into Today / Yesterday / Earlier, use an unread dot, and expose read/delete through one options disclosure.
-- Tapping an update opens Contracts, Arena or After Hours as appropriate; After Hours preserves the existing post or room-event target. Contract notifications open the Contracts list, not a specific card. Voice notifications open Voice inbox.
+- Tapping an update opens Contracts, Arena or After Hours as appropriate; After Hours preserves the existing post or room-event target. Contract notifications now open the exact friend space/event when a contract key is available (friend-space implementation); older notifications fall back to Contracts. Voice notifications open Voice inbox.
 - Mark all read and Done are persistent footer actions. New controls have 44px targets, visible keyboard focus, reduced-motion support, and restrained press feedback.
 - The dialog uses a body portal; the app behind it becomes inert, keyboard focus is trapped, Escape works after controls disappear, and focus returns to the bell on close.
 - Mutations serialize with optimistic rollback. In-flight reads are ignored during writes and settled before revalidation; a failed sync keeps the current feed and offers Retry.
@@ -353,9 +375,9 @@ Friction rules added in the social-conversion pass:
 - a brand-new user with no contracts gets two activation paths on Home: **Start a contract** or **After Hours**; do not force “bring a friend first” now that stranger discovery exists;
 - the old three-item onboarding rail is compressed to one short rule line.
 
-### Compact contract card variant
+### Previous compact contract card variant (retained inside friend-space details)
 
-Home and the Contracts page now use the **same reference-style compact horizontal contract card** inspired by the approved visual reference.
+Before the current friend-space implementation, Home and the Contracts page used the **same reference-style compact horizontal contract card** inspired by the approved visual reference.
 
 Locked anatomy:
 
@@ -1102,7 +1124,7 @@ Product rule:
 
 **one meaningful progression action per day, many tiny social responses throughout the day.**
 
-Do not turn this into chat, followers, a public social feed, or notification spam.
+The user has now explicitly authorized persistent conversations inside accepted contracts (see current friend-space checkpoint). Do not add followers, another public social feed, stranger DMs or notification spam. The older check-in reply remains a bounded legacy interaction within Contract details.
 
 ## 25. Social-safety design rule
 

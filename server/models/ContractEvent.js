@@ -12,4 +12,7 @@ const ContractEventSchema = new mongoose.Schema({
 
 ContractEventSchema.index({ friendshipId: 1, createdAt: -1 });
 
+ContractEventSchema.index({ friendshipId: 1, userId: 1, 'metadata.clientId': 1 }, { unique: true, partialFilterExpression: { type: 'MESSAGE' } });
+ContractEventSchema.index({ 'metadata.voiceNoteId': 1 }, { unique: true, partialFilterExpression: { type: 'MESSAGE', 'metadata.voiceNoteId': { $type: 'string' } } });
+
 module.exports = mongoose.model('ContractEvent', ContractEventSchema);

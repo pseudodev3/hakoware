@@ -725,7 +725,9 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
       worldEvent: world.id,
       season: friendship.season?.number,
       checkinStatus: social.checkinStatus || null,
-      note: social.note || null
+      note: social.note || null,
+      voiceNoteId: social.voiceNoteId || null,
+      messageEventId: social.messageEventId || null
     }
   });
 

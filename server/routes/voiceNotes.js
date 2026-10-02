@@ -57,12 +57,14 @@ router.post('/upload', auth, uploadLimiter, upload.single('audio'), async (req, 
     const isUser2 = friendship.user2.toString() === req.user.id;
     if (!isUser1 && !isUser2) return res.status(403).json({ msg: 'Not authorized' });
 
+    const isMessage = req.body.purpose === 'MESSAGE';
     const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
     const lastInteraction = new Date(friendship[key].lastInteraction || 0);
-    if ((Date.now() - lastInteraction.getTime()) / 3600000 < 20) {
+    const checkedInThisSeason = lastInteraction.getTime() > new Date(friendship.season?.startedAt || 0).getTime();
+    if (!isMessage && checkedInThisSeason && (Date.now() - lastInteraction.getTime()) / 3600000 < 20) {
       return res.status(400).json({ msg: 'You already checked in today' });
     }
-    await prepareCheckinGame(friendship, req.user.id, 'VOICE');
+    if (!isMessage) await prepareCheckinGame(friendship, req.user.id, 'VOICE');
 
     const recipientId = isUser1 ? friendship.user2 : friendship.user1;
     const sender = await User.findById(req.user.id).select('displayName');

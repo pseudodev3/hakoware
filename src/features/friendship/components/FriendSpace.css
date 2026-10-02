@@ -1,0 +1,106 @@
+.friend-space { position:relative; display:flex; flex-direction:column; height:100%; min-height:0; width:100%; max-width:860px; margin:0 auto; background:var(--surface-soft); border-inline:1px solid var(--border-subtle); }
+.friend-space-header { display:flex; align-items:center; gap:10px; padding:12px 18px; flex:0 0 auto; border-bottom:1px solid var(--border-subtle); background:var(--surface-card); }
+.friend-space-back { width:44px; height:44px; display:grid; place-items:center; border-radius:12px; color:var(--text-secondary); flex:0 0 auto; }
+.friend-space-identity { min-width:0; flex:1; }
+.friend-space-identity h1 { font-size:1rem; font-weight:660; letter-spacing:-.025em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.friend-space-identity > span { color:var(--text-muted); font-size:.67rem; }
+.friend-space-details { min-height:44px; display:flex; align-items:center; gap:5px; padding:0 9px; border-radius:10px; font-size:.7rem; font-weight:600; color:var(--aura-gold); flex:0 0 auto; }
+.friend-space-header .user-avatar { width:36px; height:36px; flex:0 0 36px; }
+.friend-space-health { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:44px; padding:0 22px; font-size:.7rem; border-bottom:1px solid var(--border-subtle); background:var(--surface-card); }
+.friend-space-health > span { display:flex; align-items:center; gap:6px; color:var(--text-secondary); }
+.friend-space-health i { width:5px; height:5px; border-radius:50%; background:var(--aura-green); flex:0 0 auto; }
+.friend-space-health.danger > span { color:var(--aura-red); }
+.friend-space-health.danger i { background:var(--aura-red); }
+.friend-space-health.gold i { background:var(--aura-gold); }
+.friend-space-health button { min-height:44px; display:flex; align-items:center; gap:6px; color:var(--aura-gold); font-size:.69rem; padding:0 3px; }
+.friend-space-health button:disabled { color:var(--text-muted); }
+.friend-space-attention,.friend-space-moment { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:44px; flex:0 0 auto; padding:10px 22px; font-size:.72rem; text-align:left; line-height:1.45; color:var(--text-secondary); background:var(--aura-gold-soft); border-bottom:1px solid var(--border-subtle); }
+.friend-space-moment { color:var(--aura-gold); }
+.friend-space-attention svg,.friend-space-moment svg { flex:0 0 auto; }
+.friend-space-timeline { min-height:0; flex:1; overflow-y:auto; padding:16px 24px 24px; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.friend-timeline-date { color:var(--text-muted); font-size:.65rem; font-weight:580; text-align:center; margin:14px 0; }
+.friend-event { display:flex; margin:8px 0; outline:none; }
+.friend-event.mine { justify-content:flex-end; }
+.friend-event.theirs { justify-content:flex-start; }
+.friend-message-bubble { min-width:0; max-width:min(82%,520px); padding:11px 14px 9px; border:1px solid var(--border-subtle); border-radius:17px 17px 17px 5px; background:var(--surface-card); color:var(--text-primary); }
+.mine .friend-message-bubble { border-radius:17px 17px 5px 17px; background:var(--aura-gold-soft); border-color:var(--aura-gold-glow); }
+.friend-message-bubble > p { font-size:.85rem; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
+.friend-message-author { display:block; font-size:.64rem; font-weight:650; color:var(--aura-gold); margin-bottom:4px; }
+.friend-message-meta { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; color:var(--text-muted); font-size:.57rem; margin-top:7px; }
+.friend-message-meta > span { display:flex; align-items:center; gap:3px; }
+.friend-message-checkin-note { display:block; font-size:.67rem; color:var(--text-secondary); line-height:1.5; margin-top:7px; }
+.friend-event.shared-event { justify-content:center; margin:15px 0; }
+.friend-shared-event { display:flex; flex-direction:column; align-items:center; gap:5px; max-width:90%; padding:7px 12px; text-align:center; }
+.friend-event-label { color:var(--text-secondary); font-size:.72rem; line-height:1.5; overflow-wrap:anywhere; }
+.friend-event-label > small { display:block; color:var(--aura-gold); font-size:.63rem; }
+.friend-shared-event > time,.friend-shared-event > small { font-size:.58rem; color:var(--text-muted); }
+.friend-event.is-focused { border-radius:12px; box-shadow:0 0 0 2px var(--aura-gold); padding:6px; }
+.friend-event-actions { display:flex; gap:8px; }
+.friend-event-actions button { min-height:44px; padding:0 10px; display:flex; align-items:center; gap:5px; border-radius:10px; color:var(--aura-gold); font-size:.69rem; }
+.friend-moment-reveal { background:var(--surface-card); padding:14px; border:1px solid var(--border-subtle); border-radius:14px; max-width:360px; }
+.friend-moment-reveal p { font-size:.78rem; margin-bottom:10px; color:var(--text-primary); line-height:1.5; }
+.friend-moment-reveal > span { display:flex; align-items:baseline; justify-content:space-between; gap:15px; color:var(--text-secondary); font-size:.73rem; margin-top:6px; }
+.friend-moment-reveal strong { color:var(--aura-gold); font-size:.65rem; }
+.friend-first-shared { position:relative; background:var(--aura-gold-soft); border:1px solid var(--aura-gold-glow); border-radius:16px; padding:16px 46px 16px 16px; margin:8px 0 16px; }
+.friend-first-shared > span { display:block; font-size:.65rem; color:var(--aura-gold); margin-bottom:5px; }
+.friend-first-shared > strong { font-size:1rem; letter-spacing:-.02em; }
+.friend-first-shared > p { font-size:.73rem; color:var(--text-secondary); margin-top:6px; }
+.friend-first-shared > button { position:absolute; top:7px; right:6px; width:44px; height:44px; color:var(--text-muted); display:grid; place-items:center; }
+.friend-opened-update { border-bottom:1px solid var(--border-subtle); margin-bottom:18px; padding-bottom:16px; }
+.friend-opened-update > span { display:block; font-size:.65rem; color:var(--aura-gold); margin-bottom:8px; }
+.friend-space-empty { min-height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:20px; text-align:center; color:var(--text-muted); font-size:.8rem; }
+.friend-space-empty strong { color:var(--text-secondary); }
+.friend-space-empty p { max-width:280px; font-size:.76rem; line-height:1.6; }
+.friend-load-older { min-height:44px; display:block; padding:0 14px; margin:0 auto 10px; font-size:.7rem; color:var(--aura-gold); }
+.friend-space-error { display:flex; align-items:center; justify-content:space-between; gap:12px; border-radius:12px; padding:0 12px; background:var(--surface-card); border:1px solid var(--border-subtle); color:var(--text-secondary); font-size:.74rem; }
+.friend-space-error button { min-height:44px; padding:0 10px; color:var(--aura-gold); }
+.friend-composer-dock { flex:0 0 auto; padding:12px 20px 10px; border-top:1px solid var(--border-subtle); background:var(--surface-card); }
+.friend-composer { display:flex; align-items:flex-end; gap:8px; }
+.friend-composer textarea { flex:1; min-width:0; min-height:44px; max-height:120px; resize:vertical; padding:12px; border-radius:14px; background:var(--surface-soft); border:1px solid var(--border-subtle); color:var(--text-primary); font-family:inherit; font-size:16px; line-height:1.3; }
+.friend-composer textarea::placeholder { color:var(--text-muted); }
+.friend-compose-voice,.friend-compose-send { width:44px; height:44px; flex:0 0 auto; display:grid; place-items:center; border-radius:12px; color:var(--text-secondary); }
+.friend-compose-send { background:var(--aura-gold); color:#151006; }
+.friend-compose-send:disabled { background:var(--surface-soft); color:var(--text-muted); }
+.friend-composer-context { display:flex; align-items:center; gap:10px; justify-content:space-between; margin-top:4px; }
+.friend-composer-context > span { color:var(--text-muted); font-size:.61rem; line-height:1.45; }
+.friend-composer-context > button { min-height:44px; padding:0 8px; color:var(--aura-gold); font-size:.68rem; font-weight:620; flex:0 0 auto; }
+.friend-composer-context > button:disabled { color:var(--text-muted); }
+.friend-send-error { margin-top:8px; font-size:.72rem; color:var(--aura-red); line-height:1.5; }
+.friend-new-updates { position:absolute; align-self:center; bottom:125px; display:flex; align-items:center; gap:6px; padding:0 14px; min-height:44px; border-radius:999px; background:var(--surface-modal); border:1px solid var(--border-active); color:var(--aura-gold); font-size:.73rem; box-shadow:var(--shadow-card); }
+.friend-space-contract { min-height:0; flex:1; overflow-y:auto; padding:20px; }
+.friend-contract-return { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; margin:16px auto 0; color:var(--aura-gold); font-size:.78rem; }
+.friend-voice-message { display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-width:150px; text-align:left; }
+.friend-voice-message > button { flex:0 0 auto; width:44px; height:44px; display:grid; place-items:center; border-radius:50%; color:var(--aura-gold); background:var(--surface-soft); }
+.friend-voice-message > span { flex:1; display:flex; flex-direction:column; gap:4px; }
+.friend-voice-message strong { font-size:.77rem; font-weight:590; }
+.friend-voice-message small { font-size:.63rem; color:var(--text-muted); }
+.friend-voice-message p { flex-basis:100%; font-size:.7rem; color:var(--aura-red); }
+.friend-voice-composer { padding:10px 12px; border:1px solid var(--border-subtle); border-radius:14px; background:var(--surface-soft); }
+.friend-voice-record-row { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--text-secondary); font-size:.73rem; }
+.friend-voice-record-row > button { width:44px; height:44px; display:grid; place-items:center; color:var(--aura-gold); }
+.friend-voice-composer audio { width:100%; height:44px; margin-top:8px; }
+.friend-voice-composer > p { margin:8px 0; color:var(--aura-red); font-size:.72rem; }
+.friend-voice-composer-actions { display:flex; justify-content:flex-end; align-items:center; gap:5px; margin-top:6px; }
+.friend-voice-composer-actions button { min-height:44px; padding:0 12px; border-radius:10px; font-size:.72rem; color:var(--text-secondary); }
+.friend-voice-composer-actions .friend-send-voice { background:var(--aura-gold-soft); color:var(--aura-gold); }
+.friend-space button { transition:background-color 140ms var(--ease-out),transform 140ms var(--ease-out); }
+.friend-space button:active:not(:disabled) { transform:scale(.96); }
+.friend-space button:focus-visible,.friend-space textarea:focus-visible { outline:2px solid var(--aura-gold); outline-offset:2px; }
+@media (hover:hover) and (pointer:fine) { .friend-space-back:hover,.friend-space-details:hover,.friend-event-actions button:hover,.friend-compose-voice:hover { background:var(--surface-soft); } }
+@media (max-width:768px) {
+  .friend-space { border:0; }
+  .friend-space-header { padding:8px 8px; gap:7px; }
+  .friend-space-header .user-avatar { width:32px; height:32px; flex-basis:32px; }
+  .friend-space-identity h1 { font-size:.94rem; }
+  .friend-space-details { font-size:.66rem; padding-inline:6px; }
+  .friend-space-health { padding-inline:18px; }
+  .friend-space-attention,.friend-space-moment { padding-inline:18px; }
+  .friend-space-timeline { padding:12px 16px 20px; }
+  .friend-composer-dock { padding:10px 12px max(8px,env(safe-area-inset-bottom)); }
+  .friend-message-bubble { max-width:88%; padding-inline:12px; }
+  .friend-space-contract { padding:14px; }
+}
+@media (prefers-reduced-motion:reduce) { .friend-space button { transition:none; } .friend-space button:active:not(:disabled) { transform:none; } }
+
+.friend-space-ended p { font-size:.8rem; color:var(--text-secondary); }
+.friend-space-ended button { min-height:44px; color:var(--aura-gold); font-size:.78rem; }

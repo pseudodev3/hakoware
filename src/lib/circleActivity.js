@@ -1,6 +1,6 @@
 const WINDOW_MS = 48 * 60 * 60 * 1000;
 const DISCOVERY_TYPES = new Set([
-  'CHECKIN', 'VOICE_CHECKIN', 'CHECKIN_REPLY', 'CHECKIN_REACTION', 'POKE',
+  'MESSAGE', 'CHECKIN', 'VOICE_CHECKIN', 'CHECKIN_REPLY', 'CHECKIN_REACTION', 'POKE',
   'MUTUAL_POKE', 'HOT_SEAT_OPENED', 'HOT_SEAT_ANSWERED', 'HOT_SEAT_REVEALED',
   'SPLIT_DECISION_OPENED', 'SPLIT_DECISION_ANSWERED', 'SPLIT_DECISION_REVEALED',
   'DOUBLE_DARE_SENT', 'DOUBLE_DARE_REVEALED'
@@ -36,7 +36,7 @@ export const applyCircleSeen = (presence, seen) => ({
 });
 
 export const activityLabel = (type) => ({
-  CHECKIN: 'New check-in', VOICE_CHECKIN: 'New voice check-in', CHECKIN_REPLY: 'New reply',
+  MESSAGE: 'New message', CHECKIN: 'New check-in', VOICE_CHECKIN: 'New voice check-in', CHECKIN_REPLY: 'New reply',
   CHECKIN_REACTION: 'New reaction', POKE: 'Poke back?', MUTUAL_POKE: 'Mutual Menace',
   HOT_SEAT_OPENED: 'Hot Seat is open', HOT_SEAT_ANSWERED: 'They answered Hot Seat',
   HOT_SEAT_REVEALED: 'Hot Seat revealed', SPLIT_DECISION_OPENED: 'Split Decision is open',

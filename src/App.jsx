@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useAuth } from './contexts/AuthContext';
 import {
@@ -17,6 +17,7 @@ import { ClaimUsername, Login, Signup } from './features/auth/Auth';
 import { ResetPassword } from './features/auth/ResetPassword';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { FriendshipSettingsModal } from './features/friendship/components/FriendshipSettingsModal';
+import { FriendSpace } from './features/friendship/components/FriendSpace';
 import { ContractsView } from './features/friendship/components/ContractsView';
 import { ContractRecapModal } from './features/friendship/components/ContractRecapModal';
 import { CheckinModal } from './features/debt/components/CheckinModal';
@@ -58,7 +59,13 @@ function MainApp({ showToast }) {
   const shouldReduceMotion = useReducedMotion();
   const joining = isJoinLink();
   const [hasEntered, setHasEntered] = useState(joining);
-  const [activeTab, setActiveTab] = useState('home');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const requestedTab = params.get('view') || 'home';
+  const activeTab = ['home', 'contracts', 'afterHours', 'arena', 'you'].includes(requestedTab) ? requestedTab : 'home';
+  const friendKey = location.pathname.startsWith('/circle/') ? location.pathname.split('/')[2] : null;
+  const returnFocusRef = useRef(null);
   const [friendships, setFriendships] = useState(bootstrapData?.contracts?.active || []);
   const [pendingReceived, setPendingReceived] = useState(bootstrapData?.contracts?.pendingReceived || []);
   const [pendingSent, setPendingSent] = useState(bootstrapData?.contracts?.pendingSent || []);
@@ -192,10 +199,30 @@ function MainApp({ showToast }) {
     };
   }, [isAuthenticated, user?.uid, user?.id, user?._id]);
 
-  const navigateTo = (tab, options = {}) => {
-    setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
-    setActiveTab(tab);
+  const openFriend = (friendship, options = {}) => {
+    const key = friendship.contractKey || friendship._id || friendship.id;
+    const query = new URLSearchParams({ view: activeTab });
+    if (options.focusEventId) query.set('event', options.focusEventId);
+    if (options.contract) query.set('contract', '1');
+    returnFocusRef.current = String(friendship._id || friendship.id);
+    navigate(`/circle/${encodeURIComponent(key)}?${query}`);
   };
+  const navigateTo = (tab, options = {}) => {
+    if (tab === 'friend') {
+      const match = friendships.find((item) => item.contractKey === options.contractKey);
+      if (match) { openFriend(match, options); return; }
+      tab = 'contracts';
+    }
+    setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
+    navigate(tab === 'home' ? '/' : `/?view=${tab}`, { replace: Boolean(options.replace) });
+  };
+
+  const openedFriend = friendKey ? friendships.find((item) => String(item.contractKey || item._id || item.id) === friendKey) : null;
+  useEffect(() => {
+    if (friendKey || !returnFocusRef.current) return undefined;
+    const frame = requestAnimationFrame(() => document.getElementById(`friend-open-${returnFocusRef.current}`)?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [friendKey, activeTab]);
 
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
@@ -299,6 +326,7 @@ function MainApp({ showToast }) {
       <TestSessionBar user={user} />
       <Layout
       activeTab={activeTab}
+      friendSpace={Boolean(friendKey)}
       onTabChange={navigateTo}
       onAddFriend={() => openNewContract()}
       pendingInvitations={pendingReceived}
@@ -306,13 +334,26 @@ function MainApp({ showToast }) {
       showToast={showToast}
     >
       <motion.div
-        key={activeTab}
+        key={friendKey || activeTab}
         className="tab-stage"
         initial={shouldReduceMotion ? false : { opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: shouldReduceMotion ? 0 : .17, ease: [0.2, 0, 0, 1] }}
       >
-        {activeTab === 'home' && (
+        {openedFriend && <FriendSpace
+          key={openedFriend._id || openedFriend.id}
+          friendship={openedFriend}
+          currentUserId={user.uid || user.id || user._id}
+          socialState={socialPresence.contracts?.[openedFriend._id || openedFriend.id]}
+          focusEventId={params.get('event')}
+          initialContract={params.get('contract') === '1'}
+          onBack={() => navigateTo(activeTab, { replace: true })}
+          onAction={handleAction}
+          onRefresh={loadData}
+          onActivitySeen={markActivitySeen}
+        />}
+        {friendKey && !openedFriend && <div className="friend-unavailable"><h1>This friend space is unavailable.</h1><p>It may have ended or your circle needs a refresh.</p><button onClick={() => void loadData()}>Refresh circle</button><button onClick={() => navigateTo('home')}>Back to your circle</button></div>}
+        {!friendKey && activeTab === 'home' && (
           <HomeView
             user={user}
             friendships={friendships}
@@ -326,10 +367,11 @@ function MainApp({ showToast }) {
             showToast={showToast}
             socialPresence={socialPresence}
             onActivitySeen={markActivitySeen}
+            onOpenFriend={openFriend}
           />
         )}
 
-        {activeTab === 'contracts' && (
+        {!friendKey && activeTab === 'contracts' && (
           <ContractsView
             user={user}
             friendships={friendships}
@@ -344,10 +386,11 @@ function MainApp({ showToast }) {
             showToast={showToast}
             socialContracts={socialPresence.contracts}
             onActivitySeen={markActivitySeen}
+            onOpenFriend={openFriend}
           />
         )}
 
-        {activeTab === 'afterHours' && (
+        {!friendKey && activeTab === 'afterHours' && (
           <AfterHoursView
             user={user}
             friendships={[...friendships, ...pendingReceived, ...pendingSent]}
@@ -357,8 +400,8 @@ function MainApp({ showToast }) {
             showToast={showToast}
           />
         )}
-        {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
-        {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
+        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
+        {!friendKey && activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
       </motion.div>
 
       <AddFriendModal

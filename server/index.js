@@ -76,6 +76,7 @@ app.use(requestGuard);
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bootstrap', require('./routes/bootstrap'));
+app.use('/api/friendships', require('./routes/contractTimeline'));
 app.use('/api/friendships', require('./routes/friendships'));
 app.use('/api/voice-notes', require('./routes/voiceNotes'));
 app.use('/api/notifications', require('./routes/notifications'));

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Clock3, Dice5, Mail, Plus, Swords, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
-import { ContractCard } from './ContractCard';
+import { FriendCard } from './FriendCard';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { getBankruptPartner } from '../contractState';
 import './ContractsView.css';
@@ -17,7 +17,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, onActivitySeen }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, onOpenFriend }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -118,14 +118,13 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         ) : (
           <div className="contracts-grid">
             {orderedFriendships.map((friendship) => (
-              <ContractCard
+              <FriendCard
                 key={friendship._id || friendship.id}
                 friendship={friendship}
                 currentUserId={userId}
                 onAction={onAction}
-                referenceLayout
                 socialState={socialContracts?.[friendship._id || friendship.id]}
-                onActivitySeen={onActivitySeen}
+                onOpen={onOpenFriend}
               />
             ))}
           </div>
