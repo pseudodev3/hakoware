@@ -98,34 +98,51 @@
   min-height: 54px;
   padding: 7px 9px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   border-radius: 13px;
   background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
   box-shadow: inset 0 0 0 1px var(--border-subtle);
 }
 
-.after-hours-person-chip > div {
+.after-hours-person-open {
+  min-width: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+}
+
+.after-hours-person-open:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.after-hours-person-open > span {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.after-hours-person-chip strong,
-.after-hours-person-chip span {
+.after-hours-person-open strong,
+.after-hours-person-open small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.after-hours-person-chip strong {
+.after-hours-person-open strong {
   color: var(--text-primary);
   font-size: .67rem;
   font-weight: 640;
 }
 
-.after-hours-person-chip span {
+.after-hours-person-open small {
   margin-top: 1px;
   color: var(--text-muted);
   font-size: .55rem;
@@ -136,7 +153,7 @@
   font-size: .55rem;
 }
 
-.after-hours-person-chip > button {
+.after-hours-tag-in {
   min-height: 30px;
   padding: 0 9px;
   border-radius: 9px;
@@ -230,13 +247,67 @@
   box-shadow: inset 0 0 0 1px var(--border-subtle);
 }
 
-.after-hours-challenge-picker > div:last-child {
+.after-hours-custom-challenge {
+  margin-top: 5px;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 5px 0 11px;
+  border-radius: 11px;
+  background: var(--bg-card);
+  box-shadow: inset 0 0 0 1px var(--aura-gold-glow);
+}
+
+.after-hours-custom-challenge input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+  font-size: .67rem;
+}
+
+.after-hours-custom-challenge input::placeholder {
+  color: var(--text-faint);
+}
+
+.after-hours-custom-challenge > span {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: .5rem;
+}
+
+.after-hours-custom-challenge > button {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: #151006;
+  background: var(--aura-gold);
+  font-size: .57rem;
+  font-weight: 680;
+}
+
+.after-hours-custom-challenge > button:disabled {
+  opacity: .4;
+}
+
+.after-hours-suggestion-label {
+  margin: 11px 0 5px;
+  color: var(--text-faint);
+  font-size: .56rem;
+  font-weight: 620;
+}
+
+.after-hours-challenge-suggestions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
-.after-hours-challenge-picker > div:last-child button {
+.after-hours-challenge-suggestions button {
   min-height: 48px;
   padding: 9px 11px;
   display: flex;
@@ -565,6 +636,121 @@
   text-wrap: pretty;
 }
 
+.after-hours-feed-person {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.after-hours-feed-person:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.after-hours-feed-meta > button {
+  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  text-align: left;
+  background: transparent;
+}
+
+.after-hours-feed-meta > button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.after-hours-convert-link {
+  margin-top: 10px;
+  min-height: 32px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9px;
+  color: var(--aura-gold);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--aura-gold-glow);
+  font-size: .58rem;
+  font-weight: 650;
+}
+
+.after-hours-person-sheet {
+  padding: 2px 0 4px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.after-hours-person-sheet-copy {
+  min-width: 0;
+}
+
+.after-hours-person-sheet-copy h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 660;
+}
+
+.after-hours-person-sheet-copy p {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: .65rem;
+}
+
+.after-hours-person-sheet-copy small {
+  margin-top: 8px;
+  display: block;
+  color: var(--text-secondary);
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.after-hours-person-sheet-actions {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  display: grid;
+  gap: 7px;
+}
+
+.after-hours-start-contract,
+.after-hours-sheet-tag,
+.after-hours-existing-contract {
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 11px;
+  font-size: .66rem;
+  font-weight: 650;
+}
+
+.after-hours-start-contract {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #151006;
+  background: var(--aura-gold);
+}
+
+.after-hours-sheet-tag {
+  color: var(--text-secondary);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.after-hours-existing-contract {
+  display: flex;
+  align-items: center;
+  color: var(--aura-green);
+  background: color-mix(in srgb, var(--aura-green) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--aura-green) 24%, transparent);
+}
+
 .after-hours-reactions {
   margin-top: 11px;
   display: flex;
@@ -670,14 +856,15 @@
 }
 
 @media (hover:hover) and (pointer:fine) {
-  .after-hours-person-chip > button:hover,
+  .after-hours-person-open:not(:disabled):hover,
+  .after-hours-tag-in:hover,
   .after-hours-challenge-toggle:hover,
   .after-hours-pin-options button:hover,
   .after-hours-reactions button:hover {
     background: var(--surface-soft-strong);
   }
 
-  .after-hours-challenge-picker > div:last-child button:hover {
+  .after-hours-challenge-suggestions button:hover {
     box-shadow: inset 0 0 0 1px var(--aura-gold-glow);
   }
 }
@@ -734,7 +921,7 @@
     padding: 0 9px;
   }
 
-  .after-hours-challenge-picker > div:last-child {
+  .after-hours-challenge-suggestions {
     grid-template-columns: 1fr;
   }
 
@@ -761,13 +948,18 @@
     padding: 15px 0;
   }
 
-  .after-hours-feed-item > .user-avatar {
+  .after-hours-feed-person {
+    width: 38px;
+    height: 38px;
+  }
+
+  .after-hours-feed-person .user-avatar {
     width: 38px;
     height: 38px;
     border-radius: 11px;
   }
 
-  .after-hours-feed-meta span {
+  .after-hours-feed-meta > button span {
     display: none;
   }
 
@@ -799,7 +991,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .after-hours-person-chip > button,
+  .after-hours-person-open,
+  .after-hours-tag-in,
   .after-hours-challenge-toggle,
   .after-hours-pin-options button,
   .after-hours-reactions button {
