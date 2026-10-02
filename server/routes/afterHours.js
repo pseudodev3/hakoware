@@ -232,8 +232,9 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
     const existing = await AfterHoursActivity.exists({ uniqueKey });
     if (existing) return res.status(409).json({ msg: 'You already joined that challenge' });
 
+    let joinedActivity;
     try {
-      await AfterHoursActivity.create({
+      joinedActivity = await AfterHoursActivity.create({
         uniqueKey,
         scopeKey,
         roundKey: challenge.roundKey,
@@ -255,7 +256,8 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
       fromUserId: actor._id,
       type: 'AFTER_HOURS_CHALLENGE',
       title: 'After Hours',
-      message: `${actor.displayName} answered your After Hours challenge.`
+      message: `${actor.displayName} answered your After Hours challenge.`,
+      afterHoursActivityId: joinedActivity.publicId
     });
 
     await touchPresence(actor);
@@ -360,8 +362,9 @@ router.post('/callout', calloutLimiter, async (req, res) => {
     const existing = await AfterHoursActivity.exists({ uniqueKey });
     if (existing) return res.status(409).json({ msg: 'You already tagged them in this round' });
 
+    let tagActivity;
     try {
-      await AfterHoursActivity.create({
+      tagActivity = await AfterHoursActivity.create({
         uniqueKey,
         scopeKey,
         roundKey: round.roundKey,
@@ -381,7 +384,8 @@ router.post('/callout', calloutLimiter, async (req, res) => {
       fromUserId: actor._id,
       type: 'AFTER_HOURS_CALLOUT',
       title: 'After Hours',
-      message: `${actor.displayName} tagged you into the live Pick a Side. Your turn before the room moves on.`
+      message: `${actor.displayName} tagged you into the live Pick a Side. Your turn before the room moves on.`,
+      afterHoursActivityId: tagActivity.publicId
     });
 
     await touchPresence(actor);
