@@ -81,7 +81,8 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
   useEffect(() => {
     if (!focusActivityId || !room?.feed?.length) return undefined;
     const id = window.requestAnimationFrame(() => {
-      const target = document.querySelector(`[data-after-hours-activity="${CSS.escape(String(focusActivityId))}"]`);
+      const target = Array.from(document.querySelectorAll('[data-after-hours-activity]'))
+        .find((element) => element.dataset.afterHoursActivity === String(focusActivityId));
       if (!target) {
         onFocusHandled?.();
         return;
