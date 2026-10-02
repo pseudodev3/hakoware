@@ -168,7 +168,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
     AfterHoursActivity.find({ scopeKey, roundKey: round.roundKey, type: 'ANSWER' })
       .select('actorId choice')
       .lean(),
-    AfterHoursActivity.find({ scopeKey, createdAt: { $gte: feedSince } })
+    AfterHoursActivity.find({ scopeKey, type: { $ne: 'REPLY' }, createdAt: { $gte: feedSince } })
       .sort({ createdAt: -1 })
       .limit(90)
       .populate('actorId', 'displayName username avatar')
