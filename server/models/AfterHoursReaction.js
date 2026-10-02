@@ -5,7 +5,7 @@ const AfterHoursReactionSchema = new mongoose.Schema({
   activityId: { type: mongoose.Schema.Types.ObjectId, ref: 'AfterHoursActivity', required: true, index: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   reaction: { type: String, enum: ['💀', '👀', '😭', '🤝'], required: true },
-  createdAt: { type: Date, default: Date.now, index: true }
+  createdAt: { type: Date, default: Date.now }
 }, { versionKey: false });
 
 AfterHoursReactionSchema.index({ activityId: 1, userId: 1 }, { unique: true });
