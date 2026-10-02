@@ -10,9 +10,15 @@
 .circle-secondary-actions { grid-column:2; grid-row:2; display:flex; align-items:center; justify-content:flex-end; gap:10px; }
 .circle-secondary-actions button { min-height:30px; display:inline-flex; align-items:center; gap:5px; color:var(--text-secondary); font-size:.66rem; font-weight:590; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .circle-secondary-actions button:active { transform:scale(.96); }
-.circle-pending-link { min-height:42px; padding:0 2px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--aura-gold); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); font-size:.71rem; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.circle-pending-link { min-height:46px; padding:5px 2px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--aura-gold); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); font-size:.69rem; }
+.circle-pending-link > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .circle-pending-link strong { color:var(--text-primary); }
-.circle-pending-link:active { transform:scale(.99); }
+.circle-pending-link > div { flex:0 0 auto; display:flex; align-items:center; gap:6px; }
+.circle-pending-review,.circle-pending-accept { min-height:32px; padding:0 9px; border-radius:9px; font-size:.6rem; font-weight:640; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out); }
+.circle-pending-review { color:var(--text-muted); background:transparent; }
+.circle-pending-accept { color:#151006; background:var(--aura-gold); }
+.circle-pending-review:active,.circle-pending-accept:active { transform:scale(.96); }
+.circle-pending-accept:disabled { opacity:.55; cursor:default; }
 .circle-contracts { display:flex; flex-direction:column; gap:12px; }
 .circle-pulse { padding:11px 2px 12px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .circle-pulse-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
@@ -54,7 +60,7 @@
 
 @media (hover:hover) and (pointer:fine) {
   .circle-secondary-actions button:hover,.circle-grow button:hover { color:var(--text-primary); }
-  .circle-pending-link:hover { color:var(--aura-gold-strong); }
+  .circle-pending-review:hover { color:var(--text-primary); background:var(--surface-soft); }
   .circle-season-briefing button:hover { color:var(--text-primary); background:var(--surface-soft); }
 }
 @media (max-width:720px) {
