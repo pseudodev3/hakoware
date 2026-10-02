@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, LogOut, Share2, Zap } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, Eye, EyeOff, LogOut, Share2, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -9,6 +9,8 @@ import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService'
 import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
 import { buildDuoShareCard } from '../../lib/duoShareCard';
+import { prepareAvatarImage } from '../../lib/avatarImage';
+import { UserAvatar } from '../../shared/components/UserAvatar';
 import { MARKET_ART, PLUS_ART } from './marketArt';
 import './YouView.css';
 
@@ -60,6 +62,7 @@ export const YouView = ({ friendships, showToast }) => {
   const [chaosTarget, setChaosTarget] = useState('');
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [plusInterested, setPlusInterestedState] = useState(Boolean(user.plusInterestAt));
+  const avatarInputRef = useRef(null);
   const userId = user.uid || user.id || user._id;
 
   const refresh = async ({ silent = false, refreshAccount = true, force = true } = {}) => {
@@ -106,6 +109,40 @@ export const YouView = ({ friendships, showToast }) => {
   };
 
   const partnerName = (friendship) => partnerFor(friendship)?.displayName || 'Contract partner';
+
+  const changeAvatar = async (event) => {
+    const sourceFile = event.target.files?.[0];
+    event.target.value = '';
+    if (!sourceFile || busy) return;
+
+    setBusy('avatar');
+    try {
+      const avatarFile = await prepareAvatarImage(sourceFile);
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+      await api.upload('/users/avatar', formData);
+      await refreshUser();
+      showToast?.('Avatar updated.', 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not update avatar', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!user.avatar || busy) return;
+    setBusy('avatar-remove');
+    try {
+      await api.delete('/users/avatar');
+      await refreshUser();
+      showToast?.('Avatar removed.', 'SUCCESS');
+    } catch (error) {
+      showToast?.(error.message || 'Could not remove avatar', 'ERROR');
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const purchase = async (card) => {
     setBusy(`buy-${card.id}`);
@@ -228,10 +265,39 @@ export const YouView = ({ friendships, showToast }) => {
     <div className="you-view you-circle-first">
       <section className="profile-aura-area" aria-label="Profile and Aura">
         <div className="profile-identity">
-          <div className="identity-avatar">{user.displayName?.[0]?.toUpperCase()}</div>
+          <div className="profile-avatar-control">
+            <button
+              type="button"
+              className="profile-avatar-button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={busy === 'avatar' || busy === 'avatar-remove'}
+              aria-label={user.avatar ? 'Change avatar' : 'Add avatar'}
+            >
+              <UserAvatar person={user} size="lg" className="identity-avatar" decorative />
+              <span className="profile-avatar-camera" aria-hidden="true"><Camera size={13} strokeWidth={2} /></span>
+            </button>
+            <input
+              ref={avatarInputRef}
+              className="profile-avatar-input"
+              type="file"
+              accept="image/*"
+              onChange={changeAvatar}
+              tabIndex={-1}
+            />
+          </div>
           <div className="identity-copy">
             <h1>{user.displayName}</h1>
             <p>{user.username ? '@' + user.username : 'Hakoware player'}</p>
+            <div className="identity-photo-actions">
+              <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={busy === 'avatar' || busy === 'avatar-remove'}>
+                {busy === 'avatar' ? 'Preparing…' : user.avatar ? 'Change photo' : 'Add photo'}
+              </button>
+              {user.avatar && (
+                <button type="button" className="remove" onClick={removeAvatar} disabled={busy === 'avatar' || busy === 'avatar-remove'}>
+                  {busy === 'avatar-remove' ? 'Removing…' : 'Remove'}
+                </button>
+              )}
+            </div>
           </div>
           {strongest && (
             <Button variant="secondary" size="sm" icon={Share2} loading={busy === 'share-duo'} onClick={shareStrongestDuo}>
