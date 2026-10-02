@@ -8,6 +8,7 @@ const NotificationSchema = new mongoose.Schema({
   message: { type: String, required: true },
   friendshipId: { type: mongoose.Schema.Types.ObjectId, ref: 'Friendship' },
   voiceNoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'VoiceNote' },
+  afterHoursActivityId: { type: String, default: null, maxlength: 64 },
   read: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
