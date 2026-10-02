@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Eye, EyeOff, LogOut, Share2, Zap } from 'lucide-react';
+import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Share2, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -380,36 +380,71 @@ export const YouView = ({ friendships, showToast }) => {
         <section className="you-section you-secondary-section">
           <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h2>Somebody made it personal.</h2></div></div>
           <div className="grudge-list">
-            {grudges.map((grudge) => (
-              <article className="grudge-card" key={grudge.friendshipId}>
-                <div className="grudge-card-top">
-                  <strong>{grudge.victimName} vs {grudge.claimantName}</strong>
-                  <span>{daysLeft(grudge.expiresAt)}d left</span>
-                </div>
-                <p>
-                  {grudge.role === 'VICTIM'
-                    ? grudge.revengeReady
-                      ? grudge.claimantName + ' finally went bankrupt. Return the Favor for ' + grudge.revengeCost + ' Aura and take 10% of theirs.'
-                      : grudge.claimantName + ' Claimed you. If they go bankrupt before this expires, your revenge window opens.'
-                    : grudge.victimName + ' has a public Grudge against you. Stay solvent until the timer dies.'}
-                </p>
-                {grudge.role === 'VICTIM' && (
-                  <Button
-                    variant={grudge.revengeReady ? 'danger' : 'secondary'}
-                    size="sm"
-                    loading={busy === 'revenge-' + grudge.friendshipId}
-                    disabled={!grudge.revengeReady || aura.balance < grudge.revengeCost}
-                    onClick={() => revenge(grudge)}
-                  >
-                    {grudge.revengeReady
-                      ? aura.balance < grudge.revengeCost
-                        ? 'Need ' + grudge.revengeCost + ' Aura'
-                        : 'Return the Favor · ' + grudge.revengeCost
-                      : 'Waiting for them to slip'}
-                  </Button>
-                )}
-              </article>
-            ))}
+            {grudges.map((grudge) => {
+              const isVictim = grudge.role === 'VICTIM';
+              const otherPerson = isVictim
+                ? { displayName: grudge.claimantName, avatar: grudge.claimantAvatar }
+                : { displayName: grudge.victimName, avatar: grudge.victimAvatar };
+              const otherName = otherPerson.displayName || 'Contract partner';
+              const revengeAffordable = aura.balance >= grudge.revengeCost;
+              const stateLabel = isVictim
+                ? grudge.revengeReady ? 'REVENGE OPEN' : 'GRUDGE'
+                : 'YOU CLAIMED';
+
+              return (
+                <article className={`grudge-card ${grudge.revengeReady ? 'revenge-ready' : ''}`} key={grudge.friendshipId}>
+                  <UserAvatar person={otherPerson} size="lg" className="grudge-person-avatar" decorative />
+
+                  <div className="grudge-card-main">
+                    <div className="grudge-card-top">
+                      <strong>{otherName}</strong>
+                      <span className={grudge.revengeReady ? 'ready' : ''}>{stateLabel}</span>
+                    </div>
+
+                    <p>
+                      {isVictim
+                        ? grudge.revengeReady
+                          ? `${otherName} went bankrupt. Your window is open.`
+                          : `${otherName} claimed ${grudge.originalClaimAmount} Aura from you.`
+                        : `You claimed ${grudge.originalClaimAmount} Aura from ${otherName}.`}
+                    </p>
+
+                    <div className="grudge-card-meta">
+                      <span><Clock3 size={12} /> {daysLeft(grudge.expiresAt)}d left</span>
+                      {isVictim && !grudge.revengeReady && <span>Opens if they go bankrupt</span>}
+                      {!isVictim && <span>Stay solvent</span>}
+                    </div>
+                  </div>
+
+                  <div className="grudge-card-side">
+                    <div className="grudge-card-amount">
+                      <Flame size={14} strokeWidth={1.8} />
+                      <strong>{grudge.originalClaimAmount}</strong>
+                      <small>Aura</small>
+                    </div>
+
+                    {isVictim && grudge.revengeReady ? (
+                      revengeAffordable ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          loading={busy === 'revenge-' + grudge.friendshipId}
+                          onClick={() => revenge(grudge)}
+                        >
+                          Return the Favor · {grudge.revengeCost}
+                        </Button>
+                      ) : (
+                        <span className="grudge-action-state">Need {grudge.revengeCost} Aura</span>
+                      )
+                    ) : (
+                      <span className="grudge-action-state">
+                        {isVictim ? 'Waiting on them' : 'Window active'}
+                      </span>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}
