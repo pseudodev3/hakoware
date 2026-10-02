@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ArrowRight, Clock3, Plus, Radio, Swords, UserPlus, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
-import { ContractCard } from '../friendship/components/ContractCard';
+import { FriendCard } from '../friendship/components/FriendCard';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 
@@ -52,7 +52,7 @@ const priority = (friendship, userId, socialContracts = {}) => {
 };
 
 
-export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onActivitySeen }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onActivitySeen, onOpenFriend }) => {
   const userId = user.uid || user.id || user._id;
   const socialContracts = socialPresence?.contracts || {};
   const newestActivityAt = (friendship) => {
@@ -76,11 +76,8 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       || state.debt > 0
       || state.daysLeft <= 1;
   });
-  const [focusedActivity, setFocusedActivity] = useState(null);
   const [showAllPulse, setShowAllPulse] = useState(false);
   const visible = sorted.slice(0, 3);
-  const focusedContract = sorted.find((item) => String(item._id || item.id) === focusedActivity?.friendshipId);
-  if (focusedContract && !visible.includes(focusedContract)) visible.push(focusedContract);
   const newCount = sorted.filter((item) => {
     const social = socialContracts[item._id || item.id];
     return social?.firstMutualCheckin || social?.unseenActivity?.length;
@@ -105,19 +102,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const pulse = socialPresence?.pulse || [];
   const shownPulse = showAllPulse ? pulse : pulse.slice(0, 4);
 
-  useEffect(() => {
-    if (!focusedActivity) return undefined;
-    const frame = window.requestAnimationFrame(() => {
-      const card = document.getElementById(`contract-${focusedActivity.friendshipId}`);
-      card?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-      card?.focus({ preventScroll: true });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [focusedActivity]);
-
   const openPulse = (item) => {
-    setFocusedActivity({ friendshipId: item.friendshipId, item });
-    onActivitySeen?.([item]);
+    const friendship = friendships.find((entry) => String(entry._id || entry.id) === String(item.friendshipId));
+    if (friendship) onOpenFriend?.(friendship, { focusEventId: item.id });
   };
 
   const pulseTime = (value) => {
@@ -275,16 +262,13 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
       <section className="circle-contracts" aria-label={hot.length ? 'Contracts needing attention' : 'Active contracts'}>
         {visible.map((friendship) => (
-          <ContractCard
+          <FriendCard
             key={friendship._id || friendship.id}
             friendship={friendship}
             currentUserId={userId}
             onAction={onAction}
-            referenceLayout
+            onOpen={onOpenFriend}
             socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
-            onActivitySeen={onActivitySeen}
-            onContractOpen={() => setFocusedActivity({ friendshipId: String(friendship._id || friendship.id) })}
-            focusActivity={focusedActivity?.friendshipId === String(friendship._id || friendship.id) ? focusedActivity : null}
           />
         ))}
       </section>

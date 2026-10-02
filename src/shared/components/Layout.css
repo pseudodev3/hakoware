@@ -72,3 +72,11 @@
 }
 
 .mobile-circle-shortcuts button:focus-visible,.sidebar-circle-links button:focus-visible { outline:2px solid var(--aura-gold); outline-offset:-3px; border-radius:8px; }
+
+.friend-space-layout .scroll-content { padding:0; overflow:hidden; }
+.friend-space-layout .tab-stage { height:100%; min-height:0; }
+.friend-unavailable { padding:30px; }
+.friend-unavailable h1 { font-size:1.2rem; }
+.friend-unavailable p { margin:12px 0; color:var(--text-muted); }
+.friend-unavailable button { min-height:44px; margin-right:12px; color:var(--aura-gold); }
+@media (max-width:768px) { .friend-space-layout { height:var(--friend-viewport-height,100dvh); } .friend-space-layout .mobile-dock { display:none; } .friend-keyboard-open .friend-composer-dock { padding-bottom:8px; } }

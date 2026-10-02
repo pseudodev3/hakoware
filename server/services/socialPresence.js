@@ -12,6 +12,7 @@ const REPLY_MAX_LENGTH = 40;
 const MAX_PULSE_AGE_MS = 48 * HOUR;
 const REACTIONS = Object.freeze(['💀', '🤝', '👀', '😭']);
 const SOCIAL_EVENT_TYPES = new Set([
+  'MESSAGE',
   'CHECKIN',
   'VOICE_CHECKIN',
   'POKE',
@@ -60,6 +61,7 @@ const formatPulseEvent = (event, friendship, viewerId) => {
   const actorId = idString(event.userId);
   const viewer = idString(viewerId);
   if ([
+    'MESSAGE',
     'CHECKIN',
     'VOICE_CHECKIN',
     'POKE',
@@ -77,6 +79,10 @@ const formatPulseEvent = (event, friendship, viewerId) => {
   let tone = 'neutral';
 
   switch (event.type) {
+    case 'MESSAGE':
+      text = metadata.kind === 'VOICE' ? `${actor} sent a voice message.` : `${actor}: ${String(metadata.text || '').slice(0, 120)}`;
+      tone = 'gold';
+      break;
     case 'CHECKIN':
     case 'VOICE_CHECKIN': {
       const vibe = metadata.checkinStatus
@@ -255,16 +261,23 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     getFirstMutualPayoffs(active)
   ]);
   const stateCutoff = new Date(Date.now() - Math.max(REACTION_WINDOW_MS, POKE_COOLDOWN_MS));
-  const events = await ContractEvent.find({
+  const stateEvents = await ContractEvent.find({
     friendshipId: { $in: ids },
+    type: { $in: Array.from(SOCIAL_EVENT_TYPES).filter((type) => type !== 'MESSAGE') },
     createdAt: { $gte: new Date(Math.min(since.getTime(), stateCutoff.getTime())) }
   })
     .sort({ createdAt: -1 })
     .populate('userId', 'displayName username')
     .lean();
 
+  // Conversation traffic is bounded per contract and does not crowd out check-in/poke state.
+  const messageEvents = (await Promise.all(active.map((friendship) => ContractEvent.find({ friendshipId: friendship._id, type: 'MESSAGE', 'metadata.notified': true })
+    .sort({ createdAt: -1, _id: -1 }).limit(12).lean()))).flat();
+  const events = [...stateEvents, ...messageEvents.filter((event) => new Date(event.createdAt) >= since)]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const friendshipById = new Map(active.map((item) => [idString(item._id), item]));
   const contractState = Object.fromEntries(active.map((item) => [idString(item._id), {
+    lastMessage: null,
     latestPartnerCheckin: null,
     reaction: null,
     reply: null,
@@ -279,6 +292,15 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     recentActivity: []
   }]));
 
+  for (const event of messageEvents) {
+    const state = contractState[idString(event.friendshipId)];
+    if (!state || state.lastMessage) continue;
+    state.lastMessage = {
+      id: idString(event._id), mine: idString(event.userId) === idString(userId),
+      text: event.metadata?.kind === 'VOICE' ? 'Voice message' : String(event.metadata?.text || '').slice(0, 120),
+      createdAt: event.createdAt
+    };
+  }
   const partnerCheckinIds = [];
   for (const event of events) {
     const friendshipId = idString(event.friendshipId);

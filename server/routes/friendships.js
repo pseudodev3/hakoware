@@ -6,15 +6,12 @@ const Friendship = require('../models/Friendship');
 const PendingInvite = require('../models/PendingInvite');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
-const VoiceNote = require('../models/VoiceNote');
 const ContractReaction = require('../models/ContractReaction');
 const ContractMoment = require('../models/ContractMoment');
 const AfterHoursPresence = require('../models/AfterHoursPresence');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const {
-  refundOpenBountiesForFriendship,
-  settleBountiesForCheckin,
-  getBountyDecisionRequirement
+  refundOpenBountiesForFriendship
 } = require('../services/bountyEscrow');
 const {
   TEMPLATES,
@@ -23,13 +20,11 @@ const {
   initializeContractGame,
   activateSeason,
   refreshGameState,
-  prepareCheckinGame,
-  completeCheckinGame,
   buildRecap,
   runItBack,
   recordEvent
 } = require('../services/contractGame');
-const { syncDebtState } = require('../services/debtState');
+const { performContractCheckin } = require('../services/contractCheckin');
 const { ensureActiveGameState, loadContractsForUser } = require('../services/contractQueries');
 const { normalizeUsername } = require('../services/username');
 const { recapView } = require('../services/clientViews');
@@ -76,13 +71,6 @@ const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5
 const gameTemplate = (value) => {
   const id = String(value || 'DONT_GHOST').toUpperCase();
   return TEMPLATES[id] || null;
-};
-
-const hasCheckedInThisSeason = (friendship, perspective) => {
-  const seasonStartedAt = new Date(friendship?.season?.startedAt || 0).getTime();
-  const lastInteractionAt = new Date(perspective?.lastInteraction || 0).getTime();
-  if (!(seasonStartedAt > 0)) return lastInteractionAt > 0;
-  return lastInteractionAt > seasonStartedAt;
 };
 
 router.get('/social', auth, async (req, res) => {
@@ -530,160 +518,9 @@ router.post('/:id/checkin', auth, async (req, res) => {
   try {
     const friendship = await Friendship.findById(req.params.id);
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
+    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
     if (friendship.status !== 'ACTIVE') return res.status(400).json({ msg: 'Contract is not active' });
-    await ensureActiveGameState(friendship);
-
-    const key = participantKey(friendship, req.user.id);
-    if (!key) return res.status(403).json({ msg: 'Not authorized' });
-
-    const source = String(req.body.source || 'TEXT').toUpperCase() === 'VOICE' ? 'VOICE' : 'TEXT';
-    const voiceNoteId = req.body.voiceNoteId ? String(req.body.voiceNoteId) : null;
-    const allowedCheckinStatuses = new Set(['ALIVE', 'LOCKED_IN', 'BARELY', 'CHAOS']);
-    const rawCheckinStatus = String(req.body.checkinStatus || '').trim().toUpperCase();
-    const checkinStatus = allowedCheckinStatuses.has(rawCheckinStatus) ? rawCheckinStatus : null;
-    const note = String(req.body.note || '').trim().slice(0, 40) || null;
-    let pendingVoiceNote = null;
-
-    if (source === 'VOICE') {
-      const voiceQuery = {
-        friendshipId: friendship._id,
-        senderId: req.user.id,
-        status: 'PENDING',
-        expiresAt: { $gt: new Date() }
-      };
-      if (voiceNoteId) voiceQuery._id = voiceNoteId;
-      pendingVoiceNote = await VoiceNote.findOne(voiceQuery).sort({ createdAt: -1 });
-      if (!pendingVoiceNote) {
-        return res.status(409).json({ msg: 'Upload a fresh voice note before submitting this check-in' });
-      }
-    }
-
-    const bountyCreditId = req.body.bountyCreditId ? String(req.body.bountyCreditId) : null;
-    const bountyDecision = String(req.body.bountyDecision || '').toUpperCase();
-    const proofRequirement = await getBountyDecisionRequirement(friendship._id, req.user.id);
-
-    if (proofRequirement) {
-      if (!['CREDIT', 'ESCAPE'].includes(bountyDecision)) {
-        return res.status(409).json({
-          msg: `${proofRequirement.hunterName} has active proof on this bounty. Choose whether to credit them or escape before checking in.`
-        });
-      }
-      if (bountyDecision === 'CREDIT' && bountyCreditId !== proofRequirement.bountyId) {
-        return res.status(400).json({ msg: 'The hunter credit no longer matches the active bounty. Refresh and try again.' });
-      }
-    } else if (bountyDecision === 'CREDIT') {
-      return res.status(409).json({ msg: 'That hunter proof is no longer active. Refresh and check in normally.' });
-    }
-
-    const prepared = await prepareCheckinGame(friendship, req.user.id, source);
-    const now = new Date();
-    const lastInteraction = new Date(friendship[key].lastInteraction || 0);
-    const hoursSince = (now - lastInteraction) / 3600000;
-    if (hasCheckedInThisSeason(friendship, friendship[key]) && hoursSince < 20) {
-      return res.status(400).json({ msg: 'You already checked in today' });
-    }
-
-    const debtBefore = syncDebtState(friendship[key], now);
-    const recoveryStarted = debtBefore.isBankrupt;
-    const recoveryCompleted = !debtBefore.isBankrupt && Boolean(friendship[key].recoveryRequired);
-
-    friendship[key].lastInteraction = now;
-    friendship[key].daysMissed = 0;
-    friendship[key].isBankrupt = false;
-
-    if (recoveryStarted) {
-      friendship[key].baseDebt = debtBefore.limit;
-      friendship[key].calculatedDebt = debtBefore.limit;
-      friendship[key].isInWarningZone = true;
-      friendship[key].daysUntilBankrupt = debtBefore.limit;
-      friendship[key].recoveryRequired = true;
-      friendship[key].wasBankrupt = true;
-      if (!friendship[key].bankruptAt) friendship[key].bankruptAt = now;
-    } else {
-      friendship[key].baseDebt = 0;
-      friendship[key].calculatedDebt = 0;
-      friendship[key].isInWarningZone = false;
-      friendship[key].daysUntilBankrupt = debtBefore.limit * 2;
-      friendship[key].recoveryRequired = false;
-    }
-
-    const game = await completeCheckinGame(friendship, req.user.id, source, prepared, { checkinStatus, note });
-
-    if (pendingVoiceNote) {
-      const committedVoice = await VoiceNote.findOneAndUpdate(
-        {
-          _id: pendingVoiceNote._id,
-          friendshipId: friendship._id,
-          senderId: req.user.id,
-          status: 'PENDING'
-        },
-        {
-          $set: { status: 'COMMITTED', expiresAt: null }
-        },
-        { new: true }
-      );
-
-      if (!committedVoice) {
-        console.error('Voice note commit lost after successful check-in:', pendingVoiceNote._id);
-      }
-    }
-
-    if (recoveryStarted) {
-      await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERY_STARTED', {
-        userId: req.user.id,
-        metadata: {
-          previousDebt: debtBefore.totalDebt,
-          recoveryDebt: debtBefore.limit,
-          season: friendship.season?.number
-        }
-      });
-    } else if (recoveryCompleted) {
-      await recordEvent(friendship._id, 'BANKRUPTCY_RECOVERED', {
-        userId: req.user.id,
-        metadata: { season: friendship.season?.number }
-      });
-    }
-    const creditedId = bountyDecision === 'CREDIT' ? bountyCreditId : null;
-    const bountyResults = await settleBountiesForCheckin(friendship._id, req.user.id, creditedId);
-
-    const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
-    const actor = await User.findById(req.user.id).select('displayName');
-    const actorName = actor?.displayName || 'Your contract partner';
-    const statusLabel = checkinStatus ? checkinStatus.toLowerCase().replace('_', ' ') : null;
-    const socialSuffix = `${statusLabel ? ` · ${statusLabel}` : ''}${note ? ` · “${note}”` : ''}`;
-    const recoveryMessage = recoveryStarted
-      ? `${actorName} checked in from bankruptcy. Recovery started. One clean check-in remains. +${game.xp} Duo XP${socialSuffix}.`
-      : recoveryCompleted
-        ? `${actorName} completed bankruptcy recovery and is stable again. +${game.xp} Duo XP${socialSuffix}.`
-        : `${actorName} checked in. +${game.xp} Duo XP${socialSuffix}.`;
-
-    await Notification.create({
-      toUserId: otherUserId,
-      fromUserId: req.user.id,
-      type: recoveryStarted ? 'BANKRUPTCY_RECOVERY' : 'CHECKIN',
-      title: recoveryStarted
-        ? 'Bankruptcy recovery started'
-        : recoveryCompleted
-          ? 'Recovery complete'
-          : source === 'VOICE' ? 'Voice check-in received' : 'Check-in received',
-      message: recoveryMessage,
-      friendshipId: friendship._id
-    });
-
-    return res.json({
-      game: {
-        xp: Number(game.xp) || 0,
-        chaosResolved: Boolean(game.chaosResolved),
-        wantedCleared: Boolean(game.wantedCleared)
-      },
-      bounty: bountyResults[0] ? { outcome: bountyResults[0].outcome } : null,
-      recovery: {
-        started: recoveryStarted,
-        completed: recoveryCompleted,
-        remainingDebt: recoveryStarted ? debtBefore.limit : 0,
-        checkinsRemaining: recoveryStarted ? 1 : 0
-      }
-    });
+    return res.json(await performContractCheckin(friendship._id, req.user.id, { ...req.body, messageEventId: null }));
   } catch (err) {
     console.error('Check-in failed:', err.message);
     return sendRouteError(res, err, 'Could not check in');

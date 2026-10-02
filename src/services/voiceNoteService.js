@@ -7,13 +7,14 @@ const audioExtension = (mimeType = '') => {
   return 'webm';
 };
 
-export const sendVoiceNote = async (friendshipId, audioBlob, duration = 0) => {
+export const sendVoiceNote = async (friendshipId, audioBlob, duration = 0, purpose = 'CHECKIN') => {
   try {
     const formData = new FormData();
     const extension = audioExtension(audioBlob?.type);
     formData.append('audio', audioBlob, `voice_note_${Date.now()}.${extension}`);
     formData.append('friendshipId', friendshipId);
     formData.append('duration', String(duration));
+    formData.append('purpose', purpose);
 
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/api/voice-notes/upload`, {

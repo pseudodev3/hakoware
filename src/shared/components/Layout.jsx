@@ -21,7 +21,7 @@ const CIRCLE_ITEMS = [
   { id: 'arena', label: 'Arena', icon: Swords }
 ];
 
-export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
+export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast, friendSpace = false }) => {
   const { user, logout, bootstrapData } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(bootstrapData?.notifications?.unreadCount || 0);
@@ -33,6 +33,18 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
   const totalBadge = unreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => {
+    if (!friendSpace || !window.visualViewport) return undefined;
+    const viewport = window.visualViewport;
+    const shell = shellRef.current;
+    const update = () => {
+      if (viewport.scale !== 1) return;
+      shell?.style.setProperty('--friend-viewport-height', `${viewport.height}px`);
+      shell?.classList.toggle('friend-keyboard-open', viewport.height < window.innerHeight - 100);
+    };
+    update(); viewport.addEventListener('resize', update);
+    return () => { viewport.removeEventListener('resize', update); shell?.style.removeProperty('--friend-viewport-height'); shell?.classList.remove('friend-keyboard-open'); };
+  }, [friendSpace]);
   useEffect(() => { if (shellRef.current) shellRef.current.inert = showNotifications; }, [showNotifications]);
   useEffect(() => {
     if (bootstrapData?.notifications) {
@@ -45,7 +57,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
   const themeLabel = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
 
   return (
-    <div ref={shellRef} className={`app-layout ${circleContext ? 'circle-context' : ''}`}>
+    <div ref={shellRef} className={`app-layout ${circleContext ? 'circle-context' : ''} ${friendSpace ? 'friend-space-layout' : ''}`}>
       <aside className="sidebar">
         <div className="sidebar-brand">
           <img className="brand-mark" src="/hakoware-mark-v2.png" alt="" />

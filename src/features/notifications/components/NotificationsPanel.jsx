@@ -67,8 +67,10 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   }, [applyItems]);
   useEffect(() => {
     void loadNotifications();
-    const interval = setInterval(() => void loadNotifications({ force: true }), 30000);
-    return () => { clearInterval(interval); requestRef.current += 1; };
+    const refresh = () => void loadNotifications({ force: true });
+    const interval = setInterval(refresh, 30000);
+    window.addEventListener('hakoware-notifications-read', refresh);
+    return () => { clearInterval(interval); window.removeEventListener('hakoware-notifications-read', refresh); requestRef.current += 1; };
   }, [loadNotifications]);
   useEffect(() => {
     const query = window.matchMedia('(max-width: 640px)');
@@ -135,6 +137,11 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     if (busyRef.current) return;
     if (!notification.read) void handleMarkAsRead(notificationId(notification));
     const destination = destinationFor(notification.type);
+    if (notification.contractKey && destination === 'contracts') {
+      onNavigate?.('friend', { contractKey: notification.contractKey, focusEventId: notification.focusEventId || null });
+      onClose();
+      return;
+    }
     if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
     const roomEvent = [NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT].includes(notification.type);
     onNavigate?.(destination, destination === 'afterHours' ? { focusActivityId: roomEvent ? 'room-event' : (notification.afterHoursActivityId || null) } : undefined);

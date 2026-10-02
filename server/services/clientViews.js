@@ -89,6 +89,7 @@ const contractView = (value) => {
   const data = toPlain(value);
   return {
     _id: data._id,
+    contractKey: publicKey(data._id, 'contract'),
     user1: participantView(data.user1),
     user2: participantView(data.user2),
     user1DisplayName: data.user1DisplayName,
@@ -166,6 +167,8 @@ const notificationView = (value) => {
     type: data.type,
     title: data.title,
     message: data.message,
+    contractKey: publicKey(data.friendshipId, 'contract'),
+    focusEventId: data.contractEventId || null,
     afterHoursActivityId: data.afterHoursActivityId || null,
     read: Boolean(data.read),
     createdAt: data.createdAt

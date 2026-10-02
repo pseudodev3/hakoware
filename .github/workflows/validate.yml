@@ -62,3 +62,7 @@ jobs:
       - name: Check first mutual check-in
         working-directory: server
         run: npm run check:duo-activation
+
+      - name: Check friend spaces and progression boundaries
+        working-directory: server
+        run: npm run check:friend-spaces
