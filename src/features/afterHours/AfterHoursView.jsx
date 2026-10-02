@@ -884,13 +884,43 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
               <small>You ran into each other in After Hours.</small>
             </div>
 
+            {selectedRecentPosts.length > 0 && (
+              <div className="after-hours-person-recent">
+                <span>RECENT IN AFTER HOURS</span>
+                {selectedRecentPosts.map((item) => (
+                  <p key={item.id}>“{item.text}”</p>
+                ))}
+              </div>
+            )}
+
             <div className="after-hours-person-sheet-actions">
-              {selectedHasContract ? (
-                <div className="after-hours-existing-contract">A contract already exists.</div>
-              ) : (
-                <button type="button" className="after-hours-start-contract" onClick={() => startContract(selectedPerson)}>
-                  Start contract <ArrowRight size={15} strokeWidth={1.8} />
-                </button>
+              <button
+                type="button"
+                className={noteOpen ? 'after-hours-sheet-note active' : 'after-hours-sheet-note'}
+                onClick={() => {
+                  setNoteOpen((value) => !value);
+                  setNoteText('');
+                }}
+              >
+                <MessageCircle size={14} strokeWidth={1.8} />
+                Leave a note
+              </button>
+
+              {noteOpen && (
+                <form className="after-hours-note-form" onSubmit={submitNote}>
+                  <input
+                    autoFocus
+                    value={noteText}
+                    onChange={(eventObject) => setNoteText(eventObject.target.value.slice(0, 60))}
+                    maxLength={60}
+                    placeholder="One short note. No thread."
+                    aria-label={'Leave a note for @' + selectedPerson.username}
+                  />
+                  <span>{noteText.length}/60</span>
+                  <button type="submit" disabled={!noteText.trim() || Boolean(busy)}>
+                    <Send size={14} strokeWidth={1.8} />
+                  </button>
+                </form>
               )}
 
               {canTagSelected && (
@@ -900,7 +930,15 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
                   disabled={Boolean(busy)}
                   onClick={() => submitTagIn(selectedPresence.username)}
                 >
-                  Tag into Pick a Side
+                  Tag into room question
+                </button>
+              )}
+
+              {selectedHasContract ? (
+                <div className="after-hours-existing-contract">A contract already exists.</div>
+              ) : (
+                <button type="button" className="after-hours-start-contract" onClick={() => startContract(selectedPerson)}>
+                  Start contract <ArrowRight size={15} strokeWidth={1.8} />
                 </button>
               )}
             </div>
