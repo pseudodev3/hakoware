@@ -122,6 +122,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         onUnreadCountChange={setUnreadCount}
         pendingInvitations={pendingInvitations}
         onRefresh={onRefresh}
+        onNavigate={onTabChange}
         showToast={showToast}
       />
     </div>
