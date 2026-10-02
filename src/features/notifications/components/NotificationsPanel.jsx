@@ -110,8 +110,10 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   const openAfterHours = (notification) => {
     const id = notification.id || notification._id;
     if (!notification.read) void handleMarkAsRead(id);
+    const isTagIn = [NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT]
+      .includes(notification.type);
     onNavigate?.('afterHours', {
-      focusActivityId: notification.afterHoursActivityId || null
+      focusActivityId: isTagIn ? 'room-event' : (notification.afterHoursActivityId || null)
     });
     onClose?.();
   };
