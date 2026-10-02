@@ -66,7 +66,7 @@ Current vertical slice:
 - people lock one answer per round, then see the room split;
 - structured room feed shows recent answers and call-outs;
 - users can react to other people's answers with the fixed Hakoware reaction set;
-- people currently around can be publicly called out to answer the live round;
+- after picking a side, a user can publicly call out somebody who is currently around and has not answered that round;
 - no unrestricted stranger DMs;
 - no swiping / matching / dating language;
 - no free-form public posting in this first slice;
