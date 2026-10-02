@@ -26,6 +26,7 @@ const RESERVED_USERNAMES = new Set([
   'arena',
   'contracts',
   'home',
+  'afterhours',
   'you',
   'auth',
   'account',

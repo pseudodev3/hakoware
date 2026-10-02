@@ -19,7 +19,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const [bounty, setBounty] = useState(null);
   const [bountyLoading, setBountyLoading] = useState(false);
   const [bountySyncError, setBountySyncError] = useState(false);
-  const [checkinStatus, setCheckinStatus] = useState('ALIVE');
+  const [checkinStatus, setCheckinStatus] = useState('');
   const [note, setNote] = useState('');
   const user1Id = friendship?.user1?._id || friendship?.user1;
   const isUser1 = String(user1Id) === String(currentUserId);
@@ -29,7 +29,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
   useEffect(() => {
     if (!isOpen) return;
-    setCheckinStatus('ALIVE');
+    setCheckinStatus('');
     setNote('');
   }, [isOpen, friendship?._id, friendship?.id]);
 
@@ -209,8 +209,8 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
 
         <div className="checkin-social">
           <div className="checkin-social-heading">
-            <span>How are you showing up?</span>
-            <small>Optional vibe + note</small>
+            <span>Add a vibe?</span>
+            <small>Optional</small>
           </div>
           <div className="checkin-statuses" role="group" aria-label="Check-in status">
             {CHECKIN_STATUSES.map((item) => (

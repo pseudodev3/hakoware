@@ -7,6 +7,7 @@ const ROUND_MS = 10 * MINUTE;
 const ACTIVE_MS = 5 * MINUTE;
 const FEED_MS = 3 * 60 * MINUTE;
 const SHOUT_MAX_LENGTH = 88;
+const CHALLENGE_MAX_LENGTH = 96;
 const REACTIONS = Object.freeze(['💀', '👀', '😭', '🤝']);
 
 const PROMPTS = Object.freeze([
@@ -248,6 +249,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
     },
     composer: {
       shoutMaxLength: SHOUT_MAX_LENGTH,
+      challengeMaxLength: CHALLENGE_MAX_LENGTH,
       challenges: challengeChoices(now)
     },
     reactions: REACTIONS,
@@ -259,6 +261,7 @@ module.exports = {
   ACTIVE_MS,
   FEED_MS,
   SHOUT_MAX_LENGTH,
+  CHALLENGE_MAX_LENGTH,
   REACTIONS,
   challengeById,
   challengeChoices,

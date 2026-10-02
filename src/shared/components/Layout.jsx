@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Home, LogOut, Moon, Plus, Radio, Sun, Swords, Users, UserRound } from 'lucide-react';
+import { Bell, Home, LogOut, Moon, Plus, Radio, Sun, UserRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -8,18 +8,21 @@ import './Layout.css';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
-  { id: 'afterHours', label: 'After Hours', mobileLabel: 'After', icon: Radio },
-  { id: 'contracts', label: 'Contracts', icon: Users },
-  { id: 'arena', label: 'Arena', icon: Swords },
+  { id: 'afterHours', label: 'After Hours', icon: Radio },
   { id: 'you', label: 'You', icon: UserRound }
 ];
+
+const SECONDARY_LABELS = {
+  contracts: 'Contracts',
+  arena: 'Arena'
+};
 
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast }) => {
   const { user, logout, bootstrapData } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(bootstrapData?.notifications?.unreadCount || 0);
   const [theme, setTheme] = useState(getInitialTheme);
-  const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
+  const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || SECONDARY_LABELS[activeTab] || 'Hakoware';
   const totalBadge = unreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
@@ -50,7 +53,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
               aria-current={activeTab === item.id ? 'page' : undefined}
             >
               <item.icon size={19} strokeWidth={1.8} />
-              <span>{item.mobileLabel || item.label}</span>
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>

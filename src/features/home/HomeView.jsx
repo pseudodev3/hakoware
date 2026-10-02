@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Clock3, Plus, Swords, UserPlus, X } from 'lucide-react';
+import { ArrowRight, Clock3, Plus, Radio, Swords, UserPlus, X } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
+import { respondToInvitation } from '../../services/friendshipService';
 import { ContractCard } from '../friendship/components/ContractCard';
 import { getBankruptPartner } from '../friendship/contractState';
 import './HomeView.css';
@@ -46,7 +47,7 @@ const priority = (friendship, userId, socialContracts = {}) => {
 };
 
 
-export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, socialPresence = { pulse: [], contracts: {} }, onPulseSeen }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onPulseSeen }) => {
   const userId = user.uid || user.id || user._id;
   const socialContracts = socialPresence?.contracts || {};
   const sorted = [...friendships].sort((a, b) => priority(b, userId, socialContracts) - priority(a, userId, socialContracts));
@@ -68,6 +69,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
   const completeReports = friendships.filter((item) => item.season?.status === 'COMPLETE').length;
   const [, refreshBriefingState] = useState(0);
+  const [respondingInviteId, setRespondingInviteId] = useState(null);
   const firstSeasonBriefing = useMemo(() => friendships.find((friendship) => {
     if (friendship.season?.status !== 'ACTIVE' || Number(friendship.season?.number || 1) !== 1) return false;
     if (Number(friendship.duoXP) > 0 || !friendship.season?.startedAt) return false;
@@ -99,6 +101,20 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     refreshBriefingState((value) => value + 1);
   };
 
+  const respondToPending = async (invitation, action) => {
+    const id = invitation?._id || invitation?.id;
+    if (!id || respondingInviteId) return;
+    setRespondingInviteId(id);
+    const result = await respondToInvitation(id, action);
+    if (result.success) {
+      showToast?.(action === 'ACCEPT' ? 'Contract accepted.' : 'Contract declined.', 'SUCCESS');
+      await onRefresh?.();
+    } else {
+      showToast?.(result.error || 'Could not update contract', 'ERROR');
+    }
+    setRespondingInviteId(null);
+  };
+
   if (friendships.length === 0 && pendingInvitations.length > 0) {
     const invitation = pendingInvitations[0];
     const inviter = invitation?.user1?.username ? `@${invitation.user1.username}` : (invitation?.user1?.displayName || 'Someone');
@@ -110,8 +126,28 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <p className="eyebrow">Challenge received</p>
           <h1>{inviter} put you under contract.</h1>
           <p className="first-contract-copy">They picked <strong>{mode}</strong>. Accept to start Season 1.</p>
-          <Button variant="aura" icon={ArrowRight} onClick={() => onNavigate('contracts')}>Review challenge</Button>
-          {pendingInvitations.length > 1 && <p className="pending-count-note">+{pendingInvitations.length - 1} more challenge{pendingInvitations.length === 2 ? '' : 's'} waiting</p>}
+          <div className="first-contract-actions">
+            <Button
+              variant="secondary"
+              disabled={respondingInviteId === (invitation._id || invitation.id)}
+              onClick={() => respondToPending(invitation, 'DECLINE')}
+            >
+              Decline
+            </Button>
+            <Button
+              variant="aura"
+              icon={ArrowRight}
+              loading={respondingInviteId === (invitation._id || invitation.id)}
+              onClick={() => respondToPending(invitation, 'ACCEPT')}
+            >
+              Accept & start
+            </Button>
+          </div>
+          {pendingInvitations.length > 1 && (
+            <button className="pending-count-note pending-count-button" type="button" onClick={() => onNavigate('contracts')}>
+              +{pendingInvitations.length - 1} more challenge{pendingInvitations.length === 2 ? '' : 's'} waiting · Review all
+            </button>
+          )}
         </section>
       </div>
     );
@@ -142,12 +178,11 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <p className="eyebrow">You’re in, {identity}</p>
           <h1>Start with one person.</h1>
-          <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
-          <div className="onboarding-rail" aria-label="How your first contract starts">
-            <span><b>01</b> Pick a person</span>
-            <span><b>02</b> Set the rules</span>
-            <span><b>03</b> Check in together</span>
+          <div className="first-contract-actions">
+            <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
+            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>After Hours</Button>
           </div>
+          <p className="onboarding-short-rule">Someone you know, or someone you run into. Contract → check in → don’t disappear.</p>
         </section>
       </div>
     );
@@ -161,17 +196,39 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <p>{hot.length ? hot.length + ' need' + (hot.length === 1 ? 's' : '') + ' attention.' : friendships.length + ' active · all clear.'}</p>
         </div>
         <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>New</Button>
-        <button className="circle-all-contracts" type="button" onClick={() => onNavigate('contracts')}>
-          All contracts <ArrowRight size={15} strokeWidth={1.6} />
-        </button>
+        <div className="circle-secondary-actions">
+          <button type="button" onClick={() => onNavigate('contracts')}>
+            All contracts <ArrowRight size={15} strokeWidth={1.6} />
+          </button>
+          <button type="button" onClick={() => onNavigate('arena')}>
+            Arena <Swords size={14} strokeWidth={1.6} />
+          </button>
+        </div>
       </header>
 
-      {pendingInvitations.length > 0 && (
-        <button className="circle-pending-link" type="button" onClick={() => onNavigate('contracts')}>
-          <span><strong>{pendingInvitations.length}</strong> challenge{pendingInvitations.length === 1 ? '' : 's'} waiting</span>
-          <ArrowRight size={16} strokeWidth={1.6} />
-        </button>
-      )}
+      {pendingInvitations.length > 0 && (() => {
+        const invitation = pendingInvitations[0];
+        const id = invitation?._id || invitation?.id;
+        const inviter = invitation?.user1?.username
+          ? `@${invitation.user1.username}`
+          : (invitation?.user1?.displayName || 'Someone');
+        return (
+          <div className="circle-pending-link">
+            <span><strong>{inviter}</strong> challenged you{pendingInvitations.length > 1 ? ` · +${pendingInvitations.length - 1}` : ''}</span>
+            <div>
+              <button type="button" className="circle-pending-review" onClick={() => onNavigate('contracts')}>Review</button>
+              <button
+                type="button"
+                className="circle-pending-accept"
+                disabled={respondingInviteId === id}
+                onClick={() => respondToPending(invitation, 'ACCEPT')}
+              >
+                {respondingInviteId === id ? 'Accepting…' : 'Accept'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {pulse.length > 0 && (
         <section className="circle-pulse" aria-label="While you were gone">

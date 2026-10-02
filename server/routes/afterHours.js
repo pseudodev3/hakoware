@@ -13,6 +13,7 @@ const {
   FEED_MS,
   REACTIONS,
   SHOUT_MAX_LENGTH,
+  CHALLENGE_MAX_LENGTH,
   challengeById,
   currentRound,
   scopeFor,
@@ -167,8 +168,14 @@ router.post('/challenge', challengeLimiter, async (req, res) => {
     const actor = await loadActor(req.user.id);
     if (!actor) return res.status(404).json({ msg: 'User not found' });
 
-    const challenge = challengeById(String(req.body.promptId || ''));
-    if (!challenge) return res.status(400).json({ msg: 'Pick one of the room challenges' });
+    const suggested = challengeById(String(req.body.promptId || ''));
+    const customText = String(req.body.text || '').replace(/\s+/g, ' ').trim();
+    const challenge = suggested || (customText ? { id: 'custom', text: customText } : null);
+    if (!challenge) return res.status(400).json({ msg: 'Write a challenge or pick one' });
+    if (challenge.text.length < 4) return res.status(400).json({ msg: 'Make the challenge a little clearer' });
+    if (challenge.text.length > CHALLENGE_MAX_LENGTH) {
+      return res.status(400).json({ msg: `Keep challenges under ${CHALLENGE_MAX_LENGTH} characters` });
+    }
 
     const scopeKey = scopeFor(actor);
     const recent = await AfterHoursActivity.exists({
@@ -225,8 +232,9 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
     const existing = await AfterHoursActivity.exists({ uniqueKey });
     if (existing) return res.status(409).json({ msg: 'You already joined that challenge' });
 
+    let joinedActivity;
     try {
-      await AfterHoursActivity.create({
+      joinedActivity = await AfterHoursActivity.create({
         uniqueKey,
         scopeKey,
         roundKey: challenge.roundKey,
@@ -248,7 +256,8 @@ router.post('/feed/:activityId/join', actionLimiter, async (req, res) => {
       fromUserId: actor._id,
       type: 'AFTER_HOURS_CHALLENGE',
       title: 'After Hours',
-      message: `${actor.displayName} answered your After Hours challenge.`
+      message: `${actor.displayName} answered your After Hours challenge.`,
+      afterHoursActivityId: joinedActivity.publicId
     });
 
     await touchPresence(actor);
@@ -306,7 +315,7 @@ router.post('/callout', calloutLimiter, async (req, res) => {
 
     const targetUsername = normalizeUsername(req.body.username);
     if (!targetUsername) return res.status(400).json({ msg: 'Pick somebody who is around' });
-    if (targetUsername === actor.usernameNormalized) return res.status(400).json({ msg: 'You cannot call yourself out' });
+    if (targetUsername === actor.usernameNormalized) return res.status(400).json({ msg: 'You cannot tag yourself in' });
 
     const scopeKey = scopeFor(actor);
     const targetQuery = actor.isTestAccount
@@ -339,7 +348,7 @@ router.post('/callout', calloutLimiter, async (req, res) => {
       type: 'ANSWER',
       actorId: actor._id
     });
-    if (!actorAnswered) return res.status(409).json({ msg: 'Pick a side before calling somebody out' });
+    if (!actorAnswered) return res.status(409).json({ msg: 'Pick a side before tagging somebody in' });
 
     const alreadyAnswered = await AfterHoursActivity.exists({
       scopeKey,
@@ -351,10 +360,11 @@ router.post('/callout', calloutLimiter, async (req, res) => {
 
     const uniqueKey = `callout:${scopeKey}:${round.roundKey}:${actor._id}:${target._id}`;
     const existing = await AfterHoursActivity.exists({ uniqueKey });
-    if (existing) return res.status(409).json({ msg: 'You already called them out this round' });
+    if (existing) return res.status(409).json({ msg: 'You already tagged them in this round' });
 
+    let tagActivity;
     try {
-      await AfterHoursActivity.create({
+      tagActivity = await AfterHoursActivity.create({
         uniqueKey,
         scopeKey,
         roundKey: round.roundKey,
@@ -365,23 +375,24 @@ router.post('/callout', calloutLimiter, async (req, res) => {
         promptText: round.text
       });
     } catch (error) {
-      if (error?.code === 11000) return res.status(409).json({ msg: 'You already called them out this round' });
+      if (error?.code === 11000) return res.status(409).json({ msg: 'You already tagged them in this round' });
       throw error;
     }
 
     notify({
       toUserId: target._id,
       fromUserId: actor._id,
-      type: 'AFTER_HOURS_CALLOUT',
+      type: 'AFTER_HOURS_TAG_IN',
       title: 'After Hours',
-      message: `${actor.displayName} called you out. Pick a side before the room moves on.`
+      message: `${actor.displayName} tagged you into the live Pick a Side. Your turn before the room moves on.`,
+      afterHoursActivityId: tagActivity.publicId
     });
 
     await touchPresence(actor);
     return res.json(await buildRoomSnapshot(actor));
   } catch (error) {
-    console.error('After Hours call-out failed:', error.message);
-    return res.status(500).json({ msg: 'Could not call them out' });
+    console.error('After Hours tag-in failed:', error.message);
+    return res.status(500).json({ msg: 'Could not tag them in' });
   }
 });
 

@@ -10,8 +10,8 @@ export const shoutAfterHours = async (text) => (
   api.post('/after-hours/shout', { text })
 );
 
-export const throwAfterHoursChallenge = async (promptId) => (
-  api.post('/after-hours/challenge', { promptId })
+export const throwAfterHoursChallenge = async ({ promptId = null, text = '' } = {}) => (
+  api.post('/after-hours/challenge', { promptId, text })
 );
 
 export const joinAfterHoursChallenge = async (activityId, text) => (
@@ -22,6 +22,6 @@ export const reactAfterHours = async (activityId, reaction) => (
   api.post(`/after-hours/feed/${activityId}/react`, { reaction })
 );
 
-export const callOutAfterHours = async (username) => (
+export const tagInAfterHours = async (username) => (
   api.post('/after-hours/callout', { username })
 );

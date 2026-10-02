@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, AtSign, BookOpen, Check, Clock3, Copy, Dice5, Dumbbell, Hammer, HeartHandshake, LockKeyhole, MessageCircle, MoreHorizontal, Share2, SlidersHorizontal, UsersRound } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { sendFriendInvitation } from '../../../services/friendshipService';
 import { shareHakoware } from '../../../lib/share';
 import './AddFriendModal.css';
@@ -33,7 +34,7 @@ const ICONS = {
 
 const stepTitle = (_step, shareInvite) => shareInvite ? 'Invite ready' : 'New contract';
 
-export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, templates = [] }) => {
+export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, templates = [], prefillPerson = null, source = 'DIRECT' }) => {
   const modes = templates.length ? templates : FALLBACK_TEMPLATES;
   const [step, setStep] = useState(1);
   const [friendIdentifier, setFriendIdentifier] = useState('');
@@ -50,6 +51,17 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     () => showMoreModes ? modes : modes.filter((mode) => PRIMARY_MODE_IDS.has(mode.id)),
     [modes, showMoreModes]
   );
+  const prefillMatchesIdentifier = Boolean(
+    prefillPerson?.username
+    && friendIdentifier.replace(/^@+/, '').toLowerCase() === String(prefillPerson.username).toLowerCase()
+  );
+
+  useEffect(() => {
+    if (!isOpen || !prefillPerson?.username) return;
+    setFriendIdentifier(`@${prefillPerson.username}`);
+    setStep(2);
+    setStepError('');
+  }, [isOpen, prefillPerson?.username]);
 
   const selectMode = (mode) => {
     setTemplateId(mode.id);
@@ -84,7 +96,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     setStep(2);
   };
 
-  const continueFromContract = () => {
+  const handleSubmit = async () => {
     if (!selected) {
       setStepError('Choose a contract first.');
       return;
@@ -93,19 +105,15 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
       setStepError('Grace period must be between 1 and 30 days.');
       return;
     }
-    setStepError('');
-    setStep(3);
-  };
 
-  const handleSubmit = async () => {
     setLoading(true);
     setStepError('');
     const effectiveLimit = selected.id === 'CUSTOM' ? limit : selected.limit;
-    const result = await sendFriendInvitation(friendIdentifier, effectiveLimit, selected.id);
-    if (result.success && result.inviteReady) {
+    const result = await sendFriendInvitation(friendIdentifier, effectiveLimit, selected.id, source);
+    if (result.success && result.inviteReady && result.requiresSignup) {
       setShareInvite({ ...result, modeName: selected.name });
       await onRefresh?.();
-      showToast?.('Contract ready to share', 'SUCCESS');
+      showToast?.('Invite ready to share', 'SUCCESS');
     } else if (result.success) {
       showToast?.(`${selected.name} request sent`, 'SUCCESS');
       reset();
@@ -170,11 +178,11 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
         </div>
       ) : (
         <div className="contract-onboarding">
-          <div className="contract-stepper" aria-label={`Step ${step} of 3`}>
-            {[1, 2, 3].map((item) => (
+          <div className="contract-stepper" aria-label={`Step ${step} of 2`}>
+            {[1, 2].map((item) => (
               <span key={item} className={item === step ? 'active' : item < step ? 'complete' : ''}>
                 <b>{String(item).padStart(2, '0')}</b>
-                <small>{item === 1 ? 'Person' : item === 2 ? 'Contract' : 'Confirm'}</small>
+                <small>{item === 1 ? 'Person' : 'Contract'}</small>
               </span>
             ))}
           </div>
@@ -217,7 +225,14 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           {step === 2 && (
             <section className="contract-step-panel">
               <div className="mode-intro">
-                <div><p className="mode-kicker">{friendIdentifier}</p><strong>Pick a contract.</strong></div>
+                <div className="mode-person">
+                  {prefillMatchesIdentifier && <UserAvatar person={prefillPerson} size="sm" decorative />}
+                  <div>
+                    <p className="mode-kicker">{prefillMatchesIdentifier ? (prefillPerson?.displayName || friendIdentifier) : friendIdentifier}</p>
+                    {prefillMatchesIdentifier && prefillPerson?.username && <small>@{prefillPerson.username}</small>}
+                    <strong>Pick a contract.</strong>
+                  </div>
+                </div>
                 <span>Seasons + Duo XP</span>
               </div>
 
@@ -282,36 +297,9 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
               {stepError && <p className="contract-step-error" role="alert">{stepError}</p>}
 
               <div className="new-contract-actions">
-                <Button type="button" variant="secondary" icon={ArrowLeft} onClick={() => setStep(1)}>Person</Button>
-                <Button type="button" variant={selected?.chaos ? 'danger' : 'aura'} icon={ArrowRight} onClick={continueFromContract}>Review</Button>
-              </div>
-            </section>
-          )}
-
-          {step === 3 && (
-            <section className="contract-step-panel">
-              <div className="contract-confirm">
-                <div className="contract-confirm-duo">
-                  <span>{friendIdentifier}</span>
-                  <b>×</b>
-                  <span>You</span>
-                </div>
-                <h3>{selected?.name}</h3>
-                <p>{selected?.description}</p>
-                <div className="contract-confirm-rules">
-                  <span><b>{effectiveLimit} days</b><small>before debt starts</small></span>
-                  <span><b>{selected?.seasonDays} days</b><small>in Season 1</small></span>
-                  <span><b>{selected?.difficulty || '-'}/5</b><small>pressure level</small></span>
-                </div>
-                <div className="contract-confirm-note">
-                  Season 1 starts when they accept. Miss {effectiveLimit} day{effectiveLimit === 1 ? '' : 's'} and debt starts.
-                </div>
-              </div>
-
-              {stepError && <p className="contract-step-error" role="alert">{stepError}</p>}
-
-              <div className="new-contract-actions">
-                <Button type="button" variant="secondary" icon={ArrowLeft} onClick={() => setStep(2)}>Back</Button>
+                <Button type="button" variant="secondary" icon={ArrowLeft} onClick={() => setStep(1)}>
+                  {prefillMatchesIdentifier ? 'Change person' : 'Person'}
+                </Button>
                 <Button type="button" variant={selected?.chaos ? 'danger' : 'aura'} loading={loading} onClick={handleSubmit}>
                   Send contract
                 </Button>

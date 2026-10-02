@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const VoiceNote = require('../models/VoiceNote');
 const ContractReaction = require('../models/ContractReaction');
 const ContractMoment = require('../models/ContractMoment');
+const AfterHoursPresence = require('../models/AfterHoursPresence');
 const { sendFriendRequestEmail } = require('../services/emailService');
 const {
   refundOpenBountiesForFriendship,
@@ -46,6 +47,7 @@ const {
   findRecentMutualPoke
 } = require('../services/socialPresence');
 const { createMutualMenaceMoment, respondToMoment } = require('../services/contractMoments');
+const { FEED_MS: AFTER_HOURS_CONVERSION_WINDOW_MS, scopeFor: afterHoursScopeFor } = require('../services/afterHours');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -322,6 +324,9 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
     const usernameNormalized = email ? null : normalizeUsername(identifier);
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
+    const requestedCreationSource = String(req.body.source || '').toUpperCase() === 'AFTER_HOURS'
+      ? 'AFTER_HOURS'
+      : 'DIRECT';
 
     const template = gameTemplate(req.body.templateId);
     if (!template) return res.status(400).json({ msg: 'Choose a valid contract type' });
@@ -373,6 +378,20 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
       return res.status(400).json({ msg: 'You cannot create a contract with yourself' });
     }
 
+    let creationSource = 'DIRECT';
+    if (requestedCreationSource === 'AFTER_HOURS') {
+      const scopeKey = afterHoursScopeFor(user);
+      const sameScope = scopeKey === afterHoursScopeFor(friend);
+      if (sameScope) {
+        const recentRoomParticipants = await AfterHoursPresence.countDocuments({
+          scopeKey,
+          userId: { $in: [user._id, friend._id] },
+          lastSeenAt: { $gte: new Date(Date.now() - AFTER_HOURS_CONVERSION_WINDOW_MS) }
+        });
+        if (recentRoomParticipants === 2) creationSource = 'AFTER_HOURS';
+      }
+    }
+
     const existing = await Friendship.findOne({
       $or: [
         { user1: req.user.id, user2: friend.id },
@@ -392,7 +411,7 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
     await friendship.save();
     await recordEvent(friendship._id, 'CONTRACT_CREATED', {
       userId: user._id,
-      metadata: { templateId: template.id, limit }
+      metadata: { templateId: template.id, limit, source: creationSource }
     });
 
     await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: friend.email });

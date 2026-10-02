@@ -66,6 +66,8 @@ function MainApp({ showToast }) {
   const [showSignup, setShowSignup] = useState(joining);
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
+  const [contractPrefill, setContractPrefill] = useState(null);
+  const [afterHoursFocusId, setAfterHoursFocusId] = useState(null);
   const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
   const socialSinceRef = useRef(null);
 
@@ -189,9 +191,14 @@ function MainApp({ showToast }) {
     };
   }, [isAuthenticated, user?.uid, user?.id, user?._id]);
 
+  const navigateTo = (tab, options = {}) => {
+    setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
+    setActiveTab(tab);
+  };
+
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
-      setActiveTab('arena');
+      navigateTo('arena');
       return { success: true };
     }
 
@@ -258,9 +265,15 @@ function MainApp({ showToast }) {
     return { success: true };
   };
 
+  const openNewContract = (person = null, source = 'DIRECT') => {
+    setContractPrefill(person ? { person, source } : null);
+    setModalType('ADD_FRIEND');
+  };
+
   const closeModal = () => {
     setModalType(null);
     setSelectedFriendship(null);
+    setContractPrefill(null);
   };
 
   const handleEnter = () => setHasEntered(true);
@@ -285,8 +298,8 @@ function MainApp({ showToast }) {
       <TestSessionBar user={user} />
       <Layout
       activeTab={activeTab}
-      onTabChange={setActiveTab}
-      onAddFriend={() => setModalType('ADD_FRIEND')}
+      onTabChange={navigateTo}
+      onAddFriend={() => openNewContract()}
       pendingInvitations={pendingReceived}
       onRefresh={loadData}
       showToast={showToast}
@@ -306,8 +319,10 @@ function MainApp({ showToast }) {
             pendingOutboundCount={pendingSent.length + pendingExternal.length}
             worldEvent={contractMeta.worldEvent}
             onAction={handleAction}
-            onAddFriend={() => setModalType('ADD_FRIEND')}
-            onNavigate={setActiveTab}
+            onAddFriend={() => openNewContract()}
+            onNavigate={navigateTo}
+            onRefresh={loadData}
+            showToast={showToast}
             socialPresence={socialPresence}
             onPulseSeen={markPulseSeen}
           />
@@ -322,15 +337,24 @@ function MainApp({ showToast }) {
             pendingExternal={pendingExternal}
             templates={contractMeta.templates}
             onAction={handleAction}
-            onAddFriend={() => setModalType('ADD_FRIEND')}
+            onAddFriend={() => openNewContract()}
             onRefresh={loadData}
-            onNavigate={setActiveTab}
+            onNavigate={navigateTo}
             showToast={showToast}
             socialContracts={socialPresence.contracts}
           />
         )}
 
-        {activeTab === 'afterHours' && <AfterHoursView user={user} showToast={showToast} />}
+        {activeTab === 'afterHours' && (
+          <AfterHoursView
+            user={user}
+            friendships={[...friendships, ...pendingReceived, ...pendingSent]}
+            focusActivityId={afterHoursFocusId}
+            onFocusHandled={() => setAfterHoursFocusId(null)}
+            onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}
+            showToast={showToast}
+          />
+        )}
         {activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
         {activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
       </motion.div>
@@ -341,6 +365,8 @@ function MainApp({ showToast }) {
         onRefresh={loadData}
         showToast={showToast}
         templates={contractMeta.templates}
+        prefillPerson={contractPrefill?.person || null}
+        source={contractPrefill?.source || 'DIRECT'}
       />
 
       <FriendshipSettingsModal

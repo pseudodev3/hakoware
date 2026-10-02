@@ -166,6 +166,7 @@ const notificationView = (value) => {
     type: data.type,
     title: data.title,
     message: data.message,
+    afterHoursActivityId: data.afterHoursActivityId || null,
     read: Boolean(data.read),
     createdAt: data.createdAt
   };
