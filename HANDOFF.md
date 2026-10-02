@@ -78,6 +78,7 @@ Current product shape:
 - tapping another person in After Hours opens a lightweight identity sheet with **Start contract** rather than a profile-browsing flow;
 - when somebody answers your challenge, Start contract can appear contextually on that interaction;
 - After Hours → contract opens the existing contract flow with that username prefilled and records `source: AFTER_HOURS` on the `CONTRACT_CREATED` event for conversion measurement;
+- that attribution is **server-verified**, not trusted from the client: both users must have actually been in the same After Hours scope within the 3h room-residue window, otherwise the source is recorded as `DIRECT`;
 - test / Founder Lab users remain isolated from the live room;
 - public room payloads use usernames / display names and public activity IDs rather than raw user IDs;
 - old room data is TTL-cleaned;
