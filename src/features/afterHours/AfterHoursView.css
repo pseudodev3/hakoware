@@ -463,6 +463,12 @@
   grid-template-columns: 42px minmax(0, 1fr);
   gap: 12px;
   border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+}
+
+.after-hours-feed-item.is-focused {
+  background: color-mix(in srgb, var(--aura-gold-soft) 58%, transparent);
+  box-shadow: inset 3px 0 0 var(--aura-gold);
 }
 
 .after-hours-feed-copy {
