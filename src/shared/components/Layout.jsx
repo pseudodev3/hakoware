@@ -3,6 +3,7 @@ import { Bell, Home, LogOut, Moon, Plus, Radio, Sun, Swords, Users, UserRound } 
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
+import { UserAvatar } from './UserAvatar';
 import './Layout.css';
 
 const NAV_ITEMS = [
@@ -61,7 +62,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
           </button>
 
           <button className="sidebar-user" onClick={() => onTabChange('you')} aria-label="Open your profile">
-            <span className="sidebar-avatar">{user?.displayName?.[0]?.toUpperCase() || 'U'}</span>
+            <UserAvatar person={user} size="sm" className="sidebar-avatar" decorative />
             <span className="sidebar-user-copy">
               <strong>{user?.displayName}</strong>
               <small>{user?.username ? `@${user.username} · ${user?.auraBalance || 0} Aura` : `${user?.auraBalance || 0} Aura`}</small>
