@@ -14,8 +14,8 @@ export const throwAfterHoursChallenge = async (promptId) => (
   api.post('/after-hours/challenge', { promptId })
 );
 
-export const joinAfterHoursChallenge = async (activityId) => (
-  api.post(`/after-hours/feed/${activityId}/join`, {})
+export const joinAfterHoursChallenge = async (activityId, text) => (
+  api.post(`/after-hours/feed/${activityId}/join`, { text })
 );
 
 export const reactAfterHours = async (activityId, reaction) => (
