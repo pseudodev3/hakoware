@@ -60,84 +60,83 @@ Product rule: **primary navigation is for places users habitually live; systems 
 
 ### After Hours
 
-After Hours is Hakoware's public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, quest board, or generic chatroom.
+After Hours is Hakoware's public stranger-social layer. It is intentionally **not** a dating flow, profile browser, life sim, task board, or generic chatroom.
 
-The current direction is **public culture, not minigames**:
+Current product rule:
 
-**people create the entertainment; Aura gives it weight.**
+**People create the entertainment. Aura gives it weight.**
+
+The room should be interesting even when a user has no task to complete and earns nothing for opening it.
 
 Current product shape:
 
 - the **feed is the room**; people and what they say/do are the primary surface;
-- only users who enter the room count as present;
+- only users who actually enter count as present;
 - honest live presence expires after roughly 5 minutes; do not fake users or activity;
-- real room activity remains visible for roughly 3 hours;
-- the main composer supports four user-created formats:
+- real room activity remains visible for roughly 3 hours so the room still has residue with a small userbase;
+- the primary expression modes are:
   - **Shout** — say something;
-  - **Hot Take** — user-written statement judged `real` / `nonsense`;
-  - **Confession** — short confession with optional anonymous posting;
-  - **Ask** — user-written question answered through one-level public replies;
-- posts stay short. The social-post cap is 160 characters;
-- replies are public, one level deep, max 100 characters, and one reply per user per post. There is no reply-to-reply tree;
-- an anonymous Confession never exposes the author username/avatar in the room payload;
-- anonymous Confessions do not increment the visible per-person recent-post count;
-- the anonymous author sees `Anonymous · you`, but cannot reply to their own anonymous Confession because that could deanonymize them;
-- ordinary emoji reactions remain lightweight and free;
-- **Aura Spark** is a real 1-Aura transfer from viewer → author:
-  - one Spark per viewer per piece of social content;
-  - max 15 outgoing Sparks in a rolling 24h window;
-  - max 3 Sparks to the same recipient in that window;
-  - the author sees total Aura sparked;
-  - the sender's and recipient's Aura ledgers are updated;
-  - anonymous Confession Spark ledger copy must stay anonymous and never name the recipient;
-  - unread Spark notifications aggregate per post instead of creating one notification per Spark;
-- **Aura Burn** is deliberate spectacle, not a reward loop:
-  - fixed burn choices: 5 / 10 / 25 Aura;
-  - Aura is destroyed when the post is created;
-  - burned posts get a restrained visual treatment and public `X Aura burned` marker;
-  - basic posting is always free;
-- do **not** turn Aura into `complete N After Hours actions → earn Aura`;
-- do **not** add wagering/prediction around Hot Takes or room questions;
-- a one-shot private **Leave a note** action exists in the person sheet:
-  - max 60 characters;
-  - recipient must still be actively present in the same room scope;
-  - one note from the same sender to the same recipient per 2h;
-  - notes are notifications, not DM threads;
-- the person sheet now prioritizes social context:
-  - identity;
-  - up to two recent public After Hours posts;
-  - Leave a note;
+  - **Hot Take** — post a take the room can judge with `real / nonsense`;
+  - **Confession** — public or anonymous;
+  - **Ask** — user-created question for the room;
+- posts can receive the fixed Hakoware reaction set;
+- social posts support **one-level public replies** only:
+  - one reply per user per parent post;
+  - no reply-to-reply;
+  - no infinite threads;
+  - anonymous confession owners cannot reply to their own anonymous confession because that would reveal identity;
+- people can send an **Aura Spark** to a post or reply:
+  - 1 Aura moves from sender → author;
+  - no minting / faucet behavior;
+  - one Spark per person per item;
+  - daily sender cap;
+  - per-recipient daily sender cap;
+  - anonymous confession Spark notifications/ledger copy must not reveal the author to the sender;
+- users may optionally **Burn Aura** on their own post for spectacle:
+  - fixed values only: 5 / 10 / 25 Aura;
+  - burned Aura is destroyed, not transferred;
+  - burning changes presentation only, not ranking/reach;
+- basic posting/replying/reactions remain free;
+- do **not** add “complete X After Hours actions for Aura” quests;
+- the rotating Pick a Side mechanic remains available only as a compact **Room Question**; it no longer defines the page and its ANSWER/CALLOUT activity is not mixed into the main social feed;
+- Challenges remain optional one-shot room objects, not the central retention mechanic;
+- tapping a real identified person opens a lightweight interaction sheet:
+  - recent non-anonymous After Hours activity;
+  - **Leave a note** (short, rate-limited, no message thread);
   - contextual Tag in;
-  - Start contract lower in the hierarchy;
-- `Around now` shows recent public post count rather than making Pick a Side status the main identity signal;
-- suggested/custom **Challenge** still exists, but is a secondary optional control;
-- answering a Challenge remains one-shot and can still create a contextual Start contract opportunity;
-- `Pick a Side` still rotates every 10 minutes for continuity/Tag in, but it is visually demoted to a compact **Room Question**;
-- individual Pick a Side answers and Tag-in events are intentionally omitted from the main social feed so quizzes cannot drown out people-created content;
-- Tag in still means “pull this currently-present person into the live room question,” not generic attention-seeking;
-- Tag in notifications continue to return to the current room question;
-- After Hours reply/Spark/note notifications return to After Hours; reply/Spark notifications can target the originating post;
-- tapping another person never opens a dating-style profile browser;
-- After Hours → contract still opens the existing contract flow with that username prefilled and records `source: AFTER_HOURS` on the `CONTRACT_CREATED` event;
-- that attribution remains **server-verified**, not trusted from the client: both users must have actually been in the same After Hours scope within the existing 3h verification window, otherwise the source is `DIRECT`;
+  - Start contract;
+- Leave a note is not DM:
+  - max 60 chars;
+  - delivered as a notification;
+  - sender→recipient cooldown;
+  - no inbox conversation thread;
+- when somebody answers your old-style Challenge, Start contract can still appear contextually on that interaction;
+- After Hours → contract opens the existing contract flow with username prefilled and records `source: AFTER_HOURS` only when the backend verifies both users were recently in the same scope;
 - test / Founder Lab users remain isolated from the live room;
-- public room payloads use usernames / display names and public activity IDs rather than raw user IDs;
-- old room data and social interaction documents are TTL-cleaned;
+- public room payloads use usernames/display names/public activity IDs rather than raw user IDs;
+- old room data is TTL-cleaned;
 - no unrestricted stranger DMs;
-- no follower/following system;
-- no popularity leaderboard;
-- no swiping / matching / dating language;
+- no follower system;
+- no swipe/match/dating language;
 - no fake city, house, or life-sim layer;
-- no threaded public chat;
-- no quests/checklists for social participation.
+- no algorithmic creator economy;
+- no fake crowd/bots.
 
-Product rule:
+Retention principle:
 
-**After Hours is Hakoware's public culture. Your Circle is relationships; Arena is conflict; You is identity/economy; After Hours is everybody being people.**
+**A successful After Hours session can be pure spectating.**
 
-The retention question is:
+Users should be able to open the room, read funny/weird/dramatic posts, recognize recurring people, see reactions/replies/Aura Sparks, and leave without being pushed into an objective.
 
-**Will somebody open After Hours even with nothing to complete, because they are curious what real people said, who reacted, who Sparked them, or whether a familiar person is around again?**
+The conversion path should feel earned:
+
+**see someone repeatedly → react/reply/note → recognize them → eventually Start contract**
+
+Do not make Start contract the first or loudest interaction with a stranger.
+
+The question to validate is now:
+
+**Will users open After Hours because they are curious what people are saying, then gradually form recurring social familiarity that converts into contracts?**
 
 ### Avatars
 
