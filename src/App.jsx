@@ -67,6 +67,7 @@ function MainApp({ showToast }) {
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
   const [contractPrefill, setContractPrefill] = useState(null);
+  const [afterHoursFocusId, setAfterHoursFocusId] = useState(null);
   const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
   const socialSinceRef = useRef(null);
 
@@ -190,6 +191,11 @@ function MainApp({ showToast }) {
     };
   }, [isAuthenticated, user?.uid, user?.id, user?._id]);
 
+  const navigateTo = (tab, options = {}) => {
+    setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
+    setActiveTab(tab);
+  };
+
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
       setActiveTab('arena');
@@ -292,7 +298,7 @@ function MainApp({ showToast }) {
       <TestSessionBar user={user} />
       <Layout
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={navigateTo}
       onAddFriend={() => openNewContract()}
       pendingInvitations={pendingReceived}
       onRefresh={loadData}
@@ -314,7 +320,7 @@ function MainApp({ showToast }) {
             worldEvent={contractMeta.worldEvent}
             onAction={handleAction}
             onAddFriend={() => openNewContract()}
-            onNavigate={setActiveTab}
+            onNavigate={navigateTo}
             onRefresh={loadData}
             showToast={showToast}
             socialPresence={socialPresence}
@@ -333,7 +339,7 @@ function MainApp({ showToast }) {
             onAction={handleAction}
             onAddFriend={() => openNewContract()}
             onRefresh={loadData}
-            onNavigate={setActiveTab}
+            onNavigate={navigateTo}
             showToast={showToast}
             socialContracts={socialPresence.contracts}
           />
@@ -343,6 +349,8 @@ function MainApp({ showToast }) {
           <AfterHoursView
             user={user}
             friendships={[...friendships, ...pendingReceived, ...pendingSent]}
+            focusActivityId={afterHoursFocusId}
+            onFocusHandled={() => setAfterHoursFocusId(null)}
             onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}
             showToast={showToast}
           />
