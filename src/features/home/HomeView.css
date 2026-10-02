@@ -54,9 +54,7 @@
 .first-contract-actions { display:flex; align-items:center; gap:8px; }
 .pending-count-note { margin-top:14px; color:var(--text-muted); font-size:.68rem; }
 .pending-count-button { padding:0; text-align:left; background:transparent; }
-.onboarding-rail { margin-top:34px; padding-top:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; border-top:1px solid var(--border-subtle); }
-.onboarding-rail span { color:var(--text-muted); font-size:.68rem; line-height:1.5; }
-.onboarding-rail b { display:block; margin-bottom:4px; color:var(--aura-gold); font-family:var(--font-mono); font-size:.6rem; font-weight:600; }
+.onboarding-short-rule { max-width:560px; margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle); color:var(--text-muted); font-size:.66rem; line-height:1.5; }
 
 @media (hover:hover) and (pointer:fine) {
   .circle-secondary-actions button:hover,.circle-grow button:hover { color:var(--text-primary); }
@@ -73,9 +71,7 @@
   .first-contract-card { margin-top:1vh; border-radius:22px; }
   .first-contract-actions { align-items:stretch; flex-direction:column; }
   .first-contract-actions .btn { width:100%; }
-  .onboarding-rail { grid-template-columns:1fr; gap:10px; }
-  .onboarding-rail span { display:grid; grid-template-columns:30px 1fr; align-items:center; }
-  .onboarding-rail b { margin:0; }
+  .onboarding-short-rule { margin-top:14px; padding-top:12px; }
 }
 @media (max-width:430px) {
   .circle-first-title h1 { font-size:1.67rem; }
