@@ -173,41 +173,59 @@ export const Arena = ({ friendships, showToast }) => {
                 : null;
 
               return (
-                <article className={`bounty-item ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''}`} key={bounty._id || bounty.id}>
+                <article className={`arena-target-card ${proofArmed ? 'proof-armed-item' : hunting ? 'hunting-item' : ''} ${wantedLabel ? 'wanted-item' : ''}`} key={bounty._id || bounty.id}>
                   <UserAvatar
                     person={{ displayName: bounty.targetName, avatar: bounty.targetAvatar }}
-                    size="sm"
-                    className="bounty-avatar user-avatar-round"
+                    size="lg"
+                    className="arena-target-avatar"
                     decorative
                   />
-                  <div className="bounty-copy">
-                    <div className="bounty-title-row">
+
+                  <div className="arena-target-main">
+                    <div className="arena-target-title">
                       <strong>{bounty.targetName}</strong>
                       <span className={`bounty-status ${proofArmed ? 'proof' : hunting ? 'hunting' : wantedLabel ? 'wanted' : 'open'}`}>
                         {proofArmed ? 'PROOF ARMED' : hunting ? 'HUNTER ASSIGNED' : exposureLabel || 'OPEN'}
                       </span>
                     </div>
-                    <span>{bounty.message || 'Check in to close this bounty.'}</span>
-                    {fundingBreakdown && <small className="bounty-funding">{fundingBreakdown}</small>}
-                    {hunting && <small className="bounty-hunt-meta"><Clock3 size={12} /> {bounty.hunterName || 'Hunter'} · {window || `${meta.huntWindowHours || 12}h window`}</small>}
-                  </div>
-                  <div className="bounty-reward"><Zap size={13} /> {bounty.amount}</div>
 
-                  {bounty.status === 'ACTIVE' && !isTarget && !isSender && !isPartner ? (
-                    <button className="hunt-button hunt-cta" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName} for ${bounty.amount} Aura`}><Sword size={16} strokeWidth={1.8} /><span>Hunt · {bond} bond</span></button>
-                  ) : isHunter && bounty.status === 'HUNTING' ? (
-                    <button className="pressure-button" onClick={() => setPressureBounty(bounty)}><Target size={15} /><span>Send pressure</span></button>
-                  ) : isHunter && proofArmed ? (
-                    <div className="proof-armed-state"><ShieldCheck size={15} /><span>Waiting for credit</span></div>
-                  ) : isTarget ? (
-                    <div className={`bounty-owner-state ${proofArmed ? 'danger' : ''}`}>{proofArmed ? 'Pressure on you' : hunting ? 'Being hunted' : 'On you'}</div>
-                  ) : isSender ? (
-                    <div className="bounty-owner-state">{bounty.chaosAmount > 0 ? 'Your boost' : 'Your bounty'}</div>
-                  ) : isPartner ? (
-                    <div className="bounty-owner-state">Your contract</div>
-                  ) : hunting ? (
-                    <div className="hunter-lock" title={bounty.hunterName ? `Hunted by ${bounty.hunterName}` : 'Hunter assigned'}><ShieldCheck size={16} /><span>{proofArmed ? 'Proof armed' : bounty.hunterName || 'Hunting'}</span></div>
-                  ) : null}
+                    <p>{bounty.message || (wantedLabel ? 'Check in to escape.' : 'Public bounty is live.')}</p>
+
+                    <div className="arena-target-meta">
+                      {fundingBreakdown && <span>{fundingBreakdown}</span>}
+                      {hunting && <span><Clock3 size={12} /> {bounty.hunterName || 'Hunter'} · {window || `${meta.huntWindowHours || 12}h window`}</span>}
+                    </div>
+                  </div>
+
+                  <div className="arena-target-side">
+                    <div className="arena-target-reward" aria-label={`${bounty.amount} Aura bounty`}>
+                      <Zap size={14} strokeWidth={1.8} />
+                      <strong>{bounty.amount}</strong>
+                      <small>Aura</small>
+                    </div>
+
+                    {bounty.status === 'ACTIVE' && !isTarget && !isSender && !isPartner ? (
+                      <button className="arena-target-cta danger" onClick={() => hunt(bounty)} aria-label={`Hunt ${bounty.targetName} for ${bounty.amount} Aura`}>
+                        <Sword size={15} strokeWidth={1.8} />
+                        <span>Hunt · {bond}</span>
+                      </button>
+                    ) : isHunter && bounty.status === 'HUNTING' ? (
+                      <button className="arena-target-cta" onClick={() => setPressureBounty(bounty)}>
+                        <Target size={15} strokeWidth={1.8} />
+                        <span>Pressure</span>
+                      </button>
+                    ) : isHunter && proofArmed ? (
+                      <div className="arena-target-state"><ShieldCheck size={15} /><span>Waiting</span></div>
+                    ) : isTarget ? (
+                      <div className={`arena-target-state ${proofArmed ? 'danger' : ''}`}>{proofArmed ? 'Pressure on you' : hunting ? 'Being hunted' : 'On you'}</div>
+                    ) : isSender ? (
+                      <div className="arena-target-state">{bounty.chaosAmount > 0 ? 'Your boost' : 'Your bounty'}</div>
+                    ) : isPartner ? (
+                      <div className="arena-target-state">Your contract</div>
+                    ) : hunting ? (
+                      <div className="arena-target-state"><ShieldCheck size={15} /><span>{proofArmed ? 'Proof armed' : bounty.hunterName || 'Hunting'}</span></div>
+                    ) : null}
+                  </div>
                 </article>
               );
             })}
@@ -218,14 +236,36 @@ export const Arena = ({ friendships, showToast }) => {
           <div className="arena-panel-head"><div><Flame size={18} strokeWidth={1.8} /><strong>Public grudges</strong></div><span className="arena-privacy-note">Claims are public until settled or expired</span></div>
           <div className="arena-list">
             {loading ? <div className="arena-empty">Loading beef…</div> : grudges.length === 0 ? <div className="arena-empty">No public Grudges.</div> : grudges.map((grudge) => (
-              <article className="bounty-item proof-armed-item" key={`${grudge.claimantName}:${grudge.victimName}:${grudge.createdAt}`}>
-                <div className="bounty-avatar"><Flame size={17} /></div>
-                <div className="bounty-copy">
-                  <div className="bounty-title-row"><strong>{grudge.victimName} vs {grudge.claimantName}</strong><span className="bounty-status proof">GRUDGE</span></div>
-                  <span>{grudge.claimantName} Claimed {grudge.originalClaimAmount} Aura from {grudge.victimName}. Revenge opens if they go bankrupt.</span>
-                  <small className="bounty-hunt-meta"><Clock3 size={12} /> {grudgeTimeLeft(grudge.expiresAt)}</small>
+              <article className="arena-grudge-card" key={`${grudge.claimantName}:${grudge.victimName}:${grudge.createdAt}`}>
+                <div className="arena-grudge-avatars" aria-hidden="true">
+                  <UserAvatar
+                    person={{ displayName: grudge.victimName, avatar: grudge.victimAvatar }}
+                    size="lg"
+                    className="arena-grudge-avatar victim"
+                    decorative
+                  />
+                  <UserAvatar
+                    person={{ displayName: grudge.claimantName, avatar: grudge.claimantAvatar }}
+                    size="sm"
+                    className="arena-grudge-avatar claimant"
+                    decorative
+                  />
                 </div>
-                <div className="bounty-owner-state">Public</div>
+
+                <div className="arena-grudge-main">
+                  <div className="arena-target-title">
+                    <strong>{grudge.victimName}</strong>
+                    <span className="bounty-status proof">GRUDGE</span>
+                  </div>
+                  <p><b>{grudge.claimantName}</b> took {grudge.originalClaimAmount} Aura.</p>
+                  <span><Clock3 size={12} /> {grudgeTimeLeft(grudge.expiresAt)} · revenge if {grudge.claimantName} goes bankrupt</span>
+                </div>
+
+                <div className="arena-grudge-amount">
+                  <Flame size={14} strokeWidth={1.8} />
+                  <strong>{grudge.originalClaimAmount}</strong>
+                  <small>Aura claimed</small>
+                </div>
               </article>
             ))}
           </div>
