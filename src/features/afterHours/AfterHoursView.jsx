@@ -588,38 +588,6 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           </section>
         )}
 
-        <section className="after-hours-pin after-hours-room-question" aria-labelledby="after-hours-question">
-          <div className="after-hours-room-question-copy">
-            <span><HelpCircle size={13} /> ROOM QUESTION</span>
-            <h2 id="after-hours-question">{event.text}</h2>
-            <small>{total} answered · {timeLabel}</small>
-          </div>
-
-          {!event.viewerAnswer ? (
-            <div className="after-hours-room-question-options">
-              {(event.options || []).map((option) => (
-                <button
-                  type="button"
-                  key={option}
-                  disabled={Boolean(busy)}
-                  onClick={() => submitAnswer(option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="after-hours-room-question-results">
-              {results.map((result) => (
-                <div className={event.viewerAnswer === result.option ? 'is-yours' : ''} key={result.option}>
-                  <span>{result.option}</span>
-                  <strong>{result.percent}%</strong>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
         <section className="after-hours-feed">
           <div className="after-hours-section-label after-hours-feed-heading">
             <span>ROOM NOISE</span>
@@ -867,6 +835,39 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
             </div>
           )}
         </section>
+
+        <section className="after-hours-pin after-hours-room-question" aria-labelledby="after-hours-question">
+          <div className="after-hours-room-question-copy">
+            <span><HelpCircle size={13} /> ROOM QUESTION</span>
+            <h2 id="after-hours-question">{event.text}</h2>
+            <small>{total} answered · {timeLabel}</small>
+          </div>
+
+          {!event.viewerAnswer ? (
+            <div className="after-hours-room-question-options">
+              {(event.options || []).map((option) => (
+                <button
+                  type="button"
+                  key={option}
+                  disabled={Boolean(busy)}
+                  onClick={() => submitAnswer(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="after-hours-room-question-results">
+              {results.map((result) => (
+                <div className={event.viewerAnswer === result.option ? 'is-yours' : ''} key={result.option}>
+                  <span>{result.option}</span>
+                  <strong>{result.percent}%</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
       </section>
 
       <Modal
