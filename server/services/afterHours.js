@@ -289,7 +289,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
   };
 
   const feed = activities
-    .filter((item) => item.type !== 'REPLY')
+    .filter((item) => !['REPLY', 'ANSWER', 'CALLOUT'].includes(item.type))
     .map((item) => {
       if (!item.actorId?.username) return null;
       const { actor, isOwn } = publicActorFor(item, user._id);
