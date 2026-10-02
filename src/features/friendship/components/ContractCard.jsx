@@ -64,7 +64,7 @@ const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
   return lastInteraction > seasonStart;
 };
 
-export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, socialState = null }) => {
+export const ContractCard = ({ friendship, currentUserId, onAction, compact = false, homeReference = false, socialState = null }) => {
   const [chaosShareState, setChaosShareState] = useState('');
   const [socialBusy, setSocialBusy] = useState('');
   const [replyOpen, setReplyOpen] = useState(false);
@@ -284,6 +284,242 @@ export const ContractCard = ({ friendship, currentUserId, onAction, compact = fa
   }
 
   const hideDuo = seasonDone || chaosTargetsCurrentUser;
+
+  if (homeReference) {
+    const seasonStartedAt = new Date(season.startedAt || 0).getTime();
+    const seasonDay = seasonStartedAt > 0
+      ? Math.max(1, Math.floor((Date.now() - seasonStartedAt) / 86400000) + 1)
+      : 1;
+    const currentXp = Number(friendship.duoXP) || 0;
+    const nextXp = 50 * Math.pow(level, 2);
+    const hasPartnerCheckin = !seasonDone && Boolean(socialState?.latestPartnerCheckin);
+    const exceptionalState = Boolean(
+      activeChaos
+      || wanted
+      || partnerBankrupt
+      || stats.isBankrupt
+      || stats.isRecovering
+      || stats.totalDebt > 0
+      || seasonDone
+      || moment
+    );
+
+    const runHomeSecondary = () => {
+      if (hasPartnerCheckin) {
+        setReplyOpen((value) => !value);
+        return;
+      }
+      if (activeChaos) {
+        void shareChaos();
+        return;
+      }
+      if (partnerBankrupt) {
+        onAction('ARENA', friendship);
+        return;
+      }
+      if (checkedInToday || socialState?.pokeBackAvailable || socialState?.mutualMenace) {
+        void runSocialAction('POKE');
+        return;
+      }
+      onAction('VOICE_CHECKIN', friendship);
+    };
+
+    const secondaryIcon = hasPartnerCheckin
+      ? <MessageCircle size={18} strokeWidth={1.65} />
+      : activeChaos
+        ? <Share2 size={18} strokeWidth={1.65} />
+        : partnerBankrupt
+          ? <Flame size={18} strokeWidth={1.65} />
+          : (checkedInToday || socialState?.pokeBackAvailable || socialState?.mutualMenace)
+            ? <Bell size={18} strokeWidth={1.65} />
+            : <Mic size={18} strokeWidth={1.65} />;
+
+    const secondaryLabel = hasPartnerCheckin
+      ? `Respond to ${name}`
+      : activeChaos
+        ? 'Share Chaos'
+        : partnerBankrupt
+          ? 'Open Arena'
+          : socialState?.pokeBackAvailable
+            ? 'Poke back'
+            : checkedInToday
+              ? 'Poke'
+              : 'Voice check-in';
+
+    return (
+      <article className={`contract-card home-contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''}`}>
+        <UserAvatar person={friend} size="lg" className="home-contract-avatar" decorative />
+
+        <div className="home-contract-content">
+          <div className="home-contract-name-row">
+            <h3>{name}</h3>
+            <span aria-hidden="true">✦</span>
+          </div>
+          <p className="home-contract-line">{displayState.hero}</p>
+          <div className={`home-contract-state ${displayState.tone}`}>
+            <i aria-hidden="true" />
+            <span>{displayState.label}</span>
+            {handle && <small>{handle}</small>}
+          </div>
+
+          <div className="home-contract-chips" aria-label={`${mode}, day ${seasonDay}, season ${seasonNumber}`}>
+            <span className={friendship.templateId === 'CHAOS' ? 'chaos' : ''}>{mode}</span>
+            <span>Day {seasonDay}</span>
+            <span>Season {seasonNumber}</span>
+          </div>
+
+          <div className="home-contract-duo">
+            <div className="home-contract-meter" aria-label={`Duo XP progress ${xpProgress}%`}>
+              <span style={{ width: `${xpProgress}%` }} />
+            </div>
+            <div className="home-contract-duo-copy">
+              <small>Duo XP</small>
+              <strong>{currentXp.toLocaleString()} / {nextXp.toLocaleString()}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="home-contract-actions" aria-label={`Actions for ${name}`}>
+          <button
+            type="button"
+            className={`home-contract-action secondary ${replyOpen ? 'active' : ''}`}
+            onClick={runHomeSecondary}
+            disabled={socialBusy === 'POKE' || (Boolean(socialState?.mutualMenace) && !hasPartnerCheckin)}
+            aria-label={secondaryLabel}
+            title={secondaryLabel}
+          >
+            {secondaryIcon}
+          </button>
+
+          {seasonDone ? (
+            <button
+              type="button"
+              className="home-contract-action primary"
+              onClick={() => onAction('RECAP', friendship)}
+              aria-label="View season recap"
+              title="View season recap"
+            >
+              <Trophy size={18} strokeWidth={1.65} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="home-contract-action primary"
+              disabled={checkedInToday}
+              onClick={() => onAction('CHECKIN', friendship)}
+              aria-label={checkedInToday ? 'Already checked in' : 'Check in'}
+              title={checkedInToday ? 'Already checked in' : 'Check in'}
+            >
+              <Check size={18} strokeWidth={1.7} />
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="home-contract-action"
+            onClick={() => onAction('SETTINGS', friendship)}
+            aria-label={`More options for ${name}'s contract`}
+            title="More"
+          >
+            <MoreHorizontal size={19} strokeWidth={1.6} />
+          </button>
+        </div>
+
+        {exceptionalState && (
+          <div className={`home-contract-exception ${displayState.tone}`}>
+            <div>
+              <strong>{moment ? momentTitle : displayState.label}</strong>
+              <p>{moment?.prompt || displayState.detail}</p>
+              {!moment && displayState.context && <small>{displayState.context}</small>}
+            </div>
+
+            {moment?.status === 'OPEN' && moment.type !== 'DOUBLE_DARE' && !moment.answered && (
+              <div className="home-contract-moment-actions">
+                {(moment.options || []).map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    disabled={socialBusy === 'MOMENT_RESPONSE'}
+                    onClick={() => runSocialAction('MOMENT_RESPONSE', { momentId: moment.id, value: option })}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {moment?.status === 'OPEN' && moment.type === 'DOUBLE_DARE' && ['PICK', 'RESPOND'].includes(moment.phase) && (
+              <div className="home-contract-moment-actions">
+                {(moment.options || []).map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    disabled={socialBusy === 'MOMENT_RESPONSE'}
+                    onClick={() => runSocialAction('MOMENT_RESPONSE', { momentId: moment.id, value: option })}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {moment?.status === 'OPEN' && moment.answered && (
+              <small className="home-contract-waiting">{moment.partnerAnswered ? 'Revealing…' : `Waiting on ${name}.`}</small>
+            )}
+          </div>
+        )}
+
+        {replyOpen && hasPartnerCheckin && (
+          <div className="home-contract-social">
+            <div className="home-contract-social-head">
+              <div>
+                <strong>{name} checked in{partnerCheckinStatus ? ` · ${partnerCheckinStatus}` : ''}</strong>
+                {socialState.latestPartnerCheckin.note && <p>“{socialState.latestPartnerCheckin.note}”</p>}
+              </div>
+              {socialState.reply && <small>You replied.</small>}
+            </div>
+
+            <div className="home-contract-social-actions">
+              <div className="contract-reactions" aria-label={`React to ${name}'s check-in`}>
+                {reactionOptions.map((reaction) => (
+                  <button
+                    type="button"
+                    key={reaction}
+                    className={socialState?.reaction === reaction ? 'active' : ''}
+                    disabled={Boolean(socialBusy)}
+                    onClick={() => runSocialAction('REACT', reaction)}
+                    aria-label={`React ${reaction}`}
+                    aria-pressed={socialState?.reaction === reaction}
+                  >
+                    {reaction}
+                  </button>
+                ))}
+              </div>
+
+              {!socialState.reply && (
+                <form className="home-contract-reply-form" onSubmit={submitReply}>
+                  <input
+                    type="text"
+                    value={replyText}
+                    maxLength={40}
+                    onChange={(event) => setReplyText(event.target.value.slice(0, 40))}
+                    placeholder="tiny reply…"
+                    aria-label={`Reply to ${name}'s check-in`}
+                    autoComplete="off"
+                  />
+                  <button type="submit" disabled={!replyText.trim() || socialBusy === 'REPLY'} aria-label="Send reply">
+                    <Send size={15} strokeWidth={1.8} />
+                  </button>
+                </form>
+              )}
+
+              {socialState.reply && <span className="home-contract-reply-sent">“{socialState.reply.text}”</span>}
+            </div>
+          </div>
+        )}
+      </article>
+    );
+  }
 
   return (
     <article className={`contract-card ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''} ${compact ? 'compact' : ''}`}>
