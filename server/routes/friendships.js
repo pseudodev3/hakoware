@@ -322,6 +322,9 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
     const usernameNormalized = email ? null : normalizeUsername(identifier);
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
+    const creationSource = String(req.body.source || '').toUpperCase() === 'AFTER_HOURS'
+      ? 'AFTER_HOURS'
+      : 'DIRECT';
 
     const template = gameTemplate(req.body.templateId);
     if (!template) return res.status(400).json({ msg: 'Choose a valid contract type' });
@@ -392,7 +395,7 @@ router.post('/', auth, inviteLimiter, async (req, res) => {
     await friendship.save();
     await recordEvent(friendship._id, 'CONTRACT_CREATED', {
       userId: user._id,
-      metadata: { templateId: template.id, limit }
+      metadata: { templateId: template.id, limit, source: creationSource }
     });
 
     await PendingInvite.deleteOne({ inviterId: user._id, recipientEmail: friend.email });
