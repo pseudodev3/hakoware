@@ -110,7 +110,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   const openAfterHours = async (notification) => {
     const id = notification.id || notification._id;
     if (!notification.read) await handleMarkAsRead(id);
-    onNavigate?.('afterHours');
+    onNavigate?.('afterHours', {
+      focusActivityId: notification.afterHoursActivityId || null
+    });
     onClose?.();
   };
 
