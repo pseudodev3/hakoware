@@ -45,13 +45,18 @@ Do not turn Hakoware into a SaaS dashboard, CRM, habit tracker, or card soup.
 
 ## 2. Current signed-in structure
 
-Main tabs:
+Primary tabs:
 
 - Home
 - After Hours
-- Contracts
-- Arena
 - You
+
+Secondary destinations:
+
+- Contracts — reached contextually from Home / contract management
+- Arena — reached contextually from Home or exposed contract states
+
+Product rule: **primary navigation is for places users habitually live; systems are contextual.** Do not restore Contracts/Arena as bottom tabs without evidence that the 3-tab model is failing.
 
 ### After Hours
 
@@ -64,12 +69,15 @@ Current product shape:
 - honest live presence expires after roughly 5 minutes; do not fake users or activity;
 - real room activity remains visible for roughly 3 hours so the room still has residue with a small userbase;
 - users can leave one-line public **Shouts** with strict length/rate limits;
-- users can throw one of the rotating lightweight **Challenges**;
+- users can throw a suggested **Challenge** or write a custom challenge up to 96 characters;
 - answering a challenge requires an actual one-line response, which creates its own feed moment and notifies the challenge owner;
 - one coordinated `Pick a Side` event still rotates every 10 minutes, but it is a compact pinned room event rather than the definition of the page;
 - room activity supports the fixed Hakoware reaction set;
-- after picking a side, a user can publicly call out somebody currently around who has not answered that event;
-- call-outs create an in-app notification with a direct action back into After Hours;
+- after picking a side, a user can **Tag in** somebody currently around who has not answered that event; Tag in means “pull them into this live Pick a Side,” not generic attention-seeking;
+- Tag in / challenge-answer notifications carry the public room activity ID and can return the recipient to that exact feed moment;
+- tapping another person in After Hours opens a lightweight identity sheet with **Start contract** rather than a profile-browsing flow;
+- when somebody answers your challenge, Start contract can appear contextually on that interaction;
+- After Hours → contract opens the existing contract flow with that username prefilled and records `source: AFTER_HOURS` on the `CONTRACT_CREATED` event for conversion measurement;
 - test / Founder Lab users remain isolated from the live room;
 - public room payloads use usernames / display names and public activity IDs rather than raw user IDs;
 - old room data is TTL-cleaned;
@@ -218,6 +226,12 @@ The duplicate bottom `Grow the circle / New contract` CTA was removed in PR #58.
 
 The primary Home `New` action remains.
 
+Friction rules added in the social-conversion pass:
+
+- Home exposes **All contracts** and **Arena** as contextual destinations instead of permanent primary tabs;
+- the first pending contract can be accepted directly from Home; users should not be forced into Contracts just to press Accept;
+- first-time invite acceptance also happens directly on the activation card.
+
 ## 6. Contract card design
 
 Approved anatomy:
@@ -270,6 +284,11 @@ Duo level formula:
 `floor(sqrt(xp / 50)) + 1`
 
 Check-in is also the escape/settlement action for Wanted/bounty pressure.
+
+Check-in friction rule:
+
+- vibe + tiny note are truly optional; no vibe is preselected;
+- opening the modal and pressing **Check in** is a valid one-action path unless a real bounty/proof decision requires more input.
 
 ## 8. Bankruptcy / recovery
 
@@ -324,6 +343,14 @@ No new anomaly starts while a Wanted state is unresolved.
 Chaos Ticket cannot be consumed while Wanted.
 
 ## 10. Wanted / Most Wanted / Arena loop
+
+Arena friction rule:
+
+- Arena is secondary navigation, not a permanent bottom tab;
+- hide the dead `No bankrupt targets` CTA when the user cannot place a bounty;
+- only show target search when the live bounty list is large enough to need it;
+- keep Arena intro copy compressed; the live objects should explain the system.
+
 
 This was substantially upgraded in PR #57.
 
@@ -757,6 +784,8 @@ For repo changes:
 
 Do not spam PRs for intermediate iterations.
 
+Current branch rule reaffirmed: implementation + diff audit + exact-head CI must be complete **before** opening the PR.
+
 Do not force-update `main`.
 
 If a branch is stale after another PR merges, rebase/reset/reapply carefully so newer security/product changes are not regressed.
@@ -804,6 +833,12 @@ This matters more right now than vanity signup counts.
 The strongest product question is now:
 
 **Does the relationship loop feel fun/tense/shareable enough that one person brings another person in and both keep returning?**
+
+After Hours adds a second funnel worth measuring:
+
+**room interaction → Start contract → accepted contract → first mutual check-in**
+
+`CONTRACT_CREATED` events created from the room carry `source: AFTER_HOURS` so that conversion can be separated from direct contract creation.
 
 The next retention signal after first mutual check-in is:
 
