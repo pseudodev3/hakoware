@@ -260,6 +260,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
   const recentPostCountByUser = new Map();
   activities.forEach((item) => {
     if (!SOCIAL_POST_TYPES.includes(item.type)) return;
+    if (item.type === 'CONFESSION' && item.anonymous) return;
     const key = idString(item.actorId?._id || item.actorId);
     recentPostCountByUser.set(key, (recentPostCountByUser.get(key) || 0) + 1);
   });
