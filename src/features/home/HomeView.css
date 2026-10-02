@@ -7,9 +7,6 @@
 .circle-first-title h1 { font-size:1.8rem; line-height:1.05; letter-spacing:-.045em; font-weight:680; }
 .circle-first-title p { margin-top:5px; color:var(--text-muted); font-size:.78rem; }
 .circle-first-header > .btn { grid-column:2; grid-row:1; align-self:start; }
-.circle-secondary-actions { grid-column:2; grid-row:2; display:flex; align-items:center; justify-content:flex-end; gap:10px; }
-.circle-secondary-actions button { min-height:30px; display:inline-flex; align-items:center; gap:5px; color:var(--text-secondary); font-size:.66rem; font-weight:590; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.circle-secondary-actions button:active { transform:scale(.96); }
 .circle-pending-link { min-height:46px; padding:5px 2px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--aura-gold); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); font-size:.69rem; }
 .circle-pending-link > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .circle-pending-link strong { color:var(--text-primary); }
@@ -62,7 +59,7 @@
 .onboarding-short-rule { max-width:560px; margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle); color:var(--text-muted); font-size:.66rem; line-height:1.5; }
 
 @media (hover:hover) and (pointer:fine) {
-  .circle-secondary-actions button:hover,.circle-grow button:hover { color:var(--text-primary); }
+  .circle-grow button:hover { color:var(--text-primary); }
   .circle-pending-review:hover { color:var(--text-primary); background:var(--surface-soft); }
   .circle-season-briefing button:hover { color:var(--text-primary); background:var(--surface-soft); }
 }
@@ -81,8 +78,6 @@
 @media (max-width:430px) {
   .circle-first-title h1 { font-size:1.67rem; }
   .circle-first-title p { font-size:.74rem; }
-  .circle-secondary-actions { gap:8px; }
-  .circle-secondary-actions button { font-size:.63rem; }
   .circle-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .circle-summary .circle-world-rule { grid-column:1 / -1; }
 }

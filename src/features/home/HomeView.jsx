@@ -227,14 +227,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active.`}{newCount > 0 ? ` ${newCount} with something new.` : !hot.length ? ' All clear.' : ''}</p>
         </div>
         <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>New</Button>
-        <div className="circle-secondary-actions">
-          <button type="button" onClick={() => onNavigate('contracts')}>
-            All contracts <ArrowRight size={15} strokeWidth={1.6} />
-          </button>
-          <button type="button" onClick={() => onNavigate('arena')}>
-            Arena <Swords size={14} strokeWidth={1.6} />
-          </button>
-        </div>
       </header>
 
       {pendingInvitations.length > 0 && (() => {
