@@ -74,7 +74,7 @@ Current product shape:
 - one coordinated `Pick a Side` event still rotates every 10 minutes, but it is a compact pinned room event rather than the definition of the page;
 - room activity supports the fixed Hakoware reaction set;
 - after picking a side, a user can **Tag in** somebody currently around who has not answered that event; Tag in means “pull them into this live Pick a Side,” not generic attention-seeking;
-- Tag in / challenge-answer notifications carry the public room activity ID and can return the recipient to that exact feed moment;
+- Tag in / challenge-answer notifications carry room targeting data; **Tag in** returns directly to the live Pick a Side because that is the requested action, while challenge-answer notifications return to the exact response;
 - tapping another person in After Hours opens a lightweight identity sheet with **Start contract** rather than a profile-browsing flow;
 - when somebody answers your challenge, Start contract can appear contextually on that interaction;
 - After Hours → contract opens the existing contract flow with that username prefilled and records `source: AFTER_HOURS` on the `CONTRACT_CREATED` event for conversion measurement;
@@ -231,6 +231,8 @@ Friction rules added in the social-conversion pass:
 - Home exposes **All contracts** and **Arena** as contextual destinations instead of permanent primary tabs;
 - the first pending contract can be accepted directly from Home; users should not be forced into Contracts just to press Accept;
 - first-time invite acceptance also happens directly on the activation card.
+- a brand-new user with no contracts gets two activation paths on Home: **Start a contract** or **After Hours**; do not force “bring a friend first” now that stranger discovery exists;
+- the old three-item onboarding rail is compressed to one short rule line.
 
 ## 6. Contract card design
 
