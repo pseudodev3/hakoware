@@ -5,7 +5,8 @@ const AfterHoursReaction = require('../models/AfterHoursReaction');
 const MINUTE = 60 * 1000;
 const ROUND_MS = 10 * MINUTE;
 const ACTIVE_MS = 5 * MINUTE;
-const FEED_MS = 90 * MINUTE;
+const FEED_MS = 3 * 60 * MINUTE;
+const SHOUT_MAX_LENGTH = 88;
 const REACTIONS = Object.freeze(['💀', '👀', '😭', '🤝']);
 
 const PROMPTS = Object.freeze([
@@ -33,6 +34,21 @@ const PROMPTS = Object.freeze([
   { id: 'hill-spoiler', text: 'Someone spoils the ending.', options: ['Unforgivable', 'I will survive'] },
   { id: 'hill-mic', text: 'Accidentally unmuted.', options: ['Own it', 'Leave the call'] },
   { id: 'hill-last', text: 'Last slice. Nobody claimed it.', options: ['Take it', 'Wait for permission'] }
+]);
+
+const CHALLENGES = Object.freeze([
+  { id: 'defend-bad-take', text: 'Defend your last bad take.' },
+  { id: 'three-word-roast', text: 'Roast your day in three words.' },
+  { id: 'tiny-confession', text: 'Drop one harmless confession.' },
+  { id: 'worst-excuse', text: 'Give the worst believable excuse for being late.' },
+  { id: 'unpopular-rule', text: 'Invent one ridiculous rule everybody here must follow.' },
+  { id: 'main-character', text: 'Describe your current main-character problem in one line.' },
+  { id: 'petty-hill', text: 'Name a petty hill you will die on.' },
+  { id: 'cancelled-plan', text: 'Pitch the best excuse to cancel plans tonight.' },
+  { id: 'bad-advice', text: 'Give one piece of terrible advice with confidence.' },
+  { id: 'green-flag', text: 'Name a weird green flag.' },
+  { id: 'groupchat-law', text: 'Write one law every group chat should obey.' },
+  { id: 'chaos-title', text: 'Give today a dramatic episode title.' }
 ]);
 
 const idString = (value) => String(value?._id || value || '');
@@ -65,6 +81,14 @@ const currentRound = (now = new Date()) => {
   };
 };
 
+const challengeChoices = (now = new Date()) => {
+  const bucket = Math.floor(now.getTime() / (30 * MINUTE));
+  const start = bucket % CHALLENGES.length;
+  return Array.from({ length: 4 }, (_, index) => CHALLENGES[(start + index) % CHALLENGES.length]);
+};
+
+const challengeById = (id) => CHALLENGES.find((item) => item.id === id) || null;
+
 const touchPresence = async (user, now = new Date()) => {
   const scopeKey = scopeFor(user);
   await AfterHoursPresence.findOneAndUpdate(
@@ -94,7 +118,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
   const [presences, currentAnswers, activities] = await Promise.all([
     AfterHoursPresence.find({ scopeKey, lastSeenAt: { $gte: activeSince } })
       .sort({ lastSeenAt: -1 })
-      .limit(24)
+      .limit(28)
       .populate('userId', 'displayName username avatar isTestAccount testOwnerId')
       .lean(),
     AfterHoursActivity.find({ scopeKey, roundKey: round.roundKey, type: 'ANSWER' })
@@ -102,7 +126,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
       .lean(),
     AfterHoursActivity.find({ scopeKey, createdAt: { $gte: feedSince } })
       .sort({ createdAt: -1 })
-      .limit(40)
+      .limit(70)
       .populate('actorId', 'displayName username avatar')
       .populate('targetUserId', 'displayName username avatar')
       .lean()
@@ -115,17 +139,36 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
     if (tally[item.choice] !== undefined) tally[item.choice] += 1;
   });
 
-  const answerActivityIds = activities
-    .filter((item) => item.type === 'ANSWER')
+  const activityIds = activities.map((item) => item._id);
+  const challengeIds = activities
+    .filter((item) => item.type === 'CHALLENGE')
     .map((item) => item._id);
-  const reactions = answerActivityIds.length
-    ? await AfterHoursReaction.find({ activityId: { $in: answerActivityIds } }).lean()
-    : [];
+
+  const [reactions, challengeJoins] = await Promise.all([
+    activityIds.length
+      ? AfterHoursReaction.find({ activityId: { $in: activityIds } }).lean()
+      : Promise.resolve([]),
+    challengeIds.length
+      ? AfterHoursActivity.find({
+          scopeKey,
+          type: 'CHALLENGE_JOIN',
+          parentActivityId: { $in: challengeIds }
+        }).select('parentActivityId actorId').lean()
+      : Promise.resolve([])
+  ]);
+
   const reactionsByActivity = new Map();
   reactions.forEach((item) => {
     const key = idString(item.activityId);
     if (!reactionsByActivity.has(key)) reactionsByActivity.set(key, []);
     reactionsByActivity.get(key).push(item);
+  });
+
+  const joinsByChallenge = new Map();
+  challengeJoins.forEach((item) => {
+    const key = idString(item.parentActivityId);
+    if (!joinsByChallenge.has(key)) joinsByChallenge.set(key, []);
+    joinsByChallenge.get(key).push(item);
   });
 
   const people = presences
@@ -145,20 +188,46 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
         actor: publicUser(item.actorId),
         roundKey: item.roundKey,
         promptText: item.promptText,
-        createdAt: item.createdAt
+        createdAt: item.createdAt,
+        reactions: buildReactionState(reactionsByActivity.get(idString(item._id)) || [], user._id)
       };
 
       if (item.type === 'ANSWER') {
         return {
           ...base,
-          choice: item.choice,
-          reactions: buildReactionState(reactionsByActivity.get(idString(item._id)) || [], user._id)
+          choice: item.choice
         };
       }
 
       if (item.type === 'CALLOUT' && item.targetUserId?.username) {
         return {
           ...base,
+          target: publicUser(item.targetUserId)
+        };
+      }
+
+      if (item.type === 'SHOUT') {
+        return {
+          ...base,
+          text: item.text
+        };
+      }
+
+      if (item.type === 'CHALLENGE') {
+        const joins = joinsByChallenge.get(idString(item._id)) || [];
+        return {
+          ...base,
+          text: item.text,
+          joinCount: joins.length,
+          viewerJoined: joins.some((join) => idString(join.actorId) === idString(user._id)),
+          canJoin: idString(item.actorId?._id) !== idString(user._id)
+        };
+      }
+
+      if (item.type === 'CHALLENGE_JOIN' && item.targetUserId?.username) {
+        return {
+          ...base,
+          text: item.text,
           target: publicUser(item.targetUserId)
         };
       }
@@ -177,6 +246,10 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
       viewerAnswer,
       tally
     },
+    composer: {
+      shoutMaxLength: SHOUT_MAX_LENGTH,
+      challenges: challengeChoices(now)
+    },
     reactions: REACTIONS,
     feed
   };
@@ -185,7 +258,10 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
 module.exports = {
   ACTIVE_MS,
   FEED_MS,
+  SHOUT_MAX_LENGTH,
   REACTIONS,
+  challengeById,
+  challengeChoices,
   currentRound,
   scopeFor,
   touchPresence,
