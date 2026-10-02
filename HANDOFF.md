@@ -235,6 +235,29 @@ Friction rules added in the social-conversion pass:
 - a brand-new user with no contracts gets two activation paths on Home: **Start a contract** or **After Hours**; do not force “bring a friend first” now that stranger discovery exists;
 - the old three-item onboarding rail is compressed to one short rule line.
 
+### Home contract card variant
+
+Home now uses a **reference-style compact horizontal contract card** inspired by the approved visual reference. This treatment is **Home-only**.
+
+Locked anatomy:
+
+**large avatar → name + one-line state → compact chips → Duo XP bar → circular action cluster**
+
+Rules:
+
+- the person should dominate the card visually;
+- keep the faint Orbit motif as background identity;
+- normal/clear contracts stay compact and do not grow into explanatory panels;
+- contract type, current season day, and season number are small chips;
+- Duo progression is visual first: thin bar + current / next XP;
+- primary/secondary/settings actions are circular icon buttons on desktop and remain compact on mobile;
+- important states such as Chaos, Wanted, bankruptcy, recovery, season completion, or live social moments may add one restrained expansion row;
+- partner check-in reactions/reply stay collapsed until the social action is opened;
+- **do not apply this card skin to After Hours, Arena, You, notifications, or the Contracts management view**;
+- the Contracts page continues using the fuller management card because it is the place for detail/reporting.
+
+The goal is less copy and faster scanning, not hiding consequential state.
+
 ## 6. Contract card design
 
 Approved anatomy:
