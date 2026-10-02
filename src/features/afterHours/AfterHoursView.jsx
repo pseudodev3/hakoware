@@ -31,6 +31,8 @@ export const AfterHoursView = ({ user, showToast }) => {
   const [now, setNow] = useState(Date.now());
   const [shout, setShout] = useState('');
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const [challengeReplyId, setChallengeReplyId] = useState(null);
+  const [challengeReply, setChallengeReply] = useState('');
 
   const loadRoom = useCallback(async ({ quiet = false } = {}) => {
     try {
@@ -124,12 +126,15 @@ export const AfterHoursView = ({ user, showToast }) => {
   };
 
   const joinChallenge = async (activityId) => {
-    if (busy) return;
+    const text = challengeReply.replace(/\s+/g, ' ').trim();
+    if (!text || busy) return;
     setBusy(`join:${activityId}`);
     try {
-      setRoom(await joinAfterHoursChallenge(activityId));
+      setRoom(await joinAfterHoursChallenge(activityId, text));
+      setChallengeReply('');
+      setChallengeReplyId(null);
     } catch (error) {
-      showToast?.(error.message || 'Could not join that challenge', 'ERROR');
+      showToast?.(error.message || 'Could not answer that challenge', 'ERROR');
       if (error.status === 409) void loadRoom({ quiet: true });
     } finally {
       setBusy(null);
@@ -394,24 +399,50 @@ export const AfterHoursView = ({ user, showToast }) => {
                         <span>THREW A CHALLENGE</span>
                         <p>{item.text}</p>
                         <div>
-                          <small>{item.joinCount || 0} joined</small>
-                          {item.canJoin && (
+                          <small>{item.joinCount || 0} answered</small>
+                          {item.canJoin && !item.viewerJoined && (
                             <button
                               type="button"
-                              disabled={Boolean(busy) || item.viewerJoined}
-                              onClick={() => joinChallenge(item.id)}
+                              disabled={Boolean(busy)}
+                              onClick={() => {
+                                setChallengeReplyId((current) => current === item.id ? null : item.id);
+                                setChallengeReply('');
+                              }}
                             >
-                              {item.viewerJoined ? 'Joined' : 'Join'}
+                              {challengeReplyId === item.id ? 'Close' : 'Answer'}
                             </button>
                           )}
+                          {item.viewerJoined && <small className="after-hours-answered">answered</small>}
                         </div>
+                        {challengeReplyId === item.id && !item.viewerJoined && (
+                          <form
+                            className="after-hours-challenge-response-form"
+                            onSubmit={(eventObject) => {
+                              eventObject.preventDefault();
+                              void joinChallenge(item.id);
+                            }}
+                          >
+                            <input
+                              autoFocus
+                              value={challengeReply}
+                              onChange={(eventObject) => setChallengeReply(eventObject.target.value.slice(0, shoutLimit))}
+                              maxLength={shoutLimit}
+                              placeholder="Your one-line answer…"
+                              aria-label="Answer challenge"
+                            />
+                            <button type="submit" disabled={!challengeReply.trim() || Boolean(busy)}>
+                              Send
+                            </button>
+                          </form>
+                        )}
                       </div>
                     )}
 
                     {item.type === 'CHALLENGE_JOIN' && (
                       <>
-                        <p>jumped into <b>@{item.target?.username}'s challenge</b>.</p>
-                        <small>{item.text}</small>
+                        <p>answered <b>@{item.target?.username}'s challenge</b>.</p>
+                        <small>{item.promptText}</small>
+                        <p className="after-hours-challenge-response">“{item.text}”</p>
                       </>
                     )}
 
