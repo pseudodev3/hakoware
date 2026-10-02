@@ -123,6 +123,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
                 friendship={friendship}
                 currentUserId={userId}
                 onAction={onAction}
+                referenceLayout
                 socialState={socialContracts?.[friendship._id || friendship.id]}
               />
             ))}
