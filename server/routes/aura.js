@@ -18,32 +18,11 @@ const GRUDGE_DAYS = 7;
 const REVENGE_COST = 60;
 const SIGNAL_FLARE_COOLDOWN_HOURS = 48;
 
-const CARD_CATALOG = Object.freeze({
-  PURIFY: {
-    id: 'PURIFY',
-    name: 'Clean Slate',
-    cost: 120,
-    description: 'Reset your debt across every active contract. Grace periods do not change.'
-  },
-  STEAL: {
-    id: 'STEAL',
-    name: 'Claim',
-    cost: 180,
-    description: 'Take 10% Aura from a bankrupt partner. Financially questionable. Spiritually rewarding.'
-  },
-  SIGNAL_FLARE: {
-    id: 'SIGNAL_FLARE',
-    name: 'Signal Flare',
-    cost: 45,
-    description: 'Send one high-visibility pressure signal to a contract partner. 48h cooldown per contract.'
-  },
-  CHAOS_TICKET: {
-    id: 'CHAOS_TICKET',
-    name: 'Chaos Ticket',
-    cost: 90,
-    description: 'Force your Chaos Contract to roll for its next anomaly now.'
-  }
-});
+const { CARD_CATALOG } = require('../services/cardCatalog');
+const { takeCard } = require('../services/cardInventory');
+const CardPurchase = require('../models/CardPurchase');
+const { retryKey, inTransaction } = require('../services/cardTrading');
+const { randomUUID } = require('crypto');
 
 const calculateDebt = (perspective, now = new Date()) => calculateDebtState(perspective, now).totalDebt;
 const isBankruptPerspective = (perspective, now = new Date()) => calculateDebtState(perspective, now).isBankrupt;
@@ -273,40 +252,50 @@ router.post('/buy-card', auth, async (req, res) => {
   try {
     const card = CARD_CATALOG[String(req.body.cardId || '').toUpperCase()];
     if (!card) return res.status(400).json({ msg: 'Unknown card' });
-
-    const user = await User.findOneAndUpdate(
-      { _id: req.user.id, auraBalance: { $gte: card.cost } },
-      { $inc: { auraBalance: -card.cost }, $push: { inventory: card.id } },
-      { new: true }
-    );
-
-    if (!user) {
-      const exists = await User.exists({ _id: req.user.id });
-      return res.status(exists ? 400 : 404).json({ msg: exists ? 'Not enough Aura' : 'User not found' });
-    }
-
-    await AuraTransaction.create({
-      userId: user._id,
-      amount: -card.cost,
-      type: 'MARKETPLACE_PURCHASE',
-      description: `Purchased ${card.name}`
+    const clientId = req.body.clientId ? retryKey(req.body.clientId) : randomUUID();
+    const purchase = await inTransaction(async (session) => {
+      const existing = await CardPurchase.findOne({ userId: req.user.id, clientId }).session(session);
+      if (existing) return existing;
+      const user = await User.findOneAndUpdate(
+        { _id: req.user.id, auraBalance: { $gte: card.cost } },
+        { $inc: { auraBalance: -card.cost }, $push: { inventory: card.id }, $addToSet: { cardDiscoveries: card.id } },
+        { returnDocument: 'after', session }
+      );
+      if (!user) throw Object.assign(new Error('Not enough Aura'), { status: 400 });
+      await AuraTransaction.create([{ userId: user._id, amount: -card.cost, type: 'MARKETPLACE_PURCHASE', description: `Purchased ${card.name}` }], { session });
+      const [receipt] = await CardPurchase.create([{ userId: user._id, clientId, cardId: card.id, cost: card.cost }], { session });
+      return receipt;
     });
-
-    return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, card });
+    const user = await User.findById(req.user.id).select('auraBalance inventory');
+    return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, card: CARD_CATALOG[purchase.cardId] });
   } catch (err) {
+    if (err.code === 11000 && req.body.clientId) {
+      const existing = await CardPurchase.findOne({ userId: req.user.id, clientId: req.body.clientId });
+      if (existing) {
+        const user = await User.findById(req.user.id).select('auraBalance inventory');
+        return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, card: CARD_CATALOG[existing.cardId] });
+      }
+    }
     console.error('Card purchase failed:', err.message);
-    return res.status(500).json({ msg: 'Could not purchase card' });
+    return require('../services/httpError').sendRouteError(res, err, 'Could not purchase card');
   }
 });
 
 router.post('/use-card', auth, async (req, res) => {
+  let reserved = false; let applied = false; let cardId;
   try {
-    const cardId = String(req.body.cardId || '').toUpperCase();
-    const user = await User.findById(req.user.id);
+    cardId = String(req.body.cardId || '').toUpperCase();
+    let user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
     if (!CARD_CATALOG[cardId]) return res.status(400).json({ msg: 'Unknown card' });
+    if (CARD_CATALOG[cardId].kind === 'STICKER') return res.status(400).json({ msg: 'Stamp reusable stickers from the After Hours wall' });
     if (!user.inventory.includes(cardId)) return res.status(400).json({ msg: 'Card not found in inventory' });
 
+    const reserve = async () => {
+      const next = await takeCard(req.user.id, cardId);
+      if (!next) throw Object.assign(new Error('This card is used or reserved in an offer'), { status: 409 });
+      user = next; reserved = true;
+    };
     let effect = null;
 
     if (cardId === 'PURIFY') {
@@ -322,6 +311,7 @@ router.post('/use-card', auth, async (req, res) => {
       });
       if (withDebt.length === 0) return res.status(400).json({ msg: 'You do not have any debt to clear' });
 
+      await reserve();
       for (const friendship of withDebt) {
         const isUser1 = friendship.user1.toString() === req.user.id;
         const key = isUser1 ? 'user1Perspective' : 'user2Perspective';
@@ -336,7 +326,7 @@ router.post('/use-card', auth, async (req, res) => {
         friendship[key].isInWarningZone = false;
         friendship[key].daysUntilBankrupt = limit * 2;
         friendship[key].recoveryRequired = false;
-        await friendship.save();
+        await friendship.save(); applied = true;
 
         if (wasBankrupt) {
           await refundBankruptcyBountiesForTarget(
@@ -385,9 +375,11 @@ router.post('/use-card', auth, async (req, res) => {
       const amount = Math.floor((target.auraBalance || 0) * 0.1);
       if (amount <= 0) return res.status(400).json({ msg: 'There is no Aura to claim from this partner' });
 
-      target.auraBalance -= amount;
-      user.auraBalance += amount;
-      await target.save();
+      await reserve();
+      const taken = await User.updateOne({ _id: target._id, auraBalance: { $gte: amount } }, { $inc: { auraBalance: -amount } });
+      if (!taken.modifiedCount) throw Object.assign(new Error('Their Aura changed. Try again.'), { status: 409 });
+      applied = true;
+      await User.updateOne({ _id: user._id }, { $inc: { auraBalance: amount } });
 
       const now = new Date();
       friendship.claimState[windowKeyField] = targetPerspective.lastInteraction;
@@ -463,8 +455,9 @@ router.post('/use-card', auth, async (req, res) => {
       }
 
       const targetId = isUser1 ? friendship.user2 : friendship.user1;
+      await reserve();
       friendship.claimState[flareField] = now;
-      await friendship.save();
+      await friendship.save(); applied = true;
       await createNotification({
         toUserId: targetId,
         fromUserId: user._id,
@@ -486,20 +479,21 @@ router.post('/use-card', auth, async (req, res) => {
       await refreshGameState(friendship);
       if (friendship.chaos?.wantedUserId) return res.status(409).json({ msg: 'Clear Wanted with a check-in before rolling another anomaly' });
       if (friendship.chaos?.activeEvent) return res.status(400).json({ msg: 'This contract already has a live anomaly' });
+      await reserve();
       friendship.chaos.nextEventAt = new Date();
-      await friendship.save();
+      await friendship.save(); applied = true;
       await refreshGameState(friendship);
       await recordEvent(friendship._id, 'CHAOS_TICKET_USED', { userId: user._id }).catch(() => null);
       effect = { anomalyRollTriggered: true };
     }
 
-    const cardIndex = user.inventory.indexOf(cardId);
-    user.inventory.splice(cardIndex, 1);
-    await user.save();
-    return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, effect });
+    const fresh = await User.findById(req.user.id).select('auraBalance inventory');
+    return res.json({ success: true, balance: fresh.auraBalance, inventory: fresh.inventory, effect });
   } catch (err) {
     console.error('Use card failed:', err.message);
-    return res.status(500).json({ msg: 'Could not use card' });
+    return require('../services/httpError').sendRouteError(res, err, 'Could not use card');
+  } finally {
+    if (reserved && !applied) await User.updateOne({ _id: req.user.id }, { $push: { inventory: cardId } });
   }
 });
 

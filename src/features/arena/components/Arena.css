@@ -414,3 +414,7 @@
   .pressure-footer { align-items:stretch; flex-direction:column; }
   .pressure-footer .btn { width:100%; }
 }
+
+.arena-tabs { gap:clamp(12px,3vw,24px); }
+.arena-tabs button { min-height:44px; }
+.arena-target-cta { min-height:44px; }

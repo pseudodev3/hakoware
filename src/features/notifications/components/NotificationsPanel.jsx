@@ -11,7 +11,7 @@ import './NotificationsPanel.css';
 const notificationId = (item) => String(item.id || item._id);
 const destinationFor = (type = '') => {
   if (type.startsWith('AFTER_HOURS_')) return 'afterHours';
-  if (type.startsWith('BOUNTY_')) return 'arena';
+  if (type === 'CARD_TRADE' || type.startsWith('BOUNTY_')) return 'arena';
   if (type === 'VOICE_NOTE') return 'voice';
   return 'contracts';
 };
@@ -143,8 +143,10 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       return;
     }
     if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
+    if (notification.cardTradeId) { onNavigate?.('arena', { section: 'cards', focusTradeId: notification.cardTradeId }); onClose(); return; }
+    if (notification.wallPieceId) { onNavigate?.('afterHours', { wall: true, focusPieceId: notification.wallPieceId, week: notification.wallWeekKey }); onClose(); return; }
     const roomEvent = [NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT].includes(notification.type);
-    onNavigate?.(destination, destination === 'afterHours' ? { focusActivityId: roomEvent ? 'room-event' : (notification.afterHoursActivityId || null) } : undefined);
+    onNavigate?.(destination, destination === 'afterHours' ? { surface: 'room', focusActivityId: roomEvent ? 'room-event' : (notification.afterHoursActivityId || null) } : destination === 'arena' ? { section: 'bounties' } : undefined);
     onClose();
   };
   const handleRespond = async (id, action) => {

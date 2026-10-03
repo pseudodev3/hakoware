@@ -10,7 +10,8 @@
     "check:client-payloads": "node scripts/checkClientPayloads.js",
     "check:server-hardening": "node scripts/checkServerHardening.js",
     "check:duo-activation": "node scripts/checkDuoActivation.js",
-    "check:friend-spaces": "node scripts/checkFriendSpaces.js"
+    "check:friend-spaces": "node scripts/checkFriendSpaces.js",
+    "check:cards-wall": "node scripts/checkCardsAndWall.js"
   },
   "engines": {
     "node": ">=20"

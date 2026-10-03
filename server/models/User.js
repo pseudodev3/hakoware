@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
   avatarStorageKey: { type: String, default: null },
   nenType: { type: String, enum: ['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST', null], default: null },
   inventory: [{ type: String }],
+  cardDiscoveries: [{ type: String }],
   auraBalance: { type: Number, default: 0, min: 0 },
   welcomeAuraGranted: { type: Boolean, default: false },
   lastDailyAuraBonusKey: { type: String, default: null },

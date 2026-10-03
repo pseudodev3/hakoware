@@ -9,7 +9,7 @@ router.get('/', auth, async (req, res) => {
     const notifications = await Notification.find({ toUserId: req.user.id })
       .sort({ createdAt: -1 })
       .limit(50)
-      .select('_id type title message friendshipId contractEventId afterHoursActivityId read createdAt')
+      .select('_id type title message friendshipId contractEventId cardTradeId wallPieceId wallWeekKey afterHoursActivityId read createdAt')
       .lean();
     return res.json(notifications.map(notificationView));
   } catch (err) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Share2, Zap } from 'lucide-react';
+import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Share2, Zap, ArrowRight, Layers } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -11,7 +11,7 @@ import { shareHakoware } from '../../lib/share';
 import { buildDuoShareCard } from '../../lib/duoShareCard';
 import { prepareAvatarImage } from '../../lib/avatarImage';
 import { UserAvatar } from '../../shared/components/UserAvatar';
-import { MARKET_ART, PLUS_ART } from './marketArt';
+import { PLUS_ART } from './marketArt';
 import './YouView.css';
 
 const perspectiveFor = (friendship, userId, mine = true) => {
@@ -37,15 +37,8 @@ const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase(
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
 const PLUS_FEATURES = ['Archive', 'Duo stats', 'Custom contracts', 'Recap styles', 'Cosmetics'];
-const MARKET_SUMMARY = {
-  PURIFY: 'Reset debt. Keep your grace.',
-  STEAL: 'Take 10% from a bankrupt partner.',
-  SIGNAL_FLARE: 'Send a pressure signal. 48h cooldown.',
-  CHAOS_TICKET: 'Roll the next anomaly now.'
-};
-
-export const YouView = ({ friendships, showToast }) => {
-  const { user, refreshUser, buyCard, useCard, logout } = useAuth();
+export const YouView = ({ friendships, showToast, onNavigate }) => {
+  const { user, refreshUser, useCard: activateCard, logout } = useAuth();
   const cachedYou = peekYouSnapshot();
   const [aura, setAura] = useState(cachedYou?.aura || {
     balance: Number(user.auraBalance) || 0,
@@ -93,7 +86,7 @@ export const YouView = ({ friendships, showToast }) => {
   const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
   const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
   const chaosContracts = useMemo(() => friendships.filter((friendship) => friendship.templateId === 'CHAOS' && friendship.status === 'ACTIVE' && !friendship.chaos?.activeEvent && !friendship.chaos?.wantedUserId), [friendships]);
-  const inventory = user.inventory || [];
+  const inventory = (user.inventory || []).filter((id) => ['PURIFY','STEAL','SIGNAL_FLARE','CHAOS_TICKET'].includes(id));
   const appearsOnShameBoard = !user.privacySettings?.optOutPublicBankruptcy;
   const strongest = useMemo(
     () => friendships.reduce((best, item) => ((item.duoLevel || 1) > (best?.duoLevel || 0) ? item : best), null),
@@ -144,15 +137,7 @@ export const YouView = ({ friendships, showToast }) => {
     }
   };
 
-  const purchase = async (card) => {
-    setBusy(`buy-${card.id}`);
-    const result = await buyCard(card);
-    showToast?.(result.success ? `${card.name} added.` : result.error, result.success ? 'SUCCESS' : 'ERROR');
-    await refresh();
-    setBusy(null);
-  };
-
-  const useOwnedCard = async (cardId) => {
+  const activateOwnedCard = async (cardId) => {
     if (cardId === 'PURIFY' && !hasDebt) return showToast?.('No debt to clear.', 'ERROR');
     if (cardId === 'STEAL' && !stealTarget) return showToast?.('Choose a bankrupt contract.', 'ERROR');
     if (cardId === 'SIGNAL_FLARE' && !signalTarget) return showToast?.('Choose a contract.', 'ERROR');
@@ -167,7 +152,7 @@ export const YouView = ({ friendships, showToast }) => {
           : null;
 
     setBusy(`use-${cardId}`);
-    const result = await useCard(cardId, targetId);
+    const result = await activateCard(cardId, targetId);
     let successMessage = 'Card used';
     if (cardId === 'STEAL' && result.success) successMessage = `Claimed ${result.effect?.stolen || 0} Aura · Grudge live`;
     if (cardId === 'SIGNAL_FLARE' && result.success) successMessage = 'Signal Flare sent · 48h cooldown';
@@ -346,35 +331,9 @@ export const YouView = ({ friendships, showToast }) => {
         </div>
       </section>
 
-      <section className="aura-market-section">
-        <div className="aura-market-heading">
-          <h2>Aura Market</h2>
-          <p>Spend Aura to change the game.</p>
-        </div>
-        <div className="aura-market-grid">
-          {cards.map((card) => (
-            <article className="aura-market-item" key={card.id}>
-              <div className="aura-market-content">
-                <img className="aura-market-art" src={MARKET_ART[card.id]} alt="" loading="lazy" decoding="async" />
-                <div>
-                  <h3>{card.name}</h3>
-                  <strong className="aura-market-price">{card.cost} Aura</strong>
-                  <p>{MARKET_SUMMARY[card.id] || card.description}</p>
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                loading={busy === 'buy-' + card.id}
-                disabled={aura.balance < card.cost}
-                onClick={() => purchase(card)}
-              >
-                {aura.balance < card.cost ? 'Not enough Aura' : 'Buy card'}
-              </Button>
-            </article>
-          ))}
-        </div>
-      </section>
+      <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
+        <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools, trade copies, and find your wall marks.</small></span><ArrowRight size={19} />
+      </button>
 
       {grudges.length > 0 && (
         <section className="you-section you-secondary-section">
@@ -503,7 +462,7 @@ export const YouView = ({ friendships, showToast }) => {
                     />
                   )}
                   {cardId === 'PURIFY' && !hasDebt && <span className="inventory-hint">No debt to clear</span>}
-                  <Button variant="secondary" size="sm" loading={busy === 'use-' + cardId} disabled={disabled} onClick={() => useOwnedCard(cardId)}>Use</Button>
+                  <Button variant="secondary" size="sm" loading={busy === 'use-' + cardId} disabled={disabled} onClick={() => activateOwnedCard(cardId)}>Use</Button>
                 </article>
               );
             })}

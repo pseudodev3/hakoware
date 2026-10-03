@@ -13,6 +13,9 @@ const ContractEvent = require('../models/ContractEvent');
 const Notification = require('../models/Notification');
 const PendingInvite = require('../models/PendingInvite');
 const VoiceNote = require('../models/VoiceNote');
+const CardTrade = require('../models/CardTrade');
+const CardPurchase = require('../models/CardPurchase');
+const RoomWall = require('../models/RoomWall');
 const { deleteObject } = require('../services/bucketStorage');
 const { sendRouteError } = require('../services/httpError');
 const {
@@ -359,6 +362,9 @@ router.delete('/reset', async (req, res) => {
       VoiceNote.deleteMany({ $or: [{ friendshipId: { $in: friendshipIds } }, { senderId: { $in: ids } }, { recipientId: { $in: ids } }] }),
       Notification.deleteMany({ $or: [{ toUserId: { $in: ids } }, { fromUserId: { $in: ids } }, { friendshipId: { $in: friendshipIds } }] }),
       AuraTransaction.deleteMany({ userId: { $in: ids } }),
+      CardTrade.deleteMany({ $or: [{ senderId: { $in: ids } }, { recipientId: { $in: ids } }] }),
+      CardPurchase.deleteMany({ userId: { $in: ids } }),
+      RoomWall.deleteMany({ scopeKey: 'test:' + req.user.id }),
       PendingInvite.deleteMany({ $or: [{ inviterId: { $in: ids } }, { recipientEmail: { $in: emails } }] }),
       Friendship.deleteMany({ _id: { $in: friendshipIds } })
     ]);

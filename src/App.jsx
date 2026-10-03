@@ -214,7 +214,10 @@ function MainApp({ showToast }) {
       tab = 'contracts';
     }
     setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
-    navigate(tab === 'home' ? '/' : `/?view=${tab}`, { replace: Boolean(options.replace) });
+    const query = new URLSearchParams({ view: tab });
+    if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); }
+    if (tab === 'afterHours') { query.set('surface', options.wall ? 'wall' : options.surface || (options.focusActivityId ? 'room' : 'wall')); if (options.focusPieceId) query.set('piece', options.focusPieceId); if (options.week) query.set('week', options.week); }
+    navigate(tab === 'home' ? '/' : `/?${query}`, { replace: Boolean(options.replace) });
   };
 
   const openedFriend = friendKey ? friendships.find((item) => String(item.contractKey || item._id || item.id) === friendKey) : null;
@@ -226,7 +229,7 @@ function MainApp({ showToast }) {
 
   const handleAction = async (type, friendship, payload = null) => {
     if (type === 'ARENA') {
-      navigateTo('arena');
+      navigateTo('arena', { section: 'bounties' });
       return { success: true };
     }
 
@@ -394,14 +397,18 @@ function MainApp({ showToast }) {
           <AfterHoursView
             user={user}
             friendships={[...friendships, ...pendingReceived, ...pendingSent]}
+            initialSurface={params.get('surface') === 'room' ? 'room' : 'wall'}
+            focusPieceId={params.get('piece')}
+            requestedWeek={params.get('week')}
+            onNavigate={navigateTo}
             focusActivityId={afterHoursFocusId}
             onFocusHandled={() => setAfterHoursFocusId(null)}
             onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}
             showToast={showToast}
           />
         )}
-        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} />}
-        {!friendKey && activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} />}
+        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} onNavigate={navigateTo} focusTradeId={params.get('trade')} initialView={['bounties','grudges','shame'].includes(params.get('section')) ? params.get('section') : 'cards'} />}
+        {!friendKey && activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} onNavigate={navigateTo} />}
       </motion.div>
 
       <AddFriendModal

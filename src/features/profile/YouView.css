@@ -361,3 +361,10 @@
   .aura-market-art { width:52px; height:66px; }
   .aura-market-content p { font-size:.61rem; }
 }
+
+.you-collection-link { display:flex; align-items:center; gap:16px; width:100%; padding:20px; border:1px solid var(--border-subtle); border-radius:18px; background:var(--bg-card); text-align:left; color:var(--aura-gold); min-height:80px; transition:transform 140ms var(--ease-out),background-color 140ms var(--ease-out); }
+.you-collection-link > span { display:flex; flex-direction:column; gap:6px; flex:1; }
+.you-collection-link strong { color:var(--text-primary); font-size:16px; }
+.you-collection-link small { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+.you-collection-link:active { transform:scale(.96); }
+@media(prefers-reduced-motion:reduce) { .you-collection-link { transition:none; } .you-collection-link:active { transform:none; } }
