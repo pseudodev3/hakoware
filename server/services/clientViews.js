@@ -169,6 +169,9 @@ const notificationView = (value) => {
     message: data.message,
     contractKey: publicKey(data.friendshipId, 'contract'),
     focusEventId: data.contractEventId || null,
+    cardTradeId: data.cardTradeId || null,
+    wallPieceId: data.wallPieceId || null,
+    wallWeekKey: data.wallWeekKey || null,
     afterHoursActivityId: data.afterHoursActivityId || null,
     read: Boolean(data.read),
     createdAt: data.createdAt

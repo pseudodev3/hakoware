@@ -1765,3 +1765,13 @@
     display: none;
   }
 }
+
+.after-hours-surfaces { display:flex; border-bottom:1px solid var(--border-subtle); gap:24px; margin-bottom:20px; }
+.after-hours-surfaces button { min-height:44px; padding:0 4px; color:var(--text-muted); border-bottom:2px solid transparent; font-size:15px; transition:color 140ms var(--ease-out),transform 140ms var(--ease-out); }
+.after-hours-surfaces button[aria-selected=true] { color:var(--text-primary); border-bottom-color:var(--aura-gold); }
+.after-hours-surfaces button:active { transform:scale(.96); }
+@media(prefers-reduced-motion:reduce) { .after-hours-surfaces button { transition:none; } .after-hours-surfaces button:active { transform:none; } }
+
+.after-hours-presence { flex-shrink:0; }
+@media(max-width:440px) { .after-hours-header { gap:16px; min-height:96px; } .after-hours-presence { flex-direction:column; align-items:flex-end; gap:0; } .after-hours-header p { font-size:12px; } }
+@media(max-width:640px) { .after-hours-header { min-height:80px; padding-bottom:14px; } .after-hours-surfaces { margin-bottom:12px; } }

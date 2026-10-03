@@ -10,6 +10,7 @@ const { startDebtWorker, stopDebtWorker } = require('./services/debtWorker');
 const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
 const { startMomentWorker, stopMomentWorker } = require('./services/momentWorker');
+const { startTradeWorker, stopTradeWorker } = require('./services/tradeWorker');
 const securityHeaders = require('./middleware/securityHeaders');
 const requestGuard = require('./middleware/requestGuard');
 
@@ -81,6 +82,8 @@ app.use('/api/friendships', require('./routes/friendships'));
 app.use('/api/voice-notes', require('./routes/voiceNotes'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/aura', require('./routes/aura'));
+app.use('/api/cards', require('./routes/cards'));
+app.use('/api/after-hours/wall', require('./routes/roomWall'));
 app.use('/api/bounties', require('./routes/bounties'));
 app.use('/api/after-hours', require('./routes/afterHours'));
 app.use('/api/users', require('./routes/users'));
@@ -137,13 +140,14 @@ async function start() {
   startChaosWorker();
   startVoiceCleanupWorker();
   startMomentWorker();
+  startTradeWorker();
 }
 
 async function shutdown(signal) {
   console.log(`${signal} received, shutting down gracefully`);
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker(), stopMomentWorker()]);
+  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker(), stopMomentWorker(), stopTradeWorker()]);
   if (server) await new Promise((resolve) => server.close(resolve));
   await mongoose.connection.close();
   process.exit(0);

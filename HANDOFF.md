@@ -7,30 +7,47 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-10-02**
+> Last updated: **2026-10-03**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
 
-## Current continuation checkpoint — 2026-10-02
+## Current continuation checkpoint — 2026-10-03
 
 Current production/main:
 
-- PR #80, Activity redesign + reachable Contracts/Arena navigation, is merged on top of PR #79 and PR #78.
-- Exact squash SHA: `d699f8558fcb9627c0e99d0faf8c45d3cf6cd5e5`.
-- Exact merged SHA passed GitHub validation and deployed successfully on both Vercel and Railway.
-- The After Hours social-room version is the production baseline: Shout / Hot Take / Confession / Ask, one-level replies, Aura Spark / Burn, short notes, and the secondary Room Question.
-- Its real iPhone interaction checklist below still needs device testing.
+- PR #81, accepted-contract friend spaces and quiet clickable friend cards, is merged on top of PR #80 / #79 / #78.
+- Exact squash SHA: `4014156aa0b138c16297cb5629c99fe61abdeb99`.
+- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production frontend served the friend-space UI; backend health returned 200.
+- Physical iPhone/Safari microphone and live two-account storage delivery still need device testing.
 
-The user asked to strengthen retention by improving the first mutual payoff and making unseen partner activity easy to discover on Home.
+Current implementation branch: `feat/card-trading-room-wall`.
 
-The first shared payoff implementation below is merged in PR #79.
+### Cards + the weekly After Hours wall — current implementation
 
-Current implementation branch: `feat/friend-spaces`.
+The user approved collecting/trading usable cards and a persistent shared wall as concrete activities for a small community. They rejected Hunter Runs / maps and vague challenge loops; do not reintroduce those. They explicitly rejected the initial outline-icon card art. Preserve the existing market’s shaded objects and dark mini-stages: the original four artworks are reused, and the eight new marks have matching metal/enamel object artwork.
 
-### Friend spaces — current implementation
+- Arena opens on Cards, with Collection / Offers and All / Tools / Wall marks filters. Twelve numbered cards include the original four single-use tools at unchanged prices/effects and eight reusable wall marks (20–35 Aura). Existing Aura earning rules fund purchases; there is no new XP/Aura faucet, random pack or rarity system. Discovered cards stay in the collection after consumption or a trade.
+- Card details support purchase, tool activation, wall navigation and offers. You links to the same collection; its existing utility-card activation controls remain. Sticker cards are never offered as consumable tools.
+- Trades are initially limited to ACTIVE accepted friends. An offer reserves exactly one offered copy for seven days. The other person can accept, decline, or counter; the sender can cancel. Acceptance exchanges both copies in one MongoDB transaction, changes no Aura/XP, and records a shared friend-space event. Expired offers and ended contracts return escrow exactly once through on-demand settlement and a one-minute worker. Open offers are fetched separately from the last forty closed offers so history cannot hide reservations.
+- Purchases use unique retry receipts, and offers use unique sender/client keys. The browser keeps retry keys for uncertain purchases/posts/offers while the draft is unchanged. Atomic one-copy inventory removal prevents an offered copy from also being used. Existing spell effects retain their progression rules; the wider Aura economy is still not globally transactional.
+- **Deployment requirement:** purchases and trades require MongoDB replica-set transactions (Atlas is suitable). Unsupported standalone MongoDB returns a safe 503; do not silently downgrade the exchange to separate writes. No production dependencies or migration scripts were added; new models/indexes and `cardDiscoveries` are additive.
+- After Hours opens on Wall; Room retains the existing posts, replies, Sparks, notes and secondary question. The two surfaces and Arena sections persist in URL history. Existing bounty links open Bounties, and room-post links open Room rather than losing their target in the wall.
+- A shared signed wall accepts 90-character notes, small pointer/touch sketches, and stamps from currently available owned sticker cards. Stamping keeps the card. Notes/sketches are free. Drawings use validated normalized point arrays, never uploaded SVG/HTML. Six colors, twelve strokes, forty stored points per stroke.
+- UTC Monday starts a fresh wall. Current plus three preceding weekly walls remain available; prior weeks are read-only and expire after four weeks. Maximum sixty marks per wall, eight per person. There are no fabricated participants or seeded live contributions.
+- Only authors can move/remove their marks. Movement has drag, keyboard arrows and 44px arrow controls. Browse marks opens even a buried/overlapping piece. Reactions use the existing four emoji, one per person/mark, with at most one targeted notification per giver/mark/week. There are no new progression rewards.
+- Wall revision compare-and-swap preserves concurrent edits. Drafts survive failed saves and replay with the same client ID. Live users and Founder Lab owners have separate wall scopes; trades cannot cross those boundaries. Reset removes the owner’s test trades, purchase receipts and wall. Public wall and activity payloads omit raw actor, sender/recipient and scope IDs.
+- Activity opens the exact offer or wall mark/week. Missing/deleted/expired targets show an explicit unavailable state. Native modal sheets make the background inert, wrap keyboard focus, restore trigger focus, keep the footer reachable, and support Escape. Inputs/selects use 16px; controls use at least 44px; press feedback is .96 / 140ms and respects reduced motion. Wall positioning stays intact during reduced-motion presses.
+- Validation and visual review are recorded in `docs/cards-wall-ui-review.md`. CI adds `check:cards-wall` with a real isolated MongoDB 8.0.12 replica set, auth, concurrency, escrow, inventories, privacy and wall ownership/archive checks. Existing friend-space / payload / activation / circle / hardening checks pass. Full lint now has no errors (the old profile hook-name errors were fixed while integrating the collection). Production dependency audits pass.
+- Physical iPhone/Safari and production two-account trades/wall interactions are not verified. The existing bundle-size and AfterHoursSpark duplicate-index warnings remain. Finish exact-head CI before opening one finished PR; merge only on explicit instruction, then verify both exact merged deployments.
+
+Possible next activities to discuss (not implemented): a private duo wall/keepsake that grows through actual conversation; a friends’ voice soundboard using real contributed clips; a display case where friends arrange and show their owned collection. Keep follow-ups tied to something people make or exchange, not more daily prompts.
+
+Friend spaces below are merged in PR #81.
+
+### Friend spaces — merged baseline
 
 The user explicitly approved simpler clickable friend cards and a persistent place to talk inside each accepted contract. This supersedes the older prohibition on contract chat below. After Hours notes remain short notification-only interactions; strangers still cannot start unrestricted DMs.
 
@@ -47,7 +64,7 @@ The user explicitly approved simpler clickable friend cards and a persistent pla
 - CI adds `check:friend-spaces`, using an isolated real MongoDB 8.0.12 and authenticated Express routes. `mongodb-memory-server-core` is development-only and has no deployment postinstall binary download.
 - Validation: production build, changed-file lint error check, circle activity, client payloads, duo activation and server hardening checks. MongoDB tests cover authorization, idempotency, simultaneous manual/message check-ins, 20h caps, voice ownership/expiry/reuse, Voice Tax, explicit hunter proof, two-step recovery, notification targeting/read races, hidden/resolved answers, same-timestamp pagination and ended-contract denial.
 - Local browser fixtures cover 320×844, 390×844, 390×600 and 1280×844; light/dark, reduced/normal motion, text delivery uncertainty + retry, actual MediaRecorder capture, authenticated playback, older history, details, reload, return focus and older Activity targets. Activity regression passes all four prior widths/themes. Screenshots inspected. Additional browser checks pass for simulated keyboard shrink, scroll restoration, switching from details to a new Activity target inside the same friend space, and ended-contract composer removal. These are not physical iPhone verification.
-- Not verified: physical iPhone/Safari microphone and browser chrome, live two-account delivery, or real object-storage playback. Existing three `YouView.jsx` hook-name lint errors and bundle-size warning remain.
+- Not verified: physical iPhone/Safari microphone and browser chrome, live two-account delivery, or real object-storage playback. The bundle-size warning remains; the profile hook-name errors were fixed in the cards/wall branch.
 - Finish exact-head CI before opening one finished PR. Merge only on explicit user instruction, then verify the exact merged frontend/backend deployments.
 
 Activity/navigation below is merged in PR #80.
@@ -64,7 +81,7 @@ Activity/navigation below is merged in PR #80.
 - Mutations serialize with optimistic rollback. In-flight reads are ignored during writes and settled before revalidation; a failed sync keeps the current feed and offers Retry.
 - Existing voice playback and invitation accept/decline remain available.
 - Validation: production build, changed-file lint error check, existing circle activity / payload / duo activation checks. Local browser fixtures cover 320px / 390px / 1280px, light/dark, normal/reduced motion, shortcut routing, unread filtering, successful/failed delete, mark-all, Voice, sync retry, After Hours/Arena routing, focus restoration, Escape and keyboard trapping. Screenshots inspected.
-- Not verified: physical iPhone browser chrome/safe-area behavior or a live two-account journey. Full lint retains the three existing `YouView.jsx` hook-name errors. Existing bundle-size warning remains.
+- Not verified: physical iPhone browser chrome/safe-area behavior or a live two-account journey. The older validation had three profile hook-name lint errors; these are fixed in the cards/wall branch. The bundle-size warning remains.
 - Finish exact-head CI before opening one finished PR; merge only on explicit user instruction.
 
 ### First shared payoff + Home activity discovery
@@ -91,7 +108,7 @@ Activity/navigation below is merged in PR #80.
 - Both checks are part of repository CI.
 - Browser checks used local fixtures: 320px / 390px / desktop, light + dark, reduced motion, activity routing to hidden contracts, keyboard focus, replies, reload persistence, danger ordering, and resolved answers.
 - Production frontend build, production dependency audits, payload checks, and hardening checks passed locally.
-- Full lint has three pre-existing hook-name errors in `YouView.jsx`; changed frontend files pass the lint error check.
+- The earlier pass had three profile hook-name lint errors; these are fixed in the cards/wall branch.
 - Not verified: physical iPhone behavior and a real two-account MongoDB end-to-end journey.
 - Finish exact-head CI before opening the PR. Merge only when explicitly requested, then verify both exact merged deployments.
 

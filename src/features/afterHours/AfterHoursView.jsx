@@ -15,6 +15,7 @@ import {
 } from '../../services/afterHoursService';
 import { Modal } from '../../shared/components/Modal';
 import { UserAvatar } from '../../shared/components/UserAvatar';
+import { RoomWall } from './RoomWall';
 import './AfterHoursView.css';
 
 const relativeTime = (value) => {
@@ -55,7 +56,9 @@ const usernamesFromContracts = (friendships, ownUsername) => {
   return names;
 };
 
-export const AfterHoursView = ({ user, friendships = [], focusActivityId = null, onFocusHandled, onStartContract, showToast }) => {
+export const AfterHoursView = ({ user, friendships = [], focusActivityId = null, onFocusHandled, onStartContract, showToast, initialSurface = 'wall', focusPieceId, requestedWeek, onNavigate }) => {
+  const [surface, setSurface] = useState(initialSurface);
+  useEffect(() => { setSurface(focusActivityId ? 'room' : initialSurface); }, [initialSurface, focusActivityId, focusPieceId]);
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
@@ -323,27 +326,6 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
     }
   };
 
-  if (loading) {
-    return (
-      <section className="after-hours after-hours-loading" aria-live="polite">
-        <Radio size={21} strokeWidth={1.8} />
-        <span>Opening After Hours…</span>
-      </section>
-    );
-  }
-
-  if (!room || !event) {
-    return (
-      <section className="after-hours after-hours-empty">
-        <h1>After Hours</h1>
-        <p>The room did not open.</p>
-        <button type="button" onClick={() => loadRoom()}>
-          <RefreshCw size={16} /> Try again
-        </button>
-      </section>
-    );
-  }
-
   const renderReactions = (item, isOwn) => {
     if (isOwn) return null;
     return (
@@ -397,13 +379,13 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
   const selectedHasContract = selectedPerson ? hasContractWith(selectedPerson) : false;
   const canTagSelected = Boolean(
     selectedPresence
-    && event.viewerAnswer
+    && event?.viewerAnswer
     && !selectedPresence.answeredCurrent
     && !selectedPresence.isYou
   );
 
   const selectedRecentPosts = selectedPerson
-    ? (room.feed || []).filter((item) => (
+    ? (room?.feed || []).filter((item) => (
         SOCIAL_POST_TYPES.has(item.type)
         && !item.anonymous
         && String(item.actor?.username || '').toLowerCase() === String(selectedPerson.username || '').toLowerCase()
@@ -415,16 +397,21 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
       <section className="after-hours">
         <header className="after-hours-header">
           <div>
-            <span className="after-hours-kicker"><Radio size={13} /> LIVE ROOM</span>
+            <span className="after-hours-kicker"><Radio size={13} /> THE ROOM</span>
             <h1>After Hours</h1>
-            <p>People, bad takes, and unfinished business.</p>
+            <p>Your room. Leave something behind.</p>
           </div>
-          <div className="after-hours-presence" aria-label={`${room.presenceCount} people around`}>
-            <strong>{room.presenceCount}</strong>
+          <div className="after-hours-presence" aria-label={`${room?.presenceCount || 0} people around`}>
+            <strong>{room?.presenceCount || 0}</strong>
             <span>around now</span>
           </div>
         </header>
 
+        <div className="after-hours-surfaces" role="tablist" aria-label="After Hours views">
+          <button role="tab" aria-selected={surface === 'wall'} onClick={() => { setSurface('wall'); onNavigate?.('afterHours', { surface: 'wall' }); }}>Wall</button>
+          <button role="tab" aria-selected={surface === 'room'} onClick={() => { setSurface('room'); onNavigate?.('afterHours', { surface: 'room' }); }}>Room</button>
+        </div>
+        {surface === 'wall' ? <RoomWall focusPieceId={focusPieceId} requestedWeek={requestedWeek} onNavigate={onNavigate} showToast={showToast} /> : loading ? <p className="after-hours-loading" role="status">Opening the room…</p> : !room || !event ? <div className="after-hours-empty"><p>The room did not open.</p><button onClick={() => void loadRoom()}><RefreshCw size={16} /> Try again</button></div> : <>
         <section className="after-hours-around" aria-label="People around now">
           <div className="after-hours-section-label">
             <span>AROUND NOW</span>
@@ -868,6 +855,7 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           )}
         </section>
 
+        </>}
       </section>
 
       <Modal

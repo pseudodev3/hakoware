@@ -8,6 +8,7 @@ import { huntBounty, sendBountyPressure } from '../../../services/bountyService'
 import { useAuth } from '../../../contexts/AuthContext';
 import { calculateDebt } from '../../../hooks/useDebt';
 import { getArenaSnapshot, peekArenaSnapshot } from '../../../services/prefetchService';
+import { CardCollection } from '../../cards/CardCollection';
 import './Arena.css';
 
 const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
@@ -29,10 +30,10 @@ const grudgeTimeLeft = (date) => {
   return days > 0 ? `${days}d ${hours}h left` : `${Math.max(1, hours)}h left`;
 };
 
-export const Arena = ({ friendships, showToast }) => {
+export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initialView = 'cards' }) => {
   const { user, refreshUser } = useAuth();
   const cachedArena = peekArenaSnapshot();
-  const [tab, setTab] = useState('bounties');
+  const [tab, setTab] = useState(initialView);
   const [bounties, setBounties] = useState(cachedArena?.bounties || []);
   const [shame, setShame] = useState(cachedArena?.shame || []);
   const [grudges, setGrudges] = useState(cachedArena?.grudges || []);
@@ -66,6 +67,8 @@ export const Arena = ({ friendships, showToast }) => {
     const warm = Boolean(peekArenaSnapshot());
     void loadArenaData({ force: warm, silent: warm });
   }, []);
+
+  useEffect(() => { setTab(focusTradeId ? 'cards' : initialView); }, [initialView, focusTradeId]);
 
   const filtered = useMemo(
     () => bounties.filter((bounty) => bounty.targetName?.toLowerCase().includes(search.toLowerCase())),
@@ -115,10 +118,10 @@ export const Arena = ({ friendships, showToast }) => {
       <header className="arena-hero">
         <div>
           <p className="eyebrow">Arena</p>
-          <h1>Live pressure.</h1>
-          <p>Bounties, hunts, grudges.</p>
+          <h1>Make your move.</h1>
+          <p>Collect a few tricks. Trade with your circle. Keep an eye on the pressure.</p>
         </div>
-        {bankruptFriendships.length > 0 && (
+        {tab === 'bounties' && bankruptFriendships.length > 0 && (
           <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)}>
             Place bounty
           </Button>
@@ -126,21 +129,22 @@ export const Arena = ({ friendships, showToast }) => {
       </header>
 
 
-      <div className="arena-meta-line" aria-label="Arena summary">
+      {tab !== 'cards' && <div className="arena-meta-line" aria-label="Arena summary">
         <span><b>{hunterProfile.rank || 'Rookie Hunter'}</b> · {hunterProfile.rep || 0} Rep</span>
         <span><b>{openTargets}</b> open target{openTargets === 1 ? '' : 's'}</span>
         <span><b>{bountyPool}</b> Aura on the board</span>
         {grudges.length > 0 && <span><b>{grudges.length}</b> grudge{grudges.length === 1 ? '' : 's'}</span>}
         {activeAnomalies > 0 && <span className="danger"><b>{activeAnomalies}</b> live anomal{activeAnomalies === 1 ? 'y' : 'ies'}</span>}
-      </div>
+      </div>}
 
       <div className="arena-tabs" role="tablist" aria-label="Arena views">
-        <button className={tab === 'bounties' ? 'active' : ''} onClick={() => setTab('bounties')} role="tab" aria-selected={tab === 'bounties'}>Bounties</button>
-        <button className={tab === 'grudges' ? 'active' : ''} onClick={() => setTab('grudges')} role="tab" aria-selected={tab === 'grudges'}>Grudges {grudges.length ? `· ${grudges.length}` : ''}</button>
-        <button className={tab === 'shame' ? 'active' : ''} onClick={() => setTab('shame')} role="tab" aria-selected={tab === 'shame'}>Shame board {shame.length ? `· ${shame.length}` : ''}</button>
+        <button className={tab === 'cards' ? 'active' : ''} onClick={() => { setTab('cards'); onNavigate?.('arena', { section: 'cards' }); }} role="tab" aria-selected={tab === 'cards'}>Cards</button>
+        <button className={tab === 'bounties' ? 'active' : ''} onClick={() => { setTab('bounties'); onNavigate?.('arena', { section: 'bounties' }); }} role="tab" aria-selected={tab === 'bounties'}>Bounties</button>
+        <button className={tab === 'grudges' ? 'active' : ''} onClick={() => { setTab('grudges'); onNavigate?.('arena', { section: 'grudges' }); }} role="tab" aria-selected={tab === 'grudges'}>Grudges {grudges.length ? `· ${grudges.length}` : ''}</button>
+        <button className={tab === 'shame' ? 'active' : ''} onClick={() => { setTab('shame'); onNavigate?.('arena', { section: 'shame' }); }} role="tab" aria-selected={tab === 'shame'}>Shame {shame.length ? `· ${shame.length}` : ''}</button>
       </div>
 
-      {tab === 'bounties' ? (
+      {tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} onNavigate={onNavigate} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
         <section className="arena-panel">
           <div className="arena-panel-head">
             <div><Target size={18} strokeWidth={1.8} /><strong>Live hunts</strong></div>

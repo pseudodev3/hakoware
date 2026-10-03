@@ -66,3 +66,7 @@ jobs:
       - name: Check friend spaces and progression boundaries
         working-directory: server
         run: npm run check:friend-spaces
+
+      - name: Check card trades and the shared wall
+        working-directory: server
+        run: npm run check:cards-wall

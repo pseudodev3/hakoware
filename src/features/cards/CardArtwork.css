@@ -1,0 +1,39 @@
+.card-artwork {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--art-size, 74px);
+  height: calc(var(--art-size, 74px) * 1.2);
+  padding: 2px;
+  border-radius: 8px;
+  background: #0d0f0c;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+}
+.card-artwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.card-artwork-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: url('/cards/wall-marks.webp');
+  background-size: 400% 200%;
+  background-repeat: no-repeat;
+  border-radius: 6px;
+}
+
+.card-artwork.is-stamp {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+.card-artwork.is-stamp > .card-artwork-mark {
+  border-radius: 0;
+}
