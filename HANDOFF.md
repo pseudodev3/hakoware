@@ -18,16 +18,28 @@
 
 Current production/main:
 
-- PR #82, card collection / accepted-friend trades / the weekly After Hours wall, is merged on top of PR #81 / #80 / #79 / #78.
-- Exact squash SHA: `3ba0a8ee2e6912a974c5dbe19c0e57a2c1ed0541`.
-- GitHub validation, Vercel and Railway passed for that exact merged SHA. The frontend served the new card artwork; backend health and the new protected routes were verified.
-- On October 5 the user reported that buying cards returns “Could not purchase card.” Production database topology/logs are not accessible in this workspace; standalone MongoDB reproduces that exact 500 response.
+- PR #83, the product revamp and atomic card purchase repair, is merged on top of PR #82 / #81 / #80 / #79 / #78.
+- Exact squash SHA: `504a9a118eb695a4a8ca3fa537deb68efa7f8d44`.
+- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served the new HTML/CSS and Public Sans font; backend health passed after deployment.
+- The user confirmed a successful live card purchase after the merge. Production database topology/logs and live two-account trades remain unverified.
+- The user bought `hakoware.xyz`. Domain routing and canonical metadata have not been changed in the current polish branch.
 
-Current implementation branch: `feat/playful-product-revamp` (not deployed).
+Current implementation branch: `feat/social-home-polish` (not deployed).
 
-### Product revamp + card purchase repair — current implementation
+### Social home polish — current implementation
 
-The user asked for new colors/layout, one clear font everywhere, stronger visual hierarchy, a playful product identity and better reasons to return. The default direction is ink / electric lime with violet for the wall; they were offered an optional color preference. This request supersedes the earlier token/layout preservation guidance where it conflicts with a cohesive revamp. Preserve the shaded existing market/card artwork and the relationship-first model.
+The user wants a more inviting, intentional interface and Home contract cards that blend into Hakoware and read as friendships. Keep Public Sans, the ink/paper/lime/violet palette, original shaded card artwork, and real social state.
+
+- Friend cards shared by Home and Circle now lead with round avatars, person identity, actual activity time, a more readable conversation/activity preview and an explicit Open / Start conversation affordance. A compact footer holds actual Duo level, contract state and the existing separate check-in / recap action. Borders distinguish real new updates and danger; no online presence is implied.
+- The preview picks a newer dated activity over an older message, so a fresh check-in/poke is not hidden. Invalid/missing timestamps omit the time; future clock differences clamp to now. The new-update badge still counts mixed updates, not unread messages, and is included in the conversation button's accessible description.
+- Long names clamp to two lines, handles to one, previews to two, with full person names and previews available to assistive technology. Failed/missing avatars retain the existing initial fallback. Unavailable actions do not display a completion checkmark.
+- Home has a cleaner header with Add friend and a Friends section with Open circle / See all N. The three prioritized slots, bankruptcy/Chaos/recovery ordering, contract rules and actual activity acknowledgement remain intact. Card and play-section heading spacing is aligned.
+- Validation: production build, full lint with zero errors (existing warnings remain), circle-activity checks and independent diff review. Browser fixtures cover Home and Circle at 320×844, 390×600, 390×844 and 1280×844 in both themes; actual font loading, 44px actions, conversation return focus, keyboard activation, actual update descriptions, newest/invalid/future preview timestamps, no messages, broken avatars/long identity, recovery, completed Recap, missing perspective, open/waiting moments, shared first payoff, and See all routing. Existing full revamp browser interactions also pass, including purchase retry, five-tab navigation, wall sheets, Activity and empty-circle discovery. These are fixtures, not live account or physical iPhone tests.
+- Review notes: `docs/social-home-ui-review.md`. Finish exact-head CI, then open one finished PR. Merge only on explicit instruction; verify exact frontend/backend deployments after merging.
+
+### Product revamp + card purchase repair — merged PR #83 baseline
+
+The user asked for new colors/layout, one clear font everywhere, stronger visual hierarchy, a playful product identity and better reasons to return. The default direction is ink / electric lime with violet for the wall; they were offered an optional color preference. That request supersedes the earlier token/layout preservation guidance where it conflicts with a cohesive revamp. Preserve the shaded existing market/card artwork and the relationship-first model.
 
 - Self-hosted variable Public Sans (27 kB WOFF2, OFL included) is used across text, headings, numbers and controls. Remove the old monospace split and profile serif heading. Font loads from the app, not a third-party font service.
 - Shared light/dark tokens use ink / paper, lime navigation/action states, violet wall surfaces, and separate gold Aura / red danger / green healthy meanings. Five primary destinations — Home, Circle, Arena, After Hours, You — share one phone dock and one desktop sidebar. There is no extra mobile shortcut tier; all destinations stay reachable from every main tab. Friend conversations still hide the dock for the composer.
@@ -36,7 +48,7 @@ The user asked for new colors/layout, one clear font everywhere, stronger visual
 - Purchases no longer depend on replica-set transactions. An atomic User update commits Aura debit, inventory delivery, discovery and a private durable retry receipt together. Concurrent requests with one key cannot charge/deliver twice, and separate requests cannot overspend. Previous CardPurchase receipts remain authoritative. The ledger and external receipt are idempotently journaled; a committed purchase returns success even if journaling fails, and a one-minute worker or retry repairs the audit. Private receipts are retained to prevent old retries from charging again; no migration is required. AuthContext’s older purchase path also retains a retry key after uncertainty.
 - Trading still requires MongoDB replica-set transactions. Standalone trades now return a deliberately public 503 message instead of the generic 500; cards remain untouched. Do not weaken the multi-account exchange into separate writes. If production is standalone, enable a replica set/Atlas before expecting trades to work.
 - Validation: production build, full lint with no errors, existing circle / payload / activation / hardening / real-Mongo friend-space / cards-wall checks. Added real standalone-Mongo purchase coverage for all twelve cards, same-key concurrency, last-Aura races, committed response retries, interrupted ledger recovery, old receipts, privacy and safe trade denial. Browser fixtures cover 320×844, 390×600, 390×844 and 1280×844, both themes, normal/reduced motion, five-tab reach, actual font loading, purchase response loss/retry, filtering, modal keyboard/focus restoration, sticky wall controls, conversation return, Activity and exact incoming-offer routing. Landing/login and empty-circle discovery are checked too.
-- Review notes: `docs/product-revamp-ui-review.md`. Browser API fixtures do not establish live delivery. Physical iPhone/Safari and production purchases / two-account trades still require device testing after deployment. Existing bundle-size and AfterHoursSpark duplicate-index warnings remain.
+- Review notes: `docs/product-revamp-ui-review.md`. Browser API fixtures do not establish live delivery. Physical iPhone/Safari and production two-account trades still require device testing. The user subsequently confirmed a live purchase after PR #83 deployed. Existing bundle-size and AfterHoursSpark duplicate-index warnings remain.
 - Finish exact-head CI before opening one finished PR. Merge only on explicit instruction, then verify the exact merged frontend and backend deployments. A frontend preview still talks to the currently deployed backend, so it cannot validate the purchase repair before Railway receives this code.
 
 The cards/wall implementation below is the merged PR #82 baseline.

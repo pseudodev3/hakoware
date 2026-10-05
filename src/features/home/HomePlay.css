@@ -1,5 +1,5 @@
 .home-play { min-width:0; }
-.home-play-heading { margin-bottom:14px; }
+.home-play-heading { display:flex; flex-direction:column; justify-content:center; min-height:44px; margin-bottom:10px; }
 .home-play-heading h2 { font-size:1.12rem; letter-spacing:-.025em; }
 .home-play-heading > span { display:block; color:var(--text-muted); font-size:.76rem; margin-top:3px; }
 .home-play-tiles { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
