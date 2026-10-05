@@ -11,6 +11,19 @@ const UserSchema = new mongoose.Schema({
   nenType: { type: String, enum: ['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST', null], default: null },
   inventory: [{ type: String }],
   cardDiscoveries: [{ type: String }],
+  // Kept with the balance/inventory so a lost response can never charge twice.
+  // Private durable receipts also repair the external ledger after an outage.
+  cardPurchaseReceipts: {
+    type: [new mongoose.Schema({
+      clientId: { type: String, required: true },
+      cardId: { type: String, required: true },
+      cost: { type: Number, required: true },
+      createdAt: { type: Date, required: true },
+      journaled: { type: Boolean, default: false },
+    }, { _id: false })],
+    default: [],
+    select: false,
+  },
   auraBalance: { type: Number, default: 0, min: 0 },
   welcomeAuraGranted: { type: Boolean, default: false },
   lastDailyAuraBonusKey: { type: String, default: null },

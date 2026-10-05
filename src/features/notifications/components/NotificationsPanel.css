@@ -63,3 +63,8 @@
   .panel-content { padding:10px 12px 20px; }
 }
 @media (prefers-reduced-motion:reduce) { .notifications-panel button { transition:none; } .notifications-panel button:active:not(:disabled) { transform:none; } .loading-spinner { animation:none; } }
+
+.activity-filters button[aria-pressed='true'] { background:var(--accent-soft); color:var(--accent-text); }
+.item-type,.item-msg { font-size:.87rem; }
+.item-meta { font-size:.73rem; }
+.activity-done { background:var(--accent); color:var(--accent-ink); }

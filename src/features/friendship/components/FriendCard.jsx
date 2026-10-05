@@ -16,7 +16,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
   const moment = socialState?.moment;
   const momentLabel = moment?.type === 'SPLIT_DECISION' ? 'Split Decision' : moment?.type === 'DOUBLE_DARE' ? 'Double Dare' : 'Hot Seat';
   const shared = socialState?.firstMutualCheckin;
-  return <article className={`friend-card ${summary.tone}`} aria-label={`Friend space with ${partner?.displayName || 'your friend'}`}>
+  return <article className={`friend-card ${summary.tone} ${unread ? 'has-new' : ''}`} aria-label={`Friend space with ${partner?.displayName || 'your friend'}`}>
     <button id={`friend-open-${id}`} className="friend-card-open" onClick={() => onOpen(friendship)}>
       <UserAvatar person={partner} size="lg" decorative />
       <span className="friend-card-copy">

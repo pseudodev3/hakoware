@@ -72,6 +72,15 @@ sendRouteError(serverError, new Error('mongodb internal detail'), 'Could not com
 assert.strictEqual(serverError.statusCode, 500, 'unexpected errors should become 500');
 assert.strictEqual(serverError.body.msg, 'Could not complete request', 'unexpected internal messages must be hidden');
 
+const unavailable = mockResponse();
+sendRouteError(unavailable, { status: 503, publicMessage: 'Trading is temporarily unavailable.', message: 'internal' }, 'Fallback');
+assert.strictEqual(unavailable.statusCode, 503);
+assert.strictEqual(unavailable.body.msg, 'Trading is temporarily unavailable.');
+const privateUnavailable = mockResponse();
+sendRouteError(privateUnavailable, { status: 503, message: 'private database details' }, 'Fallback');
+assert.strictEqual(privateUnavailable.statusCode, 500);
+assert.strictEqual(privateUnavailable.body.msg, 'Fallback');
+
 const limiter = createRateLimiter({ name: 'hardening-test', windowMs: 60000, max: 2 });
 const req = { ip: '203.0.113.10', socket: {} };
 const first = mockResponse();

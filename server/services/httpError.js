@@ -9,6 +9,11 @@ const sendRouteError = (res, error, fallback = 'Request failed') => {
     return res.status(status).json({ msg: String(error?.message || fallback) });
   }
 
+  // Only deliberately public service-unavailable messages may leave the server.
+  if (status === 503 && error?.publicMessage) {
+    return res.status(503).json({ msg: String(error.publicMessage) });
+  }
+
   return res.status(500).json({ msg: fallback });
 };
 

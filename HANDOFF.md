@@ -7,23 +7,39 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-10-03**
+> Last updated: **2026-10-05**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
 
-## Current continuation checkpoint — 2026-10-03
+## Current continuation checkpoint — 2026-10-05
 
 Current production/main:
 
-- PR #81, accepted-contract friend spaces and quiet clickable friend cards, is merged on top of PR #80 / #79 / #78.
-- Exact squash SHA: `4014156aa0b138c16297cb5629c99fe61abdeb99`.
-- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production frontend served the friend-space UI; backend health returned 200.
-- Physical iPhone/Safari microphone and live two-account storage delivery still need device testing.
+- PR #82, card collection / accepted-friend trades / the weekly After Hours wall, is merged on top of PR #81 / #80 / #79 / #78.
+- Exact squash SHA: `3ba0a8ee2e6912a974c5dbe19c0e57a2c1ed0541`.
+- GitHub validation, Vercel and Railway passed for that exact merged SHA. The frontend served the new card artwork; backend health and the new protected routes were verified.
+- On October 5 the user reported that buying cards returns “Could not purchase card.” Production database topology/logs are not accessible in this workspace; standalone MongoDB reproduces that exact 500 response.
 
-Current implementation branch: `feat/card-trading-room-wall`.
+Current implementation branch: `feat/playful-product-revamp` (not deployed).
+
+### Product revamp + card purchase repair — current implementation
+
+The user asked for new colors/layout, one clear font everywhere, stronger visual hierarchy, a playful product identity and better reasons to return. The default direction is ink / electric lime with violet for the wall; they were offered an optional color preference. This request supersedes the earlier token/layout preservation guidance where it conflicts with a cohesive revamp. Preserve the shaded existing market/card artwork and the relationship-first model.
+
+- Self-hosted variable Public Sans (27 kB WOFF2, OFL included) is used across text, headings, numbers and controls. Remove the old monospace split and profile serif heading. Font loads from the app, not a third-party font service.
+- Shared light/dark tokens use ink / paper, lime navigation/action states, violet wall surfaces, and separate gold Aura / red danger / green healthy meanings. Five primary destinations — Home, Circle, Arena, After Hours, You — share one phone dock and one desktop sidebar. There is no extra mobile shortcut tier; all destinations stay reachable from every main tab. Friend conversations still hide the dock for the composer.
+- Home leads with actual friend/message previews. A side panel on desktop and tiles below the circle on phones expose actual discovered cards, incoming offers and this week’s wall. Incoming offers open their exact offer. A quiet/empty circle still has useful collection and free wall actions. Failed reads do not invent counts or contributors.
+- Arena has a clearer page/tab hierarchy; the collection has twelve discovery segments, a Yours filter, stronger artwork and ownership labels, and the same prices/effects. After Hours uses violet, a tactile dot canvas and a sticky Add / Browse toolbar above the board, including on short phones. Friend spaces, profile, Circle and Activity use the same visual system. The landing page explains friend spaces, cards and the wall while retaining the approved atmospheric artwork.
+- Purchases no longer depend on replica-set transactions. An atomic User update commits Aura debit, inventory delivery, discovery and a private durable retry receipt together. Concurrent requests with one key cannot charge/deliver twice, and separate requests cannot overspend. Previous CardPurchase receipts remain authoritative. The ledger and external receipt are idempotently journaled; a committed purchase returns success even if journaling fails, and a one-minute worker or retry repairs the audit. Private receipts are retained to prevent old retries from charging again; no migration is required. AuthContext’s older purchase path also retains a retry key after uncertainty.
+- Trading still requires MongoDB replica-set transactions. Standalone trades now return a deliberately public 503 message instead of the generic 500; cards remain untouched. Do not weaken the multi-account exchange into separate writes. If production is standalone, enable a replica set/Atlas before expecting trades to work.
+- Validation: production build, full lint with no errors, existing circle / payload / activation / hardening / real-Mongo friend-space / cards-wall checks. Added real standalone-Mongo purchase coverage for all twelve cards, same-key concurrency, last-Aura races, committed response retries, interrupted ledger recovery, old receipts, privacy and safe trade denial. Browser fixtures cover 320×844, 390×600, 390×844 and 1280×844, both themes, normal/reduced motion, five-tab reach, actual font loading, purchase response loss/retry, filtering, modal keyboard/focus restoration, sticky wall controls, conversation return, Activity and exact incoming-offer routing. Landing/login and empty-circle discovery are checked too.
+- Review notes: `docs/product-revamp-ui-review.md`. Browser API fixtures do not establish live delivery. Physical iPhone/Safari and production purchases / two-account trades still require device testing after deployment. Existing bundle-size and AfterHoursSpark duplicate-index warnings remain.
+- Finish exact-head CI before opening one finished PR. Merge only on explicit instruction, then verify the exact merged frontend and backend deployments. A frontend preview still talks to the currently deployed backend, so it cannot validate the purchase repair before Railway receives this code.
+
+The cards/wall implementation below is the merged PR #82 baseline.
 
 ### Cards + the weekly After Hours wall — current implementation
 
@@ -33,7 +49,7 @@ The user approved collecting/trading usable cards and a persistent shared wall a
 - Card details support purchase, tool activation, wall navigation and offers. You links to the same collection; its existing utility-card activation controls remain. Sticker cards are never offered as consumable tools.
 - Trades are initially limited to ACTIVE accepted friends. An offer reserves exactly one offered copy for seven days. The other person can accept, decline, or counter; the sender can cancel. Acceptance exchanges both copies in one MongoDB transaction, changes no Aura/XP, and records a shared friend-space event. Expired offers and ended contracts return escrow exactly once through on-demand settlement and a one-minute worker. Open offers are fetched separately from the last forty closed offers so history cannot hide reservations.
 - Purchases use unique retry receipts, and offers use unique sender/client keys. The browser keeps retry keys for uncertain purchases/posts/offers while the draft is unchanged. Atomic one-copy inventory removal prevents an offered copy from also being used. Existing spell effects retain their progression rules; the wider Aura economy is still not globally transactional.
-- **Deployment requirement:** purchases and trades require MongoDB replica-set transactions (Atlas is suitable). Unsupported standalone MongoDB returns a safe 503; do not silently downgrade the exchange to separate writes. No production dependencies or migration scripts were added; new models/indexes and `cardDiscoveries` are additive.
+- **Deployment requirement (PR #82 baseline):** transactions were required for purchases and trades; the current revamp branch removes that requirement for purchases only. Trades still require a replica set (Atlas is suitable), and unsupported standalone MongoDB must return a safe 503 without separate exchange writes. No production dependencies or migration scripts were added; new models/indexes and `cardDiscoveries` are additive.
 - After Hours opens on Wall; Room retains the existing posts, replies, Sparks, notes and secondary question. The two surfaces and Arena sections persist in URL history. Existing bounty links open Bounties, and room-post links open Room rather than losing their target in the wall.
 - A shared signed wall accepts 90-character notes, small pointer/touch sketches, and stamps from currently available owned sticker cards. Stamping keeps the card. Notes/sketches are free. Drawings use validated normalized point arrays, never uploaded SVG/HTML. Six colors, twelve strokes, forty stored points per stroke.
 - UTC Monday starts a fresh wall. Current plus three preceding weekly walls remain available; prior weeks are read-only and expire after four weeks. Maximum sixty marks per wall, eight per person. There are no fabricated participants or seeded live contributions.

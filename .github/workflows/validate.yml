@@ -70,3 +70,7 @@ jobs:
       - name: Check card trades and the shared wall
         working-directory: server
         run: npm run check:cards-wall
+
+      - name: Check card purchases on standalone MongoDB
+        working-directory: server
+        run: npm run check:card-purchases

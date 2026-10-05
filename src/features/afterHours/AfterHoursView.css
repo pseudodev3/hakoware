@@ -1775,3 +1775,20 @@
 .after-hours-presence { flex-shrink:0; }
 @media(max-width:440px) { .after-hours-header { gap:16px; min-height:96px; } .after-hours-presence { flex-direction:column; align-items:flex-end; gap:0; } .after-hours-header p { font-size:12px; } }
 @media(max-width:640px) { .after-hours-header { min-height:80px; padding-bottom:14px; } .after-hours-surfaces { margin-bottom:12px; } }
+
+.after-hours { max-width:1120px; width:100%; padding-top:4px; }
+.after-hours-header { align-items:center; min-height:0; padding-bottom:20px; }
+.after-hours-kicker { color:var(--play-violet); font-size:.69rem; font-weight:600; letter-spacing:.04em; }
+.after-hours-header h1 { font-size:clamp(2rem,4vw,2.8rem); font-weight:750; line-height:1.12; letter-spacing:-.035em; }
+.after-hours-header p { font-size:.88rem; max-width:420px; }
+.after-hours-presence { padding:10px 14px; border-radius:16px; background:var(--play-violet-soft); flex-direction:column; gap:0; align-items:center; flex:0 0 auto; }
+.after-hours-presence strong { color:var(--play-violet); font-weight:700; font-size:1.4rem; }
+.after-hours-presence span { font-size:.7rem; }
+.after-hours-surfaces { border:0; gap:8px; margin-top:18px; margin-bottom:16px; }
+.after-hours-surfaces button { padding-inline:22px; border-radius:14px; font-size:.86rem; font-weight:600; }
+.after-hours-surfaces button[aria-selected='true'] { border-color:transparent; background:var(--play-violet-soft); color:var(--play-violet); }
+.after-hours-section-label { font-size:.7rem; }
+.after-hours-feed-item { border-radius:18px; margin-top:12px; padding:18px; border:1px solid var(--border-subtle); background:var(--surface-card); }
+.after-hours-composer { border-radius:22px; background:var(--surface-card); border:1px solid var(--border-subtle); padding:16px; }
+.after-hours-shout { font-size:.95rem !important; }
+@media (max-width:540px) { .after-hours-header { gap:14px; } .after-hours-header h1 { font-size:2rem; } .after-hours-header p { font-size:.82rem; } .after-hours-presence { padding:9px 11px; } .after-hours-presence span { font-size:.64rem; } .after-hours-kicker { font-size:.6rem; } }

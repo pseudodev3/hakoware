@@ -12,6 +12,7 @@ export const applyTheme = (nextTheme) => {
 
   root.dataset.theme = nextTheme;
   root.style.colorScheme = nextTheme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', nextTheme === 'light' ? '#f5f5ef' : '#141719');
   localStorage.setItem('hakoware_theme', nextTheme);
 
   void root.offsetHeight;

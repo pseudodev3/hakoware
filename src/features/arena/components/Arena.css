@@ -418,3 +418,16 @@
 .arena-tabs { gap:clamp(12px,3vw,24px); }
 .arena-tabs button { min-height:44px; }
 .arena-target-cta { min-height:44px; }
+
+.arena-view { max-width:1120px; gap:20px; }
+.arena-hero { padding:4px 0; }
+.arena-hero .eyebrow { color:var(--accent-text); font-size:.72rem; text-transform:none; letter-spacing:.025em; }
+.arena-hero h1 { font-size:clamp(2rem,4vw,2.8rem); font-weight:750; line-height:1.12; margin-top:8px; letter-spacing:-.035em; }
+.arena-hero p:not(.eyebrow) { font-size:.88rem; }
+.arena-tabs { padding:5px; border:1px solid var(--border-subtle); border-radius:16px; gap:4px; background:var(--surface-card); }
+.arena-tabs button { min-height:44px; padding:0 18px; font-size:.83rem; border-radius:11px; }
+.arena-tabs button.active { background:var(--accent-soft); color:var(--accent-text); }
+.arena-tabs button.active::after { display:none; }
+.arena-panel-head strong { font-size:.9rem; }
+.arena-empty { font-size:.9rem; }
+@media (max-width:540px) { .arena-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); } .arena-tabs button { padding:0 4px; font-size:.75rem; } .arena-hero h1 { font-size:2rem; } .arena-hero p:not(.eyebrow) { font-size:.82rem; } }

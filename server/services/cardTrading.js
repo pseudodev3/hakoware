@@ -8,7 +8,7 @@ const { CARD_CATALOG } = require('./cardCatalog');
 const { takeCard } = require('./cardInventory');
 const { publicKey } = require('./clientViews');
 const fail = (status, message) => {
-  throw Object.assign(new Error(message), { status });
+  throw Object.assign(new Error(message), { status, ...(status === 503 ? { publicMessage: message } : {}) });
 };
 const id = (value) => String(value?._id || value || '');
 const personView = (value) =>

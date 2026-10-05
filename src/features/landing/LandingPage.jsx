@@ -8,7 +8,10 @@ import {
   FileText,
   Flame,
   Gamepad2,
+  Layers,
+  MessageCircle,
   Moon,
+  Pencil,
   Share2,
   ShieldAlert,
   Sparkles,
@@ -21,6 +24,7 @@ import {
 import { Button } from '../../shared/components/Button';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { LANDING_DESKTOP_BG } from './landingDesktopBackground';
+import { CardArtwork } from '../cards/CardArtwork';
 import './LandingPage.css';
 
 const GAME_MODES = [
@@ -118,10 +122,10 @@ export const LandingPage = ({ onEnter }) => {
                   <small>Chaos included</small>
                 </div>
               </div>
-              <h1>Turn staying in touch into a game worth surviving.</h1>
+              <h1>Your people.<br />A little chaos.</h1>
               <p>
-                Make a contract with someone you care about. Check in, build Duo XP, earn Aura,
-                survive weird rules, place bounties and let the season remember everything.
+                A place to talk, collect cards and make things together. Start a contract with one
+                friend. Show up, grow your Duo and let the story get interesting.
               </p>
 
               <div className="lp-hero-actions">
@@ -181,6 +185,15 @@ export const LandingPage = ({ onEnter }) => {
                 <span className="safe">Wanted: off</span>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="lp-hangout-section" aria-label="Things to do in Hakoware">
+          <div className="lp-section-intro compact"><span>MORE THAN A CHECK-IN</span><h2>Something worth coming back for.</h2><p>A conversation that keeps going. A card you want. A wall that looks a little more like your people.</p></div>
+          <div className="lp-hangout-grid">
+            <article className="lp-hangout-card"><MessageCircle size={22} /><h3>Your friend space.</h3><p>Text, send a voice note, and keep your shared story in one place. An eligible message counts as your check-in.</p><span className="lp-hangout-tag">Between you and your friend</span></article>
+            <article className="lp-hangout-card is-cards"><Layers size={22} /><h3>A few good tricks.</h3><div className="lp-card-shelf" aria-label="Examples of collectible cards"><CardArtwork cardId="SIGNAL_FLARE" size={48} /><CardArtwork cardId="ORBIT" size={48} /><CardArtwork cardId="GHOST" size={48} /></div><p>Spend earned Aura on useful tools and reusable wall marks. Trade a spare with an accepted friend.</p><span className="lp-hangout-tag">Pick the card you actually want</span></article>
+            <article className="lp-hangout-card is-wall"><Pencil size={22} /><h3>Leave your mark.</h3><p>Notes, doodles and card stamps on a shared weekly wall. You can start it even when nobody else is around.</p><span className="lp-hangout-tag">Notes and sketches are free</span></article>
           </div>
         </section>
 
@@ -274,8 +287,8 @@ export const LandingPage = ({ onEnter }) => {
 
         <section className="lp-world-strip">
           <div className="lp-world-icon"><Sparkles size={20} strokeWidth={1.8} /></div>
-          <div><span>LIVE WORLD EVENT · SURVIVAL ARC</span><strong>Open Mic</strong><p>Voice check-ins earn bonus Duo XP this week.</p></div>
-          <span className="lp-world-time">06D 14H</span>
+          <div><span>WORLD EVENT EXAMPLE</span><strong>Open Mic</strong><p>Some weeks, a world event gives voice check-ins bonus Duo XP.</p></div>
+          <span className="lp-world-time">A little change of pace</span>
         </section>
 
         <section className="lp-final-section">

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Home, LogOut, Moon, Plus, Radio, ScrollText, Sun, Swords, UserRound } from 'lucide-react';
+import { Bell, Home, Layers, LogOut, Moon, Plus, Radio, Sun, Users, UserRound, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -8,17 +8,10 @@ import './Layout.css';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
+  { id: 'contracts', label: 'Circle', icon: Users },
+  { id: 'arena', label: 'Arena', icon: Layers },
   { id: 'afterHours', label: 'After Hours', icon: Radio },
   { id: 'you', label: 'You', icon: UserRound }
-];
-
-const SECONDARY_LABELS = {
-  contracts: 'Contracts',
-  arena: 'Arena'
-};
-const CIRCLE_ITEMS = [
-  { id: 'contracts', label: 'Contracts', icon: ScrollText },
-  { id: 'arena', label: 'Arena', icon: Swords }
 ];
 
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast, friendSpace = false }) => {
@@ -29,7 +22,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
   const shellRef = useRef(null);
   const circleContext = ['home', 'contracts', 'arena'].includes(activeTab);
   const closeNotifications = useCallback(() => setShowNotifications(false), []);
-  const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || SECONDARY_LABELS[activeTab] || 'Hakoware';
+  const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
   const totalBadge = unreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
@@ -79,11 +72,6 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         </nav>
 
         <div className="sidebar-footer">
-          {circleContext && <nav className="sidebar-circle-links" aria-label="Circle destinations">
-            {CIRCLE_ITEMS.map((item) => <button type="button" key={item.id} className={activeTab === item.id ? 'active' : ''} onClick={() => onTabChange(item.id)} aria-current={activeTab === item.id ? 'page' : undefined}>
-              <item.icon size={17} strokeWidth={1.8} /><span>{item.label}</span>
-            </button>)}
-          </nav>}
           <button className="new-contract-btn" onClick={onAddFriend}>
             <Plus size={18} strokeWidth={2} />
             <span>New contract</span>
@@ -112,11 +100,15 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
 
       <main className="content-container">
         <header className="content-header">
+          <span className="desktop-page-label">{friendSpace ? 'Your friend space' : currentLabel}</span>
           <div className="mobile-brand">
             <img src="/hakoware-mark-v2.png" alt="" />
             <div><strong>Hakoware</strong><span>{currentLabel}</span></div>
           </div>
           <div className="header-actions">
+            <button type="button" className="header-aura" onClick={() => onTabChange('you')} aria-label={`Your balance: ${user?.auraBalance || 0} Aura. Open your profile.`}>
+              <Zap size={15} strokeWidth={2} /><span>{user?.auraBalance || 0}</span><small>Aura</small>
+            </button>
             <button className="theme-btn" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
               <ThemeIcon size={18} strokeWidth={1.8} />
             </button>
@@ -131,16 +123,11 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
       </main>
 
       <div className="mobile-dock">
-        {circleContext && <nav className="mobile-circle-shortcuts" aria-label="Circle destinations">
-          {CIRCLE_ITEMS.map((item) => <button type="button" key={item.id} className={activeTab === item.id ? 'active' : ''} onClick={() => onTabChange(item.id)} aria-current={activeTab === item.id ? 'page' : undefined}>
-            <item.icon size={17} strokeWidth={1.8} /><span>{item.label}</span>
-          </button>)}
-        </nav>}
         <nav className="mobile-nav" aria-label="Main navigation">
         {NAV_ITEMS.map((item) => (
           <button
             key={item.id}
-            className={`mobile-nav-item ${activeTab === item.id || (item.id === 'home' && circleContext) ? 'active' : ''}`}
+            className={`mobile-nav-item ${activeTab === item.id ? 'active' : ''}`}
             onClick={() => onTabChange(item.id)}
             aria-current={activeTab === item.id ? 'page' : undefined}
           >

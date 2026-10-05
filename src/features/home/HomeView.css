@@ -81,3 +81,33 @@
   .circle-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .circle-summary .circle-world-rule { grid-column:1 / -1; }
 }
+
+/* The circle is the lead; creations and exchanges are close enough to discover. */
+.home-view { max-width:1120px; gap:24px; }
+.circle-first-header { padding:4px 0 4px; align-items:center; }
+.circle-first-title h1 { font-size:clamp(2rem,4vw,2.8rem); font-weight:750; line-height:1.12; letter-spacing:-.035em; margin-top:5px; }
+.circle-first-title p { color:var(--text-secondary); font-size:.88rem; margin-top:8px; }
+.circle-first-title .eyebrow { margin:0; color:var(--accent-text); font-size:.7rem; font-weight:600; letter-spacing:.025em; text-transform:none; }
+.circle-first-header > .btn { align-self:center; }
+.circle-contracts { gap:14px; }
+.circle-pending-link { padding:8px 14px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--surface-card); font-size:.78rem; }
+.circle-pending-review,.circle-pending-accept { min-height:44px; font-size:.75rem; }
+.circle-pending-accept { background:var(--accent); color:var(--accent-ink); }
+.circle-pulse { background:var(--surface-card); padding:8px 16px; border:1px solid var(--border-subtle); border-radius:18px; }
+.circle-pulse-heading span { font-size:.82rem; }
+.circle-pulse-heading button,.circle-pulse-more { font-size:.75rem; }
+.circle-pulse-row { font-size:.83rem; }
+.circle-pulse-row time { font-size:.7rem; }
+.circle-season-briefing { padding-top:16px; }
+.circle-season-briefing span { font-size:.7rem; letter-spacing:0; text-transform:none; }
+.circle-season-briefing p { font-size:.9rem; }
+.circle-season-briefing small { font-size:.77rem; }
+.circle-season-briefing button { width:44px; height:44px; }
+.circle-summary { padding-top:18px; }
+.circle-summary span { font-size:.75rem; }
+.circle-summary b { font-size:.9rem; }
+.first-contract-card { width:100%; margin-top:0; background:var(--accent-soft); border:1px solid var(--border-subtle); box-shadow:none; }
+.first-contract-card h1 { font-size:clamp(2rem,5vw,3.2rem); line-height:1.12; letter-spacing:-.035em; }
+.onboarding-short-rule { font-size:.82rem; }
+.eyebrow { font-size:.7rem; letter-spacing:.04em; }
+@media (max-width:540px) { .home-view { gap:22px; } .circle-first-title h1 { font-size:2rem; } .circle-first-title p { font-size:.82rem; } .circle-first-title .eyebrow { font-size:.65rem; } .circle-summary { grid-template-columns:repeat(3,minmax(0,1fr)); } .circle-summary span { font-size:.68rem; } }
