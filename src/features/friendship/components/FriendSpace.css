@@ -104,3 +104,15 @@
 
 .friend-space-ended p { font-size:.8rem; color:var(--text-secondary); }
 .friend-space-ended button { min-height:44px; color:var(--aura-gold); font-size:.78rem; }
+
+.friend-space { max-width:1000px; background:var(--bg-dark); }
+.friend-space-identity h1 { font-size:1.1rem; font-weight:700; }
+.friend-space-identity > span { font-size:.76rem; }
+.friend-space-details { color:var(--accent-text); font-size:.8rem; background:var(--accent-soft); border-radius:12px; }
+.friend-space-health { font-size:.78rem; }
+.friend-space-health button { color:var(--accent-text); font-size:.75rem; }
+.friend-event.mine .friend-message-bubble { background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent-text) 20%,var(--border-subtle)); }
+.friend-message-bubble > p { font-size:.92rem; }
+.friend-compose-send { background:var(--accent); color:var(--accent-ink); border-radius:14px; }
+.friend-composer-context > span { font-size:.73rem; }
+.friend-composer-context > button { font-size:.76rem; color:var(--accent-text); }

@@ -212,8 +212,7 @@ export const CardCollection = ({
     <section className="card-collection" aria-label="Cards and trades">
       <header className="collection-heading">
         <div>
-          <p className="eyebrow">Your collection</p>
-          <h2>Keep a few tricks.</h2>
+          <h2>Your collection</h2>
           <p>
             {cards.filter((card) => card.discovered).length} of {cards.length}{' '}
             discovered · {data.balance} Aura
@@ -229,6 +228,9 @@ export const CardCollection = ({
           <Plus size={17} /> Offer
         </button>
       </header>
+      <div className="collection-progress" role="progressbar" aria-label="Cards collected" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={cards.filter((card) => card.discovered).length}>
+        {cards.map((card) => <span key={card.id} className={card.discovered ? 'is-collected' : ''} aria-hidden="true" />)}
+      </div>
       <div className="collection-tabs" role="tablist" aria-label="Cards views">
         <button
           role="tab"
@@ -256,6 +258,7 @@ export const CardCollection = ({
           <div className="collection-filters" aria-label="Filter cards">
             {[
               ['all', 'All'],
+              ['owned', 'Yours'],
               ['SPELL', 'Tools'],
               ['STICKER', 'Wall marks'],
             ].map(([value, label]) => (
@@ -270,11 +273,11 @@ export const CardCollection = ({
           </div>
           <div className="collection-grid">
             {cards
-              .filter((card) => filter === 'all' || card.kind === filter)
+              .filter((card) => filter === 'all' || (filter === 'owned' ? card.owned > 0 || card.reserved > 0 : card.kind === filter))
               .map((card) => (
                 <button
                   key={card.id}
-                  className={`collection-card ${card.discovered ? 'is-discovered' : ''}`}
+                  className={`collection-card ${card.kind === 'STICKER' ? 'is-mark' : 'is-tool'} ${card.discovered ? 'is-discovered' : ''}`}
                   onClick={() => {
                     setSheet({ mode: 'card', cardId: card.id });
                     setFormError('');
@@ -308,6 +311,7 @@ export const CardCollection = ({
                 </button>
               ))}
           </div>
+          {filter === 'owned' && !cards.some((card) => card.owned > 0 || card.reserved > 0) && <div className="collection-empty"><h3>Your first card is waiting.</h3><p>Wall marks start at 20 Aura. Own one and stamp it as often as you like.</p><button onClick={() => setFilter('STICKER')}>Find a wall mark</button></div>}
           <p className="collection-footnote">
             Tools change the game. Wall marks can be stamped again and again
             while you own a copy.

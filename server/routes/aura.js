@@ -20,9 +20,7 @@ const SIGNAL_FLARE_COOLDOWN_HOURS = 48;
 
 const { CARD_CATALOG } = require('../services/cardCatalog');
 const { takeCard } = require('../services/cardInventory');
-const CardPurchase = require('../models/CardPurchase');
-const { retryKey, inTransaction } = require('../services/cardTrading');
-const { randomUUID } = require('crypto');
+const { purchaseCard } = require('../services/cardPurchases');
 
 const calculateDebt = (perspective, now = new Date()) => calculateDebtState(perspective, now).totalDebt;
 const isBankruptPerspective = (perspective, now = new Date()) => calculateDebtState(perspective, now).isBankrupt;
@@ -250,32 +248,8 @@ router.post('/grudges/:friendshipId/revenge', auth, async (req, res) => {
 
 router.post('/buy-card', auth, async (req, res) => {
   try {
-    const card = CARD_CATALOG[String(req.body.cardId || '').toUpperCase()];
-    if (!card) return res.status(400).json({ msg: 'Unknown card' });
-    const clientId = req.body.clientId ? retryKey(req.body.clientId) : randomUUID();
-    const purchase = await inTransaction(async (session) => {
-      const existing = await CardPurchase.findOne({ userId: req.user.id, clientId }).session(session);
-      if (existing) return existing;
-      const user = await User.findOneAndUpdate(
-        { _id: req.user.id, auraBalance: { $gte: card.cost } },
-        { $inc: { auraBalance: -card.cost }, $push: { inventory: card.id }, $addToSet: { cardDiscoveries: card.id } },
-        { returnDocument: 'after', session }
-      );
-      if (!user) throw Object.assign(new Error('Not enough Aura'), { status: 400 });
-      await AuraTransaction.create([{ userId: user._id, amount: -card.cost, type: 'MARKETPLACE_PURCHASE', description: `Purchased ${card.name}` }], { session });
-      const [receipt] = await CardPurchase.create([{ userId: user._id, clientId, cardId: card.id, cost: card.cost }], { session });
-      return receipt;
-    });
-    const user = await User.findById(req.user.id).select('auraBalance inventory');
-    return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, card: CARD_CATALOG[purchase.cardId] });
+    return res.json(await purchaseCard(req.user.id, req.body));
   } catch (err) {
-    if (err.code === 11000 && req.body.clientId) {
-      const existing = await CardPurchase.findOne({ userId: req.user.id, clientId: req.body.clientId });
-      if (existing) {
-        const user = await User.findById(req.user.id).select('auraBalance inventory');
-        return res.json({ success: true, balance: user.auraBalance, inventory: user.inventory, card: CARD_CATALOG[existing.cardId] });
-      }
-    }
     console.error('Card purchase failed:', err.message);
     return require('../services/httpError').sendRouteError(res, err, 'Could not purchase card');
   }

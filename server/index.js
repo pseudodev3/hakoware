@@ -11,6 +11,7 @@ const { startChaosWorker, stopChaosWorker } = require('./services/chaosWorker');
 const { startVoiceCleanupWorker, stopVoiceCleanupWorker } = require('./services/voiceCleanupWorker');
 const { startMomentWorker, stopMomentWorker } = require('./services/momentWorker');
 const { startTradeWorker, stopTradeWorker } = require('./services/tradeWorker');
+const { startPurchaseWorker, stopPurchaseWorker } = require('./services/purchaseWorker');
 const securityHeaders = require('./middleware/securityHeaders');
 const requestGuard = require('./middleware/requestGuard');
 
@@ -141,13 +142,14 @@ async function start() {
   startVoiceCleanupWorker();
   startMomentWorker();
   startTradeWorker();
+  startPurchaseWorker();
 }
 
 async function shutdown(signal) {
   console.log(`${signal} received, shutting down gracefully`);
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker(), stopMomentWorker(), stopTradeWorker()]);
+  await Promise.all([stopDebtWorker(), stopChaosWorker(), stopVoiceCleanupWorker(), stopMomentWorker(), stopTradeWorker(), stopPurchaseWorker()]);
   if (server) await new Promise((resolve) => server.close(resolve));
   await mongoose.connection.close();
   process.exit(0);

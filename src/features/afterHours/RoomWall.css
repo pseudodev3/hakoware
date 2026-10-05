@@ -91,8 +91,8 @@
   min-height: 44px;
   padding: 10px 16px;
   border-radius: 12px;
-  color: #151006;
-  background: var(--aura-gold);
+  color: var(--accent-ink);
+  background: var(--accent);
   font-weight: 600;
   font-size: 14px;
 }
@@ -541,3 +541,27 @@
     margin-bottom: 8px;
   }
 }
+
+.room-wall { padding-top:0; }
+.wall-heading h2 { font-size:1.25rem; font-weight:700; letter-spacing:-.025em; margin:0 0 5px; }
+.wall-heading p:not(.eyebrow) { font-size:.83rem; }
+.wall-topline > span,.wall-bottomline > span { font-size:.76rem; }
+.wall-board { background-color:color-mix(in srgb,var(--play-violet-soft) 25%,var(--bg-card)); background-size:24px 24px; border-radius:24px; box-shadow:none; }
+.wall-board-label { color:var(--play-violet); font-size:.68rem; letter-spacing:.055em; font-weight:600; }
+.wall-board-empty > svg { width:56px; height:56px; padding:12px; border-radius:18px; color:var(--play-violet); background:var(--play-violet-soft); }
+.wall-board-empty h3 { font-size:1.3rem; font-weight:700; }
+.wall-board-empty button { border-radius:14px; }
+.wall-color-red { --mark-color:var(--aura-red); }
+.wall-color-green { --mark-color:var(--aura-green); }
+.wall-color-blue { --mark-color:var(--aura-blue); }
+.wall-color-violet { --mark-color:var(--play-violet); }
+.wall-piece-note { background:color-mix(in srgb,var(--mark-color) 18%,var(--bg-card)); }
+.wall-piece > small { font-size:11px; }
+.wall-primary { border-radius:14px; }
+
+.wall-bottomline,.wall-move-tools { position:sticky; top:0; z-index:20; margin:12px 0; padding:8px 10px; border:1px solid var(--border-subtle); border-radius:18px; background:var(--surface-modal); }
+.wall-bottomline { flex-direction:row; }
+.wall-browse { font-size:.8rem; padding-inline:5px; }
+@media (max-width:430px) { .wall-bottomline { gap:6px; } .wall-primary { padding-inline:12px; font-size:.8rem; } .wall-browse { font-size:.75rem; } }
+.wall-bottomline > .wall-primary { width:auto; flex:1; }
+.wall-bottomline > .wall-browse { flex:0 0 auto; white-space:nowrap; padding-inline:6px; text-decoration:none; }

@@ -53,3 +53,13 @@
   .invite-card { min-height:64px; }
   .invite-action { width:38px; height:38px; }
 }
+
+.contracts-view { max-width:1120px; }
+.contracts-header h1 { font-size:clamp(2rem,4vw,2.8rem); font-weight:750; line-height:1.12; letter-spacing:-.035em; }
+.contracts-header p:not(.eyebrow) { font-size:.88rem; }
+.contracts-meta,.sent-row small { font-size:.77rem; }
+.contract-section-title h2 { font-size:1rem; }
+.contract-section-title > span { font-size:.8rem; }
+.invite-copy strong { font-size:.94rem; }
+.invite-copy > span { font-size:.75rem; }
+@media (max-width:540px) { .contracts-header h1 { font-size:2rem; } }

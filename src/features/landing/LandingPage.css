@@ -1091,3 +1091,34 @@
   .lp-mode-card:hover,
   .lp-theme-toggle:active { transform: none !important; }
 }
+
+.lp-hero h1 { font-family:var(--font-main); font-size:clamp(3rem,5.2vw,4.8rem); font-weight:750; line-height:1.06; letter-spacing:-.04em; }
+.lp-hero-copy > p { font-size:1rem; line-height:1.65; }
+.lp-nav { background:var(--surface-glass); border:1px solid var(--border-subtle); }
+.lp-brand strong { font-size:1rem; font-weight:750; }
+.lp-theme-toggle { width:44px; height:44px; }
+.lp-season-copy > strong { color:var(--accent-text); }
+.lp-hangout-section { max-width:1160px; margin:0 auto; padding:60px 24px; }
+.lp-hangout-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin-top:28px; }
+.lp-hangout-card { min-width:0; padding:26px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:26px; display:flex; flex-direction:column; align-items:flex-start; }
+.lp-hangout-card > svg { color:var(--accent-text); }
+.lp-hangout-card h3 { font-size:1.4rem; font-weight:700; margin:22px 0 10px; }
+.lp-hangout-card p { color:var(--text-secondary); font-size:.93rem; line-height:1.65; }
+.lp-hangout-card.is-cards { background:var(--accent-soft); }
+.lp-hangout-card.is-wall { background:var(--play-violet-soft); }
+.lp-hangout-card.is-wall > svg { color:var(--play-violet); }
+.lp-hangout-tag { display:block; padding-top:20px; margin-top:auto; color:var(--text-muted); font-size:.75rem; font-weight:500; }
+.lp-card-shelf { display:flex; align-items:center; gap:10px; margin:4px 0 16px; }
+.lp-card-shelf .card-artwork:first-child { transform:rotate(-8deg); }
+.lp-card-shelf .card-artwork:last-child { transform:rotate(8deg); }
+@media (max-width:760px) {
+  .lp-hero h1 { font-size:clamp(2.6rem,10vw,4rem); line-height:1.08; }
+  .lp-hero-copy > p { font-size:.92rem; }
+  .lp-hangout-section { padding:40px 20px; }
+  .lp-hangout-grid { grid-template-columns:1fr; }
+  .lp-hangout-card { padding:24px; }
+  .lp-nav .lp-brand span { display:none; }
+}
+.lp-nav .lp-brand > div { display:flex; }
+:root[data-theme='light'] .lp-hero { background:var(--bg-dark); }
+:root[data-theme='light'] .lp-hero::before { background:linear-gradient(90deg,rgba(245,245,239,.9),rgba(245,245,239,.83) 55%,rgba(245,245,239,.75)); }

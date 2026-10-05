@@ -117,9 +117,9 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
     <div className="arena-view">
       <header className="arena-hero">
         <div>
-          <p className="eyebrow">Arena</p>
-          <h1>Make your move.</h1>
-          <p>Collect a few tricks. Trade with your circle. Keep an eye on the pressure.</p>
+          <p className="eyebrow">Arena · A few tricks up your sleeve</p>
+          <h1>{tab === 'cards' ? 'Small cards. Big energy.' : 'Make your move.'}</h1>
+          <p>{tab === 'cards' ? 'Collect something you like. Trade with a friend. Put it to use.' : 'Keep an eye on the pressure. Every move has a consequence.'}</p>
         </div>
         {tab === 'bounties' && bankruptFriendships.length > 0 && (
           <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)}>

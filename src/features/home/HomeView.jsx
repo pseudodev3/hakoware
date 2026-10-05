@@ -3,6 +3,7 @@ import { ArrowRight, Clock3, Plus, Radio, Swords, UserPlus, X } from 'lucide-rea
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
 import { FriendCard } from '../friendship/components/FriendCard';
+import { HomePlay } from './HomePlay';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 
@@ -167,6 +168,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             </button>
           )}
         </section>
+        <HomePlay user={user} onNavigate={onNavigate} />
       </div>
     );
   }
@@ -184,6 +186,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             <Button variant="aura" icon={Plus} onClick={onAddFriend}>Start another</Button>
           </div>
         </section>
+        <HomePlay user={user} onNavigate={onNavigate} />
       </div>
     );
   }
@@ -202,6 +205,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           </div>
           <p className="onboarding-short-rule">Someone you know, or someone you run into. Contract → check in → don’t disappear.</p>
         </section>
+        <HomePlay user={user} onNavigate={onNavigate} />
       </div>
     );
   }
@@ -210,6 +214,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     <div className="home-view circle-first-home">
       <header className="circle-first-header">
         <div className="circle-first-title">
+          <p className="eyebrow">Your people. Your little universe.</p>
           <h1>Your circle</h1>
           <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active.`}{newCount > 0 ? ` ${newCount} with something new.` : !hot.length ? ' All clear.' : ''}</p>
         </div>
@@ -260,18 +265,22 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </section>
       )}
 
-      <section className="circle-contracts" aria-label={hot.length ? 'Contracts needing attention' : 'Active contracts'}>
-        {visible.map((friendship) => (
-          <FriendCard
-            key={friendship._id || friendship.id}
-            friendship={friendship}
-            currentUserId={userId}
-            onAction={onAction}
-            onOpen={onOpenFriend}
-            socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
-          />
-        ))}
-      </section>
+      <div className="home-hangout">
+        <section className="circle-contracts" aria-label={hot.length ? 'Contracts needing attention' : 'Active contracts'}>
+          {visible.map((friendship) => (
+            <FriendCard
+              key={friendship._id || friendship.id}
+              friendship={friendship}
+              currentUserId={userId}
+              onAction={onAction}
+              onOpen={onOpenFriend}
+              socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
+            />
+          ))}
+        </section>
+
+        <HomePlay user={user} onNavigate={onNavigate} />
+      </div>
 
       {showSeasonBriefing && firstSeasonBriefing && (() => {
         const partner = partnerFor(firstSeasonBriefing, userId);

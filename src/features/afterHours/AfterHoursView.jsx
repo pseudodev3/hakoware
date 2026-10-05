@@ -397,9 +397,9 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
       <section className="after-hours">
         <header className="after-hours-header">
           <div>
-            <span className="after-hours-kicker"><Radio size={13} /> THE ROOM</span>
+            <span className="after-hours-kicker"><Radio size={14} /> A LITTLE OFF THE RECORD</span>
             <h1>After Hours</h1>
-            <p>Your room. Leave something behind.</p>
+            <p>A place to hang out and leave something behind.</p>
           </div>
           <div className="after-hours-presence" aria-label={`${room?.presenceCount || 0} people around`}>
             <strong>{room?.presenceCount || 0}</strong>

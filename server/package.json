@@ -11,7 +11,8 @@
     "check:server-hardening": "node scripts/checkServerHardening.js",
     "check:duo-activation": "node scripts/checkDuoActivation.js",
     "check:friend-spaces": "node scripts/checkFriendSpaces.js",
-    "check:cards-wall": "node scripts/checkCardsAndWall.js"
+    "check:cards-wall": "node scripts/checkCardsAndWall.js",
+    "check:card-purchases": "node scripts/checkCardPurchases.js"
   },
   "engines": {
     "node": ">=20"

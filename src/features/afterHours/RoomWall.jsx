@@ -348,7 +348,6 @@ export const RoomWall = ({
     <section className="room-wall" aria-label="After Hours shared wall">
       <header className="wall-heading">
         <div>
-          <p className="eyebrow">This week’s wall</p>
           <h2>Leave your mark.</h2>
           <p>
             Sketch, leave a note, or stamp a card. Fresh every Monday.
@@ -382,6 +381,67 @@ export const RoomWall = ({
           <p>{error}</p>
           <button onClick={() => void load()}>Retry</button>
           {week && <button onClick={() => changeWeek('')}>This week</button>}
+        </div>
+      )}
+      {moving ? (
+        <div className="wall-move-tools" aria-label="Move your mark">
+          <span>Drag your mark or use the arrows.</span>
+          <div>
+            {[
+              [ArrowLeft, -0.025, 0, 'Move left'],
+              [ArrowUp, 0, -0.025, 'Move up'],
+              [ArrowDown, 0, 0.025, 'Move down'],
+              [ArrowRight, 0.025, 0, 'Move right'],
+            ].map(([Icon, dx, dy, label]) => (
+              <button
+                key={label}
+                disabled={busy}
+                aria-label={label}
+                onClick={() => nudge(dx, dy)}
+              >
+                <Icon size={18} />
+              </button>
+            ))}
+            <button
+              disabled={busy}
+              onClick={() => {
+                setMovingId(null);
+                setPosition(null);
+                drag.current = null;
+              }}
+            >
+              <Check size={16} /> Done
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="wall-bottomline">
+          <button
+            className="wall-browse"
+            disabled={!wall?.pieces.length}
+            onClick={() => {
+              setSheet('list');
+              setFormError('');
+            }}
+          >
+            Browse {wall?.pieces.length || 0} marks
+          </button>
+          {wall && !wall.readOnly && (
+            <button
+              className="wall-primary"
+              disabled={
+                busy ||
+                ownCount >= wall.limits.perPerson ||
+                wall.pieces.length >= wall.limits.total
+              }
+              onClick={openComposer}
+            >
+              <Plus size={18} />{' '}
+              {ownCount >= wall.limits.perPerson
+                ? 'Your wall is full'
+                : 'Add your mark'}
+            </button>
+          )}
         </div>
       )}
       <div className={`wall-board ${movingId ? 'is-moving' : ''}`} ref={board}>
@@ -518,67 +578,6 @@ export const RoomWall = ({
           );
         })}
       </div>
-      {moving ? (
-        <div className="wall-move-tools" aria-label="Move your mark">
-          <span>Drag your mark or use the arrows.</span>
-          <div>
-            {[
-              [ArrowLeft, -0.025, 0, 'Move left'],
-              [ArrowUp, 0, -0.025, 'Move up'],
-              [ArrowDown, 0, 0.025, 'Move down'],
-              [ArrowRight, 0.025, 0, 'Move right'],
-            ].map(([Icon, dx, dy, label]) => (
-              <button
-                key={label}
-                disabled={busy}
-                aria-label={label}
-                onClick={() => nudge(dx, dy)}
-              >
-                <Icon size={18} />
-              </button>
-            ))}
-            <button
-              disabled={busy}
-              onClick={() => {
-                setMovingId(null);
-                setPosition(null);
-                drag.current = null;
-              }}
-            >
-              <Check size={16} /> Done
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="wall-bottomline">
-          <button
-            className="wall-browse"
-            disabled={!wall?.pieces.length}
-            onClick={() => {
-              setSheet('list');
-              setFormError('');
-            }}
-          >
-            Browse {wall?.pieces.length || 0} marks
-          </button>
-          {wall && !wall.readOnly && (
-            <button
-              className="wall-primary"
-              disabled={
-                busy ||
-                ownCount >= wall.limits.perPerson ||
-                wall.pieces.length >= wall.limits.total
-              }
-              onClick={openComposer}
-            >
-              <Plus size={18} />{' '}
-              {ownCount >= wall.limits.perPerson
-                ? 'Your wall is full'
-                : 'Add your mark'}
-            </button>
-          )}
-        </div>
-      )}
       {sheet === 'list' && (
         <ActionSheet title="On this wall" onClose={close}>
           <p className="wall-hint">

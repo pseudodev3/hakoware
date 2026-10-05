@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { clearResourceCache, seedResource } from '../lib/resourceCache';
 import { getBootstrap, RESOURCE_KEYS, seedBootstrap } from '../services/bootstrapService';
@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [bootstrapData, setBootstrapData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const purchaseKeys = useRef({});
 
   useEffect(() => {
     const loadUser = async () => {
@@ -122,8 +123,11 @@ export const AuthProvider = ({ children }) => {
 
 
   const buyCard = async (card) => {
+    const key = `${user?._id || user?.uid}:${card.id}`;
+    purchaseKeys.current[key] ||= crypto.randomUUID();
     try {
-      const res = await api.post('/aura/buy-card', { cardId: card.id });
+      const res = await api.post('/aura/buy-card', { cardId: card.id, clientId: purchaseKeys.current[key] });
+      delete purchaseKeys.current[key];
       setUser((current) => current ? { ...current, auraBalance: res.balance, inventory: res.inventory } : current);
       return { success: true, card: res.card };
     } catch (error) {

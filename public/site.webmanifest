@@ -4,8 +4,8 @@
   "description": "Turn staying in touch into a social game with contracts, Duo XP, Aura, bounties and chaos.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#090907",
-  "theme_color": "#090907",
+  "background_color": "#141719",
+  "theme_color": "#141719",
   "icons": [
     {
       "src": "/hakoware-mark-v2.png",
