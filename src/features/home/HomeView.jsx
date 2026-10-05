@@ -214,11 +214,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     <div className="home-view circle-first-home">
       <header className="circle-first-header">
         <div className="circle-first-title">
-          <p className="eyebrow">Your people. Your little universe.</p>
           <h1>Your circle</h1>
           <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active.`}{newCount > 0 ? ` ${newCount} with something new.` : !hot.length ? ' All clear.' : ''}</p>
         </div>
-        <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>New</Button>
+        <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>Add friend</Button>
       </header>
 
       {pendingInvitations.length > 0 && (() => {
@@ -266,8 +265,12 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       )}
 
       <div className="home-hangout">
-        <section className="circle-contracts" aria-label={hot.length ? 'Contracts needing attention' : 'Active contracts'}>
-          {visible.map((friendship) => (
+        <section className="home-friends" aria-label={hot.length ? 'Friends needing attention' : 'Your friends'}>
+          <div className="home-friends-heading">
+            <h2>Friends</h2>
+            <button type="button" onClick={() => onNavigate('contracts')}>{friendships.length > visible.length ? `See all ${friendships.length}` : 'Open circle'}<ArrowRight size={14} aria-hidden="true" /></button>
+          </div>
+          <div className="circle-contracts">{visible.map((friendship) => (
             <FriendCard
               key={friendship._id || friendship.id}
               friendship={friendship}
@@ -276,7 +279,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
               onOpen={onOpenFriend}
               socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
             />
-          ))}
+          ))}</div>
         </section>
 
         <HomePlay user={user} onNavigate={onNavigate} />
