@@ -1766,15 +1766,10 @@
   }
 }
 
-.after-hours-surfaces { display:flex; border-bottom:1px solid var(--border-subtle); gap:24px; margin-bottom:20px; }
-.after-hours-surfaces button { min-height:44px; padding:0 4px; color:var(--text-muted); border-bottom:2px solid transparent; font-size:15px; transition:color 140ms var(--ease-out),transform 140ms var(--ease-out); }
-.after-hours-surfaces button[aria-selected=true] { color:var(--text-primary); border-bottom-color:var(--aura-gold); }
-.after-hours-surfaces button:active { transform:scale(.96); }
-@media(prefers-reduced-motion:reduce) { .after-hours-surfaces button { transition:none; } .after-hours-surfaces button:active { transform:none; } }
 
 .after-hours-presence { flex-shrink:0; }
 @media(max-width:440px) { .after-hours-header { gap:16px; min-height:96px; } .after-hours-presence { flex-direction:column; align-items:flex-end; gap:0; } .after-hours-header p { font-size:12px; } }
-@media(max-width:640px) { .after-hours-header { min-height:80px; padding-bottom:14px; } .after-hours-surfaces { margin-bottom:12px; } }
+@media(max-width:640px) { .after-hours-header { min-height:80px; padding-bottom:14px; }  }
 
 .after-hours { max-width:1120px; width:100%; padding-top:4px; }
 .after-hours-header { align-items:center; min-height:0; padding-bottom:20px; }
@@ -1784,11 +1779,12 @@
 .after-hours-presence { padding:10px 14px; border-radius:16px; background:var(--play-violet-soft); flex-direction:column; gap:0; align-items:center; flex:0 0 auto; }
 .after-hours-presence strong { color:var(--play-violet); font-weight:700; font-size:1.4rem; }
 .after-hours-presence span { font-size:.7rem; }
-.after-hours-surfaces { border:0; gap:8px; margin-top:18px; margin-bottom:16px; }
-.after-hours-surfaces button { padding-inline:22px; border-radius:14px; font-size:.86rem; font-weight:600; }
-.after-hours-surfaces button[aria-selected='true'] { border-color:transparent; background:var(--play-violet-soft); color:var(--play-violet); }
 .after-hours-section-label { font-size:.7rem; }
 .after-hours-feed-item { border-radius:18px; margin-top:12px; padding:18px; border:1px solid var(--border-subtle); background:var(--surface-card); }
 .after-hours-composer { border-radius:22px; background:var(--surface-card); border:1px solid var(--border-subtle); padding:16px; }
 .after-hours-shout { font-size:.95rem !important; }
 @media (max-width:540px) { .after-hours-header { gap:14px; } .after-hours-header h1 { font-size:2rem; } .after-hours-header p { font-size:.82rem; } .after-hours-presence { padding:9px 11px; } .after-hours-presence span { font-size:.64rem; } .after-hours-kicker { font-size:.6rem; } }
+
+.after-hours-retired-notice { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; margin-block:10px 18px; border:1px solid var(--border-subtle); border-radius:14px; color:var(--text-secondary); background:var(--surface-card); }
+.after-hours-retired-notice p { font-size:.8rem; line-height:1.5; }
+.after-hours-retired-notice button { min-height:44px; min-width:44px; padding-inline:8px; flex:0 0 auto; color:var(--accent-text); font-size:.75rem; font-weight:600; }

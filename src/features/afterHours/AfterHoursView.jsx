@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, EyeOff, Flame, HelpCircle, MessageCircle, Radio, RefreshCw, Send, Sparkles, Swords, Users, Zap } from 'lucide-react';
 import {
   answerAfterHours,
@@ -15,7 +15,6 @@ import {
 } from '../../services/afterHoursService';
 import { Modal } from '../../shared/components/Modal';
 import { UserAvatar } from '../../shared/components/UserAvatar';
-import { RoomWall } from './RoomWall';
 import './AfterHoursView.css';
 
 const relativeTime = (value) => {
@@ -56,9 +55,8 @@ const usernamesFromContracts = (friendships, ownUsername) => {
   return names;
 };
 
-export const AfterHoursView = ({ user, friendships = [], focusActivityId = null, onFocusHandled, onStartContract, showToast, initialSurface = 'wall', focusPieceId, requestedWeek, onNavigate }) => {
-  const [surface, setSurface] = useState(initialSurface);
-  useEffect(() => { setSurface(focusActivityId ? 'room' : initialSurface); }, [initialSurface, focusActivityId, focusPieceId]);
+export const AfterHoursView = ({ user, friendships = [], focusActivityId = null, onFocusHandled, onStartContract, showToast, wallRetired = false, onDismissRetiredWall }) => {
+  const headingRef = useRef(null);
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
@@ -398,8 +396,8 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
         <header className="after-hours-header">
           <div>
             <span className="after-hours-kicker"><Radio size={14} /> A LITTLE OFF THE RECORD</span>
-            <h1>After Hours</h1>
-            <p>A place to hang out and leave something behind.</p>
+            <h1 ref={headingRef} tabIndex={-1}>After Hours</h1>
+            <p>Say something. See who answers.</p>
           </div>
           <div className="after-hours-presence" aria-label={`${room?.presenceCount || 0} people around`}>
             <strong>{room?.presenceCount || 0}</strong>
@@ -407,11 +405,11 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
           </div>
         </header>
 
-        <div className="after-hours-surfaces" role="tablist" aria-label="After Hours views">
-          <button role="tab" aria-selected={surface === 'wall'} onClick={() => { setSurface('wall'); onNavigate?.('afterHours', { surface: 'wall' }); }}>Wall</button>
-          <button role="tab" aria-selected={surface === 'room'} onClick={() => { setSurface('room'); onNavigate?.('afterHours', { surface: 'room' }); }}>Room</button>
-        </div>
-        {surface === 'wall' ? <RoomWall focusPieceId={focusPieceId} requestedWeek={requestedWeek} onNavigate={onNavigate} showToast={showToast} /> : loading ? <p className="after-hours-loading" role="status">Opening the room…</p> : !room || !event ? <div className="after-hours-empty"><p>The room did not open.</p><button onClick={() => void loadRoom()}><RefreshCw size={16} /> Try again</button></div> : <>
+        {wallRetired && <div className="after-hours-retired-notice" role="status"><p>The wall has closed. Your cards are still in your collection.</p><button type="button" onClick={() => {
+          onDismissRetiredWall?.();
+          requestAnimationFrame(() => headingRef.current?.focus({ preventScroll: true }));
+        }}>Dismiss</button></div>}
+        {loading ? <p className="after-hours-loading" role="status">Opening the room…</p> : !room || !event ? <div className="after-hours-empty"><p>The room did not open.</p><button onClick={() => void loadRoom()}><RefreshCw size={16} /> Try again</button></div> : <>
         <section className="after-hours-around" aria-label="People around now">
           <div className="after-hours-section-label">
             <span>AROUND NOW</span>

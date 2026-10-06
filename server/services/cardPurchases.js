@@ -42,6 +42,9 @@ const purchaseCard = async (userId, body) => {
   if (!user) fail(404, 'User not found');
   let receipt = user.cardPurchaseReceipts.find((item) => item.clientId === clientId);
   if (!receipt && !legacy) {
+    // Prior successful purchases remain replayable, including unfinished journals.
+    // Only new purchases are blocked; owned inventory and old receipts stay intact.
+    if (!card.purchasable) fail(410, 'This collectible is no longer sold. Your owned copies stay in your collection and can still be traded.');
     const committed = await User.findOneAndUpdate({
       _id: userId, auraBalance: { $gte: card.cost },
       'cardPurchaseReceipts.clientId': { $ne: clientId },

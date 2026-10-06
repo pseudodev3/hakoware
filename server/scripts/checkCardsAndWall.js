@@ -12,21 +12,11 @@ const ContractEvent = require('../models/ContractEvent');
 const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const RoomWall = require('../models/RoomWall');
-const { weekKey, normalizePiece } = require('../services/roomWall');
 const { settleExpiredTrades } = require('../services/cardTrading');
 const { CARD_CATALOG } = require('../services/cardCatalog');
-assert.equal(weekKey(new Date('2026-10-03T23:00:00Z')), '2026-09-28');
-assert.equal(weekKey(new Date('2026-10-05T00:00:00Z')), '2026-10-05');
 assert.equal(Object.keys(CARD_CATALOG).length, 12);
-assert.throws(
-  () =>
-    normalizePiece({
-      clientId: randomUUID(),
-      kind: 'DRAWING',
-      strokes: [[[Infinity, 0]]],
-    }),
-  /position/,
-);
+assert.equal(Object.values(CARD_CATALOG).filter((card) => card.purchasable).length, 4);
+assert.ok(Object.values(CARD_CATALOG).filter((card) => card.kind === 'STICKER').every((card) => !card.purchasable));
 
 const run = async () => {
   const mongo = await MongoMemoryReplSet.create({
@@ -56,7 +46,7 @@ const run = async () => {
         email: name + '@example.test',
         password: 'fixture-only',
         auraBalance: 500,
-        inventory: ['PURIFY', 'PURIFY', 'ORBIT', 'ECHO', 'SIGNAL_FLARE'],
+        inventory: ['PURIFY', 'PURIFY', 'ORBIT', 'ECHO', ...(name === 'Ari' ? [] : ['SIGNAL_FLARE'])],
         ...(name === 'Test'
           ? { isTestAccount: true, testOwnerId: new mongoose.Types.ObjectId() }
           : {}),
@@ -127,13 +117,13 @@ const run = async () => {
         .status,
       404,
     );
-    const buy = { cardId: 'GHOST', clientId: randomUUID() };
+    const buy = { cardId: 'SIGNAL_FLARE', clientId: randomUUID() };
     const purchases = await Promise.all(
       Array.from({ length: 4 }, () => request(one, '/aura/buy-card', buy)),
     );
     assert.ok(purchases.every((item) => item.status === 200));
-    assert.equal(copies(await inventory(one), 'GHOST'), 1);
-    assert.equal((await User.findById(one._id)).auraBalance, 480);
+    assert.equal(copies(await inventory(one), 'SIGNAL_FLARE'), 1);
+    assert.equal((await User.findById(one._id)).auraBalance, 455);
     assert.equal(
       await AuraTransaction.countDocuments({
         userId: one._id,
@@ -176,7 +166,7 @@ const run = async () => {
       await ContractEvent.countDocuments({ type: 'CARD_TRADE_ACCEPTED' }),
       1,
     );
-    assert.equal((await User.findById(one._id)).auraBalance, 480);
+    assert.equal((await User.findById(one._id)).auraBalance, 455);
     assert.equal((await User.findById(two._id)).auraBalance, 500);
     const second = await request(one, '/cards/trades', offer('ORBIT', 'ECHO'));
     assert.equal(second.status, 200);
@@ -275,206 +265,61 @@ const run = async () => {
       request(one, '/cards/trades', offer('SIGNAL_FLARE', 'ORBIT')),
     ]);
     assert.equal(spellRace.filter((item) => item.status === 200).length, 1);
+    // Legacy URLs and cached clients cannot write or reveal wall content after retirement.
+    // Existing documents, collectible ownership and Activity history remain intact.
     const wallPath = '/after-hours/wall';
-    assert.equal((await request(null, wallPath)).status, 401);
-    const note = {
-      clientId: randomUUID(),
-      kind: 'NOTE',
-      text: 'Still here.',
-      x: 0.35,
-      y: 0.35,
-      color: 'gold',
-    };
-    const wall = await request(one, wallPath, note);
-    assert.equal(wall.status, 200);
-    assert.equal(wall.data.pieces.length, 1);
-    const duplicate = await request(one, wallPath, note);
-    assert.equal(duplicate.data.pieces.length, 1);
-    assert.equal((await request(testUser, wallPath)).data.pieces.length, 0);
-    assert.equal(
-      (
-        await request(
-          two,
-          wallPath + '/' + note.clientId,
-          { x: 0.4, y: 0.4 },
-          'PATCH',
-        )
-      ).status,
-      404,
-    );
-    const moved = await request(
-      one,
-      wallPath + '/' + note.clientId,
-      { x: 0.6, y: 0.3, rotation: 8 },
-      'PATCH',
-    );
-    assert.equal(moved.data.pieces[0].x, 0.6);
-    const contributions = await Promise.all([
-      request(one, wallPath, {
-        clientId: randomUUID(),
-        kind: 'STICKER',
-        cardId: 'ORBIT',
-        x: 0.7,
-        y: 0.6,
-      }),
-      request(two, wallPath, {
-        clientId: randomUUID(),
-        kind: 'DRAWING',
-        strokes: [
-          [
-            [0.1, 0.1],
-            [0.9, 0.9],
-          ],
-        ],
-        x: 0.2,
-        y: 0.6,
-      }),
-    ]);
-    assert.ok(contributions.every((item) => item.status === 200));
-    assert.equal((await request(one, wallPath)).data.pieces.length, 3);
-    assert.equal(
-      copies(await inventory(one), 'ORBIT'),
-      2,
-      'stamping does not consume a reusable card',
-    );
-    assert.equal(
-      (
-        await request(one, wallPath, {
-          clientId: randomUUID(),
-          kind: 'STICKER',
-          cardId: 'WATCHER',
-        })
-      ).status,
-      409,
-    );
-    assert.equal(
-      (
-        await request(one, wallPath, {
-          clientId: randomUUID(),
-          kind: 'NOTE',
-          text: 'x'.repeat(91),
-        })
-      ).status,
-      400,
-    );
-    const reacted = await request(
-      two,
-      wallPath + '/' + note.clientId + '/react',
-      { reaction: '😭' },
-    );
-    assert.equal(reacted.data.pieces[0].reactions.counts['😭'], 1);
-    await request(two, wallPath + '/' + note.clientId + '/react', {
-      reaction: '😭',
+    const pieceId = randomUUID();
+    const archivedWall = await RoomWall.create({
+      scopeKey: 'live',
+      weekKey: '2026-10-05',
+      revision: 3,
+      expiresAt: new Date(Date.now() + 86400000),
+      pieces: [{ id: pieceId, actorId: one._id, kind: 'NOTE', text: 'Still here.', x: 0.35, y: 0.35, reactions: [] }],
     });
-    await request(two, wallPath + '/' + note.clientId + '/react', {
-      reaction: '💀',
+    await Notification.create({
+      toUserId: one._id, fromUserId: two._id,
+      type: 'AFTER_HOURS_WALL', title: 'Your wall mark got a reaction',
+      message: 'An existing reaction.', wallPieceId: pieceId, wallWeekKey: '2026-10-05',
     });
-    assert.equal(
-      await Notification.countDocuments({ type: 'AFTER_HOURS_WALL' }),
-      1,
-    );
-    const payload = (await request(outsider, wallPath)).data;
-    assert.equal(JSON.stringify(payload).includes(String(one._id)), false);
-    assert.equal(JSON.stringify(payload).includes('actorId'), false);
-    assert.equal(JSON.stringify(payload).includes('scopeKey'), false);
+    const beforeWall = await RoomWall.findById(archivedWall._id).lean();
+    const beforePeople = await User.find({ _id: { $in: [one._id, two._id, outsider._id, testUser._id] } })
+      .select('auraBalance inventory cardDiscoveries').sort({ _id: 1 }).lean();
+    const beforeWallNotifications = await Notification.find({ type: 'AFTER_HOURS_WALL' }).lean();
+    const retiredRequests = [
+      [wallPath, null, 'GET'],
+      [wallPath + '?week=2026-09-28', null, 'GET'],
+      [wallPath, { clientId: randomUUID(), kind: 'NOTE', text: 'No new marks.' }, 'POST'],
+      [wallPath + '/' + pieceId, { x: 0.4, y: 0.4 }, 'PATCH'],
+      [wallPath + '/' + pieceId, null, 'DELETE'],
+      [wallPath + '/' + pieceId + '/react', { reaction: '😭' }, 'POST'],
+    ];
+    for (const [path, body, method] of retiredRequests) {
+      assert.equal((await request(null, path, body, method)).status, 401, method + ' still requires authentication');
+      for (const actor of [one, two, outsider, testUser]) {
+        const response = await request(actor, path, body, method);
+        assert.equal(response.status, 410, method + ' is retired for every account scope');
+        assert.equal(response.data.code, 'WALL_RETIRED');
+        assert.match(response.data.msg, /retired/);
+        assert.equal('pieces' in response.data, false);
+      }
+    }
+    assert.deepEqual(await RoomWall.findById(archivedWall._id).lean(), beforeWall, 'retirement does not rewrite or purge an old wall');
+    assert.equal(await RoomWall.countDocuments(), 1, 'cached clients cannot create new walls');
+    assert.deepEqual(await User.find({ _id: { $in: [one._id, two._id, outsider._id, testUser._id] } })
+      .select('auraBalance inventory cardDiscoveries').sort({ _id: 1 }).lean(), beforePeople);
+    assert.deepEqual(await Notification.find({ type: 'AFTER_HOURS_WALL' }).lean(), beforeWallNotifications, 'no new reactions or notifications');
+    assert.equal((await request(one, '/aura/use-card', { cardId: 'ORBIT' })).status, 410);
+    assert.deepEqual(await User.find({ _id: { $in: [one._id, two._id, outsider._id, testUser._id] } })
+      .select('auraBalance inventory cardDiscoveries').sort({ _id: 1 }).lean(), beforePeople, 'retired activation never consumes a collectible');
     const notifications = (await request(one, '/notifications')).data;
-    assert.ok(notifications.some((item) => item.wallPieceId === note.clientId));
+    assert.ok(notifications.some((item) => item.wallPieceId === pieceId), 'old wall activity remains available');
     assert.ok(notifications.some((item) => item.cardTradeId));
     assert.equal(JSON.stringify(notifications).includes('friendshipId'), false);
-    // Mark limits and deletion permissions use authenticated routes, not UI-only guards.
-    const outsiderMarks = [];
-    for (let index = 0; index < 8; index += 1) {
-      const clientId = randomUUID();
-      outsiderMarks.push(clientId);
-      assert.equal(
-        (
-          await request(outsider, wallPath, {
-            clientId,
-            kind: 'NOTE',
-            text: 'Mark ' + index,
-          })
-        ).status,
-        200,
-      );
-    }
-    assert.equal(
-      (
-        await request(outsider, wallPath, {
-          clientId: randomUUID(),
-          kind: 'NOTE',
-          text: 'One too many',
-        })
-      ).status,
-      400,
-    );
-    assert.equal(
-      (await request(one, wallPath + '/' + outsiderMarks[0], null, 'DELETE'))
-        .status,
-      404,
-    );
-    assert.equal(
-      (
-        await request(
-          outsider,
-          wallPath + '/' + outsiderMarks[0],
-          null,
-          'DELETE',
-        )
-      ).status,
-      200,
-    );
-    assert.equal(
-      (
-        await request(
-          outsider,
-          wallPath + '/' + outsiderMarks[0],
-          null,
-          'DELETE',
-        )
-      ).status,
-      404,
-    );
-    assert.equal(
-      (
-        await request(outsider, wallPath, {
-          clientId: randomUUID(),
-          kind: 'NOTE',
-          text: 'Room again',
-        })
-      ).status,
-      200,
-    );
-    const previous = new Date(weekKey() + 'T00:00:00Z');
-    previous.setUTCDate(previous.getUTCDate() - 7);
-    const previousKey = previous.toISOString().slice(0, 10);
-    await RoomWall.create({
-      scopeKey: 'live',
-      weekKey: previousKey,
-      expiresAt: new Date(Date.now() + 86400000),
-      pieces: [
-        {
-          id: randomUUID(),
-          actorId: one._id,
-          kind: 'NOTE',
-          text: 'Last week',
-          x: 0.5,
-          y: 0.5,
-          color: 'gold',
-          rotation: 0,
-        },
-      ],
-    });
-    assert.equal(
-      (await request(one, wallPath + '?week=' + previousKey)).data.readOnly,
-      true,
-    );
-    assert.equal(
-      (await request(one, wallPath + '?week=2020-01-01')).status,
-      400,
-    );
     const snapshot = (await request(one, '/cards')).data;
     assert.equal(snapshot.cards.length, 12);
-    assert.ok(snapshot.cards.find((card) => card.id === 'GHOST').discovered);
+    assert.ok(snapshot.cards.find((card) => card.id === 'SIGNAL_FLARE').discovered);
+    assert.ok(snapshot.cards.find((card) => card.id === 'ORBIT').discovered, 'owned collectibles keep their discovery');
+    assert.equal(snapshot.cards.find((card) => card.id === 'ORBIT').purchasable, false);
     assert.equal(JSON.stringify(snapshot).includes('senderId'), false);
     assert.equal(JSON.stringify(snapshot).includes(String(two._id)), false);
     // Ended contracts cancel pending offers and return reserved inventory exactly once.
@@ -485,7 +330,7 @@ const run = async () => {
     await settleExpiredTrades();
     assert.equal(await CardTrade.countDocuments({ status: 'PENDING' }), 0);
     console.log(
-      'Cards and wall: purchases, escrow, concurrent accept/use, counter/cancel/expiry, isolation, reusable stamps, ownership, privacy and weekly archives passed.',
+      'Cards and retired wall: purchases, collectible escrow/trades, concurrent accept/use, counter/cancel/expiry, privacy, authenticated retirement and preserved inventory/history passed.',
     );
   } finally {
     if (server) await new Promise((resolve) => server.close(resolve));

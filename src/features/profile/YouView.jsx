@@ -332,7 +332,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
-        <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools, trade copies, and find your wall marks.</small></span><ArrowRight size={19} />
+        <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span><ArrowRight size={19} />
       </button>
 
       {grudges.length > 0 && (

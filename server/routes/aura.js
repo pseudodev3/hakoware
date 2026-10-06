@@ -262,7 +262,7 @@ router.post('/use-card', auth, async (req, res) => {
     let user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
     if (!CARD_CATALOG[cardId]) return res.status(400).json({ msg: 'Unknown card' });
-    if (CARD_CATALOG[cardId].kind === 'STICKER') return res.status(400).json({ msg: 'Stamp reusable stickers from the After Hours wall' });
+    if (CARD_CATALOG[cardId].kind === 'STICKER') return res.status(410).json({ msg: 'The weekly wall has been retired. This collectible stays in your collection and can still be traded.' });
     if (!user.inventory.includes(cardId)) return res.status(400).json({ msg: 'Card not found in inventory' });
 
     const reserve = async () => {

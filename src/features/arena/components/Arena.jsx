@@ -144,7 +144,7 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
         <button className={tab === 'shame' ? 'active' : ''} onClick={() => { setTab('shame'); onNavigate?.('arena', { section: 'shame' }); }} role="tab" aria-selected={tab === 'shame'}>Shame {shame.length ? `· ${shame.length}` : ''}</button>
       </div>
 
-      {tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} onNavigate={onNavigate} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
+      {tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
         <section className="arena-panel">
           <div className="arena-panel-head">
             <div><Target size={18} strokeWidth={1.8} /><strong>Live hunts</strong></div>

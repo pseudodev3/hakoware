@@ -59,6 +59,7 @@ const CARD_CATALOG = Object.freeze(
           number: index + 1,
           series: 'Pressure',
           reusable: false,
+          purchasable: true,
         })),
         ...stickers.map(([id, name, cost, description, art], index) => ({
           id,
@@ -68,8 +69,9 @@ const CARD_CATALOG = Object.freeze(
           art,
           kind: 'STICKER',
           number: index + 5,
-          series: 'Room marks',
+          series: 'Collectibles',
           reusable: true,
+          purchasable: false,
         })),
       ].map((card) => [card.id, Object.freeze(card)]),
     ),
