@@ -67,7 +67,7 @@ jobs:
         working-directory: server
         run: npm run check:friend-spaces
 
-      - name: Check card trades and the shared wall
+      - name: Check card trades and wall retirement
         working-directory: server
         run: npm run check:cards-wall
 

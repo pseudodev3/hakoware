@@ -216,7 +216,7 @@ function MainApp({ showToast }) {
     setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
     const query = new URLSearchParams({ view: tab });
     if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); }
-    if (tab === 'afterHours') { query.set('surface', options.wall ? 'wall' : options.surface || (options.focusActivityId ? 'room' : 'wall')); if (options.focusPieceId) query.set('piece', options.focusPieceId); if (options.week) query.set('week', options.week); }
+    if (tab === 'afterHours' && (options.wall || options.retiredWall || options.focusPieceId || options.week)) query.set('retiredWall', '1');
     navigate(tab === 'home' ? '/' : `/?${query}`, { replace: Boolean(options.replace) });
   };
 
@@ -397,10 +397,8 @@ function MainApp({ showToast }) {
           <AfterHoursView
             user={user}
             friendships={[...friendships, ...pendingReceived, ...pendingSent]}
-            initialSurface={params.get('surface') === 'room' ? 'room' : 'wall'}
-            focusPieceId={params.get('piece')}
-            requestedWeek={params.get('week')}
-            onNavigate={navigateTo}
+            wallRetired={params.get('retiredWall') === '1' || params.get('surface') === 'wall' || params.has('piece') || params.has('week')}
+            onDismissRetiredWall={() => navigateTo('afterHours', { replace: true })}
             focusActivityId={afterHoursFocusId}
             onFocusHandled={() => setAfterHoursFocusId(null)}
             onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}

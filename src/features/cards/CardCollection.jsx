@@ -16,7 +16,6 @@ import './CardCollection.css';
 
 export const CardCollection = ({
   friendships,
-  onNavigate,
   showToast,
   focusTradeId,
 }) => {
@@ -119,6 +118,9 @@ export const CardCollection = ({
     }
   };
   const cards = data?.cards || [];
+  const canBuy = (card) => card?.purchasable ?? card?.kind === 'SPELL';
+  const activeCards = cards.filter(canBuy);
+  const visibleCards = cards.filter((card) => canBuy(card) || card.discovered || card.owned > 0 || card.reserved > 0);
   const byId = Object.fromEntries(cards.map((card) => [card.id, card]));
   const pending = (data?.trades || []).filter(
     (trade) => trade.status === 'PENDING',
@@ -214,8 +216,8 @@ export const CardCollection = ({
         <div>
           <h2>Your collection</h2>
           <p>
-            {cards.filter((card) => card.discovered).length} of {cards.length}{' '}
-            discovered · {data.balance} Aura
+            {activeCards.filter((card) => card.discovered).length} of {activeCards.length}{' '}
+            tools discovered · {data.balance} Aura
           </p>
         </div>
         <button
@@ -228,8 +230,8 @@ export const CardCollection = ({
           <Plus size={17} /> Offer
         </button>
       </header>
-      <div className="collection-progress" role="progressbar" aria-label="Cards collected" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={cards.filter((card) => card.discovered).length}>
-        {cards.map((card) => <span key={card.id} className={card.discovered ? 'is-collected' : ''} aria-hidden="true" />)}
+      <div className="collection-progress" style={{ '--collection-size': Math.max(activeCards.length, 1) }} role="progressbar" aria-label="Tools collected" aria-valuemin={0} aria-valuemax={activeCards.length} aria-valuenow={activeCards.filter((card) => card.discovered).length}>
+        {activeCards.map((card) => <span key={card.id} className={card.discovered ? 'is-collected' : ''} aria-hidden="true" />)}
       </div>
       <div className="collection-tabs" role="tablist" aria-label="Cards views">
         <button
@@ -260,7 +262,7 @@ export const CardCollection = ({
               ['all', 'All'],
               ['owned', 'Yours'],
               ['SPELL', 'Tools'],
-              ['STICKER', 'Wall marks'],
+              ...(visibleCards.some((card) => card.kind === 'STICKER') ? [['STICKER', 'Collectibles']] : []),
             ].map(([value, label]) => (
               <button
                 key={value}
@@ -272,7 +274,7 @@ export const CardCollection = ({
             ))}
           </div>
           <div className="collection-grid">
-            {cards
+            {visibleCards
               .filter((card) => filter === 'all' || (filter === 'owned' ? card.owned > 0 || card.reserved > 0 : card.kind === filter))
               .map((card) => (
                 <button
@@ -291,7 +293,7 @@ export const CardCollection = ({
                   <strong>{card.name}</strong>
                   <span className="collection-card-kind">
                     {card.kind === 'STICKER'
-                      ? 'Reusable wall mark'
+                      ? 'Retained collectible'
                       : 'Single-use tool'}
                   </span>
                   <span className="collection-card-owned">
@@ -311,10 +313,10 @@ export const CardCollection = ({
                 </button>
               ))}
           </div>
-          {filter === 'owned' && !cards.some((card) => card.owned > 0 || card.reserved > 0) && <div className="collection-empty"><h3>Your first card is waiting.</h3><p>Wall marks start at 20 Aura. Own one and stamp it as often as you like.</p><button onClick={() => setFilter('STICKER')}>Find a wall mark</button></div>}
+          {filter === 'owned' && !cards.some((card) => card.owned > 0 || card.reserved > 0) && <div className="collection-empty"><h3>Your first card is waiting.</h3><p>Earn Aura through your contracts, then pick a tool.</p><button onClick={() => setFilter('SPELL')}>Browse tools</button></div>}
           <p className="collection-footnote">
-            Tools change the game. Wall marks can be stamped again and again
-            while you own a copy.
+            Tools change the game. Cards you already own stay in your collection
+            and can be offered to an accepted friend.
           </p>
         </>
       ) : (
@@ -497,7 +499,7 @@ export const CardCollection = ({
               >
                 {busy ? 'Using…' : 'Use ' + selected?.name}
               </button>
-            ) : (
+            ) : canBuy(selected) ? (
               <button
                 className="card-primary-action"
                 onClick={() => buy(selected)}
@@ -509,7 +511,7 @@ export const CardCollection = ({
                     ? 'Need ' + selected.cost + ' Aura'
                     : 'Buy a copy · ' + selected.cost + ' Aura'}
               </button>
-            )
+            ) : null
           }
         >
           {sheet.mode === 'offer' ? (
@@ -619,26 +621,20 @@ export const CardCollection = ({
               </small>
               {selected.kind === 'STICKER' && (
                 <p>
-                  Own one copy to stamp this design on the After Hours wall as
-                  often as you like. Stamping doesn’t consume it.
+                  The wall has closed and purchases of this design are paused.
+                  Your copies stay yours and can still be traded.
                 </p>
               )}
               <div className="card-detail-actions">
-                <button
+                {selected.kind === 'SPELL' && <button
                   disabled={!selected.owned || busy}
                   onClick={() => {
-                    if (selected.kind === 'STICKER') {
-                      close();
-                      onNavigate?.('afterHours', { wall: true });
-                    } else {
-                      setTarget('');
-                      setSheet({ mode: 'use', cardId: selected.id });
-                    }
+                    setTarget('');
+                    setSheet({ mode: 'use', cardId: selected.id });
                   }}
                 >
-                  {selected.kind === 'STICKER' ? 'Stamp on wall' : 'Use card'}{' '}
-                  <ArrowUpRight size={15} />
-                </button>
+                  Use card <ArrowUpRight size={15} />
+                </button>}
                 <button
                   disabled={!selected.owned || busy || !data.partners.length}
                   onClick={() => openOffer(selected.id)}

@@ -2,7 +2,7 @@ import React from 'react';
 import { MARKET_ART } from '../profile/marketArt';
 import './CardArtwork.css';
 
-const WALL_MARKS = [
+const COLLECTIBLE_CARDS = [
   'ORBIT',
   'GHOST',
   'MENACE',
@@ -14,7 +14,7 @@ const WALL_MARKS = [
 ];
 
 export const CardArtwork = ({ cardId, size = 74, variant = 'card' }) => {
-  const index = WALL_MARKS.indexOf(cardId);
+  const index = COLLECTIBLE_CARDS.indexOf(cardId);
   return (
     <span
       className={variant === 'stamp' ? 'card-artwork is-stamp' : 'card-artwork'}

@@ -4,7 +4,7 @@
 .collection-heading > div > p:last-child { font-size:.8rem; color:var(--text-secondary); }
 .collection-new-offer { min-height:44px; padding:0 15px; display:flex; align-items:center; gap:6px; border-radius:14px; color:var(--accent-text); background:var(--accent-soft); font-size:.85rem; font-weight:650; flex:0 0 auto; }
 .collection-new-offer:disabled { opacity:.5; }
-.collection-progress { display:grid; grid-template-columns:repeat(12,1fr); gap:5px; margin-bottom:18px; }
+.collection-progress { display:grid; grid-template-columns:repeat(var(--collection-size),1fr); gap:5px; margin-bottom:18px; }
 .collection-progress span { height:5px; border-radius:4px; background:var(--surface-soft-strong); }
 .collection-progress span.is-collected { background:var(--accent-text); }
 .collection-tabs { display:flex; gap:22px; border-bottom:1px solid var(--border-subtle); }

@@ -144,7 +144,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
     }
     if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
     if (notification.cardTradeId) { onNavigate?.('arena', { section: 'cards', focusTradeId: notification.cardTradeId }); onClose(); return; }
-    if (notification.wallPieceId) { onNavigate?.('afterHours', { wall: true, focusPieceId: notification.wallPieceId, week: notification.wallWeekKey }); onClose(); return; }
+    if (notification.wallPieceId || notification.type === 'AFTER_HOURS_WALL') { onNavigate?.('afterHours', { retiredWall: true }); onClose(); return; }
     const roomEvent = [NOTIFICATION_TYPES.AFTER_HOURS_TAG_IN, NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT].includes(notification.type);
     onNavigate?.(destination, destination === 'afterHours' ? { surface: 'room', focusActivityId: roomEvent ? 'room-event' : (notification.afterHoursActivityId || null) } : destination === 'arena' ? { section: 'bounties' } : undefined);
     onClose();

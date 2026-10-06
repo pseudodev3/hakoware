@@ -7,26 +7,37 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-10-05**
+> Last updated: **2026-10-06**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
 
-## Current continuation checkpoint — 2026-10-05
+## Current continuation checkpoint — 2026-10-06
 
 Current production/main:
 
-- PR #83, the product revamp and atomic card purchase repair, is merged on top of PR #82 / #81 / #80 / #79 / #78.
-- Exact squash SHA: `504a9a118eb695a4a8ca3fa537deb68efa7f8d44`.
-- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served the new HTML/CSS and Public Sans font; backend health passed after deployment.
+- PR #84, Home/Circle social-card polish, is merged on top of PR #83 / #82 / #81 / #80 / #79 / #78.
+- Exact squash SHA: `eb5d9cf6a533962401404341f836de3fba7c0d02`.
+- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served the social-card assets and Public Sans font; backend health passed after deployment.
 - The user confirmed a successful live card purchase after the merge. Production database topology/logs and live two-account trades remain unverified.
 - The user bought `hakoware.xyz`. Domain routing and canonical metadata have not been changed in the current polish branch.
 
-Current implementation branch: `feat/social-home-polish` (not deployed).
+Current implementation branch: `feat/retire-weekly-wall` (not deployed).
 
-### Social home polish — current implementation
+### Weekly wall retirement — current implementation
+
+The user rejected the weekly wall as a retention activity and explicitly asked to remove it and explore something else. This supersedes the historical wall plan below. Do not bring back wall variants, daily prompt packs, Hunter Runs/maps or rewards for chores as an assumed replacement.
+
+- After Hours opens directly to its existing room. The wall component/CSS/client service and backend wall mutation service are removed, alongside the Home tile/poll, surface switch, stamping actions and landing/profile promises. Saved wall URLs and wall Activity links show a brief retirement notice; dismissing it clears the old route and focuses the After Hours heading.
+- The authenticated legacy wall API returns 410 for reads and every mutation; unauthenticated calls remain 401. Old cached clients cannot create/move/delete/react. Existing walls/Activity are not rewritten or purged. The pre-existing RoomWall TTL still applies, and test-account cleanup retains its scoped model handling.
+- All twelve catalog IDs, original art, owned copies, discoveries, durable receipts and trade history remain. New purchases of the eight wall-only designs are paused (`purchasable: false`), but prior successful private/legacy purchase receipts still replay successfully and repair their audit without another charge/copy. Existing collectibles can still be offered/traded/settled; no refunds or account deletions were added. Four original tools retain their prices/effects and purchase flow.
+- Collection/Home discovery progress covers the four available tools. Retained owned/discovered/reserved collectibles remain visible, with explicit paused-sales copy and no Buy/Stamp/Use action. All catalog IDs stay available to existing trade/history logic; new accounts do not see eight unobtainable discovery slots.
+- Validation: production build; lint with zero errors; circle-activity checks; independent frontend/backend review; real standalone-Mongo purchase and replica-set trade/retirement suites. Browser fixtures cover 320×844, 390×600, 390×844 and 1280×844, both themes and motion modes: no wall network requests, retained collectible details/offers, four-tool progress, active purchase response-loss/retry, room posting, default/direct/old wall routes, retired and regular room Activity destinations, notice focus, empty collections and landing copy. Physical iPhone/Safari and production account interactions remain unverified. Existing bundle/index/lint warnings remain.
+- Review notes: `docs/wall-retirement-ui-review.md`. Replacement concepts: `docs/retention-activity-options.md`; neither has been implemented or selected. Current recommendation is to explore a short equal-deck friend card duel with actual hidden information and counters; reusable personal voice reactions are a social companion idea. Finish exact-head CI before one finished PR; merge only on explicit instruction and verify both exact deployments.
+
+### Social home polish — merged PR #84 baseline
 
 The user wants a more inviting, intentional interface and Home contract cards that blend into Hakoware and read as friendships. Keep Public Sans, the ink/paper/lime/violet palette, original shaded card artwork, and real social state.
 
@@ -53,7 +64,7 @@ The user asked for new colors/layout, one clear font everywhere, stronger visual
 
 The cards/wall implementation below is the merged PR #82 baseline.
 
-### Cards + the weekly After Hours wall — current implementation
+### Cards + the weekly After Hours wall — historical PR #82 baseline (wall now retired on the current branch)
 
 The user approved collecting/trading usable cards and a persistent shared wall as concrete activities for a small community. They rejected Hunter Runs / maps and vague challenge loops; do not reintroduce those. They explicitly rejected the initial outline-icon card art. Preserve the existing market’s shaded objects and dark mini-stages: the original four artworks are reused, and the eight new marks have matching metal/enamel object artwork.
 

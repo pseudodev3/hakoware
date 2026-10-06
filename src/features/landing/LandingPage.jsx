@@ -11,7 +11,7 @@ import {
   Layers,
   MessageCircle,
   Moon,
-  Pencil,
+  Radio,
   Share2,
   ShieldAlert,
   Sparkles,
@@ -189,11 +189,11 @@ export const LandingPage = ({ onEnter }) => {
         </section>
 
         <section className="lp-hangout-section" aria-label="Things to do in Hakoware">
-          <div className="lp-section-intro compact"><span>MORE THAN A CHECK-IN</span><h2>Something worth coming back for.</h2><p>A conversation that keeps going. A card you want. A wall that looks a little more like your people.</p></div>
+          <div className="lp-section-intro compact"><span>MORE THAN A CHECK-IN</span><h2>Something worth coming back for.</h2><p>Private friend spaces, useful cards, and a room to cross paths.</p></div>
           <div className="lp-hangout-grid">
             <article className="lp-hangout-card"><MessageCircle size={22} /><h3>Your friend space.</h3><p>Text, send a voice note, and keep your shared story in one place. An eligible message counts as your check-in.</p><span className="lp-hangout-tag">Between you and your friend</span></article>
-            <article className="lp-hangout-card is-cards"><Layers size={22} /><h3>A few good tricks.</h3><div className="lp-card-shelf" aria-label="Examples of collectible cards"><CardArtwork cardId="SIGNAL_FLARE" size={48} /><CardArtwork cardId="ORBIT" size={48} /><CardArtwork cardId="GHOST" size={48} /></div><p>Spend earned Aura on useful tools and reusable wall marks. Trade a spare with an accepted friend.</p><span className="lp-hangout-tag">Pick the card you actually want</span></article>
-            <article className="lp-hangout-card is-wall"><Pencil size={22} /><h3>Leave your mark.</h3><p>Notes, doodles and card stamps on a shared weekly wall. You can start it even when nobody else is around.</p><span className="lp-hangout-tag">Notes and sketches are free</span></article>
+            <article className="lp-hangout-card is-cards"><Layers size={22} /><h3>A few good tricks.</h3><div className="lp-card-shelf" aria-label="Examples of collectible cards"><CardArtwork cardId="SIGNAL_FLARE" size={48} /><CardArtwork cardId="PURIFY" size={48} /><CardArtwork cardId="CHAOS_TICKET" size={48} /></div><p>Spend earned Aura on useful tools. Trade a spare with an accepted friend.</p><span className="lp-hangout-tag">Pick the card you actually want</span></article>
+            <article className="lp-hangout-card is-room"><Radio size={22} /><h3>After Hours.</h3><p>Say something to the room, reply to a post, or find someone to start a contract with.</p><span className="lp-hangout-tag">Cross paths. See what happens.</span></article>
           </div>
         </section>
 
