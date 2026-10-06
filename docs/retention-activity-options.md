@@ -1,21 +1,21 @@
 # Retention activity candidates — 2026-10-06
 
-Neither activity is implemented or selected. The user rejected vague prompts, Hunter Runs/maps, and the weekly wall. The next feature needs to be enjoyable without an XP/Aura reward and useful with one active friend.
+The user selected the card duel to work out next. Neither activity is implemented. The user rejected vague prompts, Hunter Runs/maps, and the weekly wall. The next feature needs to be enjoyable without an XP/Aura reward and useful with one active friend. Concrete proposed rules and screen behavior are in `docs/card-duel-v1.md`.
 
 ## Private card duel — recommended to explore first
 
-A short hidden-hand game inside Arena between accepted friends. Both receive the same free match deck. On your turn, draw a card, choose which of your two cards to play, and keep the other hidden. A played card changes what you know or what the other player can do:
+A short hidden-hand game inside Arena between accepted friends. Use one shared free match deck. On your turn, draw a card, choose which of your two cards to play, and keep the other hidden. A played card changes what you know or what the other player can do:
 
 - Watcher peeks at their held card.
 - Ghost protects you until your next turn.
 - Orbit swaps hidden hands.
-- Clean Slate replaces your held card.
+- Clean Slate forces either player's held card to be discarded and replaced.
 - Signal Flare lets you guess their held card; a correct guess ends the round.
 - Oath has the highest held value, but discarding it loses the round.
 
 When the deck runs out, the higher remaining card wins. These are proposed match-only versions using the existing artwork, separate from the purchased contract tools and inventory. Exact deck counts/values need playtesting; this is not a production rules commitment.
 
-The interesting moment: you watch their hand and see Oath. They see that you played Watcher. Before you can guess, they must decide whether to protect themselves, swap hands or replace the exposed card. Your next choice depends on their real move, rather than a daily instruction.
+The interesting moment: you watch their hand and see Oath. They see that you played Watcher. Before you can guess, they must decide whether to protect themselves or swap hands; discarding Oath would lose the round. Your next choice depends on their real move, rather than a daily instruction.
 
 First use: start a free match with one accepted friend and play the first card. Finish in a few minutes together or let the other person take their turn later. The reason to return is their move, a reveal or a rematch. Results belong in the existing friend space, with a clear turn destination.
 
