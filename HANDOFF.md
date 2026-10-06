@@ -24,7 +24,7 @@ Current production/main:
 - The user confirmed a successful live card purchase after the merge. Production database topology/logs and live two-account trades remain unverified.
 - The user bought `hakoware.xyz`. Domain routing and canonical metadata have not been changed in the current polish branch.
 
-Current implementation branch: `feat/retire-weekly-wall` (not deployed).
+Current implementation branch: `feat/retire-weekly-wall` (not merged or deployed to production).
 
 ### Weekly wall retirement — current implementation
 
@@ -34,6 +34,7 @@ The user rejected the weekly wall as a retention activity and explicitly asked t
 - The authenticated legacy wall API returns 410 for reads and every mutation; unauthenticated calls remain 401. Old cached clients cannot create/move/delete/react. Existing walls/Activity are not rewritten or purged. The pre-existing RoomWall TTL still applies, and test-account cleanup retains its scoped model handling.
 - All twelve catalog IDs, original art, owned copies, discoveries, durable receipts and trade history remain. New purchases of the eight wall-only designs are paused (`purchasable: false`), but prior successful private/legacy purchase receipts still replay successfully and repair their audit without another charge/copy. Existing collectibles can still be offered/traded/settled; no refunds or account deletions were added. Four original tools retain their prices/effects and purchase flow.
 - Collection/Home discovery progress covers the four available tools. Retained owned/discovered/reserved collectibles remain visible, with explicit paused-sales copy and no Buy/Stamp/Use action. All catalog IDs stay available to existing trade/history logic; new accounts do not see eight unobtainable discovery slots.
+- The first branch CI stopped on a newly reported production dependency advisory in the existing lockfile. Only Express's compatible transitive `proxy-addr` was updated from 2.0.7 to 2.0.8 (GHSA-jqcg-44mw-7w3h); no manifest or other dependency upgrades. Fresh `npm ci`, the production audit (zero vulnerabilities) and server-hardening checks pass. Verify the updated exact commit's full CI before opening the PR.
 - Validation: production build; lint with zero errors; circle-activity checks; independent frontend/backend review; real standalone-Mongo purchase and replica-set trade/retirement suites. Browser fixtures cover 320×844, 390×600, 390×844 and 1280×844, both themes and motion modes: no wall network requests, retained collectible details/offers, four-tool progress, active purchase response-loss/retry, room posting, default/direct/old wall routes, retired and regular room Activity destinations, notice focus, empty collections and landing copy. Physical iPhone/Safari and production account interactions remain unverified. Existing bundle/index/lint warnings remain.
 - Review notes: `docs/wall-retirement-ui-review.md`. Replacement concepts: `docs/retention-activity-options.md`; neither has been implemented or selected. Current recommendation is to explore a short equal-deck friend card duel with actual hidden information and counters; reusable personal voice reactions are a social companion idea. Finish exact-head CI before one finished PR; merge only on explicit instruction and verify both exact deployments.
 
@@ -1230,4 +1231,3 @@ When a new chat picks this up:
 10. prioritize smoothness, clarity, activation, and mobile UX;
 11. test on iPhone whenever possible;
 12. keep copy short but consequences explicit.
-

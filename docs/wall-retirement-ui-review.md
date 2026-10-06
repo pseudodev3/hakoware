@@ -15,4 +15,6 @@ Verification: production build, lint with zero errors, circle-activity checks an
 
 No new purge, refunds, trade cancellation, migration or economy faucet. Existing wall TTL behavior remains. Not verified: physical iPhone/Safari or live authenticated production journeys. Existing lint/index/bundle warnings remain.
 
+Branch CI also exposed the existing locked `proxy-addr` 2.0.7 dependency advisory. The lockfile now selects compatible 2.0.8 only; fresh installation, production audit (zero vulnerabilities) and server-hardening checks pass. No manifest or unrelated dependency upgrades.
+
 Approve: no HIGH findings remain in the inspected scope.
