@@ -67,6 +67,10 @@ jobs:
         working-directory: server
         run: npm run check:friend-spaces
 
+      - name: Check After Hours conversations and next-day returns
+        working-directory: server
+        run: npm run check:after-hours-social
+
       - name: Check card trades and wall retirement
         working-directory: server
         run: npm run check:cards-wall

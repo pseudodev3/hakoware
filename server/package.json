@@ -12,7 +12,8 @@
     "check:duo-activation": "node scripts/checkDuoActivation.js",
     "check:friend-spaces": "node scripts/checkFriendSpaces.js",
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
-    "check:card-purchases": "node scripts/checkCardPurchases.js"
+    "check:card-purchases": "node scripts/checkCardPurchases.js",
+    "check:after-hours-social": "node scripts/checkAfterHoursSocial.js"
   },
   "engines": {
     "node": ">=20"

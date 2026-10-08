@@ -1,4 +1,5 @@
 const express = require('express');
+const { randomUUID } = require('node:crypto');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const { createRateLimiter } = require('../middleware/rateLimit');
@@ -14,6 +15,10 @@ const { normalizeUsername } = require('../services/username');
 const {
   ACTIVE_MS,
   FEED_MS,
+  SOCIAL_FEED_MS,
+  findLiveSocialPost,
+  findLiveActivity,
+  buildReplyPage,
   REACTIONS,
   SHOUT_MAX_LENGTH,
   SOCIAL_POST_MAX_LENGTH,
@@ -129,7 +134,8 @@ router.get('/', readLimiter, async (req, res) => {
     const actor = await loadActor(req.user.id);
     if (!actor) return res.status(404).json({ msg: 'User not found' });
     if (!actor.username) return res.status(409).json({ msg: 'Pick a username before entering After Hours' });
-    return res.json(await buildRoomSnapshot(actor));
+    if (req.query.activity !== undefined && (typeof req.query.activity !== 'string' || req.query.activity.length > 64)) return res.status(400).json({ msg: 'That activity link is not available.' });
+    return res.json(await buildRoomSnapshot(actor, new Date(), { activityId: req.query.activity || null }));
   } catch (error) {
     console.error('After Hours load failed:', error.message);
     return res.status(500).json({ msg: 'Could not enter After Hours' });
@@ -254,6 +260,17 @@ router.post('/post', socialPostLimiter, async (req, res) => {
   }
 });
 
+router.get('/feed/:activityId/replies', readLimiter, async (req, res) => {
+  try {
+    const actor = await loadActor(req.user.id);
+    if (!actor) return res.status(404).json({ msg: 'User not found' });
+    if (!actor.username) return res.status(409).json({ msg: 'Pick a username before entering After Hours' });
+    return res.json(await buildReplyPage(actor, req.params.activityId, req.query.before));
+  } catch (error) {
+    return require('../services/httpError').sendRouteError(res, error, 'Could not load those replies');
+  }
+});
+
 router.post('/feed/:activityId/reply', socialReplyLimiter, async (req, res) => {
   try {
     const actor = await loadActor(req.user.id);
@@ -264,62 +281,92 @@ router.post('/feed/:activityId/reply', socialReplyLimiter, async (req, res) => {
     if (text.length > REPLY_MAX_LENGTH) {
       return res.status(400).json({ msg: `Keep replies under ${REPLY_MAX_LENGTH} characters` });
     }
+    // Older clients may omit the key. New clients retain it through uncertain delivery.
+    const clientId = req.body.clientId === undefined ? randomUUID() : String(req.body.clientId);
+    if (!/^[a-zA-Z0-9_-]{16,80}$/.test(clientId)) return res.status(400).json({ msg: 'A reply retry key is required' });
 
     const scopeKey = scopeFor(actor);
-    const parent = await AfterHoursActivity.findOne({
-      publicId: req.params.activityId,
-      scopeKey,
-      type: { $in: SOCIAL_POST_TYPES },
-      createdAt: { $gte: new Date(Date.now() - FEED_MS) }
-    }).lean();
-    if (!parent) return res.status(404).json({ msg: 'That post is gone' });
-
+    const parent = await findLiveSocialPost(scopeKey, req.params.activityId);
+    if (!parent) return res.status(404).json({ msg: 'That post is no longer available.' });
     if (parent.type === 'CONFESSION' && parent.anonymous && String(parent.actorId) === String(actor._id)) {
       return res.status(400).json({ msg: 'Replying would give away your anonymous confession' });
     }
 
-    const uniqueKey = `reply:${scopeKey}:${parent._id}:${actor._id}`;
-    if (await AfterHoursActivity.exists({ uniqueKey })) {
-      return res.status(409).json({ msg: 'You already replied to that post' });
+    const uniqueKey = `reply:${scopeKey}:${actor._id}:${clientId}`;
+    let reply = await AfterHoursActivity.findOne({ uniqueKey, scopeKey, actorId: actor._id, type: 'REPLY' });
+    if (!reply) {
+      let targetUserId = parent.actorId;
+      if (String(parent.actorId) === String(actor._id)) {
+        const previousParticipant = await AfterHoursActivity.findOne({
+          scopeKey, type: 'REPLY', parentActivityId: parent._id, actorId: { $ne: actor._id },
+          createdAt: { $gt: new Date(Date.now() - SOCIAL_FEED_MS) }
+        }).sort({ createdAt: -1, publicId: -1 }).select('actorId').lean();
+        targetUserId = previousParticipant?.actorId || null;
+      }
+      try {
+        reply = await AfterHoursActivity.create({
+          uniqueKey, scopeKey, roundKey: parent.roundKey, type: 'REPLY',
+          actorId: actor._id, targetUserId, parentActivityId: parent._id,
+          promptId: 'social-reply', promptText: parent.promptText || 'After Hours', text
+        });
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        reply = await AfterHoursActivity.findOne({ uniqueKey, scopeKey, actorId: actor._id, type: 'REPLY' });
+        if (!reply) throw error;
+      }
+    }
+    if (String(reply.parentActivityId) !== String(parent._id) || reply.text !== text) {
+      return res.status(409).json({ msg: 'That retry key belongs to another reply. Reopen the conversation to send a new reply.' });
     }
 
-    let reply;
-    try {
-      reply = await AfterHoursActivity.create({
-        uniqueKey,
-        scopeKey,
-        roundKey: parent.roundKey,
-        type: 'REPLY',
-        actorId: actor._id,
-        targetUserId: parent.actorId,
-        parentActivityId: parent._id,
-        promptId: 'social-reply',
-        promptText: parent.promptText || 'After Hours',
-        text
-      });
-    } catch (error) {
-      if (error?.code === 11000) return res.status(409).json({ msg: 'You already replied to that post' });
-      throw error;
+    if (reply.targetUserId && String(reply.targetUserId) !== String(actor._id)) {
+      // A persisted recipient makes owner follow-ups reciprocal without retargeting
+      // a retry if somebody else has replied since the original delivery.
+      const token = randomUUID();
+      let claim = null;
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        claim = await AfterHoursActivity.findOneAndUpdate({
+          _id: reply._id, replyNotificationDelivered: { $ne: true },
+          $or: [{ 'replyNotificationLease.until': { $exists: false } }, { 'replyNotificationLease.until': { $lte: new Date() } }]
+        }, { $set: { replyNotificationLease: { token, until: new Date(Date.now() + 30000) } } }, { returnDocument: 'after' }).select('_id');
+        if (claim) break;
+        const delivery = await AfterHoursActivity.findById(reply._id).select({ replyNotificationDelivered: 1 }).lean();
+        if (delivery?.replyNotificationDelivered) break;
+        // A retry must not confirm completed delivery while another request might
+        // still fail. Wait briefly, then keep the client retry key if work is pending.
+        if (attempt === 19) return res.status(503).json({ msg: 'Your reply is saved. Retry in a moment to confirm notification delivery.' });
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      if (claim) {
+        const notificationKey = { toUserId: reply.targetUserId, afterHoursReplyId: reply._id };
+        try {
+          try {
+            await Notification.updateOne(notificationKey, { $setOnInsert: {
+              fromUserId: actor._id, type: 'AFTER_HOURS_REPLY', title: 'After Hours',
+              message: String(reply.targetUserId) !== String(parent.actorId)
+                ? `${actor.displayName} replied in your After Hours conversation.`
+                : parent.type === 'CONFESSION' && parent.anonymous
+                  ? `${actor.displayName} replied to your anonymous confession.`
+                  : `${actor.displayName} replied to your After Hours post.`,
+              afterHoursActivityId: reply.publicId, read: false, createdAt: reply.createdAt
+            } }, { upsert: true });
+          } catch (error) {
+            if (error?.code !== 11000 || !await Notification.exists(notificationKey)) throw error;
+          }
+          await AfterHoursActivity.updateOne({ _id: reply._id, 'replyNotificationLease.token': token }, {
+            $set: { replyNotificationDelivered: true }, $unset: { replyNotificationLease: 1 }
+          });
+        } catch (error) {
+          await AfterHoursActivity.updateOne({ _id: reply._id, 'replyNotificationLease.token': token }, { $unset: { replyNotificationLease: 1 } }).catch(() => null);
+          throw error;
+        }
+      }
     }
 
-    if (String(parent.actorId) !== String(actor._id)) {
-      notify({
-        toUserId: parent.actorId,
-        fromUserId: actor._id,
-        type: 'AFTER_HOURS_REPLY',
-        title: 'After Hours',
-        message: parent.type === 'CONFESSION' && parent.anonymous
-          ? `${actor.displayName} replied to your anonymous confession.`
-          : `${actor.displayName} replied to your After Hours post.`,
-        afterHoursActivityId: parent.publicId
-      });
-    }
-
-    await touchPresence(actor);
-    return res.json(await buildRoomSnapshot(actor));
+    return res.json({ ...await buildRoomSnapshot(actor, new Date(), { activityId: reply.publicId }), replyId: reply.publicId });
   } catch (error) {
     console.error('After Hours reply failed:', error.message);
-    return res.status(500).json({ msg: 'Could not reply' });
+    return res.status(500).json({ msg: 'Could not finish sending that reply. Retry to confirm delivery.' });
   }
 });
 
@@ -336,7 +383,7 @@ router.post('/feed/:activityId/vote', actionLimiter, async (req, res) => {
       publicId: req.params.activityId,
       scopeKey,
       type: 'HOT_TAKE',
-      createdAt: { $gte: new Date(Date.now() - FEED_MS) }
+      createdAt: { $gte: new Date(Date.now() - SOCIAL_FEED_MS) }
     }).lean();
     if (!activity) return res.status(404).json({ msg: 'That hot take is gone' });
     if (String(activity.actorId) === String(actor._id)) return res.status(400).json({ msg: 'Let the room judge your take' });
@@ -348,7 +395,7 @@ router.post('/feed/:activityId/vote', actionLimiter, async (req, res) => {
     );
 
     await touchPresence(actor);
-    return res.json(await buildRoomSnapshot(actor));
+    return res.json(await buildRoomSnapshot(actor, new Date(), { activityId: req.params.activityId }));
   } catch (error) {
     console.error('After Hours hot take vote failed:', error.message);
     return res.status(500).json({ msg: 'Could not vote on that take' });
@@ -363,13 +410,9 @@ router.post('/feed/:activityId/spark', sparkLimiter, async (req, res) => {
     if (!actor) return res.status(404).json({ msg: 'User not found' });
 
     const scopeKey = scopeFor(actor);
-    const activity = await AfterHoursActivity.findOne({
-      publicId: req.params.activityId,
-      scopeKey,
-      type: { $in: SOCIAL_CONTENT_TYPES },
-      createdAt: { $gte: new Date(Date.now() - FEED_MS) }
-    }).lean();
-    if (!activity) return res.status(404).json({ msg: 'That post is gone' });
+    const live = await findLiveActivity(scopeKey, req.params.activityId);
+    const activity = live?.activity;
+    if (!activity || !SOCIAL_CONTENT_TYPES.includes(activity.type)) return res.status(404).json({ msg: 'That post is no longer available.' });
     if (String(activity.actorId) === String(actor._id)) return res.status(400).json({ msg: 'You cannot Spark yourself' });
 
     if (await AfterHoursSpark.exists({ activityId: activity._id, fromUserId: actor._id })) {
@@ -473,7 +516,7 @@ router.post('/feed/:activityId/spark', sparkLimiter, async (req, res) => {
 
     await touchPresence(actor);
     const freshActor = await loadActor(actor._id);
-    return res.json(await buildRoomSnapshot(freshActor || actor));
+    return res.json(await buildRoomSnapshot(freshActor || actor, new Date(), { activityId: req.params.activityId }));
   } catch (error) {
     if (spark && !debited) await AfterHoursSpark.deleteOne({ _id: spark._id }).catch(() => null);
     console.error('After Hours Spark failed:', error.message);
@@ -686,12 +729,9 @@ router.post('/feed/:activityId/react', actionLimiter, async (req, res) => {
     if (!REACTIONS.includes(reaction)) return res.status(400).json({ msg: 'That reaction is not available here' });
 
     const scopeKey = scopeFor(actor);
-    const activity = await AfterHoursActivity.findOne({
-      publicId: req.params.activityId,
-      scopeKey,
-      createdAt: { $gte: new Date(Date.now() - FEED_MS) }
-    }).lean();
-    if (!activity) return res.status(404).json({ msg: 'That room moment is gone' });
+    const live = await findLiveActivity(scopeKey, req.params.activityId);
+    const activity = live?.activity;
+    if (!activity) return res.status(404).json({ msg: 'That room moment is no longer available.' });
     if (String(activity.actorId) === String(actor._id)) return res.status(400).json({ msg: 'React to somebody else' });
 
     const existing = await AfterHoursReaction.findOne({ activityId: activity._id, userId: actor._id });
@@ -710,7 +750,7 @@ router.post('/feed/:activityId/react', actionLimiter, async (req, res) => {
     }
 
     await touchPresence(actor);
-    return res.json(await buildRoomSnapshot(actor));
+    return res.json(await buildRoomSnapshot(actor, new Date(), { activityId: req.params.activityId }));
   } catch (error) {
     console.error('After Hours reaction failed:', error.message);
     return res.status(500).json({ msg: 'Could not react' });

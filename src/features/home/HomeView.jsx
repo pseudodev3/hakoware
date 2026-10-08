@@ -39,6 +39,7 @@ const priority = (friendship, userId, socialContracts = {}) => {
   if (getBankruptPartner(friendship, userId) || ownDebt?.isBankrupt) return 60000;
   if (friendship.chaos?.wantedUserId && friendship.chaos?.wantedUntil) return 55000;
   if (friendship.chaos?.activeEvent) return 50000;
+  if (social?.unseenActivity?.some((item) => item.type === 'MESSAGE')) return 49500;
   if (friendship.season?.status === 'COMPLETE') return 49000;
   if (ownDebt?.isRecovering) return 48000;
   const state = contractState(friendship, userId);
@@ -53,7 +54,7 @@ const priority = (friendship, userId, socialContracts = {}) => {
 };
 
 
-export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onActivitySeen, onOpenFriend }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onActivitySeen, onOpenFriend, onAcceptedFriend }) => {
   const userId = user.uid || user.id || user._id;
   const socialContracts = socialPresence?.contracts || {};
   const newestActivityAt = (friendship) => {
@@ -62,7 +63,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   };
   const sorted = [...friendships].sort((a, b) => priority(b, userId, socialContracts) - priority(a, userId, socialContracts)
     || newestActivityAt(b) - newestActivityAt(a));
-  const bankruptPartners = friendships.map((friendship) => getBankruptPartner(friendship, userId)).filter(Boolean);
   const hot = sorted.filter((friendship) => {
     const state = contractState(friendship, userId);
     const social = socialContracts?.[friendship._id || friendship.id];
@@ -79,10 +79,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   });
   const [showAllPulse, setShowAllPulse] = useState(false);
   const visible = sorted.slice(0, 3);
-  const newCount = sorted.filter((item) => {
+  const hasNewUpdates = sorted.some((item) => {
     const social = socialContracts[item._id || item.id];
     return social?.firstMutualCheckin || social?.unseenActivity?.length;
-  }).length;
+  });
   const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
   const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
   const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
@@ -100,7 +100,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     : null;
   const showSeasonBriefing = Boolean(briefingKey && localStorage.getItem(briefingKey) !== 'seen');
 
-  const pulse = socialPresence?.pulse || [];
+  const previewedMessageIds = new Set(visible.map((friendship) => socialContracts[friendship._id || friendship.id]?.lastMessage?.id).filter(Boolean));
+  // Only the exact latest message is already represented above. Older replies
+  // and messages from friends outside these three cards stay in this list.
+  const pulse = (socialPresence?.pulse || []).filter((item) => item.type !== 'MESSAGE' || !previewedMessageIds.has(item.id));
   const shownPulse = showAllPulse ? pulse : pulse.slice(0, 4);
 
   const openPulse = (item) => {
@@ -127,7 +130,8 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     const result = await respondToInvitation(id, action);
     if (result.success) {
       showToast?.(action === 'ACCEPT' ? 'Contract accepted.' : 'Contract declined.', 'SUCCESS');
-      await onRefresh?.();
+      const refreshedContracts = await onRefresh?.();
+      if (action === 'ACCEPT') onAcceptedFriend?.(invitation, refreshedContracts);
     } else {
       showToast?.(result.error || 'Could not update contract', 'ERROR');
     }
@@ -200,10 +204,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <p className="eyebrow">You’re in, {identity}</p>
           <h1>Start with one person.</h1>
           <div className="first-contract-actions">
-            <Button variant="aura" icon={Swords} onClick={onAddFriend}>Start a contract</Button>
+            <Button variant="aura" icon={Swords} onClick={onAddFriend}>Add a friend</Button>
             <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>After Hours</Button>
           </div>
-          <p className="onboarding-short-rule">Someone you know, or someone you run into. Contract → check in → don’t disappear.</p>
+          <p className="onboarding-short-rule">Invite someone you know, or meet someone in After Hours. Your conversation starts when they accept.</p>
         </section>
         <HomePlay user={user} onNavigate={onNavigate} />
       </div>
@@ -215,7 +219,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       <header className="circle-first-header">
         <div className="circle-first-title">
           <h1>Your circle</h1>
-          <p>{hot.length ? `${hot.length} need${hot.length === 1 ? 's' : ''} attention.` : `${friendships.length} active.`}{newCount > 0 ? ` ${newCount} with something new.` : !hot.length ? ' All clear.' : ''}</p>
+          <p>{hot.length ? 'A few things to catch up on.' : hasNewUpdates ? 'Pick up where you left off.' : 'Make time for your people.'}</p>
         </div>
         <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>Add friend</Button>
       </header>
@@ -244,30 +248,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         );
       })()}
 
-      {pulse.length > 0 && (
-        <section className="circle-pulse" aria-label="While you were gone">
-          <div className="circle-pulse-heading">
-            <span>While you were gone</span>
-            <button type="button" onClick={() => onActivitySeen?.(shownPulse)} aria-label={`Dismiss these ${shownPulse.length} updates`}>Dismiss shown</button>
-          </div>
-          <div className="circle-pulse-list">
-            {shownPulse.map((item) => (
-              <button type="button" className={`circle-pulse-row ${item.tone || 'neutral'}`} key={item.id} onClick={() => openPulse(item)}>
-                <i aria-hidden="true" />
-                <span>{item.text}</span>
-                <time dateTime={item.createdAt}>{pulseTime(item.createdAt)}</time>
-                <ArrowRight size={14} strokeWidth={1.6} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-          {pulse.length > 4 && <button className="circle-pulse-more" type="button" onClick={() => setShowAllPulse((value) => !value)}>{showAllPulse ? 'Show less' : `See ${pulse.length - 4} more`}</button>}
-        </section>
-      )}
-
       <div className="home-hangout">
-        <section className="home-friends" aria-label={hot.length ? 'Friends needing attention' : 'Your friends'}>
+        <section className="home-friends" aria-label="Conversations">
           <div className="home-friends-heading">
-            <h2>Friends</h2>
+            <h2>Conversations</h2>
             <button type="button" onClick={() => onNavigate('contracts')}>{friendships.length > visible.length ? `See all ${friendships.length}` : 'Open circle'}<ArrowRight size={14} aria-hidden="true" /></button>
           </div>
           <div className="circle-contracts">{visible.map((friendship) => (
@@ -280,6 +264,26 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
               socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
             />
           ))}</div>
+
+          {pulse.length > 0 && (
+            <section className="circle-pulse" aria-label="While you were gone">
+              <div className="circle-pulse-heading">
+                <span>While you were gone</span>
+                <button type="button" onClick={() => onActivitySeen?.(shownPulse)} aria-label={`Dismiss these ${shownPulse.length} updates`}>Dismiss shown</button>
+              </div>
+              <div className="circle-pulse-list">
+                {shownPulse.map((item) => (
+                  <button type="button" className={`circle-pulse-row ${item.tone || 'neutral'}`} key={item.id} onClick={() => openPulse(item)}>
+                    <i aria-hidden="true" />
+                    <span>{item.text}</span>
+                    <time dateTime={item.createdAt}>{pulseTime(item.createdAt)}</time>
+                    <ArrowRight size={14} strokeWidth={1.6} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+              {pulse.length > 4 && <button className="circle-pulse-more" type="button" onClick={() => setShowAllPulse((value) => !value)}>{showAllPulse ? 'Show less' : `See ${pulse.length - 4} more`}</button>}
+            </section>
+          )}
         </section>
 
         <HomePlay user={user} onNavigate={onNavigate} />

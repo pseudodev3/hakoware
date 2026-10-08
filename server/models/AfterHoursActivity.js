@@ -20,6 +20,8 @@ const AfterHoursActivitySchema = new mongoose.Schema({
   text: { type: String, default: null, maxlength: 180 },
   anonymous: { type: Boolean, default: false },
   burnAmount: { type: Number, default: 0, min: 0, max: 25 },
+  replyNotificationDelivered: { type: Boolean, default: false, select: false },
+  replyNotificationLease: { type: new mongoose.Schema({ token: String, until: Date }, { _id: false }), default: undefined, select: false },
   createdAt: { type: Date, default: Date.now }
 }, { versionKey: false });
 

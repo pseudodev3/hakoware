@@ -123,3 +123,15 @@
 @media (hover:hover) and (pointer:fine) { .home-friends-heading button:hover { color:var(--accent-text); } }
 @media (max-width:540px) { .circle-first-header { gap:12px; } .circle-first-header > .btn { padding-inline:12px; font-size:.75rem; } }
 @media (prefers-reduced-motion:reduce) { .home-friends-heading button { transition:none; } .home-friends-heading button:active { transform:none; } }
+
+/* A short roster keeps the conversations in reach before supporting activity. */
+.circle-first-header { align-items:center; }
+.circle-first-title h1 { font-size:clamp(1.9rem,3.5vw,2.5rem); }
+.circle-first-title p { max-width:34ch; font-size:.8125rem; line-height:1.5; margin-top:6px; }
+.circle-contracts { gap:10px; }
+.home-friends-heading { margin-bottom:8px; }
+.home-friends-heading h2 { font-size:1rem; }
+.circle-pulse { margin-top:16px; background:transparent; padding:6px 0; border:0; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); border-radius:0; }
+.circle-pulse-row time { font-size:.8125rem; }
+.circle-summary { gap:16px; }
+@media (max-width:540px) { .circle-first-title h1 { font-size:1.9rem; } .circle-first-title p { font-size:.8125rem; } .home-view { gap:20px; } }
