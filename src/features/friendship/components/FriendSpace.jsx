@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowUpRight, Check, ChevronDown, MessageCircle, Mic, Send, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUpRight, Check, ChevronDown, MessageCircle, Mic, ScrollText, Send, X } from 'lucide-react';
 import { getContractTimeline, sendContractMessage, markContractTimelineRead } from '../../../services/friendshipService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { ContractCard } from './ContractCard';
@@ -174,13 +174,16 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     const conversation = messageTypes.has(item.type);
     const isFocus = item.id === focusEventId;
     return <article key={item.id} data-friend-event={item.id} tabIndex={-1} className={`friend-event ${conversation ? 'conversation' : 'shared-event'} ${item.mine ? 'mine' : 'theirs'} ${isFocus ? 'is-focused' : ''}`}>
-      {conversation ? <div className="friend-message-bubble">
+      {conversation ? <>
+        <div className="friend-message-bubble">
         {!item.mine && <span className="friend-message-author friend-space-sr-only">{item.actorName}</span>}
         {item.voice ? <VoiceMessage voice={item.voice} /> : <p>{item.text}</p>}
         {item.voiceUnavailable && <small>Audio is no longer available.</small>}
-        <span className="friend-message-meta"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>{item.checkin?.status === 'CHECKED_IN' && <span><Check size={11} /> Checked in · +{item.checkin.xp} XP</span>}</span>
+        <span className="friend-message-meta"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time></span>
         {item.mine && item.checkin?.status === 'NEEDS_ACTION' && <span className="friend-message-checkin-note">{item.checkin.reason}</span>}
-      </div> : <div className="friend-shared-event"><span className="friend-event-label">{item.text}{item.xp > 0 && <small>+{item.xp} Duo XP</small>}</span>
+        </div>
+        {item.checkin?.status === 'CHECKED_IN' && <span className="friend-message-checkin"><Check size={13} />Checked in · +{item.checkin.xp} Duo XP</span>}
+      </> : <div className="friend-shared-event"><span className="friend-event-label">{item.text}{item.xp > 0 && <small>+{item.xp} Duo XP</small>}</span>
         {item.voice && <VoiceMessage voice={item.voice} />}
         {item.voiceUnavailable && <small>Older voice check-in · audio isn’t linked here.</small>}
         {item.moment && <div className="friend-moment-reveal"><p>{item.moment.prompt}</p>{item.moment.answers.map((answer, index) => <span key={index}><strong>{answer.name}</strong>{answer.value}</span>)}</div>}
@@ -191,7 +194,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   };
   const focusOutsidePage = room.focusItem && !room.items.some((item) => item.id === room.focusItem.id);
   return <section className="friend-space" aria-label={`Your space with ${partner?.displayName || 'your friend'}`}>
-    <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{partner?.displayName || 'Your friend'}</h1><span>{partner?.username ? '@' + partner.username : 'Your shared space'}</span></div><button className="friend-space-details" aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}>{contractOpen ? 'Conversation' : 'Contract'}<ChevronDown size={15} /></button></header>
+    <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{partner?.displayName || 'Your friend'}</h1><span>{partner?.username ? '@' + partner.username : 'Your shared space'} · Duo Lv. {friendship.duoLevel || 1}</span></div><button className="friend-space-details" aria-label={contractOpen ? 'Return to conversation' : 'Open contract details'} aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}><ScrollText size={18} /><span>{contractOpen ? 'Conversation' : 'Contract'}</span><ChevronDown className="friend-details-chevron" size={15} /></button></header>
     {showHealth && <div className={`friend-space-health ${summary.tone}`}><span><i aria-hidden="true" />{summary.label}</span><button onClick={() => onAction(friendship.season?.status === 'COMPLETE' ? 'RECAP' : 'CHECKIN', friendship)} disabled={friendship.season?.status !== 'COMPLETE' && !checkinAvailable}>{friendship.season?.status === 'COMPLETE' ? 'See recap' : checkinAvailable ? 'Check in' : 'Checked in'}<Check size={13} /></button></div>}
     {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span><ArrowUpRight size={15} /></button>}
     {contractOpen ? <div className="friend-space-contract"><ContractCard friendship={friendship} currentUserId={currentUserId} onAction={onAction} referenceLayout socialState={socialState} onActivitySeen={onActivitySeen} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Home, Layers, LogOut, Moon, Plus, Radio, Sun, Users, UserRound, Zap } from 'lucide-react';
+import { Bell, Home, Layers, LogOut, Moon, Plus, Radio, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -116,6 +116,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
               <Bell size={19} strokeWidth={1.8} />
               {totalBadge > 0 && <span className="notification-badge">{totalBadge > 99 ? '99+' : totalBadge}</span>}
             </button>
+            {!friendSpace && ['home', 'contracts'].includes(activeTab) && <button type="button" className="header-add-friend" onClick={onAddFriend} aria-label="Add a friend"><UserRoundPlus size={20} strokeWidth={1.8} /></button>}
           </div>
         </header>
 

@@ -135,3 +135,38 @@
 .circle-pulse-row time { font-size:.8125rem; }
 .circle-summary { gap:16px; }
 @media (max-width:540px) { .circle-first-title h1 { font-size:1.9rem; } .circle-first-title p { font-size:.8125rem; } .home-view { gap:20px; } }
+
+/* The selected crew composition: one featured friend, two neighbors, a shelf. */
+.crew-home { max-width:1050px; gap:18px; }
+.crew-home .circle-first-header { position:relative; min-height:126px; padding-block:10px; grid-template-columns:minmax(0,1fr) 150px; gap:14px; }
+.crew-home .circle-first-title h1 { font-size:clamp(2.45rem,5vw,4.25rem); font-weight:780; line-height:1.06; letter-spacing:-.05em; }
+.crew-home .circle-first-title p { margin-top:10px; font-size:1rem; max-width:34ch; }
+.home-crew-sigil { height:126px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.home-crew-sigil img { display:block; width:100%; height:100%; object-fit:contain; opacity:.64; }
+.crew-home .home-friends-heading { margin-bottom:8px; }
+.crew-home .home-friends-heading h2 { color:var(--text-muted); font-size:.8125rem; font-weight:550; letter-spacing:0; }
+.crew-conversations { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:16px; }
+.crew-conversations > .friend-card-featured { grid-column:1 / -1; }
+.crew-conversations > .friend-card-crew:nth-child(2):last-child { grid-column:1 / -1; }
+.crew-conversations > .friend-card-crew:nth-child(2):last-child .friend-card-open { display:grid; grid-template-columns:minmax(0,40%) minmax(0,60%); align-items:stretch; }
+.crew-conversations > .friend-card-crew:nth-child(2):last-child .friend-card-portrait { height:100%; min-height:142px; }
+.crew-conversations > .friend-card-crew:nth-child(2):not(.danger) { background:color-mix(in srgb,var(--aura-blue) 50%,var(--crew-edge,var(--border-active))); }
+.crew-conversations > .friend-card-crew:nth-child(3):not(.danger) { background:color-mix(in srgb,var(--play-violet) 55%,var(--crew-edge,var(--border-active))); }
+.crew-home .circle-pulse { margin-top:20px; }
+.crew-home .circle-summary { padding-top:16px; }
+.onboarding-home .first-contract-card { border-radius:0; background:var(--surface-card); clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px); }
+@media (max-width:540px) {
+  .crew-home { gap:12px; }
+  .crew-home .circle-first-header { min-height:76px; grid-template-columns:minmax(0,1fr) 86px; gap:10px; padding-block:3px; }
+  .crew-home .circle-first-title h1 { font-size:clamp(2.0625rem,11vw,3rem); }
+  .crew-home .circle-first-title p { font-size:.875rem; margin-top:8px; }
+  .home-crew-sigil { height:76px; }
+  .crew-conversations { gap:12px; }
+}
+@media (max-width:350px) {
+  .crew-home .circle-first-header { grid-template-columns:minmax(0,1fr) 60px; gap:7px; }
+  .crew-home .circle-first-title h1 { font-size:clamp(2.0625rem,11vw,3rem); }
+  .crew-home .circle-first-title p { font-size:.8125rem; }
+  .home-crew-sigil { height:72px; }
+  .crew-conversations { gap:10px; }
+}

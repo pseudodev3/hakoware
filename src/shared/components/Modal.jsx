@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -11,26 +11,72 @@ export const Modal = ({
   children,
   size = 'md',
   showClose = true,
-  footer = null
+  footer = null,
+  manageFocus = true,
+  initialFocusSelector
 }) => {
   const shouldReduceMotion = useReducedMotion();
 
+  const contentRef = useRef(null);
+  const closeRef = useRef(onClose);
+  const initialSelectorRef = useRef(initialFocusSelector);
+  initialSelectorRef.current = initialFocusSelector;
+  closeRef.current = onClose;
+
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = 'auto';
-    return () => { document.body.style.overflow = 'auto'; };
+    if (!isOpen) return undefined;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = overflow; };
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
-
+    const content = contentRef.current;
+    const opener = document.activeElement;
+    const isTopDialog = () => [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+      .filter((element) => element.getBoundingClientRect().width && element.getBoundingClientRect().height).at(-1) === content;
+    const backgrounds = manageFocus ? [...document.body.children]
+      .filter((element) => element instanceof HTMLElement && element !== content?.closest('.modal-root'))
+      .map((element) => ({ element, inert: element.inert })) : [];
+    backgrounds.forEach(({ element }) => { element.inert = true; });
+    const controls = () => [...(content?.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),summary,a[href],[tabindex]:not([tabindex="-1"])') || [])]
+      .filter((element) => element.getBoundingClientRect().width && element.getBoundingClientRect().height
+        && getComputedStyle(element).visibility !== 'hidden'
+        && !element.closest('[inert]')
+        && (element.tagName === 'SUMMARY' || !element.closest('details:not([open])')));
+    const focusFirst = () => (content?.querySelector(initialSelectorRef.current || '[autofocus]') || controls()[0] || content)?.focus({ preventScroll: true });
+    const frame = manageFocus ? requestAnimationFrame(() => { if (isTopDialog()) focusFirst(); }) : null;
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose?.();
+      if (!isTopDialog()) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeRef.current?.();
+      } else if (manageFocus && event.key === 'Tab') {
+        const list = controls();
+        const first = list[0]; const last = list.at(-1);
+        if (!first) { event.preventDefault(); content?.focus(); }
+        else if (event.shiftKey && (document.activeElement === first || !content.contains(document.activeElement))) {
+          event.preventDefault(); last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !content.contains(document.activeElement))) {
+          event.preventDefault(); first.focus();
+        }
+      }
     };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, onClose]);
+    const keepFocus = (event) => {
+      if (manageFocus && isTopDialog() && !content?.contains(event.target)) focusFirst();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    if (manageFocus) document.addEventListener('focusin', keepFocus);
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('focusin', keepFocus);
+      backgrounds.forEach(({ element, inert }) => { element.inert = inert; });
+      if (manageFocus && opener?.isConnected && !opener.closest('[inert]')) opener.focus({ preventScroll: true });
+    };
+  }, [isOpen, manageFocus]);
 
   const sizes = {
     sm: { maxWidth: '400px' },
@@ -67,6 +113,8 @@ export const Modal = ({
           />
 
           <motion.div
+            ref={contentRef}
+            tabIndex={-1}
             className={`modal-content ${footer ? 'has-footer' : ''}`}
             style={sizes[size]}
             role="dialog"

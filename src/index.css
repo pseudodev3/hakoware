@@ -25,7 +25,7 @@
   --aura-blue-glow: rgba(153,189,255,.1);
   --aura-green: #9dddaf;
   --aura-green-glow: rgba(157,221,175,.1);
-  --bg-dark: #141719;
+  --bg-dark: #101313;
   --bg-elevated: #1b1f21;
   --bg-card: #202527;
   --bg-card-strong: #272d30;
@@ -33,11 +33,11 @@
   --surface-1: #1b1f21;
   --surface-2: #202527;
   --surface-3: #2a3033;
-  --surface-card: #202527;
+  --surface-card: #191d1e;
   --surface-soft: rgba(244,246,237,.05);
   --surface-soft-strong: rgba(244,246,237,.09);
   --surface-glass: rgba(20,23,25,.97);
-  --surface-sidebar: #181c1e;
+  --surface-sidebar: #121616;
   --surface-modal: #202527;
   --surface-input: #171b1d;
   --border-subtle: rgba(239,246,244,.11);
@@ -51,6 +51,12 @@
   --shadow-card: 0 2px 0 rgba(0,0,0,.1);
   --shadow-float: 0 22px 70px rgba(0,0,0,.4);
   --shadow-shell: none;
+  --crew-surface-texture: url('/textures/hakoware-ink-grain.webp');
+  --crew-texture-opacity: .5;
+  --crew-panel-texture-opacity: .16;
+  --crew-edge: rgba(239,246,244,.27);
+  --crew-portrait-bg: #252f2b;
+  --crew-cut: 14px;
 }
 
 :root[data-theme='light'] {
@@ -95,6 +101,10 @@
   --shadow-card: 0 2px 0 rgba(30,41,32,.05);
   --shadow-float: 0 22px 70px rgba(30,41,32,.18);
   --shadow-shell: none;
+  --crew-texture-opacity: .045;
+  --crew-panel-texture-opacity: .025;
+  --crew-edge: rgba(30,41,32,.25);
+  --crew-portrait-bg: #e8edde;
 }
 
 :root {

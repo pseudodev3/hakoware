@@ -159,7 +159,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
   const effectiveLimit = selected?.id === 'CUSTOM' ? limit : selected?.limit;
 
   return (
-    <Modal isOpen={isOpen} onClose={close} title={stepTitle(step, shareInvite)} size="lg">
+    <Modal isOpen={isOpen} initialFocusSelector="[data-add-friend-input]" onClose={close} title={stepTitle(step, shareInvite)} size="lg">
       {shareInvite ? (
         <div className="invite-share-state">
           <div className="invite-share-icon"><Check size={20} strokeWidth={2} /></div>
@@ -209,7 +209,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
                 }}
                 autoCapitalize="none"
                 spellCheck={false}
-                autoFocus
+                data-add-friend-input="true"
                 required
               />
 

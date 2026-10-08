@@ -18,15 +18,29 @@
 
 Current production/main:
 
-- PR #85, weekly wall retirement, is merged on top of PR #84 / #83 / #82 / #81 / #80 / #79 / #78.
-- Exact squash SHA: `6ef2ff767d07c5ab43b48f5e896e200b3ad9f14b`.
-- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served the retired-wall frontend assets; backend health passed. These checks do not establish authenticated two-account behavior.
+- PR #86, social return flow, is merged on top of PR #85 / #84 / #83 / #82 / #81 / #80 / #79 / #78.
+- Exact squash SHA: `14e1abccdb250c940a9e704c78f00182b2dbcfe3`.
+- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served `/assets/index-Cr4i462P.js` and `/assets/index-DOXy_zoB.css`; the stylesheet matched the verified local build. Public Sans loaded as a real WOFF2; backend health returned 200 and unauthenticated room/cards/reply reads returned 401. These checks do not establish authenticated two-account behavior.
 - The user previously confirmed a successful live card purchase. Production database topology/logs and live two-account trades remain unverified.
 - The user bought `hakoware.xyz`. Domain routing and canonical metadata have not been changed.
 
-Current implementation branch: `feat/social-return-flow` (not merged or deployed to production).
+Current implementation branch: `feat/crew-visual-revamp` (not merged or deployed to production).
 
-### Home, friend conversations and After Hours — current implementation
+### Selected crew visual direction — current implementation
+
+The user said the overall look felt generic, then selected **2 — textured crew cards** from three displayed image concepts. Implement that exact direction across Home, friend conversations and After Hours. Preserve Public Sans, actual avatars/initial fallbacks, original shaded card artwork and relationship-first behavior. Do not install the mockup's synthetic people as production avatars.
+
+- Selected reference: `/workspace/generated_images/exec-3229aa87-3e3f-447e-98cb-50a3ca67de1e.png` (853×1844). Its 390px normalized comparison and final representative renders are recorded in `design-qa.md` and `docs/crew-visual-ui-review.md`.
+- Home leads with one featured portrait/message card and two adjacent cut-corner crew cards. Circle keeps compact roster rows. Real mixed updates, dangerous-contract ordering, exact latest-message deduplication, moments, check-ins/recaps and invitations retain their existing semantics. All friends remain reachable through Circle in the dock/sidebar. Add friend is in the phone header and existing desktop sidebar; no duplicated populated-Home CTA.
+- The collection shelf shows actual owned/reserved tools, honest Aura/counts and exact incoming offers, retaining original card art. Missing collections and zero owned tools have useful real destinations rather than fabricated cards.
+- Friend conversations use one identity bar with Back, actual friend/handle/Duo level, Contract details and Activity. Message text stays 16px; check-in acknowledgments sit below the message surface. Existing manual check-in, danger, voice, history, focus, retry/drafts and progression behavior remain.
+- After Hours uses violet-edged ink surfaces, clearer author/post/reply hierarchy, compact sharing and a real Here now people sheet. Room posts appear earlier. Social-post expiry copy explicitly covers 48h; challenges/conversion proof retain 3h. Its dedicated exact-reply focus/viewport handling remains in place.
+- Generated raster material and decorative mark/accent live in `public/textures/`: ink grain 115422 bytes, transparent H mark 26388 bytes and transparent lime accent 3958 bytes. They add no gameplay state. Public Sans remains the sole font and no dependencies were added.
+- Shared Input now associates labels/error descriptions with stable IDs. Shared Modal traps/returns focus, makes the background inert and preserves active scroll locks. After Hours opts out of generic focus handling because its existing wrapper manages exact reply targets. Modal/toast close targets are 44px. Verify keyboard navigation as well as pointer views after changing these shared components.
+- Validation/evidence: local build, lint (zero errors; existing warnings), circle activity checks, production dependency audits, independent diff/integration review and Chromium fixture matrices at 320/390/1280, both themes and motion preferences. Room regression coverage includes exact Activity focus, reply pagination/retries/drafts/expiry, public/anonymous ownership and unchanged Aura actions. Review reports record concrete evidence and limits; do not treat synthetic fixtures as authenticated production delivery or retention measurements.
+- This is a visual pass. No game, card duel, web push, email flow, economy change, fake presence or domain routing was added. Card duel remains a proposal. Do not restore the rejected wall, daily prompt packs or Hunter Runs. Finish exact-head CI before one finished PR; merge only on explicit user instruction, then verify exact frontend/backend deployments.
+
+### Home, friend conversations and After Hours — merged PR #86 baseline
 
 The user said both UI/UX and retention still need work. They prioritized Home and friend conversations, then explicitly included After Hours. This pass improves discovery, readability and continuing a real conversation across visits. It does not establish a retention lift.
 
