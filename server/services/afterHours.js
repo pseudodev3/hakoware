@@ -8,6 +8,8 @@ const MINUTE = 60 * 1000;
 const ROUND_MS = 10 * MINUTE;
 const ACTIVE_MS = 5 * MINUTE;
 const FEED_MS = 3 * 60 * MINUTE;
+const SOCIAL_FEED_MS = 48 * 60 * MINUTE;
+const REPLY_PAGE_SIZE = 20;
 const SHOUT_MAX_LENGTH = 88;
 const SOCIAL_POST_MAX_LENGTH = 160;
 const REPLY_MAX_LENGTH = 100;
@@ -153,7 +155,119 @@ const publicActorFor = (item, viewerId) => {
   return { actor: publicUser(item.actorId), isOwn };
 };
 
-const buildRoomSnapshot = async (user, now = new Date()) => {
+const publicActivityId = (value) => typeof value === 'string' && /^[a-f0-9]{24}$/.test(value);
+const socialSince = (now = new Date()) => new Date(now.getTime() - SOCIAL_FEED_MS);
+const findLiveSocialPost = async (scopeKey, publicId, now = new Date()) => {
+  if (!publicActivityId(publicId)) return null;
+  return AfterHoursActivity.findOne({
+    scopeKey, publicId, type: { $in: SOCIAL_POST_TYPES }, createdAt: { $gt: socialSince(now) }
+  }).lean();
+};
+
+const findLiveActivity = async (scopeKey, publicId, now = new Date()) => {
+  if (!publicActivityId(publicId)) return null;
+  const activity = await AfterHoursActivity.findOne({ scopeKey, publicId, createdAt: { $gt: socialSince(now) } }).lean();
+  if (!activity) return null;
+  if (activity.type === 'REPLY') {
+    // Replies have their own TTL, but interaction always ends with the parent post.
+    const parent = await AfterHoursActivity.findOne({
+      _id: activity.parentActivityId, scopeKey, type: { $in: SOCIAL_POST_TYPES }, createdAt: { $gt: socialSince(now) }
+    }).lean();
+    return parent ? { activity, parent } : null;
+  }
+  if (SOCIAL_POST_TYPES.includes(activity.type)) return { activity, parent: null };
+  return activity.createdAt.getTime() > now.getTime() - FEED_MS ? { activity, parent: null } : null;
+};
+
+const encodeReplyCursor = (parentId, reply) => Buffer.from(JSON.stringify({
+  v: 1, parent: parentId, at: reply.createdAt.toISOString(), id: reply.publicId
+})).toString('base64url');
+
+const decodeReplyCursor = (value, parentId) => {
+  if (value === undefined || value === null || value === '') return null;
+  const invalid = () => { throw Object.assign(new Error('That reply page is not available. Reopen the conversation.'), { status: 400 }); };
+  if (typeof value !== 'string' || value.length > 512 || !/^[a-zA-Z0-9_-]+$/.test(value)) return invalid();
+  try {
+    const decoded = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+    const date = new Date(decoded.at);
+    if (decoded.v !== 1 || decoded.parent !== parentId || !publicActivityId(decoded.id)
+      || typeof decoded.at !== 'string' || !Number.isFinite(date.getTime()) || date.toISOString() !== decoded.at) return invalid();
+    return { createdAt: date, publicId: decoded.id };
+  } catch { return invalid(); }
+};
+
+const mapReply = (reply, viewerId, reactions = [], sparks = []) => {
+  if (!reply.actorId?.username) return null;
+  const { actor, isOwn } = publicActorFor(reply, viewerId);
+  return {
+    id: reply.publicId, type: 'REPLY', actor, isOwn, text: reply.text, createdAt: reply.createdAt,
+    reactions: buildReactionState(reactions, viewerId), spark: buildSparkState(sparks, viewerId)
+  };
+};
+
+const enrichReplies = async (replies, scopeKey, viewerId) => {
+  const populated = await AfterHoursActivity.populate(replies, { path: 'actorId', select: 'displayName username avatar' });
+  const ids = populated.map((reply) => reply._id);
+  const [reactions, sparks] = ids.length ? await Promise.all([
+    AfterHoursReaction.find({ scopeKey, activityId: { $in: ids } }).lean(),
+    AfterHoursSpark.find({ scopeKey, activityId: { $in: ids } }).lean()
+  ]) : [[], []];
+  return populated.map((reply) => mapReply(reply, viewerId,
+    reactions.filter((reaction) => idString(reaction.activityId) === idString(reply._id)),
+    sparks.filter((spark) => idString(spark.activityId) === idString(reply._id))
+  )).filter(Boolean);
+};
+
+const replyQueryFor = (scopeKey, parent, now) => ({
+  scopeKey, type: 'REPLY', parentActivityId: parent._id, createdAt: { $gt: socialSince(now) }
+});
+
+const buildReplyPage = async (user, parentId, before, now = new Date()) => {
+  const scopeKey = scopeFor(user);
+  const parent = await findLiveSocialPost(scopeKey, parentId, now);
+  if (!parent) throw Object.assign(new Error('That post is no longer available.'), { status: 404 });
+  const cursor = decodeReplyCursor(before, parent.publicId);
+  const query = replyQueryFor(scopeKey, parent, now);
+  const pageQuery = cursor ? { ...query, $or: [
+    { createdAt: { $lt: cursor.createdAt } },
+    { createdAt: cursor.createdAt, publicId: { $lt: cursor.publicId } }
+  ] } : query;
+  const [rows, replyCount] = await Promise.all([
+    AfterHoursActivity.find(pageQuery).sort({ createdAt: -1, publicId: -1 }).limit(REPLY_PAGE_SIZE + 1).lean(),
+    AfterHoursActivity.countDocuments(query)
+  ]);
+  const hasMore = rows.length > REPLY_PAGE_SIZE;
+  const page = rows.slice(0, REPLY_PAGE_SIZE);
+  const nextCursor = hasMore ? encodeReplyCursor(parent.publicId, page[page.length - 1]) : null;
+  return {
+    activityId: parent.publicId, replies: await enrichReplies(page.reverse(), scopeKey, user._id),
+    replyCount, hasMore, nextCursor
+  };
+};
+
+const replyPreviews = async (scopeKey, parentIds, now) => {
+  if (!parentIds.length) return [];
+  // Each post receives its own bounded newest page; a busy thread cannot consume
+  // a global reply budget and hide the conversations on every other post.
+  return AfterHoursActivity.aggregate([
+    { $match: { _id: { $in: parentIds }, scopeKey } },
+    { $lookup: {
+      from: AfterHoursActivity.collection.name,
+      let: { parentId: '$_id' },
+      pipeline: [
+        { $match: { scopeKey, type: 'REPLY', createdAt: { $gt: socialSince(now) }, $expr: { $eq: ['$parentActivityId', '$$parentId'] } } },
+        { $facet: {
+          page: [{ $sort: { createdAt: -1, publicId: -1 } }, { $limit: REPLY_PAGE_SIZE }],
+          count: [{ $count: 'total' }]
+        } }
+      ],
+      as: 'thread'
+    } },
+    { $project: { _id: 1, thread: { $arrayElemAt: ['$thread', 0] } } }
+  ]);
+};
+
+const buildRoomSnapshot = async (user, now = new Date(), { activityId = null } = {}) => {
   const scopeKey = await touchPresence(user, now);
   const round = currentRound(now);
   const activeSince = new Date(now.getTime() - ACTIVE_MS);
@@ -168,13 +282,43 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
     AfterHoursActivity.find({ scopeKey, roundKey: round.roundKey, type: 'ANSWER' })
       .select('actorId choice')
       .lean(),
-    AfterHoursActivity.find({ scopeKey, type: { $ne: 'REPLY' }, createdAt: { $gte: feedSince } })
+    AfterHoursActivity.find({ scopeKey, $or: [
+      { type: { $in: SOCIAL_POST_TYPES }, createdAt: { $gt: socialSince(now) } },
+      { type: { $in: ['CHALLENGE', 'CHALLENGE_JOIN'] }, createdAt: { $gte: feedSince } }
+    ] })
       .sort({ createdAt: -1 })
       .limit(90)
       .populate('actorId', 'displayName username avatar')
       .populate('targetUserId', 'displayName username avatar')
       .lean()
   ]);
+
+  let focus = null;
+  let focusedReply = null;
+  if (activityId) {
+    focus = { requestedId: String(activityId), postId: null, replyId: null, status: 'unavailable' };
+    if (activityId === 'room-event') {
+      focus.status = 'available';
+    } else {
+      const live = await findLiveActivity(scopeKey, activityId, now);
+      if (live && (SOCIAL_CONTENT_TYPES.includes(live.activity.type) || ['CHALLENGE', 'CHALLENGE_JOIN'].includes(live.activity.type))) {
+        const parent = live.parent || live.activity;
+        const populated = await AfterHoursActivity.populate(parent, [
+          { path: 'actorId', select: 'displayName username avatar' },
+          { path: 'targetUserId', select: 'displayName username avatar' }
+        ]);
+        if (populated.actorId?.username) {
+          if (!activities.some((item) => idString(item._id) === idString(parent._id))) activities.push(populated);
+          focus = { requestedId: activityId, postId: parent.publicId,
+            replyId: live.activity.type === 'REPLY' ? live.activity.publicId : null, status: 'available' };
+          if (live.activity.type === 'REPLY') {
+            focusedReply = await AfterHoursActivity.populate(live.activity, { path: 'actorId', select: 'displayName username avatar' });
+            if (!focusedReply.actorId?.username) { focusedReply = null; focus.replyId = null; }
+          }
+        }
+      }
+    }
+  }
 
   const answerByUser = new Map(currentAnswers.map((item) => [idString(item.actorId), item.choice]));
   const viewerAnswer = answerByUser.get(idString(user._id)) || null;
@@ -187,7 +331,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
   const socialPostIds = activities.filter((item) => SOCIAL_POST_TYPES.includes(item.type)).map((item) => item._id);
   const hotTakeIds = activities.filter((item) => item.type === 'HOT_TAKE').map((item) => item._id);
 
-  const [challengeJoins, replies, votes] = await Promise.all([
+  const [challengeJoins, previewRows, votes] = await Promise.all([
     challengeIds.length
       ? AfterHoursActivity.find({
           scopeKey,
@@ -195,30 +339,28 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
           parentActivityId: { $in: challengeIds }
         }).select('parentActivityId actorId').lean()
       : Promise.resolve([]),
-    socialPostIds.length
-      ? AfterHoursActivity.find({
-          scopeKey,
-          type: 'REPLY',
-          parentActivityId: { $in: socialPostIds },
-          createdAt: { $gte: feedSince }
-        })
-          .sort({ createdAt: 1 })
-          .limit(180)
-          .populate('actorId', 'displayName username avatar')
-          .lean()
-      : Promise.resolve([]),
+    replyPreviews(scopeKey, socialPostIds, now),
     hotTakeIds.length
-      ? AfterHoursVote.find({ activityId: { $in: hotTakeIds } }).lean()
+      ? AfterHoursVote.find({ scopeKey, activityId: { $in: hotTakeIds } }).lean()
       : Promise.resolve([])
   ]);
+
+  const previewByParent = new Map(previewRows.map((row) => [idString(row._id), {
+    replies: row.thread?.page || [], replyCount: row.thread?.count?.[0]?.total || 0
+  }]));
+  const replies = await AfterHoursActivity.populate(
+    [...previewByParent.values()].flatMap((preview) => preview.replies),
+    { path: 'actorId', select: 'displayName username avatar' }
+  );
+  if (focusedReply && !replies.some((reply) => idString(reply._id) === idString(focusedReply._id))) replies.push(focusedReply);
 
   const contentIds = [...activities.map((item) => item._id), ...replies.map((item) => item._id)];
   const [reactions, sparks] = await Promise.all([
     contentIds.length
-      ? AfterHoursReaction.find({ activityId: { $in: contentIds } }).lean()
+      ? AfterHoursReaction.find({ scopeKey, activityId: { $in: contentIds } }).lean()
       : Promise.resolve([]),
     contentIds.length
-      ? AfterHoursSpark.find({ activityId: { $in: contentIds } }).lean()
+      ? AfterHoursSpark.find({ scopeKey, activityId: { $in: contentIds } }).lean()
       : Promise.resolve([])
   ]);
 
@@ -274,21 +416,6 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
       recentPostCount: recentPostCountByUser.get(idString(item.userId?._id)) || 0
     }));
 
-  const mapReply = (reply) => {
-    if (!reply.actorId?.username) return null;
-    const { actor, isOwn } = publicActorFor(reply, user._id);
-    return {
-      id: reply.publicId,
-      type: 'REPLY',
-      actor,
-      isOwn,
-      text: reply.text,
-      createdAt: reply.createdAt,
-      reactions: buildReactionState(reactionsByActivity.get(idString(reply._id)) || [], user._id),
-      spark: buildSparkState(sparksByActivity.get(idString(reply._id)) || [], user._id)
-    };
-  };
-
   const feed = activities
     .filter((item) => !['REPLY', 'ANSWER', 'CALLOUT'].includes(item.type))
     .map((item) => {
@@ -315,12 +442,20 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
       }
 
       if (SOCIAL_POST_TYPES.includes(item.type)) {
-        const postReplies = (repliesByPost.get(idString(item._id)) || []).map(mapReply).filter(Boolean);
+        const rawReplies = repliesByPost.get(idString(item._id)) || [];
+        const postReplies = rawReplies.sort((first, second) => first.createdAt - second.createdAt || first.publicId.localeCompare(second.publicId))
+          .map((reply) => mapReply(reply, user._id, reactionsByActivity.get(idString(reply._id)) || [], sparksByActivity.get(idString(reply._id)) || [])).filter(Boolean);
+        const preview = previewByParent.get(idString(item._id)) || { replies: [], replyCount: 0 };
+        const hasMore = preview.replyCount > REPLY_PAGE_SIZE;
+        // Cursor belongs to the normal newest page, never to an older focused reply.
+        const oldestPreview = preview.replies[preview.replies.length - 1];
         return {
           ...base,
           text: item.text,
           replies: postReplies,
-          replyCount: postReplies.length,
+          replyCount: preview.replyCount,
+          repliesHasMore: hasMore,
+          repliesNextCursor: hasMore && oldestPreview ? encodeReplyCursor(item.publicId, oldestPreview) : null,
           canReply: !(base.anonymous && isOwn),
           vote: item.type === 'HOT_TAKE'
             ? buildVoteState(votesByActivity.get(idString(item._id)) || [], user._id)
@@ -349,6 +484,7 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
 
   return {
     generatedAt: now,
+    focus,
     presenceCount: people.length,
     people,
     viewerAuraBalance: Number(user.auraBalance) || 0,
@@ -379,6 +515,11 @@ const buildRoomSnapshot = async (user, now = new Date()) => {
 module.exports = {
   ACTIVE_MS,
   FEED_MS,
+  SOCIAL_FEED_MS,
+  REPLY_PAGE_SIZE,
+  findLiveSocialPost,
+  findLiveActivity,
+  buildReplyPage,
   SHOUT_MAX_LENGTH,
   SOCIAL_POST_MAX_LENGTH,
   REPLY_MAX_LENGTH,

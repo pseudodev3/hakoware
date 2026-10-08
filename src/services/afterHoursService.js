@@ -1,6 +1,8 @@
 import { api } from '../lib/api';
 
-export const getAfterHours = async () => api.get('/after-hours');
+export const getAfterHours = async ({ activityId = null } = {}) => api.get(`/after-hours${activityId ? '?activity=' + encodeURIComponent(activityId) : ''}`);
+
+export const getAfterHoursReplies = (activityId, { before = null } = {}) => api.get(`/after-hours/feed/${encodeURIComponent(activityId)}/replies${before ? '?before=' + encodeURIComponent(before) : ''}`);
 
 export const answerAfterHours = async (roundKey, choice) => (
   api.post('/after-hours/answer', { roundKey, choice })
@@ -31,8 +33,8 @@ export const createAfterHoursPost = ({ type = 'SHOUT', text = '', anonymous = fa
   api.post('/after-hours/post', { type, text, anonymous, burnAmount })
 );
 
-export const replyAfterHours = (activityId, text) => (
-  api.post(`/after-hours/feed/${activityId}/reply`, { text })
+export const replyAfterHours = (activityId, text, clientId) => (
+  api.post(`/after-hours/feed/${activityId}/reply`, { text, clientId })
 );
 
 export const voteAfterHours = (activityId, vote) => (

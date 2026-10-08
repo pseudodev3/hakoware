@@ -7,26 +7,43 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-10-06**
+> Last updated: **2026-10-08**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
 
-## Current continuation checkpoint — 2026-10-06
+## Current continuation checkpoint — 2026-10-08
 
 Current production/main:
 
-- PR #84, Home/Circle social-card polish, is merged on top of PR #83 / #82 / #81 / #80 / #79 / #78.
-- Exact squash SHA: `eb5d9cf6a533962401404341f836de3fba7c0d02`.
-- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served the social-card assets and Public Sans font; backend health passed after deployment.
-- The user confirmed a successful live card purchase after the merge. Production database topology/logs and live two-account trades remain unverified.
-- The user bought `hakoware.xyz`. Domain routing and canonical metadata have not been changed in the current polish branch.
+- PR #85, weekly wall retirement, is merged on top of PR #84 / #83 / #82 / #81 / #80 / #79 / #78.
+- Exact squash SHA: `6ef2ff767d07c5ab43b48f5e896e200b3ad9f14b`.
+- GitHub validation, Vercel and Railway passed for that exact merged SHA. Production served the retired-wall frontend assets; backend health passed. These checks do not establish authenticated two-account behavior.
+- The user previously confirmed a successful live card purchase. Production database topology/logs and live two-account trades remain unverified.
+- The user bought `hakoware.xyz`. Domain routing and canonical metadata have not been changed.
 
-Current implementation branch: `feat/retire-weekly-wall` (not merged or deployed to production).
+Current implementation branch: `feat/social-return-flow` (not merged or deployed to production).
 
-### Weekly wall retirement — current implementation
+### Home, friend conversations and After Hours — current implementation
+
+The user said both UI/UX and retention still need work. They prioritized Home and friend conversations, then explicitly included After Hours. This pass improves discovery, readability and continuing a real conversation across visits. It does not establish a retention lift.
+
+- Home/Circle friend cards are compact conversation rows: round avatar, name, actual message preview/time, honest mixed `New updates` badge, quiet Duo/status footer and separate 44px check-in/recap. Messages stay ahead of routine check-ins; bankruptcy/Wanted/Chaos remain first in Home ordering. Home still fills three slots and exposes the whole Circle. Supporting activity is below conversations and before collection on phones; only exact latest MESSAGE IDs already shown on visible cards are omitted, so older and off-card updates remain reachable.
+- Friend conversations use 16px message/composer text, 13px timestamps, round avatars and a growing composer. Healthy already-checked status recedes; manual check-in, danger, Voice Tax, hunter proof, moments and Contract details remain available. Existing voice delivery and progression rules are preserved.
+- Accepting an invitation on Home or Circle uses the refreshed ACTIVE list to open that exact friend's conversation; failed refresh falls back to Circle.
+- After Hours leads with actual room posts. A compact Share control opens a draft-preserving sheet; challenges and room questions remain secondary. Presence counts other people only and the quiet room has no self-person tile. Confession publishing identity and optional Aura burn are explicit.
+- Social posts remain interactive for 48h instead of 3h. Challenges and After Hours conversion proof keep their existing 3h windows. Flat public replies allow multiple turns and public-owner replies; anonymous owners cannot identify themselves by replying.
+- Reply threads show bounded newest pages with Earlier replies. Exact post/reply Activity destinations work outside the 90-post feed and newest 20 replies. URLs/reload and room -> existing friend -> Back preserve the target; polling does not reopen a closed thread. Expired open threads preserve readable content/draft while disabling mutations.
+- Reply retries use a stable client key across uncertainty and change it when the draft changes. Database uniqueness and private delivery bookkeeping protect normal retries, notification read state and dismissed Activity. Public owners notify the most recent other replier, persisted at creation; later retries do not retarget. This is not a claim of atomic exactly-once delivery across every process crash/deletion window.
+- Added `check:after-hours-social` to CI. Real isolated MongoDB 8.0.12 tests cover next-day/multiple/owner replies, anonymous and test-scope privacy, same-key races, notification failures and recovery, stable reciprocal targets, read/deleted Activity, parent expiry, 20/20/5 tied-timestamp pagination, exact old focus, and unchanged Spark accounting. Shared-model friend-space/payload/hardening, activation, card/wall and standalone purchase suites pass.
+- Removed the redundant AfterHoursSpark `createdAt index:true` declaration that conflicted with its explicit TTL index during fresh Model.init. The existing 48h TTL remains; no live index migration or purge was performed.
+- Local Chromium fixtures cover 320×600, 390×600, 390×844 and 1280×844, light/dark and motion preferences: draft dismissal/mode changes, uncertain reply retry/edit, focused Activity, pagination overlap/gaps, expiry, quiet room, person sheets, acceptance, Back/focus, reaction/Spark/burn/challenges/questions, overflow, Public Sans and 44px controls. Evidence paths and review: `docs/social-return-ui-review.md`.
+- Physical iPhone/Safari, live two-account delivery and real retention cohorts are not verified. Existing lint warnings and bundle-size warning remain. Notifications are still in-app; no web push or new email flow was introduced.
+- Card duel remains a proposal in `docs/card-duel-v1.md`, not implemented. Do not restore the wall, prompts or Hunter Runs as an assumed retention solution. Prepare one finished PR after exact-head checks; merge only on explicit user instruction and then verify exact frontend/backend deployments.
+
+### Weekly wall retirement — merged PR #85 baseline
 
 The user rejected the weekly wall as a retention activity and explicitly asked to remove it and explore something else. This supersedes the historical wall plan below. Do not bring back wall variants, daily prompt packs, Hunter Runs/maps or rewards for chores as an assumed replacement.
 
@@ -65,7 +82,7 @@ The user asked for new colors/layout, one clear font everywhere, stronger visual
 
 The cards/wall implementation below is the merged PR #82 baseline.
 
-### Cards + the weekly After Hours wall — historical PR #82 baseline (wall now retired on the current branch)
+### Cards + the weekly After Hours wall — historical PR #82 baseline (wall retired in merged PR #85)
 
 The user approved collecting/trading usable cards and a persistent shared wall as concrete activities for a small community. They rejected Hunter Runs / maps and vague challenge loops; do not reintroduce those. They explicitly rejected the initial outline-icon card art. Preserve the existing market’s shaded objects and dark mini-stages: the original four artworks are reused, and the eight new marks have matching metal/enamel object artwork.
 
@@ -157,7 +174,7 @@ Activity/navigation below is merged in PR #80.
 1. Create each post type.
 2. Verify anonymous Confessions stay anonymous to everyone else.
 3. Vote on a Hot Take; the author cannot vote on their own take.
-4. Reply once per user; replies cannot branch.
+4. Send multiple flat public replies, including public-owner follow-ups; anonymous owners cannot reply. Verify next-day availability within 48h and exact reply Activity navigation.
 5. Spark transfers exactly 1 Aura and enforces daily / per-recipient caps.
 6. Burn deducts only the selected 5 / 10 / 25 Aura.
 7. Notes arrive as notifications and do not create a chat thread.

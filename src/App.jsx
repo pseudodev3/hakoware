@@ -137,7 +137,7 @@ function MainApp({ showToast }) {
         if (nextBalance > oldBalance) {
           showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
         }
-        return;
+        return refreshed.data?.contracts || null;
       }
 
       console.warn('Bootstrap sync failed, using legacy data endpoints:', refreshed.error);
@@ -165,9 +165,11 @@ function MainApp({ showToast }) {
         showToast(`+${nextBalance - oldBalance} Aura`, 'SUCCESS');
       }
       prefetchWarmTabs();
+      return contracts;
     } catch (error) {
       console.error('Failed to sync Hakoware:', error);
       showToast(error.message || 'Could not sync Hakoware', 'ERROR');
+      return null;
     }
   };
 
@@ -202,10 +204,18 @@ function MainApp({ showToast }) {
   const openFriend = (friendship, options = {}) => {
     const key = friendship.contractKey || friendship._id || friendship.id;
     const query = new URLSearchParams({ view: activeTab });
+    if (activeTab === 'afterHours' && params.get('activity')) query.set('activity', params.get('activity'));
     if (options.focusEventId) query.set('event', options.focusEventId);
     if (options.contract) query.set('contract', '1');
-    returnFocusRef.current = String(friendship._id || friendship.id);
+    returnFocusRef.current = activeTab === 'afterHours' ? 'after-hours-heading' : `friend-open-${friendship._id || friendship.id}`;
     navigate(`/circle/${encodeURIComponent(key)}?${query}`);
+  };
+  const openAcceptedFriend = (invitation, contracts) => {
+    const id = String(invitation?._id || invitation?.id || '');
+    const accepted = (contracts?.active || []).find((item) => String(item._id || item.id) === id
+      || (invitation?.contractKey && item.contractKey === invitation.contractKey));
+    if (accepted) openFriend(accepted);
+    else navigateTo('contracts');
   };
   const navigateTo = (tab, options = {}) => {
     if (tab === 'friend') {
@@ -217,13 +227,14 @@ function MainApp({ showToast }) {
     const query = new URLSearchParams({ view: tab });
     if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); }
     if (tab === 'afterHours' && (options.wall || options.retiredWall || options.focusPieceId || options.week)) query.set('retiredWall', '1');
+    if (tab === 'afterHours' && options.focusActivityId) query.set('activity', options.focusActivityId);
     navigate(tab === 'home' ? '/' : `/?${query}`, { replace: Boolean(options.replace) });
   };
 
   const openedFriend = friendKey ? friendships.find((item) => String(item.contractKey || item._id || item.id) === friendKey) : null;
   useEffect(() => {
     if (friendKey || !returnFocusRef.current) return undefined;
-    const frame = requestAnimationFrame(() => document.getElementById(`friend-open-${returnFocusRef.current}`)?.focus({ preventScroll: true }));
+    const frame = requestAnimationFrame(() => document.getElementById(returnFocusRef.current)?.focus({ preventScroll: true }));
     return () => cancelAnimationFrame(frame);
   }, [friendKey, activeTab]);
 
@@ -350,7 +361,7 @@ function MainApp({ showToast }) {
           socialState={socialPresence.contracts?.[openedFriend._id || openedFriend.id]}
           focusEventId={params.get('event')}
           initialContract={params.get('contract') === '1'}
-          onBack={() => navigateTo(activeTab, { replace: true })}
+          onBack={() => navigateTo(activeTab, { replace: true, focusActivityId: activeTab === 'afterHours' ? params.get('activity') : null })}
           onAction={handleAction}
           onRefresh={loadData}
           onActivitySeen={markActivitySeen}
@@ -367,6 +378,7 @@ function MainApp({ showToast }) {
             onAddFriend={() => openNewContract()}
             onNavigate={navigateTo}
             onRefresh={loadData}
+            onAcceptedFriend={openAcceptedFriend}
             showToast={showToast}
             socialPresence={socialPresence}
             onActivitySeen={markActivitySeen}
@@ -388,6 +400,7 @@ function MainApp({ showToast }) {
             onNavigate={navigateTo}
             showToast={showToast}
             socialContracts={socialPresence.contracts}
+            onAcceptedFriend={openAcceptedFriend}
             onActivitySeen={markActivitySeen}
             onOpenFriend={openFriend}
           />
@@ -399,9 +412,12 @@ function MainApp({ showToast }) {
             friendships={[...friendships, ...pendingReceived, ...pendingSent]}
             wallRetired={params.get('retiredWall') === '1' || params.get('surface') === 'wall' || params.has('piece') || params.has('week')}
             onDismissRetiredWall={() => navigateTo('afterHours', { replace: true })}
-            focusActivityId={afterHoursFocusId}
+            focusActivityId={params.get('activity') || afterHoursFocusId}
+            focusRequestKey={location.key}
             onFocusHandled={() => setAfterHoursFocusId(null)}
             onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}
+            onOpenFriend={openFriend}
+            onNavigate={navigateTo}
             showToast={showToast}
           />
         )}

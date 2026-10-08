@@ -13,6 +13,7 @@ const NotificationSchema = new mongoose.Schema({
   wallWeekKey: String,
   voiceNoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'VoiceNote' },
   afterHoursActivityId: { type: String, default: null, maxlength: 64 },
+  afterHoursReplyId: { type: mongoose.Schema.Types.ObjectId, ref: 'AfterHoursActivity' },
   read: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
@@ -20,5 +21,6 @@ const NotificationSchema = new mongoose.Schema({
 NotificationSchema.index({ toUserId: 1, friendshipId: 1 }, { unique: true, partialFilterExpression: { type: 'CONTRACT_MESSAGE', read: false } });
 NotificationSchema.index({ toUserId: 1, contractEventId: 1 }, { unique: true, partialFilterExpression: { contractEventId: { $type: 'objectId' } } });
 NotificationSchema.index({ toUserId: 1, fromUserId: 1, wallPieceId: 1, wallWeekKey: 1 }, { unique: true, partialFilterExpression: { type: 'AFTER_HOURS_WALL' } });
+NotificationSchema.index({ toUserId: 1, afterHoursReplyId: 1 }, { unique: true, partialFilterExpression: { afterHoursReplyId: { $type: 'objectId' } } });
 
 module.exports = mongoose.model('Notification', NotificationSchema);

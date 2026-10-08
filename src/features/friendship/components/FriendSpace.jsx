@@ -51,6 +51,13 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const roomRef = useRef(room);
   roomRef.current = room;
   const conversationTop = useRef(0);
+  useLayoutEffect(() => {
+    const input = composerRef.current;
+    if (!input) return;
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+    if (nearBottomRef.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [draft, voiceOpen, contractOpen]);
   const openContract = (open) => {
     if (open) conversationTop.current = listRef.current?.scrollTop || 0;
     else scrollRef.current = nearBottomRef.current ? { bottom: true } : { restore: conversationTop.current };
@@ -153,6 +160,8 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   };
   const shared = socialState?.firstMutualCheckin;
   const moment = socialState?.moment;
+  const checkinAvailable = canCheckin(friendship, currentUserId);
+  const showHealth = summary.needsAction || checkinAvailable || contractOpen;
   const canPoke = socialState?.canPoke !== false;
   const [poking, setPoking] = useState(false);
   const poke = async () => {
@@ -166,7 +175,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     const isFocus = item.id === focusEventId;
     return <article key={item.id} data-friend-event={item.id} tabIndex={-1} className={`friend-event ${conversation ? 'conversation' : 'shared-event'} ${item.mine ? 'mine' : 'theirs'} ${isFocus ? 'is-focused' : ''}`}>
       {conversation ? <div className="friend-message-bubble">
-        {!item.mine && <span className="friend-message-author">{item.actorName}</span>}
+        {!item.mine && <span className="friend-message-author friend-space-sr-only">{item.actorName}</span>}
         {item.voice ? <VoiceMessage voice={item.voice} /> : <p>{item.text}</p>}
         {item.voiceUnavailable && <small>Audio is no longer available.</small>}
         <span className="friend-message-meta"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>{item.checkin?.status === 'CHECKED_IN' && <span><Check size={11} /> Checked in · +{item.checkin.xp} XP</span>}</span>
@@ -183,7 +192,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const focusOutsidePage = room.focusItem && !room.items.some((item) => item.id === room.focusItem.id);
   return <section className="friend-space" aria-label={`Your space with ${partner?.displayName || 'your friend'}`}>
     <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{partner?.displayName || 'Your friend'}</h1><span>{partner?.username ? '@' + partner.username : 'Your shared space'}</span></div><button className="friend-space-details" aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}>{contractOpen ? 'Conversation' : 'Contract'}<ChevronDown size={15} /></button></header>
-    <div className={`friend-space-health ${summary.tone}`}><span><i aria-hidden="true" />{summary.label}</span><button onClick={() => onAction(friendship.season?.status === 'COMPLETE' ? 'RECAP' : 'CHECKIN', friendship)} disabled={friendship.season?.status !== 'COMPLETE' && !canCheckin(friendship, currentUserId)}>{friendship.season?.status === 'COMPLETE' ? 'See recap' : canCheckin(friendship, currentUserId) ? 'Check in' : 'Checked in'}<Check size={13} /></button></div>
+    {showHealth && <div className={`friend-space-health ${summary.tone}`}><span><i aria-hidden="true" />{summary.label}</span><button onClick={() => onAction(friendship.season?.status === 'COMPLETE' ? 'RECAP' : 'CHECKIN', friendship)} disabled={friendship.season?.status !== 'COMPLETE' && !checkinAvailable}>{friendship.season?.status === 'COMPLETE' ? 'See recap' : checkinAvailable ? 'Check in' : 'Checked in'}<Check size={13} /></button></div>}
     {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span><ArrowUpRight size={15} /></button>}
     {contractOpen ? <div className="friend-space-contract"><ContractCard friendship={friendship} currentUserId={currentUserId} onAction={onAction} referenceLayout socialState={socialState} onActivitySeen={onActivitySeen} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>
       {moment?.status === 'OPEN' && <button className="friend-space-moment" onClick={() => openContract(true)}><span>{moment.type === 'SPLIT_DECISION' ? 'Split Decision' : moment.type === 'DOUBLE_DARE' ? 'Double Dare' : 'Hot Seat'} · {moment.answered ? 'Waiting on them' : 'Your turn'}</span><ArrowUpRight size={15} /></button>}

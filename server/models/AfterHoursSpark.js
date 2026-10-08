@@ -6,7 +6,7 @@ const AfterHoursSparkSchema = new mongoose.Schema({
   fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   toUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   amount: { type: Number, default: 1, min: 1, max: 1 },
-  createdAt: { type: Date, default: Date.now, index: true }
+  createdAt: { type: Date, default: Date.now }
 }, { versionKey: false });
 
 AfterHoursSparkSchema.index({ activityId: 1, fromUserId: 1 }, { unique: true });

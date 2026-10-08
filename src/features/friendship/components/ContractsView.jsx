@@ -17,7 +17,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, onOpenFriend }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, onOpenFriend, onAcceptedFriend }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -37,8 +37,11 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
     const result = await respondToInvitation(id, action);
     if (result.success) {
       showToast?.(action === 'ACCEPT' ? 'Season 1 started' : 'Challenge declined', 'SUCCESS');
-      await onRefresh();
-      if (action === 'ACCEPT') onNavigate?.('home');
+      const refreshedContracts = await onRefresh();
+      if (action === 'ACCEPT') {
+        if (onAcceptedFriend) onAcceptedFriend(friendship, refreshedContracts);
+        else onNavigate?.('home');
+      }
     } else {
       showToast?.(result.error || 'Could not update contract', 'ERROR');
     }

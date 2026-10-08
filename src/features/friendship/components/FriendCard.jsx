@@ -28,9 +28,9 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
   const id = friendship._id || friendship.id;
   const latest = socialState?.lastMessage;
   const activity = socialState?.recentActivity?.[0];
-  const newerActivity = activity && (!latest || (timestamp(activity.createdAt) ?? -Infinity) > (timestamp(latest.createdAt) ?? -Infinity));
-  const preview = newerActivity ? activity.text : latest ? `${latest.mine ? 'You: ' : ''}${latest.text}` : 'Send the first message.';
-  const previewAt = newerActivity ? activity.createdAt : latest?.createdAt;
+  // Check-ins stay in the contract strip; a newer one should not bury a reply.
+  const preview = latest ? `${latest.mine ? 'You: ' : ''}${latest.text}` : activity?.text || 'Send the first message.';
+  const previewAt = latest?.createdAt || activity?.createdAt;
   const time = activityTime(previewAt);
   const unread = socialState?.unseenActivity?.length || 0;
   const moment = socialState?.moment;
@@ -50,31 +50,16 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
         aria-describedby={`friend-preview-${id}${unread ? ` friend-updates-${id}` : ''}`}
         onClick={() => onOpen(friendship)}
       >
-        <span className="friend-card-identity">
-          <UserAvatar person={partner} size="lg" decorative />
-          <span className="friend-card-copy">
+        <UserAvatar person={partner} size="lg" decorative />
+        <span className="friend-card-copy">
+          <span className="friend-card-identity">
             <strong>{name}</strong>
-            {partner?.username && <span className="friend-card-handle">@{partner.username}</span>}
+            {unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
+            {time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}
           </span>
-          {time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}
-        </span>
-        <span id={`friend-preview-${id}`} className={`friend-card-preview ${!latest && !activity ? 'is-empty' : ''}`}>
-          {preview}
-        </span>
-        <span className="friend-card-conversation">
-          <span>
-            <MessageCircle size={16} strokeWidth={1.8} aria-hidden="true" />
-            {latest || activity ? 'Open conversation' : 'Start conversation'}
-            <ArrowRight size={14} aria-hidden="true" />
+          <span id={`friend-preview-${id}`} className={`friend-card-preview ${!latest && !activity ? 'is-empty' : ''}`}>
+            {preview}
           </span>
-          {unread > 0 && (
-            <span id={`friend-updates-${id}`} className="friend-card-unread">
-              {unread > 9 ? '9+' : unread} new
-              <span className="friend-card-sr-only">
-                {unread > 9 ? ` (${unread} total)` : ''} update{unread === 1 ? '' : 's'}
-              </span>
-            </span>
-          )}
         </span>
       </button>
       <div className="friend-card-footer">
