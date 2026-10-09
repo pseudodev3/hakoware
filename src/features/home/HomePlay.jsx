@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, Layers } from 'lucide-react';
+import { ArrowRight, Layers } from 'lucide-react';
 import { getCardCollection } from '../../services/cardService';
 import { CardArtwork } from '../cards/CardArtwork';
 import './HomePlay.css';
@@ -25,24 +25,25 @@ export const HomePlay = ({ user, onNavigate }) => {
     const timer = window.setInterval(load, 60000);
     document.addEventListener('visibilitychange', load);
     return () => { alive = false; clearInterval(timer); document.removeEventListener('visibilitychange', load); };
-  }, [user._id, user.uid]);
+  }, [user._id, user.uid, user.id]);
 
-  const owned = collection?.cards.filter((card) => card.owned > 0) || [];
-  const art = owned.length ? owned.slice(0, 3).map((card) => card.id) : ['SIGNAL_FLARE', 'PURIFY', 'CHAOS_TICKET'];
   const tools = collection?.cards.filter((card) => card.purchasable ?? card.kind === 'SPELL') || [];
-  const discovered = tools.filter((card) => card.discovered).length;
+  const owned = collection?.cards.filter((card) => card.owned > 0 || card.reserved > 0) || [];
+  const ownedTools = tools.filter((card) => card.owned > 0 || card.reserved > 0);
+  const shelf = (ownedTools.length ? ownedTools : owned).slice(0, 2);
+  const balance = collection?.balance ?? user.auraBalance;
   const received = collection?.trades.filter((trade) => trade.status === 'PENDING' && !trade.mine).length || 0;
+  const openCollection = () => onNavigate('arena', { section: 'cards' });
 
-  return <section className="home-play" aria-label="Cards and exchanges">
-    <div className="home-play-heading"><h2>Cards & exchanges.</h2><span>Use a tool. Trade a spare.</span></div>
-    <div className="home-play-tiles">
-      <button type="button" className="home-play-tile home-play-cards" onClick={() => onNavigate('arena', { section: 'cards', ...(received ? { focusTradeId: collection.trades.find((trade) => trade.status === 'PENDING' && !trade.mine).id } : {}) })}>
-        <span className="home-play-tile-label"><Layers size={16} /> Your collection <ArrowUpRight size={17} /></span>
-        <span className="home-play-art" aria-hidden="true">{art.map((id) => <CardArtwork key={id} cardId={id} size={38} />)}</span>
-        <strong>{received ? `${received} offer${received === 1 ? '' : 's'} waiting.` : 'Keep a few tricks.'}</strong>
-        <span className="home-play-copy">{collection ? `${discovered} of ${tools.length} tools collected.` : 'Earn Aura. Pick a tool. Trade a spare.'}</span>
-        <span className="home-play-link">{received ? 'Check your offers' : 'Open collection'} <ArrowUpRight size={15} /></span>
-      </button>
+  return <section className="home-play crew-collection" aria-label="Cards and exchanges">
+    <div className="home-play-heading"><h2>Your cards</h2><button type="button" onClick={openCollection}>View collection <ArrowRight size={16} aria-hidden="true" /></button></div>
+    <p className="home-play-copy">{collection ? `${ownedTools.length} of ${tools.length} tools owned` : 'Your collection'}{Number.isFinite(Number(balance)) && balance != null ? ` · ${Number(balance)} Aura` : ''}</p>
+    {received > 0 && <button type="button" className="home-play-offers" onClick={() => onNavigate('arena', { section: 'cards', focusTradeId: collection.trades.find((trade) => trade.status === 'PENDING' && !trade.mine).id })}>{received} offer{received === 1 ? '' : 's'} waiting <ArrowRight size={16} aria-hidden="true" /></button>}
+    <div className={`home-play-tiles ${shelf.length === 1 ? 'has-one' : ''}`}>
+      {shelf.map((card) => <button type="button" key={card.id} className="home-play-tool" aria-label={`${card.name}. Open your collection`} onClick={openCollection}>
+        <span className="home-play-tool-surface"><span className="home-play-tool-number">{String(card.number).padStart(2, '0')} / {card.series}</span><span className="home-play-tool-content"><CardArtwork cardId={card.id} size={72} /><span><strong>{card.name}</strong><small>{card.owned === 0 && card.reserved > 0 ? 'Reserved for trade' : card.kind === 'SPELL' ? 'Single-use tool' : 'Collectible'}</small></span></span></span>
+      </button>)}
     </div>
+    {!shelf.length && <button type="button" className="home-play-empty" onClick={openCollection}><Layers size={26} strokeWidth={1.5} aria-hidden="true" /><span><strong>{collection ? 'Keep a few tricks.' : 'Open your collection.'}</strong><small>{collection ? 'Earn Aura. Pick your first tool.' : 'Find your tools, collectibles and offers.'}</small></span><ArrowRight size={20} aria-hidden="true" /></button>}
   </section>;
 };

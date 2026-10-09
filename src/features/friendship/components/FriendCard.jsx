@@ -20,7 +20,7 @@ const activityTime = (value) => {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(time);
 };
 
-export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onAction }) => {
+export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onAction, variant = 'roster' }) => {
   const { partner, ownPerspective } = getContractSides(friendship, currentUserId);
   const name = partner?.displayName || 'Your friend';
   const summary = friendSummary(friendship, currentUserId);
@@ -39,9 +39,11 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
   const checkinLabel = available ? 'Check in' : friendship.status === 'ACTIVE' && ownPerspective ? 'Checked in' : 'Unavailable';
   return (
     <article
-      className={`friend-card ${summary.tone} ${unread ? 'has-new' : ''}`}
+      className={`friend-card friend-card-${variant} ${summary.tone} ${unread ? 'has-new' : ''}`}
       aria-label={`Friend space with ${name}`}
     >
+      <div className="friend-card-surface">
+      <div className="friend-card-main">
       <button
         type="button"
         id={`friend-open-${id}`}
@@ -50,15 +52,20 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
         aria-describedby={`friend-preview-${id}${unread ? ` friend-updates-${id}` : ''}`}
         onClick={() => onOpen(friendship)}
       >
-        <UserAvatar person={partner} size="lg" decorative />
+        {variant === 'roster' ? <UserAvatar person={partner} size="lg" decorative /> : <span className="friend-card-portrait"><UserAvatar person={partner} size="lg" decorative />{variant === 'featured' && <img className="friend-card-portrait-accent" src="/textures/hakoware-crew-accent.webp" alt="" />}{variant === 'crew' && partner?.avatar && <span className="friend-card-portrait-initial" aria-hidden="true">{name[0]?.toUpperCase()}</span>}</span>}
         <span className="friend-card-copy">
+          {variant === 'featured' && <span className="friend-card-topline"><span className="friend-card-initial" aria-hidden="true">{name[0]?.toUpperCase()}</span>{unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}{time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}</span>}
           <span className="friend-card-identity">
             <strong>{name}</strong>
-            {unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
-            {time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}
+            {variant === 'roster' && unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
+            {variant !== 'featured' && time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}
           </span>
-          <span id={`friend-preview-${id}`} className={`friend-card-preview ${!latest && !activity ? 'is-empty' : ''}`}>
-            {preview}
+          {variant === 'crew' && unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
+          <span className="friend-card-preview-line">
+            <span id={`friend-preview-${id}`} className={`friend-card-preview ${!latest && !activity ? 'is-empty' : ''}`}>
+              {preview}
+            </span>
+            {variant === 'featured' && <span className="friend-card-open-arrow" aria-hidden="true"><ArrowRight size={22} strokeWidth={1.8} /></span>}
           </span>
         </span>
       </button>
@@ -89,6 +96,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
           </button>
         )}
       </div>
+      </div>
       {(shared || moment?.status === 'OPEN') && (
         <button
           type="button"
@@ -104,6 +112,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
           <ArrowRight size={14} aria-hidden="true" />
         </button>
       )}
+      </div>
     </article>
   );
 };

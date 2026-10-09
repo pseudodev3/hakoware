@@ -173,3 +173,62 @@
   .friend-composer { gap:6px; }
   .friend-compose-voice,.friend-compose-send { width:44px; height:48px; }
 }
+
+/* Crew conversation: one identity bar and restrained, tangible message surfaces. */
+.friend-space { background:transparent; }
+.friend-space-header { min-height:72px; padding:12px 66px 12px 16px; gap:10px; border-bottom:1px solid var(--crew-edge); background:transparent; }
+.friend-space-header .user-avatar { width:44px; height:44px; flex-basis:44px; border-radius:8px; }
+.friend-space-identity h1 { font-size:1.25rem; font-weight:730; letter-spacing:-.035em; }
+.friend-space-identity > span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.75rem; margin-top:1px; }
+.friend-space-details { color:var(--text-secondary); border:1px solid var(--crew-edge); border-radius:8px; padding-inline:10px; }
+.friend-space-health { background:transparent; border-bottom:1px solid var(--border-subtle); }
+.friend-space-attention,.friend-space-moment { background:var(--aura-gold-soft); }
+.friend-space-timeline { padding:18px 24px 24px; }
+.friend-timeline-date { margin:12px 0 20px; font-size:.8125rem; }
+.friend-event.conversation { flex-direction:column; gap:6px; margin:12px 0; }
+.friend-event.conversation.mine { align-items:flex-end; }
+.friend-event.conversation.theirs { align-items:flex-start; }
+.friend-message-bubble { position:relative; isolation:isolate; border:1px solid var(--border-active); border-radius:9px 9px 9px 2px; background:var(--surface-card); padding:12px 15px 10px; }
+.friend-message-bubble::before { content:''; position:absolute; inset:0; z-index:-1; border-radius:inherit; background-image:var(--crew-surface-texture); background-size:400px; opacity:var(--crew-panel-texture-opacity); pointer-events:none; }
+.friend-event.mine .friend-message-bubble { background:var(--accent-soft); border:1px solid color-mix(in srgb,var(--accent-text) 28%,var(--border-subtle)); border-radius:9px 9px 2px 9px; }
+.friend-message-bubble > p { font-size:1rem; line-height:1.55; }
+.friend-message-meta { margin-top:6px; font-size:.75rem; color:var(--text-muted); }
+.friend-message-checkin { display:flex; align-items:center; gap:4px; padding-inline:3px; color:var(--text-muted); font-size:.75rem; line-height:1.5; }
+.friend-message-checkin svg { color:var(--aura-green); }
+.friend-message-checkin-note { color:var(--aura-gold); }
+.friend-shared-event { border-inline:1px solid var(--border-subtle); padding:5px 14px; }
+.friend-moment-reveal { border:1px solid var(--crew-edge); border-radius:8px; }
+.friend-first-shared { border-radius:8px; background:var(--accent-soft); }
+.friend-first-shared > span { color:var(--accent-text); }
+.friend-first-shared > strong { font-size:1.0625rem; }
+.friend-composer-dock { border-top:1px solid var(--crew-edge); padding:12px 16px 8px; background:transparent; }
+.friend-composer textarea { min-height:50px; padding:13px 14px; border:1px solid var(--crew-edge); border-radius:9px; background:var(--surface-card); }
+.friend-compose-voice,.friend-compose-send { width:48px; height:48px; border-radius:9px; }
+.friend-compose-voice { border:1px solid var(--border-subtle); }
+.friend-composer-context { margin-top:3px; }
+.friend-composer-context > span { font-size:.75rem; }
+.friend-composer-context > button { font-size:.8125rem; }
+.friend-voice-composer { background:var(--surface-card); border-radius:9px; border-color:var(--crew-edge); }
+.friend-new-updates { border-radius:8px; }
+.friend-space-contract { padding:20px; }
+.friend-space-contract .home-contract-action { width:44px; height:44px; min-width:44px; min-height:44px; }
+.friend-space button:focus-visible,.friend-space textarea:focus-visible { outline-color:var(--accent-text); }
+@media (max-width:768px) {
+  .friend-space-header { min-height:68px; padding:10px 64px 10px 10px; gap:9px; padding-top:max(10px,env(safe-area-inset-top)); }
+  .friend-space-header .user-avatar { width:40px; height:40px; flex-basis:40px; }
+  .friend-space-identity h1 { font-size:1.125rem; }
+  .friend-space-details { width:44px; padding:0; justify-content:center; }
+  .friend-space-details > span { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+  .friend-details-chevron { display:none; }
+  .friend-space-timeline { padding:14px 16px 22px; }
+  .friend-composer-dock { padding:10px 12px max(8px,env(safe-area-inset-bottom)); }
+  .friend-keyboard-open .friend-space-attention { display:none; }
+  .friend-keyboard-open .friend-composer textarea { max-height:88px; }
+}
+@media (max-width:350px) {
+  .friend-space-header { gap:6px; padding-left:6px; }
+  .friend-space-header .user-avatar { width:36px; height:36px; flex-basis:36px; }
+  .friend-space-identity > span { font-size:.6875rem; }
+  .friend-space-timeline { padding-inline:12px; }
+  .friend-compose-voice,.friend-compose-send { width:44px; height:48px; }
+}

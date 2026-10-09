@@ -215,13 +215,13 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   }
 
   return (
-    <div className="home-view circle-first-home">
+    <div className="home-view circle-first-home crew-home">
       <header className="circle-first-header">
         <div className="circle-first-title">
           <h1>Your circle</h1>
           <p>{hot.length ? 'A few things to catch up on.' : hasNewUpdates ? 'Pick up where you left off.' : 'Make time for your people.'}</p>
         </div>
-        <Button variant="aura" size="sm" icon={Plus} onClick={onAddFriend}>Add friend</Button>
+        <div className="home-crew-sigil" aria-hidden="true"><img src="/textures/hakoware-crew-mark.webp" alt="" /></div>
       </header>
 
       {pendingInvitations.length > 0 && (() => {
@@ -250,13 +250,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
       <div className="home-hangout">
         <section className="home-friends" aria-label="Conversations">
-          <div className="home-friends-heading">
-            <h2>Conversations</h2>
-            <button type="button" onClick={() => onNavigate('contracts')}>{friendships.length > visible.length ? `See all ${friendships.length}` : 'Open circle'}<ArrowRight size={14} aria-hidden="true" /></button>
-          </div>
-          <div className="circle-contracts">{visible.map((friendship) => (
+          <div className="circle-contracts crew-conversations">{visible.map((friendship, index) => (
             <FriendCard
               key={friendship._id || friendship.id}
+              variant={index === 0 ? 'featured' : 'crew'}
               friendship={friendship}
               currentUserId={userId}
               onAction={onAction}

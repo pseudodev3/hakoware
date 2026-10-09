@@ -69,3 +69,45 @@
 .friend-unavailable p { margin:12px 0; color:var(--text-muted); }
 .friend-unavailable button { min-height:44px; margin-right:12px; color:var(--accent-text); }
 @media (max-width:768px) { .friend-space-layout { height:var(--friend-viewport-height,100dvh); } .friend-space-layout .mobile-dock { display:none; } .friend-keyboard-open .friend-composer-dock { padding-bottom:8px; } }
+
+/* The selected crew direction uses ink, fine rules and a flat navigation dock. */
+.app-layout { position:relative; isolation:isolate; --mobile-dock-height:68px; }
+.app-layout::before { content:''; position:absolute; inset:0; z-index:-1; background-image:var(--crew-surface-texture); background-size:620px; opacity:var(--crew-texture-opacity); pointer-events:none; }
+.sidebar { background:transparent; border-right-color:var(--crew-edge); }
+.sidebar-brand { font-size:1.3rem; letter-spacing:-.04em; }
+.nav-item { border-radius:0; border-left:2px solid transparent; }
+.nav-item.active { color:var(--accent-text); background:var(--accent-soft); border-left-color:var(--accent-text); }
+.new-contract-btn { border-radius:8px; background:transparent; }
+.content-header { min-height:70px; background:transparent; }
+.header-aura { background:transparent; padding-inline:6px; }
+.theme-btn,.notification-btn { background:transparent; border-color:transparent; border-radius:8px; }
+.header-add-friend { display:none; }
+.friend-space-layout .content-container { position:relative; }
+.friend-space-layout .content-header { position:absolute; z-index:120; top:12px; right:max(12px,calc((100% - 1000px)/2 + 12px)); width:44px; min-height:44px; height:44px; padding:0; }
+.friend-space-layout .content-header .mobile-brand,
+.friend-space-layout .content-header .desktop-page-label,
+.friend-space-layout .header-actions > :not(.notification-btn) { display:none; }
+.friend-space-layout .header-actions { gap:0; }
+@media (max-width:768px) {
+  .content-header { min-height:64px; padding:10px 16px; gap:8px; position:relative; }
+  .mobile-brand { gap:8px; }
+  .mobile-brand img { width:36px; height:36px; border-radius:9px; }
+  .mobile-brand strong { font-size:1.15rem; font-weight:780; }
+  .header-actions { gap:2px; }
+  .header-aura { font-size:.875rem; padding-inline:3px; }
+  .header-add-friend { display:grid; place-items:center; width:44px; height:44px; flex:0 0 auto; border:1px solid var(--crew-edge); border-radius:11px; color:var(--text-primary); background:transparent; }
+  .scroll-content { padding-top:16px; }
+  .mobile-dock { background:var(--bg-dark); border-top-color:var(--crew-edge); }
+  .mobile-nav { min-height:68px; padding:4px 8px; gap:2px; }
+  .mobile-nav-item { position:relative; min-height:60px; border-radius:0; font-size:.6875rem; font-weight:500; }
+  .mobile-nav-item .nav-icon { width:23px; height:23px; }
+  .mobile-nav-item.active { background:transparent; color:var(--accent-text); font-weight:650; }
+  .mobile-nav-item.active::before { content:''; position:absolute; top:-5px; left:20%; right:20%; height:2px; background:var(--accent-text); }
+  .friend-space-layout .content-header { top:max(12px,env(safe-area-inset-top)); right:12px; }
+}
+@media (max-width:350px) {
+  .content-header { padding-inline:12px; }
+  .mobile-brand strong { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+  .mobile-nav { padding-inline:4px; }
+  .mobile-nav-item { font-size:.625rem; }
+}
