@@ -12,6 +12,7 @@
     "check:duo-activation": "node scripts/checkDuoActivation.js",
     "check:friend-spaces": "node scripts/checkFriendSpaces.js",
     "check:sparks": "node scripts/checkSparks.js",
+    "check:sparks-legacy-indexes": "node scripts/checkSparkLegacyIndexes.js",
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",
     "check:after-hours-social": "node scripts/checkAfterHoursSocial.js"

@@ -21,14 +21,28 @@ const notifyOnce = async (query, values) => {
   try { await Notification.updateOne(query, { $setOnInsert: values }, { upsert: true }); }
   catch (error) { if (error.code !== 11000 || !await Notification.exists(query)) throw error; }
 };
+let writeIndexes;
+const prepareWrites = async (req, res, next) => {
+  try {
+    if (!writeIndexes) writeIndexes = (async () => {
+      await Promise.all([SparkPost, SparkReply, SparkReaction].map(model => model.init()));
+      // Existing notification collections can have unrelated historical indexes.
+      // Initialize only these two new constraints; never rebuild the whole model.
+      await Notification.collection.createIndexes([
+        { key: { toUserId: 1, fromUserId: 1, sparkPostId: 1 }, name: 'toUserId_1_fromUserId_1_sparkPostId_1', unique: true, partialFilterExpression: { type: 'SPARK_REACTION' } },
+        { key: { toUserId: 1, sparkReplyId: 1 }, name: 'toUserId_1_sparkReplyId_1', unique: true, partialFilterExpression: { type: 'SPARK_REPLY' } }
+      ]);
+    })().catch(error => { writeIndexes = null; throw error; });
+    await writeIndexes; next();
+  } catch (error) {
+    console.error('Spark write indexes unavailable:', error.message);
+    res.status(503).json({ msg: 'Sparks is preparing its write indexes. Please try again in a moment.' });
+  }
+};
 router.use(auth);
-router.use(async (req, res, next) => {
-  try { await Promise.all([SparkPost, SparkReply, SparkReaction, Notification].map(model => model.init())); next(); }
-  catch (error) { sendRouteError(res, error, 'Sparks is starting up. Try again in a moment.'); }
-});
 router.get('/', limiter('sparks-feed', 90), async (req, res) => {
   try { res.json(await feedFor(await contextFor(req.user.id), req.query)); }
-  catch (error) { sendRouteError(res, error, 'Could not load your Sparks'); }
+  catch (error) { if (!error.status || error.status >= 500) console.error('Spark feed load failed:', error.message); sendRouteError(res, error, 'Could not load your Sparks'); }
 });
 // Old activity links remain readable without restoring the retired room game.
 router.get('/legacy/:activityId', limiter('sparks-legacy', 30), async (req, res) => {
@@ -46,7 +60,7 @@ router.get('/legacy/:activityId', limiter('sparks-legacy', 30), async (req, res)
     return res.json({ post: await view(linked.parent || linked.activity), reply: linked.parent ? await view(linked.activity) : null });
   } catch (error) { sendRouteError(res, error, 'Could not open this previous activity'); }
 });
-router.post('/', limiter('sparks-post', 8), uploadPhoto, async (req, res) => {
+router.post('/', limiter('sparks-post', 8), prepareWrites, uploadPhoto, async (req, res) => {
   let storageKey = null;
   try {
     const context = await contextFor(req.user.id);
@@ -104,7 +118,7 @@ router.get('/:postId', limiter('sparks-thread', 90), async (req, res) => {
     return res.json({ post: (await postViews([post], context))[0], focusReply, ...await repliesFor(post, context, req.query) });
   } catch (error) { sendRouteError(res, error, 'Could not open this Spark'); }
 });
-router.put('/:postId/reaction', limiter('sparks-react', 30), async (req, res) => {
+router.put('/:postId/reaction', limiter('sparks-react', 30), prepareWrites, async (req, res) => {
   try {
     const context = await contextFor(req.user.id);
     const post = await accessiblePost(context, req.params.postId);
@@ -123,7 +137,7 @@ router.put('/:postId/reaction', limiter('sparks-react', 30), async (req, res) =>
     return res.json({ post: (await postViews([post], context))[0] });
   } catch (error) { sendRouteError(res, error, 'Could not react to this Spark'); }
 });
-router.post('/:postId/replies', limiter('sparks-reply', 24), async (req, res) => {
+router.post('/:postId/replies', limiter('sparks-reply', 24), prepareWrites, async (req, res) => {
   try {
     const context = await contextFor(req.user.id);
     const post = await accessiblePost(context, req.params.postId);
@@ -142,7 +156,7 @@ router.post('/:postId/replies', limiter('sparks-reply', 24), async (req, res) =>
     return res.json({ reply: { id: reply.publicId, author: { displayName: context.viewer.displayName, username: context.viewer.username, avatar: context.viewer.avatar || null }, mine: true, text: reply.text, createdAt: reply.createdAt }, post: (await postViews([post], context))[0] });
   } catch (error) { sendRouteError(res, error, 'Could not send your reply'); }
 });
-router.delete('/:postId', limiter('sparks-delete', 15), async (req, res) => {
+router.delete('/:postId', limiter('sparks-delete', 15), prepareWrites, async (req, res) => {
   try {
     const context = await contextFor(req.user.id);
     const post = await accessiblePost(context, req.params.postId, { media: true });
