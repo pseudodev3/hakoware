@@ -34,7 +34,7 @@ const ICONS = {
 
 const stepTitle = (_step, shareInvite) => shareInvite ? 'Invite ready' : 'New contract';
 
-export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, templates = [], prefillPerson = null, source = 'DIRECT' }) => {
+export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, templates = [], prefillPerson = null, initialTemplateId = 'DONT_GHOST', source = 'DIRECT' }) => {
   const modes = templates.length ? templates : FALLBACK_TEMPLATES;
   const [step, setStep] = useState(1);
   const [friendIdentifier, setFriendIdentifier] = useState('');
@@ -55,6 +55,12 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
     prefillPerson?.username
     && friendIdentifier.replace(/^@+/, '').toLowerCase() === String(prefillPerson.username).toLowerCase()
   );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setTemplateId(initialTemplateId);
+    setStepError('');
+  }, [isOpen, initialTemplateId]);
 
   useEffect(() => {
     if (!isOpen || !prefillPerson?.username) return;
@@ -188,12 +194,12 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
           </div>
 
           {step === 1 && (
-            <section className="contract-step-panel">
+            <form className="contract-step-panel" onSubmit={(event) => { event.preventDefault(); continueFromPerson(); }}>
               <div className="contract-step-intro">
                 <span className="contract-step-icon"><UsersRound size={20} strokeWidth={1.8} /></span>
                 <div>
                   <h3>Who’s this with?</h3>
-                  <p>Use their @username or email.</p>
+                  <p>Use their @username, or invite them by email if they’re new.</p>
                 </div>
               </div>
 
@@ -212,14 +218,15 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
                 data-add-friend-input="true"
                 required
               />
+              <p className="contract-field-note person-invite-note">Your season starts after they accept. You’ll choose the pace together on the next step.</p>
 
               {stepError && <p className="contract-step-error" role="alert">{stepError}</p>}
 
               <div className="new-contract-actions single-primary">
                 <Button type="button" variant="secondary" onClick={close}>Cancel</Button>
-                <Button type="button" variant="aura" icon={ArrowRight} onClick={continueFromPerson}>Next</Button>
+                <Button type="submit" variant="aura" icon={ArrowRight}>Choose your pace</Button>
               </div>
-            </section>
+            </form>
           )}
 
           {step === 2 && (
@@ -237,7 +244,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
               </div>
 
               <div className="template-grid" role="radiogroup" aria-label="Contract type">
-                {visibleModes.map((mode) => {
+                {visibleModes.map((mode, index) => {
                   const Icon = ICONS[mode.id] || MessageCircle;
                   const active = selected?.id === mode.id;
                   return (
@@ -246,11 +253,21 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
                       type="button"
                       role="radio"
                       aria-checked={active}
+                      tabIndex={active ? 0 : -1}
+                      disabled={loading}
                       className={`template-option ${active ? 'active' : ''} ${mode.chaos ? 'chaos' : ''}`}
                       onClick={() => selectMode(mode)}
+                      onKeyDown={(event) => {
+                        const offset = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 0;
+                        if (!offset && !['Home', 'End'].includes(event.key)) return;
+                        event.preventDefault();
+                        const next = event.key === 'Home' ? 0 : event.key === 'End' ? visibleModes.length - 1 : (index + offset + visibleModes.length) % visibleModes.length;
+                        selectMode(visibleModes[next]);
+                        event.currentTarget.parentElement.querySelectorAll('[role="radio"]')[next]?.focus();
+                      }}
                     >
                       <span className="template-icon"><Icon size={18} strokeWidth={1.8} /></span>
-                      <span className="template-copy"><strong>{mode.name}</strong><small>{mode.tagline}</small></span>
+                      <span className="template-copy"><strong>{mode.name}</strong><small>{mode.id === 'DONT_GHOST' ? 'A good first contract · 3-day window' : mode.tagline}</small></span>
                       {mode.chaos && <span className="chaos-tag">CHAOS</span>}
                     </button>
                   );
@@ -258,7 +275,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
               </div>
 
               {!showMoreModes && modes.some((mode) => !PRIMARY_MODE_IDS.has(mode.id)) && (
-                <button type="button" className="more-contracts-button" onClick={() => setShowMoreModes(true)}>
+                <button type="button" className="more-contracts-button" disabled={loading} onClick={() => setShowMoreModes(true)}>
                   <MoreHorizontal size={16} /> More contracts
                 </button>
               )}
@@ -284,6 +301,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
                     max="30"
                     icon={Clock3}
                     value={limit}
+                    disabled={loading}
                     onChange={(event) => {
                       setLimit(Number(event.target.value));
                       setStepError('');
@@ -297,7 +315,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
               {stepError && <p className="contract-step-error" role="alert">{stepError}</p>}
 
               <div className="new-contract-actions">
-                <Button type="button" variant="secondary" icon={ArrowLeft} onClick={() => setStep(1)}>
+                <Button type="button" variant="secondary" icon={ArrowLeft} disabled={loading} onClick={() => setStep(1)}>
                   {prefillMatchesIdentifier ? 'Change person' : 'Person'}
                 </Button>
                 <Button type="button" variant={selected?.chaos ? 'danger' : 'aura'} loading={loading} onClick={handleSubmit}>

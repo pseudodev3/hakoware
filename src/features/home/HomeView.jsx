@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { ArrowRight, Clock3, Plus, Radio, Swords, UserPlus, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, Clock3, Radio, UserPlus } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
 import { FriendCard } from '../friendship/components/FriendCard';
 import { HomePlay } from './HomePlay';
+import { NextMove } from './NextMove';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 
@@ -14,16 +15,6 @@ const contractState = (friendship, userId) => {
   const daysMissed = Math.floor(Math.max(0, Date.now() - new Date(perspective?.lastInteraction || Date.now())) / 86400000);
   const debt = (perspective?.baseDebt || 0) + Math.max(0, daysMissed - limit);
   return { debt, daysLeft: Math.max(0, limit - daysMissed), daysMissed };
-};
-
-const perspectiveFor = (friendship, userId) => {
-  const user1Id = friendship.user1?._id || friendship.user1;
-  return String(user1Id) === String(userId) ? friendship.user1Perspective : friendship.user2Perspective;
-};
-
-const partnerFor = (friendship, userId) => {
-  const user1Id = friendship.user1?._id || friendship.user1;
-  return String(user1Id) === String(userId) ? friendship.user2 : friendship.user1;
 };
 
 const WORLD_RULE_COPY = {
@@ -87,18 +78,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
   const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
   const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
   const completeReports = friendships.filter((item) => item.season?.status === 'COMPLETE').length;
-  const [, refreshBriefingState] = useState(0);
   const [respondingInviteId, setRespondingInviteId] = useState(null);
-  const firstSeasonBriefing = useMemo(() => friendships.find((friendship) => {
-    if (friendship.season?.status !== 'ACTIVE' || Number(friendship.season?.number || 1) !== 1) return false;
-    if (Number(friendship.duoXP) > 0 || !friendship.season?.startedAt) return false;
-    const age = Date.now() - new Date(friendship.season.startedAt).getTime();
-    return age >= 0 && age <= 72 * 60 * 60 * 1000;
-  }) || null, [friendships]);
-  const briefingKey = firstSeasonBriefing
-    ? `hakoware-season-briefing:${firstSeasonBriefing._id || firstSeasonBriefing.id}:1`
-    : null;
-  const showSeasonBriefing = Boolean(briefingKey && localStorage.getItem(briefingKey) !== 'seen');
 
   const previewedMessageIds = new Set(visible.map((friendship) => socialContracts[friendship._id || friendship.id]?.lastMessage?.id).filter(Boolean));
   // Only the exact latest message is already represented above. Older replies
@@ -118,10 +98,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     return `${Math.floor(diff / 3600000)}h`;
   };
 
-  const dismissSeasonBriefing = () => {
-    if (briefingKey) localStorage.setItem(briefingKey, 'seen');
-    refreshBriefingState((value) => value + 1);
-  };
 
   const respondToPending = async (invitation, action) => {
     const id = invitation?._id || invitation?.id;
@@ -183,11 +159,12 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <section className="first-contract-card pending-first-contract">
           <div className="first-contract-mark pending"><Clock3 size={24} strokeWidth={1.8} /></div>
           <p className="eyebrow">Challenge sent</p>
-          <h1>Waiting on them.</h1>
-          <p className="first-contract-copy">Season 1 starts when they accept.</p>
+          <h1>Your first move is made.</h1>
+          <p className="first-contract-copy">Your friend’s acceptance starts the season. Send them a quick heads-up so they know where to find your invite.</p>
+          <ol className="onboarding-path" aria-label="Your first Duo"><li className="complete"><span>01</span>Invite your person</li><li className="current"><span>02</span>They accept</li><li><span>03</span>Check in together</li></ol>
           <div className="first-contract-actions">
-            <Button variant="secondary" onClick={() => onNavigate('contracts')}>View</Button>
-            <Button variant="aura" icon={Plus} onClick={onAddFriend}>Start another</Button>
+            <Button variant="aura" onClick={() => onNavigate('contracts')}>View your invitation</Button>
+            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>Explore After Hours</Button>
           </div>
         </section>
         <HomePlay user={user} onNavigate={onNavigate} />
@@ -202,10 +179,12 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         <section className="first-contract-card">
           <div className="first-contract-mark"><img src="/hakoware-mark-v2.png" alt="" /></div>
           <p className="eyebrow">You’re in, {identity}</p>
-          <h1>Start with one person.</h1>
+          <h1>Who do you want<br />to show up for?</h1>
+          <p className="first-contract-copy">A far-away friend. Your gym partner. The person you keep meaning to call. Start with them.</p>
+          <ol className="onboarding-path" aria-label="Your first Duo"><li className="current"><span>01</span>Invite your person</li><li><span>02</span>Pick your pace</li><li><span>03</span>Check in together</li></ol>
           <div className="first-contract-actions">
-            <Button variant="aura" icon={Swords} onClick={onAddFriend}>Add a friend</Button>
-            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>After Hours</Button>
+            <Button variant="aura" icon={UserPlus} onClick={onAddFriend}>Invite your first friend</Button>
+            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>Find someone in After Hours</Button>
           </div>
           <p className="onboarding-short-rule">Invite someone you know, or meet someone in After Hours. Your conversation starts when they accept.</p>
         </section>
@@ -223,6 +202,8 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         </div>
         <div className="home-crew-sigil" aria-hidden="true"><img src="/textures/hakoware-crew-mark.webp" alt="" /></div>
       </header>
+
+      <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} firstOnly />
 
       {pendingInvitations.length > 0 && (() => {
         const invitation = pendingInvitations[0];
@@ -283,24 +264,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           )}
         </section>
 
+        <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} />
         <HomePlay user={user} onNavigate={onNavigate} />
       </div>
-
-      {showSeasonBriefing && firstSeasonBriefing && (() => {
-        const partner = partnerFor(firstSeasonBriefing, userId);
-        const partnerName = partner?.username ? '@' + partner.username : (partner?.displayName || 'your partner');
-        const limit = Number(perspectiveFor(firstSeasonBriefing, userId)?.limit) || 3;
-        return (
-          <section className="circle-season-briefing">
-            <div>
-              <span>First move</span>
-              <p>Check in with {partnerName}.</p>
-              <small>Then get them to match you. Debt starts after {limit} day{limit === 1 ? '' : 's'} of silence.</small>
-            </div>
-            <button type="button" onClick={dismissSeasonBriefing} aria-label="Dismiss Season 1 briefing"><X size={16} strokeWidth={1.6} /></button>
-          </section>
-        );
-      })()}
 
       <div className="circle-summary" aria-label="Circle summary">
         <span><b>{activeSeasons}</b>Active</span>

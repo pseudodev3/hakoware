@@ -41,6 +41,9 @@ jobs:
       - name: Check circle activity acknowledgement
         run: npm run check:circle-activity
 
+      - name: Check activation and return guidance
+        run: npm run check:next-move
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund

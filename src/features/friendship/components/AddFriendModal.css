@@ -55,6 +55,10 @@
 .mode-rule-stats span { display:flex; flex-direction:column; color:var(--text-muted); font-size:.57rem; line-height:1.25; }
 .mode-rule-stats b { color:var(--text-primary); font-family:var(--font-mono); font-size:.74rem; font-weight:600; }
 .contract-field-note { margin-top:-12px; color:var(--text-muted); font-size:.68rem; line-height:1.45; }
+.contract-field-note.person-invite-note { margin-top:0; font-size:.8125rem; line-height:1.6; }
+.template-option { min-height:76px; }
+.template-copy strong { font-size:.875rem; }
+.template-copy small { font-size:.75rem; }
 .new-contract-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; padding-top:4px; }
 .invite-share-icon { width:44px; height:44px; display:grid; place-items:center; border-radius:14px; color:#07150e; background:var(--aura-green); }
 .invite-share-copy strong { display:block; font-size:.84rem; font-weight:650; }

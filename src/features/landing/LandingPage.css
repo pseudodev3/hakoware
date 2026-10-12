@@ -1122,3 +1122,70 @@
 .lp-nav .lp-brand > div { display:flex; }
 :root[data-theme='light'] .lp-hero { background:var(--bg-dark); }
 :root[data-theme='light'] .lp-hero::before { background:linear-gradient(90deg,rgba(245,245,239,.9),rgba(245,245,239,.83) 55%,rgba(245,245,239,.75)); }
+
+/* Lead with the relationship; keep the game as something visitors can try. */
+.lp-hero { min-height:760px; background:var(--bg-dark); padding-bottom:70px; }
+.lp-hero-grid { opacity:.2; filter:saturate(.25); }
+.lp-hero::before { background:linear-gradient(90deg,var(--bg-dark),transparent 80%),linear-gradient(0deg,var(--bg-dark),transparent 70%); }
+:root[data-theme='light'] .lp-hero-grid { opacity:.12; }
+:root[data-theme='light'] .lp-hero::before { background:linear-gradient(90deg,var(--bg-dark),transparent 80%),linear-gradient(0deg,var(--bg-dark),transparent 70%); }
+.lp-hero-shell { gap:48px; grid-template-columns:minmax(0,1.25fr) minmax(0,.9fr); }
+.lp-hero h1 { font-size:clamp(3.2rem,5.2vw,5.2rem); line-height:1.07; letter-spacing:-.055em; }
+.lp-hero h1 em { font-style:normal; color:var(--accent-text); }
+.lp-season-copy > span { font-size:.625rem; letter-spacing:.12em; }
+.lp-season-copy strong { font-size:.8125rem; }
+.lp-season-marker { margin-bottom:24px; }
+.lp-hero-copy > .lp-start-note { font-size:.8125rem; color:var(--text-muted); margin-top:14px; }
+.lp-nav .btn { min-height:44px; }
+.lp-nav-actions .btn-ghost { display:inline-flex; }
+.lp-contract-demo { width:100%; max-width:460px; transform:none; background:var(--surface-card); backdrop-filter:none; scroll-margin-top:90px; }
+.lp-demo-label { padding:5px 8px; border:1px solid var(--border-active); border-radius:6px; font-size:.6875rem; }
+.lp-contract-demo .lp-duo-block { margin-top:24px; }
+.lp-contract-demo .lp-duo-copy strong { font-size:1rem; }
+.lp-contract-demo .lp-duo-copy small { font-size:.8125rem; }
+.lp-contract-demo .lp-duo-xp { font-size:.8125rem; color:var(--accent-text); }
+.lp-contract-demo .lp-xp-track { height:6px; }
+.lp-contract-demo .lp-xp-track span { background:var(--accent); transition:width 220ms var(--ease-out); }
+.lp-demo-conversation { min-height:215px; display:flex; flex-direction:column; gap:12px; padding:24px 0 18px; }
+.lp-demo-day { color:var(--text-muted); font-size:.625rem; font-weight:600; letter-spacing:.09em; }
+.lp-demo-prompt { padding:20px 16px; border:1px dashed var(--border-active); border-radius:14px; font-size:.9375rem; line-height:1.6; color:var(--text-secondary); }
+.lp-demo-message { max-width:92%; padding:14px 16px; border-radius:14px 14px 14px 3px; background:var(--surface-soft-strong); font-size:.9375rem; line-height:1.5; }
+.lp-demo-message.own { align-self:flex-end; background:var(--accent-soft); border-radius:14px 14px 3px 14px; }
+.lp-demo-message span { margin-top:6px; display:flex; align-items:center; gap:4px; color:var(--text-muted); font-size:.6875rem; }
+.lp-contract-demo .lp-contract-status { margin-top:0; }
+.lp-contract-demo .lp-contract-status small { font-size:.6875rem; }
+.lp-contract-demo .lp-contract-status strong { font-size:.75rem; line-height:1.4; }
+.lp-contract-demo .lp-preview-actions { grid-template-columns:1fr; margin-top:16px; }
+.lp-contract-demo .lp-preview-actions .primary { min-height:48px; flex-direction:row; color:var(--accent-ink); background:var(--accent); box-shadow:none; }
+.lp-contract-demo .lp-preview-actions button span { font-size:.8125rem; display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; }
+.lp-game-footer { font-size:.625rem; min-height:44px; }
+.lp-game-footer button { min-height:44px; margin-left:auto; color:var(--text-secondary); text-decoration:underline; text-underline-offset:3px; }
+.lp-mode-start { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:44px; margin-top:16px; text-align:left; color:var(--accent-text); font-size:.8125rem; font-weight:600; }
+.lp-mode-card.featured { background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--border-active); }
+.lp-mode-card.featured .lp-mode-icon { color:var(--accent-text); background:var(--surface-card); }
+.lp-faq { max-width:1160px; width:calc(100% - 48px); margin:0 auto; padding:0 0 80px; display:grid; grid-template-columns:1fr 1.2fr; gap:50px; }
+.lp-faq .lp-section-intro { display:block; }
+.lp-faq h2 { margin-top:16px; font-size:clamp(1.75rem,3vw,2.7rem); }
+.lp-faq details { border-bottom:1px solid var(--border-subtle); }
+.lp-faq summary { min-height:60px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; cursor:pointer; font-size:1rem; font-weight:600; list-style:none; }
+.lp-faq summary::-webkit-details-marker { display:none; }
+.lp-faq-plus { color:var(--accent-text); font-size:1.5rem; }
+.lp-faq details[open] .lp-faq-plus { transform:rotate(45deg); }
+.lp-faq details p { margin-bottom:20px; color:var(--text-secondary); font-size:.9375rem; line-height:1.7; }
+@media(max-width:980px) { .lp-hero-shell { grid-template-columns:1fr; gap:36px; } .lp-contract-demo { justify-self:center; max-width:560px; } }
+@media(max-width:760px) {
+  .lp-hero { min-height:auto; padding:112px 20px 48px; }
+  .lp-hero h1 { font-size:clamp(2.6rem,10.5vw,4.5rem); }
+  .lp-nav-actions { gap:3px; }
+  .lp-nav-actions .btn { padding-inline:10px; font-size:.75rem; }
+  .lp-nav .lp-brand img { width:30px; height:30px; }
+  .lp-nav .lp-brand strong { font-size:.8125rem; }
+  .lp-brand { gap:6px; }
+  .lp-nav .lp-brand > div { display:none; }
+  .lp-contract-demo .lp-duo-xp { display:block; }
+  .lp-contract-demo .lp-duo-block { grid-template-columns:auto minmax(0,1fr) auto; gap:8px; }
+  .lp-contract-demo .lp-duo-copy strong { font-size:.875rem; }
+  .lp-faq { grid-template-columns:1fr; gap:24px; padding-bottom:48px; width:calc(100% - 40px); }
+  .lp-loop-section,.lp-modes-section,.lp-pressure-section { padding-block:48px; }
+}
+@media(prefers-reduced-motion:reduce) { .lp-contract-demo .lp-xp-track span { transition:none; } }

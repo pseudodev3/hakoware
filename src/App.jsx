@@ -72,6 +72,7 @@ function MainApp({ showToast }) {
   const [pendingExternal, setPendingExternal] = useState(bootstrapData?.contracts?.pendingExternal || []);
   const [contractMeta, setContractMeta] = useState(bootstrapData?.meta || { templates: [], worldEvent: null });
   const [showSignup, setShowSignup] = useState(joining);
+  const [preferredMode, setPreferredMode] = useState('DONT_GHOST');
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
   const [contractPrefill, setContractPrefill] = useState(null);
@@ -308,7 +309,7 @@ function MainApp({ showToast }) {
   };
 
   const openNewContract = (person = null, source = 'DIRECT') => {
-    setContractPrefill(person ? { person, source } : null);
+    setContractPrefill({ person, source, templateId: preferredMode });
     setModalType('ADD_FRIEND');
   };
 
@@ -318,7 +319,12 @@ function MainApp({ showToast }) {
     setContractPrefill(null);
   };
 
-  const handleEnter = () => setHasEntered(true);
+  const handleEnter = (intent = 'signup', templateId = 'DONT_GHOST') => {
+    setPreferredMode(templateId);
+    setShowSignup(intent !== 'login');
+    setHasEntered(true);
+    window.scrollTo({ top: 0 });
+  };
   const handleBackToLanding = () => {
     setShowSignup(false);
     setHasEntered(false);
@@ -432,6 +438,7 @@ function MainApp({ showToast }) {
         showToast={showToast}
         templates={contractMeta.templates}
         prefillPerson={contractPrefill?.person || null}
+        initialTemplateId={contractPrefill?.templateId || 'DONT_GHOST'}
         source={contractPrefill?.source || 'DIRECT'}
       />
 

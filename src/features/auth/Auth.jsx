@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, AtSign, Lock, Mail, Moon, Sun } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, AtSign, Eye, EyeOff, Lock, Mail, MessageCircle, Moon, Sun, UsersRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { Input } from '../../shared/components/Input';
@@ -17,7 +18,15 @@ const AuthBrand = ({ eyebrow, title, description }) => (
   </div>
 );
 
-const AuthShell = ({ children, onBack }) => {
+const PasswordInput = ({ autoComplete, ...props }) => {
+  const [visible, setVisible] = useState(false);
+  return <div className="auth-password">
+    <Input label="Password" type={visible ? 'text' : 'password'} icon={Lock} autoComplete={autoComplete} {...props} />
+    <button type="button" className="auth-password-toggle" aria-label={visible ? 'Hide password' : 'Show password'} aria-pressed={visible} onClick={() => setVisible(value => !value)}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+  </div>;
+};
+
+const AuthShell = ({ children, onBack, signup = false }) => {
   const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
@@ -31,7 +40,7 @@ const AuthShell = ({ children, onBack }) => {
     <div className="auth-container">
       <div className="auth-orbit" aria-hidden="true" />
       <div className="auth-toolbar">
-        <button type="button" className="auth-toolbar-button auth-back" onClick={onBack}>
+        <button type="button" className="auth-toolbar-button auth-back" aria-label="Back to home" onClick={onBack}>
           <ArrowLeft size={16} strokeWidth={1.8} />
           <span>Home</span>
         </button>
@@ -45,12 +54,22 @@ const AuthShell = ({ children, onBack }) => {
           <ThemeIcon size={17} strokeWidth={1.8} />
         </button>
       </div>
-      {children}
+      <main className={`auth-layout ${signup ? 'is-signup' : ''}`}>
+        {signup && <aside className="auth-invitation" aria-label="What your account unlocks">
+          <span className="auth-invitation-tag"><UsersRound size={18} /> BETTER TOGETHER</span>
+          <h2>The friend you keep meaning to catch up with?<br /><em>Start there.</em></h2>
+          <p>A shared place to talk, show up and build a story. One person is all it takes.</p>
+          <div className="auth-invitation-message"><MessageCircle size={22} /><span>“Same time next week?”<small>A small message. A reason to come back.</small></span></div>
+          <ol><li>Make your account.</li><li>Invite your person.</li><li>Check in together.</li></ol>
+        </aside>}
+        {children}
+      </main>
     </div>
   );
 };
 
 export const Login = ({ onToggle, onBack, showToast }) => {
+  const reduceMotion = useReducedMotion();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,8 +93,8 @@ export const Login = ({ onToggle, onBack, showToast }) => {
 
   return (
     <AuthShell onBack={onBack}>
-      <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
-        <AuthBrand eyebrow="Hakoware" title="Welcome back" description="Your contracts, Aura and unfinished business are right where you left them." />
+      <motion.div className="auth-card" initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : .25 }}>
+        <AuthBrand eyebrow="Pick up where you left off" title="Your people are here." description="Sign in to your conversations, shared moments and Duos." />
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="auth-error-banner" role="alert">{error}</div>}
           <Input
@@ -91,10 +110,10 @@ export const Login = ({ onToggle, onBack, showToast }) => {
             required
           />
           <div className="input-with-action-label">
-            <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <PasswordInput placeholder="Your password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot password</button>
           </div>
-          <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Enter Hakoware</Button>
+          <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Log in</Button>
         </form>
         <div className="auth-footer"><p>New here? <button type="button" onClick={onToggle}>Create an account</button></p></div>
       </motion.div>
@@ -104,6 +123,7 @@ export const Login = ({ onToggle, onBack, showToast }) => {
 };
 
 export const Signup = ({ onToggle, onBack }) => {
+  const reduceMotion = useReducedMotion();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -126,9 +146,10 @@ export const Signup = ({ onToggle, onBack }) => {
   };
 
   return (
-    <AuthShell onBack={onBack}>
-      <motion.div className="auth-card" initial={{ opacity: 0, y: 14, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', duration: .45, bounce: 0 }}>
-        <AuthBrand eyebrow="Create your ID" title="Claim your username" description="Your @username is how people find you on Hakoware. Email stays behind the scenes for recovery and important account messages." />
+    <AuthShell onBack={onBack} signup>
+      <motion.div className="auth-card" initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : .25 }}>
+        <div className="auth-journey" aria-label="Step 1: your account. Next: invite your person."><span className="current">01 Your account</span><ArrowRight size={14} aria-hidden="true" /><span>02 Your person</span></div>
+        <AuthBrand eyebrow="Start something together" title="Your Duo starts here." description="Claim a username. Then bring the person you want to stay close to." />
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="auth-error-banner" role="alert">{error}</div>}
           <Input
@@ -157,9 +178,10 @@ export const Signup = ({ onToggle, onBack }) => {
             required
           />
           <p className="auth-field-note">Used for recovery and important account notifications.</p>
-          <Input label="Password" type="password" placeholder="••••••••" icon={Lock} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
+          <PasswordInput placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
           <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Create account</Button>
         </form>
+        <p className="auth-legal">Your email stays private. Read our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy policy</Link>.</p>
         <div className="auth-footer"><p>Already have an account? <button type="button" onClick={onToggle}>Log in</button></p></div>
       </motion.div>
     </AuthShell>

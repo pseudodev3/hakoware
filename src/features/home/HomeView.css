@@ -170,3 +170,16 @@
   .home-crew-sigil { height:72px; }
   .crew-conversations { gap:10px; }
 }
+
+.onboarding-home .first-contract-card { clip-path:none; border-radius:24px; padding:clamp(24px,5vw,44px); border:1px solid var(--border-active); position:relative; overflow:hidden; }
+.onboarding-home .first-contract-card::before { content:''; position:absolute; right:-28px; top:-40px; width:220px; height:220px; background:url('/textures/hakoware-crew-mark.webp') center/contain no-repeat; opacity:.07; pointer-events:none; }
+.first-contract-mark { margin-bottom:24px; }
+.onboarding-home .first-contract-card h1 { font-size:clamp(2rem,4.5vw,3.5rem); line-height:1.1; letter-spacing:-.045em; }
+.first-contract-copy { font-size:.9375rem; line-height:1.7; }
+.onboarding-path { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:24px 0 28px; padding:20px 0; border-block:1px solid var(--border-subtle); list-style:none; }
+.onboarding-path li { font-size:.8125rem; color:var(--text-muted); line-height:1.5; }
+.onboarding-path span { display:block; margin-bottom:7px; font-size:.6875rem; color:var(--text-muted); }
+.onboarding-path .current,.onboarding-path .complete { color:var(--text-primary); }
+.onboarding-path .current span,.onboarding-path .complete span { color:var(--accent-text); }
+.onboarding-home .home-play { max-width:760px; width:100%; margin:auto; }
+@media(max-width:540px) { .onboarding-path { gap:10px; } .onboarding-path li { font-size:.75rem; } }
