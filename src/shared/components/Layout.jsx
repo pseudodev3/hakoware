@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Home, Layers, LogOut, Moon, Plus, Radio, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
+import { ArrowUpRight, Bell, Home, Layers, LogOut, Moon, Plus, Radio, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -7,11 +7,11 @@ import { UserAvatar } from './UserAvatar';
 import './Layout.css';
 
 const NAV_ITEMS = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'contracts', label: 'Circle', icon: Users },
-  { id: 'arena', label: 'Arena', icon: Layers },
-  { id: 'afterHours', label: 'After Hours', icon: Radio },
-  { id: 'you', label: 'You', icon: UserRound }
+  { id: 'home', label: 'Home', description: 'Your people, closer', icon: Home },
+  { id: 'contracts', label: 'Circle', description: 'Duos & invitations', icon: Users },
+  { id: 'arena', label: 'Arena', description: 'Cards & consequences', icon: Layers },
+  { id: 'afterHours', label: 'After Hours', description: 'The open room', icon: Radio },
+  { id: 'you', label: 'You', description: 'Your corner of it all', icon: UserRound }
 ];
 
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast, friendSpace = false }) => {
@@ -52,10 +52,10 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
   return (
     <div ref={shellRef} className={`app-layout ${circleContext ? 'circle-context' : ''} ${friendSpace ? 'friend-space-layout' : ''}`}>
       <aside className="sidebar">
-        <div className="sidebar-brand">
+        <button type="button" className="sidebar-brand" onClick={() => onTabChange('home')} aria-label="Hakoware home">
           <img className="brand-mark" src="/hakoware-mark-v2.png" alt="" />
-          <span>Hakoware</span>
-        </div>
+          <span>Hakoware<small>Keep the loop alive.</small></span>
+        </button>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
           {NAV_ITEMS.map((item) => (
@@ -66,7 +66,9 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
               aria-current={activeTab === item.id ? 'page' : undefined}
             >
               <item.icon size={19} strokeWidth={1.8} />
-              <span>{item.label}</span>
+              <span>{item.label}<small>{item.description}</small></span>
+              {activeTab === item.id && <ArrowUpRight className="nav-current-arrow" size={16} aria-hidden="true" />}
+              {item.id === 'contracts' && pendingInvitations.length > 0 && <b className="nav-count">{pendingInvitations.length}</b>}
             </button>
           ))}
         </nav>
@@ -81,7 +83,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
             <UserAvatar person={user} size="sm" className="sidebar-avatar" decorative />
             <span className="sidebar-user-copy">
               <strong>{user?.displayName}</strong>
-              <small>{user?.username ? `@${user.username} · ${user?.auraBalance || 0} Aura` : `${user?.auraBalance || 0} Aura`}</small>
+              <small>{user?.username ? `@${user.username}` : 'Your profile'}</small>
             </span>
           </button>
 
@@ -120,7 +122,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
           </div>
         </header>
 
-        <div className="scroll-content">{children}</div>
+        <div className="scroll-content" id="main-app-content">{children}</div>
       </main>
 
       <div className="mobile-dock">

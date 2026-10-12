@@ -4,41 +4,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
-import { SelectMenu } from '../../shared/components/SelectMenu';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
-import { setPlusInterest } from '../../services/growthService';
 import { shareHakoware } from '../../lib/share';
 import { buildDuoShareCard } from '../../lib/duoShareCard';
 import { prepareAvatarImage } from '../../lib/avatarImage';
 import { UserAvatar } from '../../shared/components/UserAvatar';
-import { PLUS_ART } from './marketArt';
+import { PageHeading } from '../../shared/components/PageHeading';
 import './YouView.css';
-
-const perspectiveFor = (friendship, userId, mine = true) => {
-  const user1Id = friendship.user1?._id || friendship.user1;
-  const isUser1 = String(user1Id) === String(userId);
-  if (mine) return isUser1 ? friendship.user1Perspective : friendship.user2Perspective;
-  return isUser1 ? friendship.user2Perspective : friendship.user1Perspective;
-};
-
-const debtFor = (perspective) => {
-  const limit = Number(perspective?.limit) || 7;
-  const days = Math.floor(Math.max(0, Date.now() - new Date(perspective?.lastInteraction || Date.now())) / 86400000);
-  return (perspective?.baseDebt || 0) + Math.max(0, days - limit);
-};
-
-const partnerIsBankrupt = (friendship, userId) => {
-  const perspective = perspectiveFor(friendship, userId, false);
-  const limit = Number(perspective?.limit) || 7;
-  return debtFor(perspective) >= limit * 2;
-};
 
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
-const PLUS_FEATURES = ['Archive', 'Duo stats', 'Custom contracts', 'Recap styles', 'Cosmetics'];
 export const YouView = ({ friendships, showToast, onNavigate }) => {
-  const { user, refreshUser, useCard: activateCard, logout } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const cachedYou = peekYouSnapshot();
   const [aura, setAura] = useState(cachedYou?.aura || {
     balance: Number(user.auraBalance) || 0,
@@ -47,14 +25,9 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
     totalSpent: 0,
     reputation: { name: 'Spark', lifetimeEarned: 0, nextRankAt: 250, progress: 0 }
   });
-  const [cards, setCards] = useState(cachedYou?.cards || []);
   const [grudges, setGrudges] = useState(cachedYou?.grudges || []);
   const [busy, setBusy] = useState(null);
-  const [stealTarget, setStealTarget] = useState('');
-  const [signalTarget, setSignalTarget] = useState('');
-  const [chaosTarget, setChaosTarget] = useState('');
   const [savingPrivacy, setSavingPrivacy] = useState(false);
-  const [plusInterested, setPlusInterestedState] = useState(Boolean(user.plusInterestAt));
   const avatarInputRef = useRef(null);
   const userId = user.uid || user.id || user._id;
 
@@ -67,7 +40,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
 
     if (snapshotResult.status === 'fulfilled') {
       setAura(snapshotResult.value.aura);
-      setCards(snapshotResult.value.cards || []);
       setGrudges(snapshotResult.value.grudges || []);
     } else {
       const fallbackBalance = Number(refreshedUser?.auraBalance ?? user.auraBalance) || 0;
@@ -81,12 +53,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
     void refresh({ silent: warm, refreshAccount: false, force: warm });
   }, []);
   useEffect(() => { setAura((current) => ({ ...current, balance: Number(user.auraBalance) || 0 })); }, [user.auraBalance]);
-  useEffect(() => { setPlusInterestedState(Boolean(user.plusInterestAt)); }, [user.plusInterestAt]);
 
-  const bankrupt = useMemo(() => friendships.filter((friendship) => partnerIsBankrupt(friendship, userId)), [friendships, userId]);
-  const hasDebt = useMemo(() => friendships.some((friendship) => debtFor(perspectiveFor(friendship, userId, true)) > 0), [friendships, userId]);
-  const chaosContracts = useMemo(() => friendships.filter((friendship) => friendship.templateId === 'CHAOS' && friendship.status === 'ACTIVE' && !friendship.chaos?.activeEvent && !friendship.chaos?.wantedUserId), [friendships]);
-  const inventory = (user.inventory || []).filter((id) => ['PURIFY','STEAL','SIGNAL_FLARE','CHAOS_TICKET'].includes(id));
   const appearsOnShameBoard = !user.privacySettings?.optOutPublicBankruptcy;
   const strongest = useMemo(
     () => friendships.reduce((best, item) => ((item.duoLevel || 1) > (best?.duoLevel || 0) ? item : best), null),
@@ -135,35 +102,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
     } finally {
       setBusy(null);
     }
-  };
-
-  const activateOwnedCard = async (cardId) => {
-    if (cardId === 'PURIFY' && !hasDebt) return showToast?.('No debt to clear.', 'ERROR');
-    if (cardId === 'STEAL' && !stealTarget) return showToast?.('Choose a bankrupt contract.', 'ERROR');
-    if (cardId === 'SIGNAL_FLARE' && !signalTarget) return showToast?.('Choose a contract.', 'ERROR');
-    if (cardId === 'CHAOS_TICKET' && !chaosTarget) return showToast?.('Choose a Chaos Contract.', 'ERROR');
-
-    const targetId = cardId === 'STEAL'
-      ? stealTarget
-      : cardId === 'SIGNAL_FLARE'
-        ? signalTarget
-        : cardId === 'CHAOS_TICKET'
-          ? chaosTarget
-          : null;
-
-    setBusy(`use-${cardId}`);
-    const result = await activateCard(cardId, targetId);
-    let successMessage = 'Card used';
-    if (cardId === 'STEAL' && result.success) successMessage = `Claimed ${result.effect?.stolen || 0} Aura · Grudge live`;
-    if (cardId === 'SIGNAL_FLARE' && result.success) successMessage = 'Signal Flare sent · 48h cooldown';
-    showToast?.(result.success ? successMessage : result.error, result.success ? 'SUCCESS' : 'ERROR');
-    if (result.success) {
-      if (cardId === 'STEAL') setStealTarget('');
-      if (cardId === 'SIGNAL_FLARE') setSignalTarget('');
-      if (cardId === 'CHAOS_TICKET') setChaosTarget('');
-    }
-    await refresh();
-    setBusy(null);
   };
 
   const revenge = async (grudge) => {
@@ -218,21 +156,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
     }
   };
 
-  const joinPlusInterest = async () => {
-    if (plusInterested) return;
-    setBusy('plus-interest');
-    try {
-      await setPlusInterest(true);
-      setPlusInterestedState(true);
-      await refreshUser();
-      showToast?.('Hakoware+ interest saved · you are early', 'SUCCESS');
-    } catch (error) {
-      showToast?.(error.message || 'Could not save Hakoware+ interest', 'ERROR');
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const toggleShameBoard = async () => {
     setSavingPrivacy(true);
     try {
@@ -247,7 +170,8 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
   };
 
   return (
-    <div className="you-view you-circle-first">
+    <div className="you-view">
+      <PageHeading eyebrow="You" title={<>Your corner.<br /><span>Make it yours.</span></>} description="Your Duos, your Aura, your way to play." />
       <section className="profile-aura-area" aria-label="Profile and Aura">
         <div className="profile-identity">
           <div className="profile-avatar-control">
@@ -271,7 +195,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
             />
           </div>
           <div className="identity-copy">
-            <h1>{user.displayName}</h1>
+            <h2>{user.displayName}</h2>
             <p>{user.username ? '@' + user.username : 'Hakoware player'}</p>
             <div className="identity-photo-actions">
               <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={busy === 'avatar' || busy === 'avatar-remove'}>
@@ -305,29 +229,9 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         </div>
 
         <div className="profile-meta" aria-label="Profile summary">
-          <span><b>Strongest Duo</b> Lv. {strongest?.duoLevel || 1}</span>
+          <span><b>Strongest Duo</b> {strongest ? `Lv. ${strongest.duoLevel || 1}` : 'Start your first Duo'}</span>
           <span><b>Active</b> {activeSeasons} season{activeSeasons === 1 ? '' : 's'}</span>
           <span><b>Duo XP</b> {totalDuoXP}</span>
-        </div>
-      </section>
-
-      <section className="hakoware-plus-card" aria-label="Hakoware plus">
-        <img className="hakoware-plus-art" src={PLUS_ART} alt="" aria-hidden="true" />
-        <div className="hakoware-plus-copy">
-          <h2>Hakoware+</h2>
-          <p>{PLUS_FEATURES.join(' · ')}</p>
-        </div>
-        <div className="hakoware-plus-footer">
-          <small>{plusInterested ? 'Interest saved. No payment.' : 'Core game stays free.'}</small>
-          <Button
-            variant="aura"
-            size="sm"
-            loading={busy === 'plus-interest'}
-            disabled={plusInterested}
-            onClick={joinPlusInterest}
-          >
-            {plusInterested ? 'Interested' : "I'm interested"}
-          </Button>
         </div>
       </section>
 
@@ -408,68 +312,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         </section>
       )}
 
-      {inventory.length > 0 && (
-        <section className="you-section you-secondary-section">
-          <div className="you-section-heading"><div><p className="eyebrow">Inventory</p><h2>Your cards</h2></div></div>
-          <div className="inventory-list">
-            {[...new Set(inventory)].map((cardId) => {
-              const card = cards.find((item) => item.id === cardId) || { id: cardId, name: typeLabel(cardId), description: '' };
-              const count = inventory.filter((item) => item === cardId).length;
-              const disabled = cardId === 'PURIFY'
-                ? !hasDebt
-                : cardId === 'STEAL'
-                  ? bankrupt.length === 0 || !stealTarget
-                  : cardId === 'SIGNAL_FLARE'
-                    ? friendships.length === 0 || !signalTarget
-                    : cardId === 'CHAOS_TICKET'
-                      ? chaosContracts.length === 0 || !chaosTarget
-                      : false;
-              return (
-                <article className="inventory-card" key={cardId}>
-                  <div className="inventory-copy"><strong>{card.name}</strong><span>{count} owned</span></div>
-                  {cardId === 'STEAL' && (
-                    <SelectMenu
-                      value={stealTarget}
-                      onChange={setStealTarget}
-                      ariaLabel="Choose bankrupt contract"
-                      placeholder={bankrupt.length ? 'Choose target' : 'No bankrupt partners'}
-                      disabled={bankrupt.length === 0}
-                      placement="top"
-                      options={bankrupt.map((friendship) => ({ value: friendship._id, label: partnerName(friendship) }))}
-                    />
-                  )}
-                  {cardId === 'STEAL' && stealTarget && <span className="inventory-hint">Takes 10% of their current Aura · creates a public Grudge</span>}
-                  {cardId === 'SIGNAL_FLARE' && (
-                    <SelectMenu
-                      value={signalTarget}
-                      onChange={setSignalTarget}
-                      ariaLabel="Choose contract for Signal Flare"
-                      placeholder={friendships.length ? 'Choose contract' : 'No active contracts'}
-                      disabled={friendships.length === 0}
-                      placement="top"
-                      options={friendships.map((friendship) => ({ value: friendship._id, label: partnerName(friendship) }))}
-                    />
-                  )}
-                  {cardId === 'CHAOS_TICKET' && (
-                    <SelectMenu
-                      value={chaosTarget}
-                      onChange={setChaosTarget}
-                      ariaLabel="Choose Chaos Contract"
-                      placeholder={chaosContracts.length ? 'Choose Chaos Contract' : 'No ready Chaos Contract'}
-                      disabled={chaosContracts.length === 0}
-                      placement="top"
-                      options={chaosContracts.map((friendship) => ({ value: friendship._id, label: partnerName(friendship) }))}
-                    />
-                  )}
-                  {cardId === 'PURIFY' && !hasDebt && <span className="inventory-hint">No debt to clear</span>}
-                  <Button variant="secondary" size="sm" loading={busy === 'use-' + cardId} disabled={disabled} onClick={() => activateOwnedCard(cardId)}>Use</Button>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       <section className="you-section you-secondary-section">
         <div className="you-section-heading"><div><p className="eyebrow">Privacy</p><h2>Public pressure</h2></div></div>
         <button className="privacy-row" type="button" onClick={toggleShameBoard} disabled={savingPrivacy} aria-pressed={appearsOnShameBoard}>
@@ -480,7 +322,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <section className="you-section you-secondary-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Recent</h2></div></div>
+        <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Your Aura, accounted for.</h2></div></div>
         <div className="transaction-list">
           {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
             <div className="transaction-row" key={transaction._id}>

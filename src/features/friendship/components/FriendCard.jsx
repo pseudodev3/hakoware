@@ -20,7 +20,7 @@ const activityTime = (value) => {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(time);
 };
 
-export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onAction, variant = 'roster' }) => {
+export const FriendCard = ({ friendship, currentUserId, socialState, socialStatus = 'ready', onOpen, onAction, variant = 'roster' }) => {
   const { partner, ownPerspective } = getContractSides(friendship, currentUserId);
   const name = partner?.displayName || 'Your friend';
   const summary = friendSummary(friendship, currentUserId);
@@ -29,7 +29,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
   const latest = socialState?.lastMessage;
   const activity = socialState?.recentActivity?.[0];
   // Check-ins stay in the contract strip; a newer one should not bury a reply.
-  const preview = latest ? `${latest.mine ? 'You: ' : ''}${latest.text}` : activity?.text || 'Send the first message.';
+  const preview = latest ? `${latest.mine ? 'You: ' : ''}${latest.text}` : activity?.text || (socialStatus === 'loading' ? 'Opening your conversation…' : socialStatus === 'error' ? 'Open your conversation.' : 'Send the first message.');
   const previewAt = latest?.createdAt || activity?.createdAt;
   const time = activityTime(previewAt);
   const unread = socialState?.unseenActivity?.length || 0;
@@ -52,20 +52,18 @@ export const FriendCard = ({ friendship, currentUserId, socialState, onOpen, onA
         aria-describedby={`friend-preview-${id}${unread ? ` friend-updates-${id}` : ''}`}
         onClick={() => onOpen(friendship)}
       >
-        {variant === 'roster' ? <UserAvatar person={partner} size="lg" decorative /> : <span className="friend-card-portrait"><UserAvatar person={partner} size="lg" decorative />{variant === 'featured' && <img className="friend-card-portrait-accent" src="/textures/hakoware-crew-accent.webp" alt="" />}{variant === 'crew' && partner?.avatar && <span className="friend-card-portrait-initial" aria-hidden="true">{name[0]?.toUpperCase()}</span>}</span>}
+        <UserAvatar person={partner} size="lg" decorative />
         <span className="friend-card-copy">
-          {variant === 'featured' && <span className="friend-card-topline"><span className="friend-card-initial" aria-hidden="true">{name[0]?.toUpperCase()}</span>{unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}{time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}</span>}
+          {unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
           <span className="friend-card-identity">
             <strong>{name}</strong>
-            {variant === 'roster' && unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
-            {variant !== 'featured' && time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}
+            {time && <time className="friend-card-time" dateTime={new Date(previewAt).toISOString()}>{time}</time>}
           </span>
-          {variant === 'crew' && unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
           <span className="friend-card-preview-line">
             <span id={`friend-preview-${id}`} className={`friend-card-preview ${!latest && !activity ? 'is-empty' : ''}`}>
               {preview}
             </span>
-            {variant === 'featured' && <span className="friend-card-open-arrow" aria-hidden="true"><ArrowRight size={22} strokeWidth={1.8} /></span>}
+            <span className="friend-card-open-arrow" aria-hidden="true"><ArrowRight size={18} strokeWidth={1.8} /></span>
           </span>
         </span>
       </button>

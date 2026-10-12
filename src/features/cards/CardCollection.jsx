@@ -12,6 +12,7 @@ import {
   respondToCardOffer,
 } from '../../services/cardService';
 import { CardArtwork } from './CardArtwork';
+import { ViewTabs } from '../../shared/components/ViewTabs';
 import './CardCollection.css';
 
 export const CardCollection = ({
@@ -233,28 +234,14 @@ export const CardCollection = ({
       <div className="collection-progress" style={{ '--collection-size': Math.max(activeCards.length, 1) }} role="progressbar" aria-label="Tools collected" aria-valuemin={0} aria-valuemax={activeCards.length} aria-valuenow={activeCards.filter((card) => card.discovered).length}>
         {activeCards.map((card) => <span key={card.id} className={card.discovered ? 'is-collected' : ''} aria-hidden="true" />)}
       </div>
-      <div className="collection-tabs" role="tablist" aria-label="Cards views">
-        <button
-          role="tab"
-          aria-selected={tab === 'collection'}
-          onClick={() => setTab('collection')}
-        >
-          Collection
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'offers'}
-          onClick={() => setTab('offers')}
-        >
-          Offers {pending.length > 0 && <span>{pending.length}</span>}
-        </button>
-      </div>
+      <ViewTabs id="collection" label="Cards views" className="collection-tabs" value={tab} onChange={setTab} items={[{ value: 'collection', label: 'Collection' }, { value: 'offers', label: 'Offers', count: pending.length }]} />
       {error && (
         <div className="cards-error" role="status">
           <p>{error}</p>
           <button onClick={() => void load()}>Retry</button>
         </div>
       )}
+      <div role="tabpanel" id={`collection-panel-${tab}`} aria-labelledby={`collection-tab-${tab}`}>
       {tab === 'collection' ? (
         <>
           <div className="collection-filters" aria-label="Filter cards">
@@ -293,7 +280,7 @@ export const CardCollection = ({
                   <strong>{card.name}</strong>
                   <span className="collection-card-kind">
                     {card.kind === 'STICKER'
-                      ? 'Retained collectible'
+                      ? 'Collectible'
                       : 'Single-use tool'}
                   </span>
                   <span className="collection-card-owned">
@@ -464,6 +451,7 @@ export const CardCollection = ({
             This offer is no longer in your recent history.
           </p>
         )}
+      </div>
       {sheet && (
         <ActionSheet
           title={

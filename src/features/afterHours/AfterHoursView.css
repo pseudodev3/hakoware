@@ -2,17 +2,11 @@
   --room-accent: var(--play-violet);
   --room-soft: var(--play-violet-soft);
   --room-cut: var(--crew-cut, 14px);
-  width: min(720px, 100%);
   margin: 0 auto;
-  padding: 10px 0 40px;
+  width: min(840px,100%);
+  padding: 0 0 32px;
 }
-
-.after-hours-header { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; margin-bottom: 14px; }
-.after-hours-room-title { display: contents; }
-.after-hours-header h1 { grid-column: 1 / -1; padding-right: 42px; font-size: clamp(2.1rem, 4vw, 2.9rem); line-height: 1.05; letter-spacing: -.055em; font-weight: 850; }
-.after-hours-room-mark { position: absolute; top: 4px; right: 0; color: var(--room-accent); }
-.after-hours-header p { margin-top: 8px; color: var(--text-muted); font-size: .85rem; line-height: 1.4; }
-.after-hours-presence { min-height: 44px; display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; margin-top: 3px; border-radius: 3px; color: var(--text-secondary); font-size: .75rem; white-space: nowrap; }
+.after-hours-presence { min-height: 44px; display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; border-radius: 3px; white-space: nowrap; margin-top: 0; font-size: .6875rem; color: var(--text-muted); }
 .after-hours-presence > svg { color: var(--room-accent); }
 .after-hours-presence-portraits { display: flex; align-items: center; padding-left: 7px; }
 .after-hours-presence-portraits .user-avatar { width: 25px; height: 29px; margin-left: -7px; border: 1px solid var(--bg-primary); font-size: .64rem; }
@@ -21,7 +15,7 @@
 .after-hours-dialog-body .user-avatar { border-radius: 3px; }
 
 .after-hours-share { display: flex; align-items: center; gap: 8px; margin-bottom: 19px; }
-.after-hours-share-open { min-width: 0; min-height: 52px; flex: 1 1 auto; display: flex; align-items: center; gap: 11px; padding: 8px 12px; border: 1px solid var(--crew-edge, var(--border-active)); border-radius: 3px; color: var(--text-secondary); background: var(--surface-card); background-image: linear-gradient(color-mix(in srgb, var(--surface-card) 94%, transparent), color-mix(in srgb, var(--surface-card) 94%, transparent)), var(--crew-surface-texture, none); background-size: auto, 280px; text-align: left; font-size: .88rem; }
+.after-hours-share-open { min-width: 0; flex: 1 1 auto; display: flex; align-items: center; gap: 11px; padding: 8px 12px; color: var(--text-secondary); background-image: linear-gradient(color-mix(in srgb, var(--surface-card) 94%, transparent), color-mix(in srgb, var(--surface-card) 94%, transparent)), var(--crew-surface-texture, none); background-size: auto, 280px; text-align: left; font-size: .88rem; border-radius: 14px; background: var(--play-violet-soft); border: 1px solid var(--border-subtle); min-height: 64px; }
 .after-hours-share-open > span:not(.user-avatar) { min-width: 0; flex: 1; }
 .after-hours-share-open > svg { flex: 0 0 auto; color: var(--room-accent); }
 .after-hours-share-open .user-avatar { width: 30px; height: 34px; }
@@ -34,11 +28,7 @@
 .after-hours-feed-item { position: relative; min-width: 0; padding: 22px 0 16px; border-bottom: 1px solid var(--border-subtle); isolation: isolate; }
 /* Only the opening post gets the tactile card treatment. The rest of the room
    stays open so a busy feed does not become a stack of identical boxes. */
-.after-hours-feed-item:first-child.is-social { padding: 20px 18px 13px; margin-bottom: 6px; border: 0; }
-.after-hours-feed-item:first-child.is-social::before,
-.after-hours-feed-item:first-child.is-social::after { content: ''; position: absolute; inset: 0; z-index: -2; pointer-events: none; clip-path: polygon(0 0, calc(100% - var(--room-cut)) 0, 100% var(--room-cut), 100% calc(100% - var(--room-cut)), calc(100% - var(--room-cut)) 100%, var(--room-cut) 100%, 0 calc(100% - var(--room-cut))); }
-.after-hours-feed-item:first-child.is-social::before { background: color-mix(in srgb, var(--room-accent) 38%, var(--crew-edge, var(--border-active))); }
-.after-hours-feed-item:first-child.is-social::after { inset: 1px; z-index: -1; background-color: var(--surface-card); background-image: linear-gradient(color-mix(in srgb, var(--surface-card) 94%, transparent), color-mix(in srgb, var(--surface-card) 94%, transparent)), var(--crew-surface-texture, none); background-size: auto, 280px; }
+.after-hours-feed-item:first-child.is-social { padding: 24px; border: 1px solid var(--border-subtle); border-radius: 20px; background: var(--surface-card); margin-bottom: 12px; }
 .after-hours-post-header { min-width: 0; display: flex; align-items: center; gap: 10px; }
 .after-hours-post-author { min-width: 0; min-height: 48px; flex: 1; display: flex; align-items: center; gap: 10px; border-radius: 3px; text-align: left; }
 .after-hours-post-author .user-avatar,
@@ -52,7 +42,7 @@
 .after-hours-feed-meta strong { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-size: .96rem; font-weight: 750; }
 .after-hours-feed-meta span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: .76rem; }
 .after-hours-post-type { display: inline-flex; align-items: center; margin-top: 12px; color: var(--room-accent, var(--play-violet)); font-size: .74rem; font-weight: 650; line-height: 1.4; }
-.after-hours-social-post { min-width: 0; margin-top: 14px; color: var(--text-primary); font-size: 1.06rem; line-height: 1.55; font-weight: 450; letter-spacing: -.018em; overflow-wrap: anywhere; white-space: pre-wrap; }
+.after-hours-social-post { min-width: 0; margin-top: 14px; color: var(--text-primary); letter-spacing: -.018em; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 1.0625rem; line-height: 1.65; font-weight: 450; }
 .after-hours-feed-item:first-child.is-social .after-hours-social-post { font-size: 1.19rem; line-height: 1.45; font-weight: 550; }
 .after-hours-feed-item > small { display: block; margin-top: 6px; color: var(--text-muted); font-size: .76rem; overflow-wrap: anywhere; }
 .after-hours-burn-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; color: var(--aura-gold); font-size: .75rem; }
@@ -200,8 +190,6 @@ button.after-hours-submit { width: 100%; justify-content: space-between; }
 
 @media (max-width: 640px) {
   .after-hours { padding-top: 2px; }
-  .after-hours-header h1 { font-size: 2.3rem; }
-  .after-hours-header p { font-size: .8rem; }
   .after-hours-presence { gap: 5px; font-size: .72rem; }
   .after-hours-share { gap: 9px; margin-bottom: 16px; }
   .after-hours-share-open { gap: 8px; padding: 8px 10px; font-size: .85rem; }
@@ -218,7 +206,6 @@ button.after-hours-submit { width: 100%; justify-content: space-between; }
   .after-hours-post-modes button { font-size: .76rem; }
 }
 @media (max-width: 360px) {
-  .after-hours-header p { font-size: .74rem; }
   .after-hours-presence { font-size: .68rem; gap: 4px; }
   .after-hours-presence-portraits .user-avatar { width: 21px; height: 26px; }
   .after-hours-challenge-toggle { gap: 5px; font-size: .7rem; }
@@ -232,4 +219,42 @@ button.after-hours-submit { width: 100%; justify-content: space-between; }
 @media (prefers-reduced-motion: reduce) {
   .after-hours *,
   .after-hours-dialog-body * { scroll-behavior: auto; transition-duration: 0ms; }
+}
+.after-hours .page-heading-eyebrow {
+  color: var(--room-accent);
+}
+.after-hours .page-heading h1 {
+  font-size: clamp(2.75rem,4.8vw,4.75rem);
+  font-weight: 750;
+  letter-spacing: -.055em;
+  line-height: 1.03;
+  padding-right: 0;
+}
+.after-hours-room-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: .75rem;
+}
+.after-hours-room-meta > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--room-accent);
+}
+.after-hours-share-open > span {
+  font-size: .9375rem;
+  font-weight: 500;
+}
+.after-hours .user-avatar, .after-hours-dialog-body .user-avatar {
+  clip-path: none;
+  border-radius: 50%;
+}
+.after-hours-post-byline strong {
+  font-weight: 600;
 }

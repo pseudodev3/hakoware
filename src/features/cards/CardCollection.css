@@ -1,7 +1,7 @@
 .card-collection { padding:8px 0 30px; }
 .collection-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
-.collection-heading h2 { font-size:1.3rem; letter-spacing:-.03em; margin-bottom:5px; }
-.collection-heading > div > p:last-child { font-size:.8rem; color:var(--text-secondary); }
+.collection-heading h2 { margin-bottom:5px; font-size:1.125rem; font-weight:600; letter-spacing:-.025em; }
+.collection-heading > div > p:last-child { font-size:.75rem; line-height:1.5; color:var(--text-muted); }
 .collection-new-offer { min-height:44px; padding:0 15px; display:flex; align-items:center; gap:6px; border-radius:14px; color:var(--accent-text); background:var(--accent-soft); font-size:.85rem; font-weight:650; flex:0 0 auto; }
 .collection-new-offer:disabled { opacity:.5; }
 .collection-progress { display:grid; grid-template-columns:repeat(var(--collection-size),1fr); gap:5px; margin-bottom:18px; }
@@ -15,14 +15,14 @@
 .collection-filters button { min-height:44px; padding:0 14px; color:var(--text-secondary); font-size:.78rem; border-radius:12px; }
 .collection-filters button[aria-pressed='true'] { color:var(--accent-text); background:var(--accent-soft); font-weight:650; }
 .collection-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
-.collection-card { position:relative; display:flex; flex-direction:column; align-items:center; padding:15px 14px 12px; text-align:center; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; box-shadow:var(--shadow-card); overflow:hidden; min-width:0; }
+.collection-card { position:relative; display:flex; flex-direction:column; border:1px solid var(--border-subtle); overflow:hidden; min-width:0; padding:20px 16px 18px; border-radius:18px; background:var(--surface-card); box-shadow:none; text-align:left; align-items:flex-start; }
 .collection-card.is-mark { background:color-mix(in srgb,var(--play-violet-soft) 38%,var(--bg-card)); }
 .collection-card.is-discovered { border-color:color-mix(in srgb,var(--accent-text) 32%,var(--border-subtle)); }
-.collection-card-number { width:100%; color:var(--text-muted); font-size:.69rem; font-weight:500; text-align:left; }
-.collection-card > .card-artwork { width:min(112px,100%); height:134px; margin:14px 0 16px; border-radius:12px; }
-.collection-card > strong { font-size:1rem; font-weight:700; letter-spacing:-.02em; }
-.collection-card-kind { color:var(--text-secondary); font-size:.72rem; margin-top:5px; }
-.collection-card-owned { margin-top:14px; border-top:1px solid var(--border-subtle); padding-top:11px; width:100%; color:var(--accent-text); font-size:.77rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px; flex-wrap:wrap; min-height:32px; }
+.collection-card-number { width:100%; color:var(--text-muted); font-weight:500; text-align:left; font-size:.625rem; letter-spacing:.07em; }
+.collection-card > .card-artwork { border-radius:12px; width:min(140px,100%); height:170px; align-self:center; margin:16px 0 22px; }
+.collection-card > strong { letter-spacing:-.02em; font-size:1.0625rem; font-weight:650; }
+.collection-card-kind { margin-top:5px; font-size:.75rem; line-height:1.5; color:var(--text-muted); }
+.collection-card-owned { margin-top:14px; border-top:1px solid var(--border-subtle); padding-top:11px; width:100%; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px; flex-wrap:wrap; min-height:32px; font-size:.8125rem; color:var(--accent-text); }
 .collection-card-owned small { flex-basis:100%; font-size:.72rem; color:var(--text-muted); font-weight:400; }
 .collection-footnote {
   margin-top: 18px;
@@ -32,9 +32,13 @@
   line-height: 1.6;
 }
 .collection-offer {
-  padding: 20px 0;
   border-bottom: 1px solid var(--border-subtle);
   outline: none;
+  padding:22px;
+  margin-top:16px;
+  border:1px solid var(--border-active);
+  border-radius:18px;
+  background:var(--surface-card);
 }
 .collection-offer.is-focused {
   outline: 2px solid var(--aura-gold);
@@ -167,19 +171,19 @@
   justify-content: space-between;
   min-height: 44px;
   padding: 0 12px;
-  color: var(--aura-gold);
   font-size: 0.82rem;
   border-radius: 10px;
   background: var(--surface-soft);
+  color:var(--accent-text);
 }
 .card-primary-action {
   min-height: 48px;
   width: 100%;
-  border-radius: 12px;
   color: var(--accent-ink);
   background: var(--accent);
-  font-size: 0.82rem;
   font-weight: 650;
+  font-size:.875rem;
+  border-radius:12px;
 }
 .card-form {
   display: flex;
@@ -228,13 +232,13 @@
     gap: 10px;
   }
   .collection-card {
-    padding: 12px 9px;
+    padding: 16px 12px;
   }
   .collection-card-number {
-    font-size: 0.5rem;
+    font-size: .625rem;
   }
   .collection-heading h2 {
-    font-size: 1.65rem;
+    font-size: 1.125rem;
   }
 }
 @media (hover: hover) and (pointer: fine) {
@@ -250,25 +254,4 @@
     transform: none;
   }
 }
-
-
-.collection-offer { margin-top:16px; padding:20px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:22px; }
-.collection-offer-person strong { font-size:.95rem; }
-.collection-offer-person small,.collection-offer-swap small { font-size:.76rem; }
-.collection-offer-swap strong { font-size:.9rem; }
-.collection-offer-note { font-size:.83rem; }
-.collection-offer-swap .card-artwork { width:68px; height:82px; margin:4px 0; }
-.card-detail > .card-artwork { width:156px; height:187px; }
-.card-primary-action { font-size:.9rem; border-radius:14px; }
-.card-primary-action:disabled { opacity:.5; }
-.card-detail-actions button { color:var(--accent-text); }
-@media (max-width:760px) {
-  .collection-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-  .collection-card { padding:12px 10px; border-radius:18px; }
-  .collection-card > strong { font-size:.94rem; }
-  .collection-card-kind { font-size:.68rem; }
-  .collection-card-number { font-size:.66rem; }
-  .collection-heading h2 { font-size:1.2rem; }
-  .collection-heading > div > p:last-child { font-size:.76rem; }
-  .collection-filters button { padding-inline:12px; }
-}
+.card-detail > .card-artwork { width:160px; height:190px; }

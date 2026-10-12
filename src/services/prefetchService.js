@@ -1,7 +1,7 @@
 import { api } from '../lib/api';
 import { fetchResource, invalidateResource, peekResource } from '../lib/resourceCache';
 import { getBountyMeta, getContractBounty, getHunterProfile } from './bountyService';
-import { getAuraCards, getMyGrudges, getPublicGrudges, getUserAura } from './auraService';
+import { getMyGrudges, getPublicGrudges, getUserAura } from './auraService';
 import { RESOURCE_KEYS } from './bootstrapService';
 
 export const getArenaSnapshot = ({ force = false } = {}) => fetchResource(
@@ -32,15 +32,13 @@ export const invalidateArenaSnapshot = () => invalidateResource(RESOURCE_KEYS.ar
 export const getYouSnapshot = ({ force = false } = {}) => fetchResource(
   RESOURCE_KEYS.you,
   async () => {
-    const [aura, cards, grudges] = await Promise.all([
+    const [aura, grudges] = await Promise.all([
       getUserAura({ force }),
-      getAuraCards(),
       getMyGrudges()
     ]);
 
     return {
       aura,
-      cards: cards || [],
       grudges: grudges || []
     };
   },

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Check, Clock3, Dice5, Mail, Plus, Swords, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { FriendCard } from './FriendCard';
+import { PageHeading } from '../../../shared/components/PageHeading';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { getBankruptPartner } from '../contractState';
 import './ContractsView.css';
@@ -17,7 +18,7 @@ const FALLBACK_NAMES = {
   CUSTOM: 'Custom'
 };
 
-export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, onOpenFriend, onAcceptedFriend }) => {
+export const ContractsView = ({ user, friendships, pendingReceived, pendingSent, pendingExternal = [], templates = [], onAction, onAddFriend, onRefresh, onNavigate, showToast, socialContracts = {}, socialStatus = 'ready', onOpenFriend, onAcceptedFriend }) => {
   const [respondingId, setRespondingId] = useState(null);
   const userId = user.uid || user.id || user._id;
   const waitingOnThem = pendingSent.length + pendingExternal.length;
@@ -76,13 +77,9 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         </section>
       )}
 
-      <header className="contracts-header">
-        <div>
-          <p className="eyebrow">Contracts</p>
-          <h1>Your roster.</h1>
-        </div>
-        <Button variant="aura" icon={Plus} onClick={onAddFriend}>New contract</Button>
-      </header>
+      <PageHeading eyebrow="Your circle" title={<>Good people.<br /><span>Shared stories.</span></>} description="Every Duo has its own rhythm. Find yours.">
+        <Button variant="aura" icon={Plus} onClick={onAddFriend}>New Duo</Button>
+      </PageHeading>
 
       <div className="contracts-meta" aria-label="Contract summary">
         <span><b>{friendships.length}</b> active</span>
@@ -117,7 +114,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
       <section className="contract-section active-contract-section">
         <div className="contract-section-title"><h2>Active</h2><span>{friendships.length}</span></div>
         {friendships.length === 0 ? (
-          <div className="contracts-empty"><Swords size={24} strokeWidth={1.6} /><p>No active contracts.</p><Button variant="secondary" icon={Plus} onClick={onAddFriend}>Start one</Button></div>
+          <div className="contracts-empty"><Swords size={28} strokeWidth={1.6} /><h2>It starts with one person.</h2><p>Invite a friend and pick a rhythm you can both keep.</p><Button variant="aura" icon={Plus} onClick={onAddFriend}>Invite your person</Button></div>
         ) : (
           <div className="contracts-grid">
             {orderedFriendships.map((friendship) => (
@@ -127,6 +124,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
                 currentUserId={userId}
                 onAction={onAction}
                 socialState={socialContracts?.[friendship._id || friendship.id]}
+                socialStatus={socialStatus}
                 onOpen={onOpenFriend}
               />
             ))}

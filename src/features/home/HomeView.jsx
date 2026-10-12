@@ -5,6 +5,7 @@ import { respondToInvitation } from '../../services/friendshipService';
 import { FriendCard } from '../friendship/components/FriendCard';
 import { HomePlay } from './HomePlay';
 import { NextMove } from './NextMove';
+import { PageHeading } from '../../shared/components/PageHeading';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 
@@ -45,7 +46,7 @@ const priority = (friendship, userId, socialContracts = {}) => {
 };
 
 
-export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, onActivitySeen, onOpenFriend, onAcceptedFriend }) => {
+export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboundCount = 0, worldEvent, onAction, onAddFriend, onNavigate, onRefresh, showToast, socialPresence = { pulse: [], contracts: {} }, socialStatus = 'ready', onActivitySeen, onOpenFriend, onAcceptedFriend }) => {
   const userId = user.uid || user.id || user._id;
   const socialContracts = socialPresence?.contracts || {};
   const newestActivityAt = (friendship) => {
@@ -74,10 +75,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
     const social = socialContracts[item._id || item.id];
     return social?.firstMutualCheckin || social?.unseenActivity?.length;
   });
-  const highestDuo = friendships.reduce((best, friendship) => (friendship.duoLevel || 1) > (best?.duoLevel || 0) ? friendship : best, null);
-  const liveChaos = friendships.filter((friendship) => friendship.chaos?.activeEvent).length;
-  const activeSeasons = friendships.filter((item) => item.season?.status === 'ACTIVE').length;
-  const completeReports = friendships.filter((item) => item.season?.status === 'COMPLETE').length;
   const [respondingInviteId, setRespondingInviteId] = useState(null);
 
   const previewedMessageIds = new Set(visible.map((friendship) => socialContracts[friendship._id || friendship.id]?.lastMessage?.id).filter(Boolean));
@@ -195,13 +192,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
   return (
     <div className="home-view circle-first-home crew-home">
-      <header className="circle-first-header">
-        <div className="circle-first-title">
-          <h1>Your circle</h1>
-          <p>{hot.length ? 'A few things to catch up on.' : hasNewUpdates ? 'Pick up where you left off.' : 'Make time for your people.'}</p>
-        </div>
-        <div className="home-crew-sigil" aria-hidden="true"><img src="/textures/hakoware-crew-mark.webp" alt="" /></div>
-      </header>
+      <PageHeading eyebrow="Keep the loop alive" title={<>Your people.<br /><span>A little closer.</span></>} description={hot.length ? 'A few things to catch up on. Start with your people.' : hasNewUpdates ? 'Something new. Pick up where you left off.' : 'A small message can make their day.'} />
 
       <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} firstOnly />
 
@@ -231,6 +222,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
       <div className="home-hangout">
         <section className="home-friends" aria-label="Conversations">
+          <div className="home-friends-heading"><h2>Pick up a conversation</h2><button type="button" onClick={() => onNavigate('contracts')}>Your circle <ArrowRight size={16} aria-hidden="true" /></button></div>
           <div className="circle-contracts crew-conversations">{visible.map((friendship, index) => (
             <FriendCard
               key={friendship._id || friendship.id}
@@ -240,6 +232,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
               onAction={onAction}
               onOpen={onOpenFriend}
               socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
+              socialStatus={socialStatus}
             />
           ))}</div>
 
@@ -264,22 +257,13 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           )}
         </section>
 
-        <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} />
-        <HomePlay user={user} onNavigate={onNavigate} />
+        <aside className="home-side">
+          <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} />
+          <HomePlay user={user} onNavigate={onNavigate} />
+        </aside>
       </div>
 
-      <div className="circle-summary" aria-label="Circle summary">
-        <span><b>{activeSeasons}</b>Active</span>
-        <span><b>Lv. {highestDuo?.duoLevel || 1}</b>Strongest Duo</span>
-        {completeReports > 0 && <span><b>{completeReports}</b>Reports</span>}
-        <span><b className={liveChaos > 0 ? 'danger' : ''}>{liveChaos > 0 ? liveChaos + ' live' : 'Clear'}</b>Chaos</span>
-        {worldEvent && (
-          <span className="circle-world-rule">
-            <b>{worldEvent.name}</b>
-            {WORLD_RULE_COPY[worldEvent.id] || worldEvent.description}
-          </span>
-        )}
-      </div>
+      {worldEvent && <div className="home-world-event"><span>This week in Hakoware</span><strong>{worldEvent.name}</strong><p>{WORLD_RULE_COPY[worldEvent.id] || worldEvent.description}</p></div>}
 
     </div>
   );

@@ -9,6 +9,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { calculateDebt } from '../../../hooks/useDebt';
 import { getArenaSnapshot, peekArenaSnapshot } from '../../../services/prefetchService';
 import { CardCollection } from '../../cards/CardCollection';
+import { PageHeading } from '../../../shared/components/PageHeading';
+import { ViewTabs } from '../../../shared/components/ViewTabs';
 import './Arena.css';
 
 const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
@@ -115,18 +117,13 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
 
   return (
     <div className="arena-view">
-      <header className="arena-hero">
-        <div>
-          <p className="eyebrow">Arena · A few tricks up your sleeve</p>
-          <h1>{tab === 'cards' ? 'Small cards. Big energy.' : 'Make your move.'}</h1>
-          <p>{tab === 'cards' ? 'Collect something you like. Trade with a friend. Put it to use.' : 'Keep an eye on the pressure. Every move has a consequence.'}</p>
-        </div>
+      <PageHeading eyebrow="Arena" title={tab === 'cards' ? <>A few good<br /><span>tricks.</span></> : <>Make your<br /><span>move.</span></>} description={tab === 'cards' ? 'Your tools, your trades, your next move.' : 'Every move leaves a mark. Choose yours.'}>
         {tab === 'bounties' && bankruptFriendships.length > 0 && (
           <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)}>
             Place bounty
           </Button>
         )}
-      </header>
+      </PageHeading>
 
 
       {tab !== 'cards' && <div className="arena-meta-line" aria-label="Arena summary">
@@ -137,13 +134,9 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
         {activeAnomalies > 0 && <span className="danger"><b>{activeAnomalies}</b> live anomal{activeAnomalies === 1 ? 'y' : 'ies'}</span>}
       </div>}
 
-      <div className="arena-tabs" role="tablist" aria-label="Arena views">
-        <button className={tab === 'cards' ? 'active' : ''} onClick={() => { setTab('cards'); onNavigate?.('arena', { section: 'cards' }); }} role="tab" aria-selected={tab === 'cards'}>Cards</button>
-        <button className={tab === 'bounties' ? 'active' : ''} onClick={() => { setTab('bounties'); onNavigate?.('arena', { section: 'bounties' }); }} role="tab" aria-selected={tab === 'bounties'}>Bounties</button>
-        <button className={tab === 'grudges' ? 'active' : ''} onClick={() => { setTab('grudges'); onNavigate?.('arena', { section: 'grudges' }); }} role="tab" aria-selected={tab === 'grudges'}>Grudges {grudges.length ? `· ${grudges.length}` : ''}</button>
-        <button className={tab === 'shame' ? 'active' : ''} onClick={() => { setTab('shame'); onNavigate?.('arena', { section: 'shame' }); }} role="tab" aria-selected={tab === 'shame'}>Shame {shame.length ? `· ${shame.length}` : ''}</button>
-      </div>
+      <ViewTabs id="arena" label="Arena views" className="arena-tabs" value={tab} onChange={(value) => { setTab(value); onNavigate?.('arena', { section: value }); }} items={[{ value: 'cards', label: 'Cards' }, { value: 'bounties', label: 'Bounties' }, { value: 'grudges', label: 'Grudges', count: grudges.length }, { value: 'shame', label: 'Shame', count: shame.length }]} />
 
+      <div role="tabpanel" id={`arena-panel-${tab}`} aria-labelledby={`arena-tab-${tab}`}>
       {tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
         <section className="arena-panel">
           <div className="arena-panel-head">
@@ -290,6 +283,7 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
         </section>
       )}
 
+      </div>
       <CreateBountyModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} friendships={bankruptFriendships} onRefresh={loadArenaData} showToast={showToast} />
       <PressureMoveModal bounty={pressureBounty} moves={meta.pressureMoves || []} loading={pressureLoading} onClose={() => setPressureBounty(null)} onSend={sendPressure} />
     </div>

@@ -78,7 +78,14 @@ function MainApp({ showToast }) {
   const [contractPrefill, setContractPrefill] = useState(null);
   const [afterHoursFocusId, setAfterHoursFocusId] = useState(null);
   const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
+  const [socialStatus, setSocialStatus] = useState('loading');
   const circleSeenRef = useRef({ userId: null, items: {} });
+  useEffect(() => {
+    setSocialPresence({ pulse: [], contracts: {} });
+    setSocialStatus('loading');
+    const userId = String(user?.uid || user?.id || user?._id || '');
+    circleSeenRef.current = { userId, items: readCircleSeen(localStorage, userId) };
+  }, [user?.uid, user?.id, user?._id]);
 
   const applyBootstrap = (payload) => {
     if (!payload) return;
@@ -106,14 +113,17 @@ function MainApp({ showToast }) {
 
   const loadSocial = async () => {
     if (!isAuthenticated || !user) return;
+    const viewerId = String(user.uid || user.id || user._id);
     try {
-      const viewerId = String(user.uid || user.id || user._id);
       circleSeen();
       const data = await getSocialPresence(new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
-      if (circleSeenRef.current.userId && circleSeenRef.current.userId !== viewerId) return;
+      if (circleSeenRef.current.userId !== viewerId) return;
       setSocialPresence(applyCircleSeen(data || { pulse: [], contracts: {} }, circleSeen().items));
+      setSocialStatus('ready');
     } catch (error) {
+      if (circleSeenRef.current.userId !== viewerId) return;
       console.error('Could not load social presence:', error);
+      setSocialStatus('error');
     }
   };
 
@@ -387,6 +397,7 @@ function MainApp({ showToast }) {
             onAcceptedFriend={openAcceptedFriend}
             showToast={showToast}
             socialPresence={socialPresence}
+            socialStatus={socialStatus}
             onActivitySeen={markActivitySeen}
             onOpenFriend={openFriend}
           />
@@ -406,6 +417,7 @@ function MainApp({ showToast }) {
             onNavigate={navigateTo}
             showToast={showToast}
             socialContracts={socialPresence.contracts}
+            socialStatus={socialStatus}
             onAcceptedFriend={openAcceptedFriend}
             onActivitySeen={markActivitySeen}
             onOpenFriend={openFriend}

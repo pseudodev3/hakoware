@@ -7,6 +7,7 @@ import {
 } from '../../services/afterHoursService';
 import { Modal } from '../../shared/components/Modal';
 import { UserAvatar } from '../../shared/components/UserAvatar';
+import { PageHeading } from '../../shared/components/PageHeading';
 import './AfterHoursView.css';
 
 const POST_MODES = [
@@ -276,7 +277,8 @@ export const AfterHoursView = ({ user, friendships = [], focusActivityId = null,
 
   return <>
     <section className="after-hours">
-      <header className="after-hours-header"><div className="after-hours-room-title"><h1 id="after-hours-heading" ref={headingRef} tabIndex={-1}>After Hours</h1><Radio className="after-hours-room-mark" size={30} strokeWidth={1.5} aria-hidden="true" /><p>A room to cross paths.</p></div>{others.length > 0 ? <button type="button" className="after-hours-presence" aria-haspopup="dialog" aria-label={`See ${others.length} other ${others.length === 1 ? 'person' : 'people'} here`} onClick={() => openDialog({ type: 'people' })}><span className="after-hours-presence-portraits" aria-hidden="true">{others.slice(0, 2).map((person) => <UserAvatar key={person.username} person={person} size="sm" decorative />)}</span><span>{`${others.length} ${others.length === 1 ? 'other' : 'others'} here`}</span><ChevronRight size={14} /></button> : <div className="after-hours-presence is-quiet"><span>{loading ? 'Opening…' : 'Just you here'}</span></div>}</header>
+      <PageHeading className="after-hours-header" eyebrow="After Hours" title={<>Stay a little.<br /><span>Say something.</span></>} description="Good conversations don’t always need an introduction." headingRef={headingRef} headingId="after-hours-heading" />
+      <div className="after-hours-room-meta"><span><Radio size={14} aria-hidden="true" />The open room</span>{others.length > 0 ? <button type="button" className="after-hours-presence" aria-haspopup="dialog" aria-label={`See ${others.length} other ${others.length === 1 ? 'person' : 'people'} here`} onClick={() => openDialog({ type: 'people' })}><span className="after-hours-presence-portraits" aria-hidden="true">{others.slice(0, 2).map((person) => <UserAvatar key={person.username} person={person} size="sm" decorative />)}</span><span>{`${others.length} ${others.length === 1 ? 'other' : 'others'} here`}</span><ChevronRight size={14} /></button> : <span className="after-hours-presence is-quiet">{loading ? 'Opening…' : 'Just you here'}</span>}</div>
       {wallRetired && <div className="after-hours-retired-notice" role="status"><p>The wall has closed. Your cards are still in your collection.</p><button type="button" onClick={() => { onDismissRetiredWall?.(); requestAnimationFrame(() => headingRef.current?.focus({ preventScroll: true })); }}>Dismiss</button></div>}
       {focusNotice && <div className="after-hours-focus-notice" role="status"><p>{focusNotice}</p><button type="button" onClick={() => { setFocusNotice(null); onNavigate?.('afterHours', { replace: true }); requestAnimationFrame(() => headingRef.current?.focus({ preventScroll: true })); }}>Return to room</button></div>}
       {loading ? <p role="status" className="after-hours-loading">Opening the room…</p> : !room ? <div className="after-hours-feed-empty" role="status"><p>{error || 'The room did not open.'}</p><button type="button" onClick={() => void loadRoom()}><RefreshCw size={16} />Try again</button></div> : <>
