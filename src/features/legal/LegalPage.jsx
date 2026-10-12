@@ -3,7 +3,7 @@ import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './LegalPage.css';
 
-const EFFECTIVE_DATE = 'September 18, 2026';
+const EFFECTIVE_DATE = 'October 12, 2026';
 const SUPPORT_EMAIL = 'hakoware265@gmail.com';
 
 const privacySections = [
@@ -13,7 +13,7 @@ const privacySections = [
       <ul>
         <li>account information such as your username, display name and email address;</li>
         <li>contract and game activity such as friendships, check-ins, Duo XP, Aura, debt, seasons, bounties, Claims, Grudges, recaps and notifications;</li>
-        <li>voice notes and other content you choose to upload;</li>
+        <li>messages, voice notes, Spark photos, thoughts, replies and reactions you choose to share;</li>
         <li>email addresses used to send contract invitations;</li>
         <li>limited first-party product signals, such as when you successfully share a Hakoware moment or mark interest in an upcoming Hakoware+ feature; and</li>
         <li>basic technical and security information needed to run the service. Our hosting providers may also process request metadata such as IP address, browser or device information in their logs.</li>
@@ -24,7 +24,7 @@ const privacySections = [
     <p>We use this information to operate contracts and game mechanics, authenticate accounts, deliver invitations and transactional messages, store voice notes, show recaps and social game state, prevent abuse, troubleshoot problems, secure the service and improve reliability.</p>
   )],
   ['Browser storage', (
-    <p>Hakoware uses browser storage for things such as your signed-in session and interface preferences. We use limited first-party product signals to understand whether core game loops are being used. We do not currently run advertising trackers or third-party behavioral analytics on the site.</p>
+    <p>Hakoware uses browser storage for things such as your signed-in session, interface preferences and unfinished message or Spark drafts. We use limited first-party product signals to understand whether core game loops are being used. We do not currently run advertising trackers or third-party behavioral analytics on the site.</p>
   )],
   ['When information is shared', (
     <>
@@ -33,7 +33,7 @@ const privacySections = [
     </>
   )],
   ['Public and social game information', (
-    <p>Hakoware includes social mechanics. Your username is a public social identifier, while your account email is used operationally for things such as recovery, invitations and important account messages. Depending on the feature and your settings, usernames, display names, contract status, bounties, Grudges, Wanted state, leaderboard or Shame Board information may be visible to other users. Do not put sensitive personal information into content you expect to be social or shareable.</p>
+    <><p>Hakoware includes social mechanics. Your username is a public social identifier, while your account email is used operationally for things such as recovery, invitations and important account messages. Depending on the feature and your settings, usernames, display names, contract status, bounties, Grudges, Wanted state, leaderboard or Shame Board information may be visible to other users. Do not put sensitive personal information into content you expect to be social or shareable.</p><p>Sparks and their photos are visible to the author and their accepted friends. Replies are visible to that same audience. Removing a friendship ends that account’s access to the author’s Sparks. Authors can remove a Spark and its photo, replies and reactions. Message read ticks show when the other participant views a message in the friend space.</p></>
   )],
   ['Retention and deletion', (
     <p>We keep account and game information for as long as reasonably needed to operate Hakoware, maintain game history, secure the service and meet legal obligations. Provider logs and backups may remain for limited periods after deletion. To request account or personal-data deletion, email us from the address connected to your account.</p>

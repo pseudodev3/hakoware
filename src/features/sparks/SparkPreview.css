@@ -1,0 +1,17 @@
+.home-sparks { border-top:1px solid var(--border-subtle); padding-top:24px; }
+.home-sparks > header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.home-sparks h2 { font-size:.9375rem; font-weight:600; letter-spacing:-.025em; }
+.home-sparks header button { display:flex; align-items:center; gap:5px; min-height:44px; color:var(--text-muted); font-size:.75rem; }
+.home-spark-list { display:flex; flex-direction:column; gap:4px; }
+.home-spark-list > button { min-width:0; display:flex; align-items:center; gap:10px; min-height:72px; text-align:left; }
+.home-spark-list .user-avatar { width:34px; height:34px; flex:0 0 auto; border-radius:50%; }
+.home-spark-list > button > span { flex:1; min-width:0; }
+.home-spark-list strong { font-size:.8125rem; font-weight:600; display:block; }
+.home-spark-list small { display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.75rem; margin-top:6px; }
+.home-spark-list small svg { flex:0 0 auto; }
+.home-spark-list > button > svg { flex:0 0 auto; color:var(--text-muted); }
+.home-sparks-empty { width:100%; display:flex; align-items:center; gap:12px; min-height:76px; text-align:left; padding:14px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--surface-card); }
+.home-sparks-empty > svg { flex:0 0 auto; color:var(--accent-text); }
+.home-sparks-empty > span { min-width:0; flex:1; }
+.home-sparks-empty strong { display:block; font-size:.8125rem; font-weight:550; line-height:1.4; }
+.home-sparks-empty small { display:block; color:var(--text-muted); font-size:.6875rem; line-height:1.5; margin-top:6px; }

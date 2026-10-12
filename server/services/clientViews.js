@@ -173,6 +173,8 @@ const notificationView = (value) => {
     wallPieceId: data.wallPieceId || null,
     wallWeekKey: data.wallWeekKey || null,
     afterHoursActivityId: data.afterHoursActivityId || null,
+    sparkPostId: data.sparkPostId || null,
+    sparkReplyId: data.sparkReplyId || null,
     read: Boolean(data.read),
     createdAt: data.createdAt
   };

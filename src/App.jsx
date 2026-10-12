@@ -25,7 +25,7 @@ import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal'
 import { LandingPage } from './features/landing/LandingPage';
 import { HomeView } from './features/home/HomeView';
 import { Arena } from './features/arena/components/Arena';
-import { AfterHoursView } from './features/afterHours/AfterHoursView';
+import { SparksView } from './features/sparks/SparksView';
 import { YouView } from './features/profile/YouView';
 import { FounderLabPage } from './features/testlab/FounderLabPage';
 import { LegalPage } from './features/legal/LegalPage';
@@ -63,7 +63,7 @@ function MainApp({ showToast }) {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const requestedTab = params.get('view') || 'home';
-  const activeTab = ['home', 'contracts', 'afterHours', 'arena', 'you'].includes(requestedTab) ? requestedTab : 'home';
+  const activeTab = requestedTab === 'afterHours' ? 'sparks' : ['home', 'contracts', 'sparks', 'arena', 'you'].includes(requestedTab) ? requestedTab : 'home';
   const friendKey = location.pathname.startsWith('/circle/') ? location.pathname.split('/')[2] : null;
   const returnFocusRef = useRef(null);
   const [friendships, setFriendships] = useState(bootstrapData?.contracts?.active || []);
@@ -76,7 +76,6 @@ function MainApp({ showToast }) {
   const [modalType, setModalType] = useState(null);
   const [selectedFriendship, setSelectedFriendship] = useState(null);
   const [contractPrefill, setContractPrefill] = useState(null);
-  const [afterHoursFocusId, setAfterHoursFocusId] = useState(null);
   const [socialPresence, setSocialPresence] = useState({ pulse: [], contracts: {} });
   const [socialStatus, setSocialStatus] = useState('loading');
   const circleSeenRef = useRef({ userId: null, items: {} });
@@ -215,10 +214,11 @@ function MainApp({ showToast }) {
   const openFriend = (friendship, options = {}) => {
     const key = friendship.contractKey || friendship._id || friendship.id;
     const query = new URLSearchParams({ view: activeTab });
-    if (activeTab === 'afterHours' && params.get('activity')) query.set('activity', params.get('activity'));
+    if (activeTab === 'sparks' && params.get('spark')) query.set('spark', params.get('spark'));
+    if (activeTab === 'sparks' && params.get('reply')) query.set('reply', params.get('reply'));
     if (options.focusEventId) query.set('event', options.focusEventId);
     if (options.contract) query.set('contract', '1');
-    returnFocusRef.current = activeTab === 'afterHours' ? 'after-hours-heading' : `friend-open-${friendship._id || friendship.id}`;
+    returnFocusRef.current = activeTab === 'sparks' ? 'sparks-heading' : `friend-open-${friendship._id || friendship.id}`;
     navigate(`/circle/${encodeURIComponent(key)}?${query}`);
   };
   const openAcceptedFriend = (invitation, contracts) => {
@@ -229,16 +229,18 @@ function MainApp({ showToast }) {
     else navigateTo('contracts');
   };
   const navigateTo = (tab, options = {}) => {
+    const previousRoom = tab === 'afterHours';
+    if (previousRoom) tab = 'sparks';
     if (tab === 'friend') {
       const match = friendships.find((item) => item.contractKey === options.contractKey);
       if (match) { openFriend(match, options); return; }
       tab = 'contracts';
     }
-    setAfterHoursFocusId(tab === 'afterHours' ? (options?.focusActivityId || null) : null);
     const query = new URLSearchParams({ view: tab });
     if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); }
-    if (tab === 'afterHours' && (options.wall || options.retiredWall || options.focusPieceId || options.week)) query.set('retiredWall', '1');
-    if (tab === 'afterHours' && options.focusActivityId) query.set('activity', options.focusActivityId);
+    if (tab === 'sparks' && options.focusPostId) query.set('spark', options.focusPostId);
+    if (tab === 'sparks' && options.focusReplyId) query.set('reply', options.focusReplyId);
+    if (tab === 'sparks' && (previousRoom || options.legacy)) { query.set('legacy', '1'); if (options.focusActivityId) query.set('activity', options.focusActivityId); }
     navigate(tab === 'home' ? '/' : `/?${query}`, { replace: Boolean(options.replace) });
   };
 
@@ -377,7 +379,7 @@ function MainApp({ showToast }) {
           socialState={socialPresence.contracts?.[openedFriend._id || openedFriend.id]}
           focusEventId={params.get('event')}
           initialContract={params.get('contract') === '1'}
-          onBack={() => navigateTo(activeTab, { replace: true, focusActivityId: activeTab === 'afterHours' ? params.get('activity') : null })}
+          onBack={() => navigateTo(activeTab, { replace: true, focusPostId: activeTab === 'sparks' ? params.get('spark') : null, focusReplyId: activeTab === 'sparks' ? params.get('reply') : null })}
           onAction={handleAction}
           onRefresh={loadData}
           onActivitySeen={markActivitySeen}
@@ -424,16 +426,14 @@ function MainApp({ showToast }) {
           />
         )}
 
-        {!friendKey && activeTab === 'afterHours' && (
-          <AfterHoursView
+        {!friendKey && activeTab === 'sparks' && (
+          <SparksView
             user={user}
-            friendships={[...friendships, ...pendingReceived, ...pendingSent]}
-            wallRetired={params.get('retiredWall') === '1' || params.get('surface') === 'wall' || params.has('piece') || params.has('week')}
-            onDismissRetiredWall={() => navigateTo('afterHours', { replace: true })}
-            focusActivityId={params.get('activity') || afterHoursFocusId}
-            focusRequestKey={location.key}
-            onFocusHandled={() => setAfterHoursFocusId(null)}
-            onStartContract={(person) => openNewContract(person, 'AFTER_HOURS')}
+            friendships={friendships}
+            legacy={requestedTab === 'afterHours' || params.get('legacy') === '1' || Boolean(params.get('retiredWall')) || params.get('surface') === 'wall' || params.has('piece') || params.has('week')}
+            legacyActivityId={params.get('activity')}
+            focusPostId={params.get('spark')}
+            focusReplyId={params.get('reply')}
             onOpenFriend={openFriend}
             onNavigate={navigateTo}
             showToast={showToast}

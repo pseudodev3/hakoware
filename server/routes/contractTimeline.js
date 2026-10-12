@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
+const ContractEvent = require('../models/ContractEvent');
 const Friendship = require('../models/Friendship');
 const { ensureActiveGameState } = require('../services/contractQueries');
 const { loadTimeline, sendMessage } = require('../services/contractTimeline');
@@ -28,7 +29,11 @@ router.post('/:id/timeline/read', auth, activeParticipant, async (req, res) => {
   try {
     const ids = req.body.eventIds;
     if (!Array.isArray(ids) || ids.length > 50 || ids.some((value) => !mongoose.isValidObjectId(value))) return res.status(400).json({ msg: 'Choose valid visible updates' });
-    await Notification.updateMany({ toUserId: req.user.id, friendshipId: req.friendship._id, type: 'CONTRACT_MESSAGE', read: false, contractEventId: { $in: ids } }, { $set: { read: true } });
+    const incoming = { _id: { $in: ids }, friendshipId: req.friendship._id, type: 'MESSAGE', userId: { $ne: req.user.id }, 'metadata.notified': true };
+    const visible = await ContractEvent.find(incoming).select('_id').lean();
+    const visibleIds = visible.map((event) => event._id);
+    await ContractEvent.updateMany({ ...incoming, 'metadata.readAt': { $exists: false } }, { $set: { 'metadata.readAt': new Date() } });
+    await Notification.updateMany({ toUserId: req.user.id, friendshipId: req.friendship._id, type: 'CONTRACT_MESSAGE', read: false, contractEventId: { $in: visibleIds } }, { $set: { read: true } });
     return res.json({ success: true });
   } catch (error) { return sendRouteError(res, error, 'Could not acknowledge these updates'); }
 });

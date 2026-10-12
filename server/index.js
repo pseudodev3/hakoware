@@ -87,6 +87,7 @@ app.use('/api/cards', require('./routes/cards'));
 app.use('/api/after-hours/wall', require('./routes/roomWall'));
 app.use('/api/bounties', require('./routes/bounties'));
 app.use('/api/after-hours', require('./routes/afterHours'));
+app.use('/api/sparks', require('./routes/sparks'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/growth', require('./routes/growth'));
 app.use('/api/test-lab', require('./routes/testLab'));

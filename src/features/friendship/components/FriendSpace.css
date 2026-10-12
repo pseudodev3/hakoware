@@ -30,6 +30,14 @@
 .friend-event.mine .friend-message-bubble { border-radius:20px 20px 4px 20px; background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent-text) 16%,var(--border-subtle)); }
 .friend-message-bubble > p { font-size:1rem; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
 .friend-message-meta { display:flex; justify-content:flex-end; gap:6px; color:var(--text-muted); font-size:.6875rem; margin-top:8px; }
+.friend-message-receipt { display:inline-flex; align-items:center; }
+.friend-message-receipt.is-read { color:var(--accent-text); }
+.friend-pending-message .friend-message-bubble { opacity:.7; }
+.friend-pending-message.has-failed .friend-message-meta { color:var(--aura-gold); }
+.friend-message-retry { min-height:44px; padding-inline:12px; color:var(--accent-text); font-size:.75rem; }
+.friend-sending-icon { animation:friend-send-spin 1s linear infinite; }
+@keyframes friend-send-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .friend-sending-icon { animation:none; } }
 .friend-message-checkin { display:flex; align-items:center; gap:4px; padding-inline:4px; font-size:.6875rem; line-height:1.5; color:var(--text-muted); }
 .friend-message-checkin svg { color:var(--aura-green); }
 .friend-message-checkin-note { display:block; margin-top:8px; font-size:.75rem; line-height:1.5; color:var(--aura-gold); }
@@ -59,13 +67,18 @@
 .friend-load-older { display:block; min-height:44px; margin:0 auto 16px; padding:0 16px; font-size:.75rem; color:var(--accent-text); }
 .friend-space-error { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; border:1px solid var(--border-subtle); border-radius:12px; font-size:.8125rem; color:var(--text-secondary); }
 .friend-space-error button { min-height:44px; color:var(--accent-text); flex:0 0 auto; }
-.friend-composer-dock { flex:0 0 auto; padding:16px 24px 12px; background:var(--surface-sidebar); border-top:1px solid var(--border-subtle); }
-.friend-composer { display:flex; align-items:flex-end; gap:10px; }
-.friend-composer textarea { flex:1; min-width:0; min-height:48px; max-height:120px; padding:14px 16px; resize:vertical; border:1px solid var(--border-active); border-radius:16px; background:var(--surface-input); font-size:1rem; line-height:1.4; color:var(--text-primary); }
+.friend-composer-dock { position:relative; flex:0 0 auto; padding:16px 24px 12px; background:var(--surface-sidebar); border-top:1px solid var(--border-subtle); }
+.friend-composer { display:flex; align-items:flex-end; gap:4px; padding:6px; border:1px solid var(--border-active); border-radius:24px; background:var(--surface-input); transition:border-color 160ms,box-shadow 160ms; }
+.friend-composer:focus-within { border-color:var(--accent-text); box-shadow:0 0 0 3px var(--accent-soft); }
+.friend-composer textarea { flex:1; min-width:0; min-height:44px; max-height:120px; padding:11px 6px; resize:none; border:0; outline:none; border-radius:0; background:transparent; font-size:1rem; line-height:1.4; color:var(--text-primary); }
 .friend-composer textarea::placeholder { color:var(--text-muted); }
-.friend-compose-voice,.friend-compose-send { width:48px; height:48px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; color:var(--text-secondary); }
+.friend-compose-voice,.friend-compose-send,.friend-compose-emoji { width:44px; height:44px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; color:var(--text-secondary); }
 .friend-compose-send { background:var(--accent); color:var(--accent-ink); }
 .friend-compose-send:disabled { background:var(--surface-soft); color:var(--text-muted); }
+.friend-emoji-tray { position:absolute; bottom:calc(100% + 8px); right:24px; display:flex; gap:4px; padding:8px; background:var(--surface-card); border:1px solid var(--border-active); border-radius:18px; box-shadow:0 8px 28px #0003; }
+.friend-emoji-tray button { width:44px; height:44px; border-radius:12px; font-size:1.4rem; }
+.friend-emoji-tray button:hover { background:var(--accent-soft); }
+.friend-message-count { display:inline-block; margin-left:8px; font-size:inherit; }
 .friend-composer-context { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:5px; }
 .friend-composer-context > span { color:var(--text-muted); font-size:.6875rem; line-height:1.5; }
 .friend-composer-context > button { min-height:44px; padding:0 8px; font-size:.75rem; color:var(--text-muted); }
@@ -91,4 +104,4 @@
 .friend-voice-composer-actions .friend-send-voice { color:var(--accent-text); background:var(--accent-soft); border-radius:10px; }
 @media(hover:hover) and (pointer:fine) { .friend-space-back:hover,.friend-space-details:hover,.friend-compose-voice:hover { background:var(--surface-soft-strong); } }
 @media(max-width:768px) { .friend-space-header { min-height:80px; gap:10px; padding:14px 62px 14px 10px; } .friend-space-header > .user-avatar { width:38px; height:38px; } .friend-space-identity h1 { font-size:1rem; } .friend-space-identity > span { font-size:.6875rem; } .friend-space-details { width:44px; padding:0; justify-content:center; } .friend-space-details > span,.friend-details-chevron { display:none; } .friend-space-health { padding-inline:20px; } .friend-space-attention,.friend-space-moment { padding-inline:20px; } .friend-space-timeline { padding:18px 16px 24px; } .friend-composer-dock { padding:12px 12px max(10px,env(safe-area-inset-bottom)); } .friend-space-contract { padding:20px 16px; } .friend-message-bubble { padding-inline:14px; max-width:88%; } }
-@media(max-width:350px) { .friend-space-header > .user-avatar { display:none; } .friend-composer { gap:6px; } }
+@media(max-width:350px) { .friend-space-header > .user-avatar { display:none; } .friend-composer { gap:0; } .friend-compose-emoji { display:none; } .friend-emoji-tray { right:10px; } }

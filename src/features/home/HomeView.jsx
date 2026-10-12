@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowRight, Clock3, Radio, UserPlus } from 'lucide-react';
+import { ArrowRight, Clock3, Sparkles, UserPlus } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
 import { FriendCard } from '../friendship/components/FriendCard';
 import { HomePlay } from './HomePlay';
 import { NextMove } from './NextMove';
 import { PageHeading } from '../../shared/components/PageHeading';
+import { SparkPreview } from '../sparks/SparkPreview';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 
@@ -161,7 +162,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <ol className="onboarding-path" aria-label="Your first Duo"><li className="complete"><span>01</span>Invite your person</li><li className="current"><span>02</span>They accept</li><li><span>03</span>Check in together</li></ol>
           <div className="first-contract-actions">
             <Button variant="aura" onClick={() => onNavigate('contracts')}>View your invitation</Button>
-            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>Explore After Hours</Button>
+            <Button variant="secondary" icon={Sparkles} onClick={() => onNavigate('sparks')}>See Sparks</Button>
           </div>
         </section>
         <HomePlay user={user} onNavigate={onNavigate} />
@@ -181,9 +182,9 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <ol className="onboarding-path" aria-label="Your first Duo"><li className="current"><span>01</span>Invite your person</li><li><span>02</span>Pick your pace</li><li><span>03</span>Check in together</li></ol>
           <div className="first-contract-actions">
             <Button variant="aura" icon={UserPlus} onClick={onAddFriend}>Invite your first friend</Button>
-            <Button variant="secondary" icon={Radio} onClick={() => onNavigate('afterHours')}>Find someone in After Hours</Button>
+            <Button variant="secondary" icon={Sparkles} onClick={() => onNavigate('sparks')}>See Sparks</Button>
           </div>
-          <p className="onboarding-short-rule">Invite someone you know, or meet someone in After Hours. Your conversation starts when they accept.</p>
+          <p className="onboarding-short-rule">Invite someone you know. Conversations and circle-only Sparks open up when they accept.</p>
         </section>
         <HomePlay user={user} onNavigate={onNavigate} />
       </div>
@@ -259,6 +260,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
         <aside className="home-side">
           <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} />
+          <SparkPreview onNavigate={onNavigate} />
           <HomePlay user={user} onNavigate={onNavigate} />
         </aside>
       </div>

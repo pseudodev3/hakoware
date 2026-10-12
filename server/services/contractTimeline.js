@@ -74,6 +74,7 @@ const timelineView = (event, friendship, viewerId, voice = null, moment = null) 
     id: id(event._id), type: event.type, mine, actorName: actor, text,
     xp: Number(event.xp) || 0, createdAt: event.createdAt,
     kind: event.type === 'MESSAGE' ? (meta.kind === 'VOICE' ? 'VOICE' : 'TEXT') : null,
+    receipt: event.type === 'MESSAGE' && mine ? { status: meta.readAt ? 'READ' : 'SENT', readAt: meta.readAt || null } : null,
     checkin: event.type === 'MESSAGE' && meta.checkin?.status ? {
       status: meta.checkin.status,
       xp: Number(meta.checkin.xp) || 0,

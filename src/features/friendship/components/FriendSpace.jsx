@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowUpRight, Check, ChevronDown, MessageCircle, Mic, ScrollText, Send, X } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowLeft, ArrowUpRight, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, ScrollText, Send, Smile, X } from 'lucide-react';
 import { getContractTimeline, sendContractMessage, markContractTimelineRead } from '../../../services/friendshipService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { ContractDetails } from './ContractDetails';
@@ -16,6 +16,9 @@ const dateLabel = (value) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
 };
 const messageTypes = new Set(['MESSAGE', 'CHECKIN_REPLY']);
+const EMOJIS = ['❤️', '😂', '🤝', '👀', '✨', '🥹'];
+const readDraft = (key) => { try { return localStorage.getItem(key) || ''; } catch { return ''; } };
+const readRetry = (key) => { try { const value = JSON.parse(localStorage.getItem(key)); return /^[a-zA-Z0-9_-]{16,80}$/.test(value?.clientId || '') && typeof value.text === 'string' ? value : null; } catch { return null; } };
 
 export const FriendSpace = ({ friendship, currentUserId, socialState, focusEventId, initialContract = false, onBack, onAction, onRefresh, onActivitySeen }) => {
   const id = friendship._id || friendship.id;
@@ -29,7 +32,10 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [error, setError] = useState('');
   const [unavailable, setUnavailable] = useState(false);
-  const [draft, setDraft] = useState('');
+  const draftKey = `hakoware:message-draft:${currentUserId}:${id}`;
+  const [draft, setDraft] = useState(() => readDraft(draftKey).slice(0, 1000));
+  const [pendingMessage, setPendingMessage] = useState(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -45,27 +51,31 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const nearBottomRef = useRef(true);
   const scrollRef = useRef(null);
   const acknowledged = useRef(new Set());
-  const failedSend = useRef(null);
+  const failedSend = useRef(readRetry(`${draftKey}:retry`));
   const pendingReads = useRef(new Set());
+  const readBusy = useRef(false);
   const sendBusy = useRef(false);
   const roomRef = useRef(room);
   roomRef.current = room;
   const conversationTop = useRef(0);
+  useEffect(() => {
+    try { if (draft) localStorage.setItem(draftKey, draft); else localStorage.removeItem(draftKey); } catch { /* Sending remains available when storage is unavailable. */ }
+  }, [draft, draftKey]);
   useLayoutEffect(() => {
     const input = composerRef.current;
     if (!input) return;
     input.style.height = 'auto';
     input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
     if (nearBottomRef.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [draft, voiceOpen, contractOpen]);
+  }, [draft, voiceOpen, contractOpen, pendingMessage]);
   const openContract = (open) => {
     if (open) conversationTop.current = listRef.current?.scrollTop || 0;
     else scrollRef.current = nearBottomRef.current ? { bottom: true } : { restore: conversationTop.current };
     setContractOpen(open);
   };
 
-  const acknowledge = useCallback((items) => {
-    const unseen = items.filter((item) => !acknowledged.current.has(item.id));
+  const acknowledge = useCallback((items, visibleMessages = false) => {
+    const unseen = items.filter((item) => (item.type !== 'MESSAGE' || visibleMessages) && !acknowledged.current.has(item.id));
     if (!unseen.length) return;
     unseen.forEach((item) => acknowledged.current.add(item.id));
     callbacks.current.onActivitySeen?.(unseen);
@@ -73,8 +83,9 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   }, []);
   const syncReads = useCallback(() => {
     const ids = [...pendingReads.current].slice(0, 50);
-    if (!ids.length) return;
-    void markContractTimelineRead(id, ids).then(() => ids.forEach((eventId) => pendingReads.current.delete(eventId))).catch(() => {});
+    if (!ids.length || readBusy.current) return;
+    readBusy.current = true;
+    void markContractTimelineRead(id, ids).then(() => ids.forEach((eventId) => pendingReads.current.delete(eventId))).catch(() => {}).finally(() => { readBusy.current = false; });
   }, [id]);
   const load = useCallback(async () => {
     const request = ++requestRef.current;
@@ -136,6 +147,20 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   useEffect(() => {
     if (!contractOpen && !loading) { acknowledge(roomRef.current.items); syncReads(); }
   }, [contractOpen, loading, acknowledge, syncReads]);
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || contractOpen || loading) return undefined;
+    const items = [...room.items, ...(room.focusItem ? [room.focusItem] : [])];
+    const observer = new IntersectionObserver((entries) => {
+      if (document.visibilityState !== 'visible' || list.closest('[inert]')) return;
+      const visible = entries.filter((entry) => entry.isIntersecting && entry.intersectionRect.height >= Math.min(entry.boundingClientRect.height, entry.rootBounds?.height || entry.boundingClientRect.height) * .5)
+        .map((entry) => items.find((item) => item.id === entry.target.dataset.friendEvent)).filter(Boolean);
+      acknowledge(visible, true);
+      syncReads();
+    }, { root: list, threshold: [0, .1, .25, .5, .6, 1] });
+    list.querySelectorAll('[data-friend-event]').forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [room.items, room.focusItem, contractOpen, loading, acknowledge, syncReads]);
   const send = async (payload) => {
     let result;
     try { result = await sendContractMessage(id, payload); }
@@ -146,17 +171,29 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     setSendError(''); setNewUpdates(false);
     void load(); void callbacks.current.onRefresh?.();
   };
-  const sendText = async (event) => {
+  const sendText = async (event, retryText) => {
     event?.preventDefault();
-    const text = draft.trim();
+    const text = (retryText ?? draft).trim();
     if (!text || sendBusy.current) return;
     const payload = failedSend.current?.text === text ? failedSend.current : { clientId: crypto.randomUUID(), text };
     failedSend.current = payload; sendBusy.current = true; setSending(true); setSendError('');
+    try { localStorage.setItem(`${draftKey}:retry`, JSON.stringify(payload)); } catch { /* The in-memory retry key still prevents duplicate sends. */ }
+    setPendingMessage({ id: payload.clientId, text, createdAt: new Date().toISOString(), status: 'SENDING' });
+    setEmojiOpen(false);
     try {
       await send(payload);
-      if (aliveRef.current) { failedSend.current = null; setDraft((value) => value.trim() === text ? '' : value); composerRef.current?.focus({ preventScroll: true }); }
-    } catch (err) { if (aliveRef.current) setSendError(err.message || 'Couldn’t confirm delivery. Retry to send it once.'); }
+      if (aliveRef.current) { failedSend.current = null; try { localStorage.removeItem(`${draftKey}:retry`); } catch { /* Optional local storage. */ } setPendingMessage(null); setDraft((value) => value.trim() === text ? '' : value); composerRef.current?.focus({ preventScroll: true }); }
+    } catch (err) { if (aliveRef.current) { setSendError(err.message || 'Couldn’t confirm delivery. Retry to send it once.'); setPendingMessage((value) => ({ ...value, status: 'FAILED' })); } }
     finally { sendBusy.current = false; if (aliveRef.current) setSending(false); }
+  };
+  const insertEmoji = (emoji) => {
+    const input = composerRef.current;
+    const start = input?.selectionStart ?? draft.length;
+    const end = input?.selectionEnd ?? start;
+    if (draft.length - (end - start) + emoji.length > 1000) return;
+    setDraft(draft.slice(0, start) + emoji + draft.slice(end));
+    setEmojiOpen(false);
+    requestAnimationFrame(() => { input?.focus(); input?.setSelectionRange(start + emoji.length, start + emoji.length); });
   };
   const shared = socialState?.firstMutualCheckin;
   const moment = socialState?.moment;
@@ -179,7 +216,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         {!item.mine && <span className="friend-message-author friend-space-sr-only">{item.actorName}</span>}
         {item.voice ? <VoiceMessage voice={item.voice} /> : <p>{item.text}</p>}
         {item.voiceUnavailable && <small>Audio is no longer available.</small>}
-        <span className="friend-message-meta"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time></span>
+        <span className="friend-message-meta"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>{item.receipt && <span className={`friend-message-receipt ${item.receipt.status === 'READ' ? 'is-read' : ''}`} role="img" aria-label={item.receipt.status === 'READ' ? 'Read by your friend' : 'Sent'} title={item.receipt.status === 'READ' ? 'Read by your friend' : 'Sent'}>{item.receipt.status === 'READ' ? <CheckCheck size={16} /> : <Check size={16} />}</span>}</span>
         {item.mine && item.checkin?.status === 'NEEDS_ACTION' && <span className="friend-message-checkin-note">{item.checkin.reason}</span>}
         </div>
         {item.checkin?.status === 'CHECKED_IN' && <span className="friend-message-checkin"><Check size={13} />Checked in · +{item.checkin.xp} Duo XP</span>}
@@ -207,18 +244,21 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
           {focusOutsidePage && <section className="friend-opened-update" aria-label="Opened from Activity"><span>Opened from Activity</span>{renderItem(room.focusItem)}</section>}
           {!room.items.length && !error && <div className="friend-space-empty"><MessageCircle size={28} strokeWidth={1.5} /><strong>Your space with {partner?.displayName}.</strong><p>Leave a message or a voice note. Your check-ins and shared moments stay here.</p></div>}
           {room.items.map((item, index) => <React.Fragment key={item.id}>{(index === 0 || dateLabel(room.items[index - 1].createdAt) !== dateLabel(item.createdAt)) && <div className="friend-timeline-date">{dateLabel(item.createdAt)}</div>}{renderItem(item)}</React.Fragment>)}
+          {pendingMessage && <article className={`friend-event mine friend-pending-message ${pendingMessage.status === 'FAILED' ? 'has-failed' : ''}`}><div className="friend-message-bubble"><p>{pendingMessage.text}</p><span className="friend-message-meta" role="status">{pendingMessage.status === 'SENDING' ? <><LoaderCircle size={14} className="friend-sending-icon" />Sending</> : <><AlertCircle size={14} />Delivery unconfirmed</>}</span></div>{pendingMessage.status === 'FAILED' && <button className="friend-message-retry" type="button" onClick={() => void sendText(null, pendingMessage.text)}>Retry message</button>}</article>}
         </>}
       </div>
       {newUpdates && <button className="friend-new-updates" onClick={() => { listRef.current.scrollTop = listRef.current.scrollHeight; nearBottomRef.current = true; setNewUpdates(false); acknowledge(room.items); syncReads(); }}>New updates <ArrowDown size={15} /></button>}
       <div className="friend-composer-dock">
         {unavailable ? <div className="friend-space-ended" role="status"><p>This contract is no longer available.</p><button onClick={onBack}>Back to your circle</button></div> : <>
-        {voiceOpen ? <VoiceMessageComposer friendshipId={id} onCancel={() => { setVoiceOpen(false); composerRef.current?.focus(); }} onSend={async (payload) => { await send(payload); if (aliveRef.current) setVoiceOpen(false); }} /> : <form className="friend-composer" onSubmit={sendText}>
+        {voiceOpen ? <VoiceMessageComposer friendshipId={id} onCancel={() => { setVoiceOpen(false); composerRef.current?.focus(); }} onSend={async (payload) => { await send(payload); if (aliveRef.current) setVoiceOpen(false); }} /> : <form className={`friend-composer ${draft.trim() ? 'has-draft' : ''}`} onSubmit={sendText}>
           <button type="button" className="friend-compose-voice" onClick={() => setVoiceOpen(true)} disabled={sending} aria-label="Record a voice message"><Mic size={19} /></button>
-          <textarea ref={composerRef} aria-label={`Message ${partner?.displayName || 'your friend'}`} placeholder={`Message ${partner?.displayName || 'your friend'}…`} value={draft} maxLength={1000} rows={1} onChange={(event) => setDraft(event.target.value)} />
-          <button className="friend-compose-send" type="submit" disabled={!draft.trim() || sending} aria-label={sending ? 'Sending message' : 'Send message'}><Send size={18} /></button>
+          <textarea ref={composerRef} aria-label={`Message ${partner?.displayName || 'your friend'}`} placeholder={`Message ${partner?.displayName || 'your friend'}…`} value={draft} maxLength={1000} rows={1} onChange={(event) => { setDraft(event.target.value); if (pendingMessage?.status === 'FAILED' && event.target.value.trim() !== pendingMessage.text) setPendingMessage(null); }} onKeyDown={(event) => { if (event.key === 'Escape') setEmojiOpen(false); if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia('(pointer:fine)').matches) { event.preventDefault(); void sendText(); } }} />
+          <button type="button" className="friend-compose-emoji" aria-label="Add an emoji" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((value) => !value)}><Smile size={19} /></button>
+          <button className="friend-compose-send" type="submit" disabled={!draft.trim() || sending} aria-label={sending ? 'Sending message' : 'Send message'}>{sending ? <LoaderCircle size={18} className="friend-sending-icon" /> : <Send size={18} />}</button>
         </form>}
+        {emojiOpen && !voiceOpen && <div className="friend-emoji-tray" role="group" aria-label="Message emojis" onKeyDown={(event) => { if (event.key === 'Escape') { setEmojiOpen(false); composerRef.current?.focus(); } }}>{EMOJIS.map((emoji) => <button type="button" key={emoji} aria-label={`Insert ${emoji}`} onClick={() => insertEmoji(emoji)}>{emoji}</button>)}</div>}
         {sendError && <p className="friend-send-error" role="status">{sendError} Your message is kept here so you can retry.</p>}
-        <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}</span><button type="button" onClick={() => void poke()} disabled={poking || !canPoke}>{poking ? 'Poking…' : socialState?.pokeBackAvailable ? 'Poke back' : 'Poke'}</button></div>
+        <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}{draft.length >= 850 && <small className="friend-message-count">{draft.length}/1000</small>}</span><button type="button" onClick={() => void poke()} disabled={poking || !canPoke}>{poking ? 'Poking…' : socialState?.pokeBackAvailable ? 'Poke back' : 'Poke'}</button></div>
       </>}
       </div>
     </>}

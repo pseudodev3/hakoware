@@ -16,6 +16,9 @@ const VoiceNote = require('../models/VoiceNote');
 const CardTrade = require('../models/CardTrade');
 const CardPurchase = require('../models/CardPurchase');
 const RoomWall = require('../models/RoomWall');
+const SparkPost = require('../models/SparkPost');
+const SparkReply = require('../models/SparkReply');
+const SparkReaction = require('../models/SparkReaction');
 const { deleteObject } = require('../services/bucketStorage');
 const { sendRouteError } = require('../services/httpError');
 const {
@@ -341,6 +344,9 @@ router.delete('/reset', async (req, res) => {
         { friendshipId: { $in: friendshipIds } }
       ]
     }).select('storageKey');
+    const sparkPosts = await SparkPost.find({ authorId: { $in: ids } }).select('_id publicId +photoStorageKey');
+    const sparkIds = sparkPosts.map((post) => post._id);
+    await Promise.all(sparkPosts.filter((post) => post.photoStorageKey).map((post) => deleteObject(post.photoStorageKey)));
 
     await Promise.all(voiceNotes
       .filter((note) => note.storageKey)
@@ -365,6 +371,9 @@ router.delete('/reset', async (req, res) => {
       CardTrade.deleteMany({ $or: [{ senderId: { $in: ids } }, { recipientId: { $in: ids } }] }),
       CardPurchase.deleteMany({ userId: { $in: ids } }),
       RoomWall.deleteMany({ scopeKey: 'test:' + req.user.id }),
+      SparkPost.deleteMany({ _id: { $in: sparkIds } }),
+      SparkReply.deleteMany({ $or: [{ postId: { $in: sparkIds } }, { authorId: { $in: ids } }] }),
+      SparkReaction.deleteMany({ $or: [{ postId: { $in: sparkIds } }, { userId: { $in: ids } }] }),
       PendingInvite.deleteMany({ $or: [{ inviterId: { $in: ids } }, { recipientEmail: { $in: emails } }] }),
       Friendship.deleteMany({ _id: { $in: friendshipIds } })
     ]);

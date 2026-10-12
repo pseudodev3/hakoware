@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Bell, Home, Layers, LogOut, Moon, Plus, Radio, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
+import { ArrowUpRight, Bell, Home, Layers, LogOut, Moon, Plus, Sparkles, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { id: 'home', label: 'Home', description: 'Your people, closer', icon: Home },
   { id: 'contracts', label: 'Circle', description: 'Duos & invitations', icon: Users },
   { id: 'arena', label: 'Arena', description: 'Cards & consequences', icon: Layers },
-  { id: 'afterHours', label: 'After Hours', description: 'The open room', icon: Radio },
+  { id: 'sparks', label: 'Sparks', description: 'From your people', icon: Sparkles },
   { id: 'you', label: 'You', description: 'Your corner of it all', icon: UserRound }
 ];
 

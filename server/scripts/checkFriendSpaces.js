@@ -60,6 +60,9 @@ const run = async () => {
     const firstPayload = message('Made it through today. How was yours?');
     const first = await request(one, path + '/messages', firstPayload);
     assert.equal(first.status, 200); assert.equal(first.data.item.checkin.status, 'CHECKED_IN');
+    assert.equal(first.data.item.receipt.status, 'SENT');
+    await request(one, path + '/timeline/read', { eventIds: [first.data.item.id] });
+    assert.equal((await ContractEvent.findById(first.data.item.id)).metadata.readAt, undefined, 'senders cannot read their own message on behalf of their friend');
     const firstXP = (await Friendship.findById(friendship._id)).duoXP; assert.ok(firstXP > 0);
     const repeats = await Promise.all(Array.from({ length: 4 }, () => request(one, path + '/messages', firstPayload)));
     assert.ok(repeats.every((result) => result.data.item.id === first.data.item.id));
@@ -72,6 +75,12 @@ const run = async () => {
     assert.equal(String((await Notification.findOne({ toUserId: two._id, type: 'CONTRACT_MESSAGE', read: false })).contractEventId), followup.data.item.id);
     // Reading an older visible event cannot clear a newer coalesced message notification.
     await request(two, path + '/timeline/read', { eventIds: [first.data.item.id] });
+    const firstReadAt = (await ContractEvent.findById(first.data.item.id)).metadata.readAt;
+    assert.ok(firstReadAt instanceof Date);
+    assert.equal((await request(one, path + '/timeline')).data.items.find(item => item.id === first.data.item.id).receipt.status, 'READ');
+    assert.equal((await request(two, path + '/timeline')).data.items.find(item => item.id === first.data.item.id).receipt, null);
+    await request(two, path + '/timeline/read', { eventIds: [first.data.item.id] });
+    assert.equal((await ContractEvent.findById(first.data.item.id)).metadata.readAt.getTime(), firstReadAt.getTime(), 'retries preserve the first read time');
     assert.equal(await Notification.countDocuments({ toUserId: two._id, type: 'CONTRACT_MESSAGE', read: false }), 1);
     await request(two, path + '/timeline/read', { eventIds: [followup.data.item.id] });
     assert.equal(await Notification.countDocuments({ toUserId: two._id, type: 'CONTRACT_MESSAGE', read: false }), 0);

@@ -14,6 +14,8 @@ const NotificationSchema = new mongoose.Schema({
   voiceNoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'VoiceNote' },
   afterHoursActivityId: { type: String, default: null, maxlength: 64 },
   afterHoursReplyId: { type: mongoose.Schema.Types.ObjectId, ref: 'AfterHoursActivity' },
+  sparkPostId: { type: String, maxlength: 24 },
+  sparkReplyId: { type: String, maxlength: 24 },
   read: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
@@ -22,5 +24,7 @@ NotificationSchema.index({ toUserId: 1, friendshipId: 1 }, { unique: true, parti
 NotificationSchema.index({ toUserId: 1, contractEventId: 1 }, { unique: true, partialFilterExpression: { contractEventId: { $type: 'objectId' } } });
 NotificationSchema.index({ toUserId: 1, fromUserId: 1, wallPieceId: 1, wallWeekKey: 1 }, { unique: true, partialFilterExpression: { type: 'AFTER_HOURS_WALL' } });
 NotificationSchema.index({ toUserId: 1, afterHoursReplyId: 1 }, { unique: true, partialFilterExpression: { afterHoursReplyId: { $type: 'objectId' } } });
+NotificationSchema.index({ toUserId: 1, fromUserId: 1, sparkPostId: 1 }, { unique: true, partialFilterExpression: { type: 'SPARK_REACTION' } });
+NotificationSchema.index({ toUserId: 1, sparkReplyId: 1 }, { unique: true, partialFilterExpression: { type: 'SPARK_REPLY' } });
 
 module.exports = mongoose.model('Notification', NotificationSchema);
