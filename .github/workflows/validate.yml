@@ -78,6 +78,10 @@ jobs:
         working-directory: server
         run: npm run check:sparks-legacy-indexes
 
+      - name: Check Sparks recovery after database storage pressure
+        working-directory: server
+        run: npm run check:sparks-storage-recovery
+
       - name: Check Aura bank integrity and repayment
         working-directory: server
         run: npm run check:aura-bank

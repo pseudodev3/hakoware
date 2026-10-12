@@ -5,9 +5,14 @@ const WorldActivity = require('../models/WorldActivity');
 const { scopeFor } = require('./afterHours');
 const TYPES = Object.freeze(['SIGNAL_FLARE', 'DUO_LEVEL_UP', 'SEASON_COMPLETED', 'BOUNTY_REWARD']);
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
+let worldIndexes;
+const prepareWorldIndexes = () => {
+  if (!worldIndexes) worldIndexes = WorldActivity.createIndexes().catch(error => { worldIndexes = null; throw error; });
+  return worldIndexes;
+};
 const publishWorldEvent = async event => {
   if (!TYPES.includes(event.type) || !event.metadata?.worldEligible) return;
-  await WorldActivity.init();
+  await prepareWorldIndexes();
   const contract = await Friendship.findById(event.friendshipId).select('user1 user2 isTestData testOwnerId').lean();
   if (!contract) return;
   const users = await User.find({ _id: { $in: [contract.user1, contract.user2] } }).select('isTestAccount testOwnerId privacySettings').lean();

@@ -26,12 +26,17 @@ The startup error was reproduced with an existing unrelated Notification index. 
 
 The reported Permissions-Policy feature names do not appear in the repository's policy. Those browser warnings are separate from the API failure. Production Railway access is blocked from this workspace, so live deployment and the production response have not been verified.
 
+The October 13 follow-up Railway log identifies a separate publishing failure: MongoDB has 232,271,872 bytes available, below the 524,288,000-byte minimum for index builds. Its attached volume needs more capacity, with at least 1 GB free recommended. Retrying cannot fix that infrastructure limit.
+
+Spark write setup now prepares only the model and notification constraint required by each operation. It reissues index creation after a failed attempt instead of awaiting Mongoose's permanently cached initialization rejection. Low storage has an explicit public error; reads and removal do not await new indexes. The activity board also retries failed index setup, then republishes its durable pending events. No production disk threshold is changed and no data or legacy indexes are removed.
+
 ## Verification
 
 - Production build and whitespace checks pass. ESLint reports zero errors and 359 warnings under the existing configuration.
 - All 11 frontend checks and the existing eight backend suites pass. The new bank, world activity, and Sparks existing-index suites pass and are included in CI.
 - Bank checks exercise concurrent loan, earning, and repayment retries; repayment bounds; mutual activation; cooldown; gross earnings versus borrowed principal; ledger outages; readable committed balances; private payloads; and account ownership on standalone MongoDB.
 - World checks exercise actual Flare card use, simultaneous cooldown attempts, retained losing cards, notification and board outages, concurrent delivery recovery, historical Flare exclusion, private recipients, anonymous milestones, current privacy settings, live/test isolation, badge acknowledgement, tied-timestamp pagination, and the retention window.
+- The storage recovery suite triggers MongoDB's actual disk-space error in an isolated instance, restores its original threshold, and verifies same-process Spark and world-event recovery. Concurrent retries preserve one post, one reply, and one notification per action. Legacy index checks also cover operation isolation during a reply-index outage. Both suites run in CI.
 - Local Chromium exercises a lost loan response after server commit followed by the same retry, a real card purchase and Flare use, visibility from a player outside the sender's Circle, automatic and manual repayment, wallet refresh, keyboard tabs, badge acknowledgement, and focus restoration.
 - Bank, borrowing, repayment, and board layouts pass at 320, 390, and 1280 pixels in both themes: 24 rendered cases without horizontal overflow or unexpected browser errors. A reduced visual viewport simulation checks the repayment input, reachable confirmation, Escape, focus restoration, and viewport cleanup.
 
