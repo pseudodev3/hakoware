@@ -18,12 +18,13 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
   const { user, logout, bootstrapData } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(bootstrapData?.notifications?.unreadCount || 0);
+  const [worldUnreadCount, setWorldUnreadCount] = useState(0);
   const [theme, setTheme] = useState(getInitialTheme);
   const shellRef = useRef(null);
   const circleContext = ['home', 'contracts', 'arena'].includes(activeTab);
   const closeNotifications = useCallback(() => setShowNotifications(false), []);
   const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
-  const totalBadge = unreadCount + pendingInvitations.length;
+  const totalBadge = unreadCount + worldUnreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
   useEffect(() => {
@@ -145,6 +146,9 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         isOpen={showNotifications}
         onClose={closeNotifications}
         onUnreadCountChange={setUnreadCount}
+        onWorldUnreadCountChange={setWorldUnreadCount}
+        worldUnreadCount={worldUnreadCount}
+        viewerId={user?.uid || user?.id || user?._id}
         pendingInvitations={pendingInvitations}
         onRefresh={onRefresh}
         onNavigate={onTabChange}

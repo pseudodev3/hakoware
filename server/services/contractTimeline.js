@@ -11,7 +11,7 @@ const MESSAGE_MAX_LENGTH = 1000;
 const id = (value) => String(value?._id || value || '');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const TIMELINE_TYPES = Object.freeze([
-  'MESSAGE', 'CARD_TRADE_ACCEPTED', 'CHECKIN', 'VOICE_CHECKIN', 'CHECKIN_REPLY', 'CHECKIN_REACTION', 'POKE', 'MUTUAL_POKE',
+  'MESSAGE', 'SIGNAL_FLARE', 'CARD_TRADE_ACCEPTED', 'CHECKIN', 'VOICE_CHECKIN', 'CHECKIN_REPLY', 'CHECKIN_REACTION', 'POKE', 'MUTUAL_POKE',
   'CONTRACT_CREATED', 'CONTRACT_ACCEPTED', 'SEASON_STARTED', 'SEASON_COMPLETED', 'DUO_LEVEL_UP',
   'CHAOS_TRIGGERED', 'CHAOS_SURVIVED', 'CHAOS_FAILED', 'BANKRUPTCY',
   'BANKRUPTCY_RECOVERY_STARTED', 'BANKRUPTCY_RECOVERED', 'BOUNTY_REWARD', 'BOUNTY_ESCAPED',
@@ -36,6 +36,7 @@ const timelineView = (event, friendship, viewerId, voice = null, moment = null) 
   let text = '';
   switch (event.type) {
     case 'MESSAGE': text = meta.kind === 'VOICE' ? 'Voice message' : String(meta.text || ''); break;
+    case 'SIGNAL_FLARE': text = `${actor} sent a Signal Flare`; break;
     case 'CARD_TRADE_ACCEPTED': {
       const { CARD_CATALOG } = require('./cardCatalog');
       text = `Card swap · ${CARD_CATALOG[meta.offeredCardId]?.name || 'a card'} ↔ ${CARD_CATALOG[meta.requestedCardId]?.name || 'a card'}`;

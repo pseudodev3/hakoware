@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Friendship = require('../models/Friendship');
@@ -430,17 +431,12 @@ router.post('/use-card', auth, async (req, res) => {
 
       const targetId = isUser1 ? friendship.user2 : friendship.user1;
       await reserve();
-      friendship.claimState[flareField] = now;
-      await friendship.save(); applied = true;
-      await createNotification({
-        toUserId: targetId,
-        fromUserId: user._id,
-        type: 'SIGNAL_FLARE',
-        title: 'SIGNAL FLARE',
-        message: `${user.displayName} burned Aura to make sure you saw this: your contract is waiting.`,
-        friendshipId: friendship._id
-      });
-      await recordEvent(friendship._id, 'SIGNAL_FLARE', { userId: user._id, metadata: { targetId, cooldownHours: SIGNAL_FLARE_COOLDOWN_HOURS } }).catch(() => null);
+      const path = 'claimState.' + flareField;
+      const receipt = { eventId: new mongoose.Types.ObjectId(), senderId: user._id, targetId, createdAt: now, done: false };
+      const committed = await Friendship.findOneAndUpdate({ _id: friendship._id, status: 'ACTIVE', $or: [{ [path]: null }, { [path]: { $lte: new Date(now.getTime() - SIGNAL_FLARE_COOLDOWN_HOURS * HOUR) } }] }, { $set: { [path]: now }, $push: { flareReceipts: receipt } }, { returnDocument: 'after' });
+      if (!committed) throw Object.assign(new Error('This Signal Flare is already cooling down. Your card was kept.'), { status: 409 });
+      applied = true;
+      await require('../services/flareDelivery').reconcileFlareDelivery(friendship._id).catch(error => console.error('Signal Flare delivery pending:', error.message));
       effect = { cooldownHours: SIGNAL_FLARE_COOLDOWN_HOURS };
     }
 

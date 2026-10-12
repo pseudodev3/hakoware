@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const auth = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
+const { sendRouteError } = require('../services/httpError');
+const { worldFeed, markWorldRead, reconcileWorldActivity } = require('../services/worldActivity');
+router.use(auth);
+router.use(createRateLimiter({ name: 'world-activity', windowMs: 60000, max: 90, keyGenerator: req => req.user.id }));
+router.get('/', async (req, res) => { try { await reconcileWorldActivity().catch(error => console.error('World activity recovery pending:', error.message)); res.json(await worldFeed(req.user.id, req.query)); } catch (error) { sendRouteError(res, error, 'Could not load activity around Hakoware'); } });
+router.post('/read', async (req, res) => { try { res.json(await markWorldRead(req.user.id, req.body?.eventIds)); } catch (error) { sendRouteError(res, error, 'Could not acknowledge world activity'); } });
+module.exports = router;

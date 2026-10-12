@@ -6,6 +6,9 @@ import { deleteNotification, getUserNotifications, peekUserNotifications, markAl
 import { respondToInvitation } from '../../../services/friendshipService';
 import { Button } from '../../../shared/components/Button';
 import { VoiceNotesInbox } from '../../debt/components/VoiceNotesInbox';
+import { ViewTabs } from '../../../shared/components/ViewTabs';
+import { getWorldActivity } from '../../../services/worldActivityService';
+import { WorldActivity } from './WorldActivity';
 import './NotificationsPanel.css';
 
 const notificationId = (item) => String(item.id || item._id);
@@ -25,7 +28,8 @@ const dayGroup = (value) => {
   return 'Earlier';
 };
 
-export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendingInvitations, onRefresh, onNavigate, showToast }) => {
+export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWorldUnreadCountChange, worldUnreadCount = 0, viewerId, pendingInvitations, onRefresh, onNavigate, showToast }) => {
+  const [section, setSection] = useState('you');
   const [notifications, setNotifications] = useState(() => peekUserNotifications().filter((item) => item.type !== 'CONTRACT_INVITE'));
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -40,6 +44,16 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
   const dialogRef = useRef(null);
   const countCallback = useRef(onUnreadCountChange);
   countCallback.current = onUnreadCountChange;
+  const worldCallback = useRef(onWorldUnreadCountChange); worldCallback.current = onWorldUnreadCountChange;
+  useEffect(() => {
+    let active = true;
+    let request = 0;
+    worldCallback.current?.(0);
+    const refresh = async () => { const current = ++request; try { const data = await getWorldActivity({ limit: 1 }); if (active && current === request) worldCallback.current?.(data.unreadCount); } catch { /* Personal activity remains available during a board outage. */ } };
+    void refresh(); const interval = setInterval(() => { if (document.visibilityState === 'visible') void refresh(); }, 60000);
+    window.addEventListener('hakoware-world-read', refresh);
+    return () => { active = false; clearInterval(interval); window.removeEventListener('hakoware-world-read', refresh); };
+  }, [viewerId]);
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
   const shouldReduceMotion = useReducedMotion();
 
@@ -249,13 +263,15 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
       <motion.aside ref={dialogRef} className="notifications-panel" role="dialog" aria-modal="true" aria-labelledby="activity-title" {...panelMotion}>
         <div className="panel-handle" aria-hidden="true" />
         <header className="panel-header">
-          <div className="panel-heading"><h2 id="activity-title">Activity</h2><p>{unreadCount ? `${unreadCount} unread update${unreadCount === 1 ? '' : 's'}` : 'You’re all caught up'}</p></div>
+          <div className="panel-heading"><h2 id="activity-title">Activity</h2><p>{section === 'world' ? 'Flares, milestones, and Arena results.' : unreadCount ? `${unreadCount} unread update${unreadCount === 1 ? '' : 's'}` : 'You’re all caught up'}</p></div>
           <button className="close-panel" onClick={onClose} aria-label="Close activity"><X size={20} /></button>
         </header>
-        <div className="activity-filters" role="group" aria-label="Activity filter">
+        <ViewTabs id="activity-view" label="Activity views" className="activity-view-tabs" value={section} onChange={setSection} items={[{ value: 'you', label: 'For you', count: unreadCount }, { value: 'world', label: 'Around Hakoware', count: worldUnreadCount }]} />
+        {section === 'you' && <div className="activity-filters" role="group" aria-label="Activity filter">
           {[['all', 'All'], ['unread', `Unread${unreadCount ? ` · ${unreadCount}` : ''}`], ['voice', 'Voice']].map(([id, label]) => <button key={id} aria-pressed={filter === id} onClick={() => { setFilter(id); setExpanded(null); }}>{label}</button>)}
-        </div>
-        <div className="panel-content">
+        </div>}
+        <div className="panel-content" role="tabpanel" id={`activity-view-panel-${section}`} aria-labelledby={`activity-view-tab-${section}`}>
+          {section === 'world' ? <WorldActivity onNavigate={onNavigate} onClose={onClose} onUnreadCountChange={onWorldUnreadCountChange} /> : <>
           {loadError && <div className="activity-sync-error" role="status"><span>Couldn’t sync activity.</span><button disabled={loading} onClick={() => void loadNotifications({ force: true })}>Retry</button></div>}
           {filter === 'voice' ? <section className="voice-section"><VoiceNotesInbox /></section> : <>
             {pendingInvitations?.length > 0 && <section className="invitations-section" aria-labelledby="pending-contracts-title">
@@ -287,8 +303,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, pendi
               </div></section>;
             })}
           </>}
+          </>}
         </div>
-        <footer className="panel-footer"><button className="mark-all-btn" disabled={busy || !unreadCount} onClick={() => void handleMarkAllRead()}><CheckCheck size={18} />{busy ? 'Updating…' : 'Mark all read'}</button><button className="activity-done" onClick={onClose}>Done</button></footer>
+        <footer className="panel-footer">{section === 'you' ? <button className="mark-all-btn" disabled={busy || !unreadCount} onClick={() => void handleMarkAllRead()}><CheckCheck size={18} />{busy ? 'Updating…' : 'Mark all read'}</button> : <span className="world-footer-note">Public game moments · Last 7 days</span>}<button className="activity-done" onClick={onClose}>Done</button></footer>
       </motion.aside>
     </>}
   </AnimatePresence>, document.body);

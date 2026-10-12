@@ -1,7 +1,5 @@
 const ContractEvent = require('../models/ContractEvent');
 const Friendship = require('../models/Friendship');
-const User = require('../models/User');
-const AuraTransaction = require('../models/AuraTransaction');
 const { syncDebtState } = require('./debtState');
 const { createNotification } = require('./notificationDelivery');
 const { ensureWantedBounty } = require('./wantedBounty');
@@ -123,7 +121,7 @@ const getWorldEvent = (now = new Date()) => {
 };
 
 const recordEvent = (friendshipId, type, { userId = null, xp = 0, aura = 0, metadata = {} } = {}) => (
-  ContractEvent.create({ friendshipId, userId, type, xp, aura, metadata })
+  ContractEvent.create({ friendshipId, userId, type, xp, aura, metadata: { ...metadata, ...(['DUO_LEVEL_UP', 'SEASON_COMPLETED', 'BOUNTY_REWARD'].includes(type) || type === 'SIGNAL_FLARE' && metadata.publicFlare ? { worldEligible: true } : {}) } }).then(async event => { if (event.metadata?.worldEligible) await require('./worldActivity').publishWorldEvent(event).catch(error => console.error('World activity delivery pending:', error.message)); return event; })
 );
 
 const syncDuoState = (friendship) => {
@@ -746,14 +744,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
   }
 
   if (auraBonus > 0) {
-    await User.updateOne({ _id: userId }, { $inc: { auraBalance: auraBonus } });
-    await AuraTransaction.create({
-      userId,
-      amount: auraBonus,
-      type: 'CHAOS_BONUS',
-      description: `${chaosEvent?.name || 'Chaos'} anomaly bonus`,
-      metadata: { friendshipId: friendship._id }
-    });
+    await require('./auraBank').creditAuraEarnings(userId, auraBonus, 'CHAOS_BONUS', `${chaosEvent?.name || 'Chaos'} anomaly bonus`, `chaos:${checkinEvent._id}`, { metadata: { friendshipId: friendship._id } });
   }
 
   if (duo.level > previousLevel) {

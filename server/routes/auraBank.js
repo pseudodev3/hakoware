@@ -1,0 +1,11 @@
+const express = require('express');
+const auth = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
+const { sendRouteError } = require('../services/httpError');
+const { bankView, bankAction, reconcileAuraWallet } = require('../services/auraBank');
+const router = express.Router();
+router.use(auth);
+router.get('/', async (req, res) => { try { await reconcileAuraWallet(req.user.id).catch(error => console.error('Aura wallet reconciliation pending:', error.message)); res.json(await bankView(req.user.id)); } catch (error) { sendRouteError(res, error, 'Could not load your Aura bank'); } });
+const limit = createRateLimiter({ name: 'aura-bank', windowMs: 60000, max: 12, keyGenerator: req => req.user.id, message: 'A lot at once. Refresh your bank in a moment.' });
+for (const [path, kind] of [['borrow', 'BORROW'], ['repay', 'REPAY']]) router.post('/' + path, limit, async (req, res) => { try { res.json(await bankAction(req.user.id, kind, req.body)); } catch (error) { sendRouteError(res, error, 'Could not complete this bank action'); } });
+module.exports = router;

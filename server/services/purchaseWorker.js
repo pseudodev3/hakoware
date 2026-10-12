@@ -1,10 +1,12 @@
 const { reconcileCardPurchases } = require('./cardPurchases');
+const { reconcileAuraWallet } = require('./auraBank');
+const { reconcileWorldActivity } = require('./worldActivity');
 let timer;
 let active;
 const tick = () => {
   if (active) return;
-  active = reconcileCardPurchases()
-    .catch((error) => console.error('Card purchase journal recovery failed:', error.message))
+  active = Promise.all([reconcileCardPurchases(), reconcileAuraWallet(), reconcileWorldActivity()])
+    .catch((error) => console.error('Economy and activity recovery failed:', error.message))
     .finally(() => { active = null; });
 };
 const startPurchaseWorker = () => { tick(); timer = setInterval(tick, 60000); timer.unref(); };

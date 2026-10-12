@@ -10,6 +10,7 @@ import { buildDuoShareCard } from '../../lib/duoShareCard';
 import { prepareAvatarImage } from '../../lib/avatarImage';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import { PageHeading } from '../../shared/components/PageHeading';
+import { AuraBank } from './AuraBank';
 import './YouView.css';
 
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
@@ -235,6 +236,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         </div>
       </section>
 
+      <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} />
       <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
         <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span><ArrowRight size={19} />
       </button>

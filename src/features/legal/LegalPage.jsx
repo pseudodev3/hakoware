@@ -3,7 +3,7 @@ import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './LegalPage.css';
 
-const EFFECTIVE_DATE = 'October 12, 2026';
+const EFFECTIVE_DATE = 'October 13, 2026';
 const SUPPORT_EMAIL = 'hakoware265@gmail.com';
 
 const privacySections = [
@@ -12,7 +12,7 @@ const privacySections = [
       <p>Hakoware processes information you provide or create while using the game, including:</p>
       <ul>
         <li>account information such as your username, display name and email address;</li>
-        <li>contract and game activity such as friendships, check-ins, Duo XP, Aura, debt, seasons, bounties, Claims, Grudges, recaps and notifications;</li>
+        <li>contract and game activity such as friendships, check-ins, Duo XP, Aura, bank loans and repayments, debt, seasons, bounties, Claims, Grudges, recaps and notifications;</li>
         <li>messages, voice notes, Spark photos, thoughts, replies and reactions you choose to share;</li>
         <li>email addresses used to send contract invitations;</li>
         <li>limited first-party product signals, such as when you successfully share a Hakoware moment or mark interest in an upcoming Hakoware+ feature; and</li>
@@ -33,7 +33,7 @@ const privacySections = [
     </>
   )],
   ['Public and social game information', (
-    <><p>Hakoware includes social mechanics. Your username is a public social identifier, while your account email is used operationally for things such as recovery, invitations and important account messages. Depending on the feature and your settings, usernames, display names, contract status, bounties, Grudges, Wanted state, leaderboard or Shame Board information may be visible to other users. Do not put sensitive personal information into content you expect to be social or shareable.</p><p>Sparks and their photos are visible to the author and their accepted friends. Replies are visible to that same audience. Removing a friendship ends that account’s access to the author’s Sparks. Authors can remove a Spark and its photo, replies and reactions. Message read ticks show when the other participant views a message in the friend space.</p></>
+    <><p>Hakoware includes social mechanics. Your username is a public social identifier, while your account email is used operationally for things such as recovery, invitations and important account messages. Depending on the feature and your settings, usernames, display names, contract status, bounties, Grudges, Wanted state, leaderboard or Shame Board information may be visible to other users. Do not put sensitive personal information into content you expect to be social or shareable.</p><p>Sparks and their photos are visible to the author and their accepted friends. Replies are visible to that same audience. Removing a friendship ends that account’s access to the author’s Sparks. Authors can remove a Spark and its photo, replies and reactions. Message read ticks show when the other participant views a message in the friend space.</p><p>Using a Signal Flare announces the sender to the shared activity board; its recipient stays private. Duo milestones appear without participant names. Selected Arena results can identify players already visible in public game activity, subject to the public-pressure privacy setting. Bank balances, loans and repayments remain private. The board shows the past seven days.</p></>
   )],
   ['Retention and deletion', (
     <p>We keep account and game information for as long as reasonably needed to operate Hakoware, maintain game history, secure the service and meet legal obligations. Provider logs and backups may remain for limited periods after deletion. To request account or personal-data deletion, email us from the address connected to your account.</p>

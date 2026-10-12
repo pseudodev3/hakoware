@@ -3,6 +3,7 @@ const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
 const { auraTransactionView } = require('./clientViews');
 const { calculateDebtState } = require('./debtState');
+const { creditAuraEarnings, reconcileAuraWallet } = require('./auraBank');
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -134,26 +135,8 @@ const addDailyBonusIfEligible = async (userId) => {
 
   if (!debtFree) return 0;
 
-  const updated = await User.findOneAndUpdate(
-    { _id: user._id, lastDailyAuraBonusKey: { $ne: key } },
-    { $inc: { auraBalance: 10 }, $set: { lastDailyAuraBonusKey: key } },
-    { new: true }
-  );
-  if (!updated) return 0;
-
-  try {
-    await AuraTransaction.create({
-      userId: updated._id,
-      amount: 10,
-      type: 'DAILY_BONUS',
-      description: 'Daily clean-contract bonus',
-      idempotencyKey: `daily:${updated._id}:${key}`
-    });
-  } catch (error) {
-    if (error?.code !== 11000) throw error;
-  }
-
-  return 10;
+  const credited = await creditAuraEarnings(user._id, 10, 'DAILY_BONUS', 'Daily clean-contract bonus', `daily:${key}`, { filter: { lastDailyAuraBonusKey: { $ne: key } }, set: { lastDailyAuraBonusKey: { $literal: key } } });
+  return credited ? 10 : 0;
 };
 
 const buildAuraSummary = async (userId) => {
@@ -161,12 +144,13 @@ const buildAuraSummary = async (userId) => {
   if (!user) return null;
 
   await addDailyBonusIfEligible(user._id);
+  await reconcileAuraWallet(user._id).catch(error => console.error('Aura wallet reconciliation pending:', error.message));
   user = await User.findById(user._id);
 
   const [history, earned, spent, reputationEarned, count] = await Promise.all([
     AuraTransaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(40).select('_id amount description createdAt').lean(),
     AuraTransaction.aggregate([
-      { $match: { userId: user._id, amount: { $gt: 0 } } },
+      { $match: { userId: user._id, amount: { $gt: 0 }, type: { $ne: 'BANK_LOAN' } } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]),
     AuraTransaction.aggregate([
@@ -178,7 +162,7 @@ const buildAuraSummary = async (userId) => {
         $match: {
           userId: user._id,
           amount: { $gt: 0 },
-          type: { $nin: ['BOUNTY_REFUND', 'HUNTER_BOND_RETURN', 'REVENGE_STEAL'] }
+          type: { $nin: ['BOUNTY_REFUND', 'HUNTER_BOND_RETURN', 'REVENGE_STEAL', 'BANK_LOAN'] }
         }
       },
       { $group: { _id: null, total: { $sum: '$amount' } } }

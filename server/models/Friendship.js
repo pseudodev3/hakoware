@@ -83,6 +83,7 @@ const FriendshipSchema = new mongoose.Schema({
   chaos: { type: ChaosSchema, default: () => ({}) },
   grudge: { type: GrudgeSchema, default: () => ({}) },
   claimState: { type: ClaimStateSchema, default: () => ({}) },
+  flareReceipts: { type: [new mongoose.Schema({ eventId: mongoose.Schema.Types.ObjectId, senderId: mongoose.Schema.Types.ObjectId, targetId: mongoose.Schema.Types.ObjectId, createdAt: Date, done: { type: Boolean, default: false } }, { _id: false })], default: [], select: false },
   user1Perspective: { type: PerspectiveSchema, default: () => ({}) },
   user2Perspective: { type: PerspectiveSchema, default: () => ({}) }
 }, { timestamps: true });

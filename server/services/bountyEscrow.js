@@ -24,6 +24,7 @@ const hunterRankFromRep = (rep = 0) => {
 
 const addAura = async (userId, amount, type, description, metadata = {}) => {
   if (!amount || amount <= 0) return false;
+  if (type === 'BOUNTY_REWARD') return require('./auraBank').creditAuraEarnings(userId, amount, type, description, `bounty:${metadata.bountyId}`, { metadata });
   const updated = await User.updateOne({ _id: userId }, { $inc: { auraBalance: amount } });
   if (!updated.matchedCount) return false;
   await AuraTransaction.create({ userId, amount, type, description, metadata });

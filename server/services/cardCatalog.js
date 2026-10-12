@@ -17,7 +17,7 @@ const spells = [
     'SIGNAL_FLARE',
     'Signal Flare',
     45,
-    'Send a pressure signal to a contract partner. 48h cooldown per contract.',
+    'Signal your contract partner. Your Flare is announced to all Hakoware players; the recipient stays private. 48h cooldown per contract.',
     'flare',
   ],
   [
