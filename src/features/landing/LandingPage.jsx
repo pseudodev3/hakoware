@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
+  ArrowUpRight,
   AudioLines,
   BarChart3,
   CalendarDays,
@@ -12,6 +13,7 @@ import {
   Gamepad2,
   Layers,
   MessageCircle,
+  Play,
   Share2,
   Sparkles,
   Swords,
@@ -76,6 +78,14 @@ const QUESTIONS = [
   ['Can we just talk?', 'Yes. Your friend space supports text and voice messages. An eligible message can also count as a check-in, so staying in touch is the point.']
 ];
 
+const LandingAction = ({ children, onClick, secondary = false, compact = false }) => {
+  const Icon = secondary ? Play : compact ? ArrowUpRight : ArrowRight;
+  return <button type="button" className={`lp-action ${secondary ? 'lp-action-secondary' : 'lp-action-primary'} ${compact ? 'lp-action-compact' : ''}`} onClick={onClick}>
+    <span className="lp-action-label">{children}</span>
+    <span className="lp-action-icon" aria-hidden="true"><Icon size={18} strokeWidth={2} /></span>
+  </button>;
+};
+
 export const LandingPage = ({ onEnter }) => {
   const [scrolled, setScrolled] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
@@ -103,7 +113,7 @@ export const LandingPage = ({ onEnter }) => {
 
           <div className="lp-nav-actions">
             <Button variant="ghost" size="sm" onClick={() => onEnter('login')}>Log in</Button>
-            <Button variant="aura" size="sm" onClick={start}>Get started</Button>
+            <LandingAction compact onClick={start}>Get started</LandingAction>
           </div>
         </nav>
       </header>
@@ -131,8 +141,8 @@ export const LandingPage = ({ onEnter }) => {
               </p>
 
               <div className="lp-hero-actions">
-                <Button variant="aura" size="lg" icon={ArrowRight} onClick={start}>Start with one friend</Button>
-                <Button variant="secondary" size="lg" onClick={() => document.getElementById('contract-demo')?.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'center' })}>Try the demo</Button>
+                <LandingAction onClick={start}>Start with one friend</LandingAction>
+                <LandingAction secondary onClick={() => document.getElementById('contract-demo')?.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'center' })}>Try the demo</LandingAction>
               </div>
               <p className="lp-start-note">One friend. Your pace. A story worth keeping.</p>
 

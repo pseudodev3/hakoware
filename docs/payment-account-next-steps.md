@@ -1,6 +1,6 @@
 # Merchant account next steps
 
-The user operates from Nigeria without a registered business. They clarified that they need help creating the merchant account, declined US incorporation through Stripe Atlas, and asked for the easiest option with international customer payments. Flutterwave is recommended for Nigerian onboarding and international cards. This is a recommendation; no Flutterwave account has been created or verified and the checkout integration has not been changed to Flutterwave.
+The user operates from Nigeria without a registered business. They declined US incorporation through Stripe Atlas and began Flutterwave onboarding after asking for the easiest option with international customer payments. Their ID review is pending. The signup UI offered Startup and NGO rather than Individual; support must confirm whether Startup fits their unregistered business and whether additional registration is required for international cards. Hakoware is not an NGO. No merchant approval or international payment access has been verified, and checkout has not been changed to Flutterwave.
 
 ## Account signup
 
