@@ -56,23 +56,7 @@ app.get('/brand/hakoware-mark-v2.jpg', (req, res) => {
   res.sendFile(path.join(__dirname, 'assets', 'hakoware-mark-v2.jpg'));
 });
 
-const allowedOrigins = (process.env.CORS_ORIGINS || FRONTEND_URL || '')
-  .split(',')
-  .map((origin) => origin.trim().replace(/\/$/, ''))
-  .filter(Boolean);
-
-const HAKOWARE_VERCEL_PREVIEW_ORIGIN = /^https:\/\/hakoware-v2-[a-z0-9-]+-ghostts-projects-0d589912\.vercel\.app$/i;
-
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    if (HAKOWARE_VERCEL_PREVIEW_ORIGIN.test(origin)) return callback(null, true);
-    if (!IS_PRODUCTION && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
-    return callback(new Error('Origin not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-auth-token']
-}));
+app.use(cors(require('./services/siteCors').createCorsOptions()));
 app.use(express.json({ limit: '1mb' }));
 app.use(requestGuard);
 

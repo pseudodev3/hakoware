@@ -94,3 +94,30 @@ assert.strictEqual(passes, 2, 'limiter should allow only the configured request 
 assert.strictEqual(third.statusCode, 429, 'limiter should reject requests over the limit');
 
 console.log('Server hardening checks passed');
+
+async function checkSiteOrigins() {
+  const express = require('express'), cors = require('cors');
+  const { createCorsOptions } = require('../services/siteCors');
+  const app = express();
+  // Reproduce a deployment retaining the previous Vercel environment values.
+  app.use(cors(createCorsOptions({ NODE_ENV: 'production', FRONTEND_URL: 'https://hakoware.vercel.app', CORS_ORIGINS: 'https://hakoware.vercel.app' })));
+  app.get('/protected', (req, res) => res.status(401).json({ msg: 'Authentication required' }));
+  app.use((error, req, res, next) => res.status(403).json({ msg: 'Origin rejected' }));
+  const server = await new Promise(resolve => { const running = app.listen(0, '127.0.0.1', () => resolve(running)); });
+  try {
+    const url = `http://127.0.0.1:${server.address().port}/protected`;
+    for (const origin of ['https://hakoware.xyz', 'https://www.hakoware.xyz', 'https://hakoware.vercel.app', 'https://hakoware-v2-preview-ghostts-projects-0d589912.vercel.app']) {
+      const preflight = await fetch(url, { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type,x-auth-token' } });
+      assert.equal(preflight.status, 204); assert.equal(preflight.headers.get('access-control-allow-origin'), origin);
+      assert.ok(preflight.headers.get('access-control-allow-headers').toLowerCase().includes('x-auth-token'));
+      const account = await fetch(url, { headers: { Origin: origin } });
+      assert.equal(account.status, 401, 'approved origins still require authentication'); assert.equal(account.headers.get('access-control-allow-origin'), origin);
+    }
+    for (const origin of ['https://hakoware.xyz.attacker.test', 'https://attacker.test/hakoware.xyz', 'http://hakoware.xyz', 'http://localhost:5173', 'https://other-tenant.vercel.app', 'https://evil.hakoware.xyz']) {
+      const response = await fetch(url, { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'POST' } });
+      assert.equal(response.status, 403); assert.equal(response.headers.get('access-control-allow-origin'), null);
+    }
+    console.log('Production CORS: new domains with legacy environment values, auth preflights, previews, and foreign/lookalike/local-origin rejection passed.');
+  } finally { await new Promise(resolve => server.close(resolve)); }
+}
+checkSiteOrigins().catch(error => { console.error(error); process.exitCode = 1; });
