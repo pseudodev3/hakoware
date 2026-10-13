@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
-  ArrowUpRight,
   AudioLines,
   BarChart3,
   CalendarDays,
@@ -13,7 +12,6 @@ import {
   Gamepad2,
   Layers,
   MessageCircle,
-  Play,
   Share2,
   Sparkles,
   Swords,
@@ -79,10 +77,8 @@ const QUESTIONS = [
 ];
 
 const LandingAction = ({ children, onClick, secondary = false, compact = false }) => {
-  const Icon = secondary ? Play : compact ? ArrowUpRight : ArrowRight;
   return <button type="button" className={`lp-action ${secondary ? 'lp-action-secondary' : 'lp-action-primary'} ${compact ? 'lp-action-compact' : ''}`} onClick={onClick}>
-    <span className="lp-action-label">{children}</span>
-    <span className="lp-action-icon" aria-hidden="true"><Icon size={18} strokeWidth={2} /></span>
+    {children}
   </button>;
 };
 
