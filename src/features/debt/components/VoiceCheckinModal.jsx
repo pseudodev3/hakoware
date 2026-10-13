@@ -10,6 +10,7 @@ import './VoiceCheckinModal.css';
 
 export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRefresh, showToast }) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -20,7 +21,10 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   const [bountySyncError, setBountySyncError] = useState(false);
   const [creditHunter, setCreditHunter] = useState(false);
   const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const startingRef = useRef(false);
+  const recordingGeneration = useRef(0);
+  const openRef = useRef(isOpen);
+  openRef.current = isOpen;
   const timerRef = useRef(null);
   const audioPlayerRef = useRef(null);
 
@@ -40,6 +44,27 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     cleanupStream();
   }, [audioUrl]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      startingRef.current = false;
+      setIsStarting(false);
+      setIsRecording(false);
+      setIsPlaying(false);
+      setAudioBlob(null);
+      setAudioUrl(null);
+      setRecordingTime(0);
+    }
+    return () => {
+      recordingGeneration.current += 1;
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+      const recorder = mediaRecorderRef.current;
+      if (recorder?.state && recorder.state !== 'inactive') recorder.stop();
+      cleanupStream();
+      audioPlayerRef.current?.pause();
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     let active = true;
@@ -81,27 +106,37 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
   };
 
   const startRecording = async () => {
+    if (!openRef.current || isRecording || startingRef.current) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       showToast?.('Voice recording is not supported in this browser', 'ERROR');
       return;
     }
 
+    const generation = ++recordingGeneration.current;
+    startingRef.current = true;
+    setIsStarting(true);
+    let stream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!openRef.current || generation !== recordingGeneration.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
+      const chunks = [];
 
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) chunks.push(event.data);
       };
 
       recorder.onstop = () => {
-        const type = recorder.mimeType || audioChunksRef.current[0]?.type || 'audio/webm';
-        const blob = new Blob(audioChunksRef.current, { type });
+        stream.getTracks().forEach((track) => track.stop());
+        if (!openRef.current || generation !== recordingGeneration.current) return;
+        const type = recorder.mimeType || chunks[0]?.type || 'audio/webm';
+        const blob = new Blob(chunks, { type });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach((track) => track.stop());
       };
 
       recorder.start();
@@ -117,8 +152,13 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
         });
       }, 1000);
     } catch {
-      cleanupStream();
-      showToast?.('Allow microphone access to send a voice check-in', 'ERROR');
+      stream?.getTracks().forEach(track => track.stop());
+      if (openRef.current && generation === recordingGeneration.current) showToast?.('Allow microphone access to send a voice check-in', 'ERROR');
+    } finally {
+      if (generation === recordingGeneration.current) {
+        startingRef.current = false;
+        setIsStarting(false);
+      }
     }
   };
 
@@ -197,9 +237,10 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
     ? `${bounty.chaosAmount} Chaos${bounty.partnerAmount > 0 ? ` + ${bounty.partnerAmount} Partner` : ''}`
     : null;
   const proofBlocked = bountyLoading || bountySyncError;
+  const close = () => { if (!loading) onClose?.(); };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Voice check-in with ${friend.displayName}`} size="md">
+    <Modal isOpen={isOpen} onClose={close} title={`Voice check-in with ${friend.displayName}`} size="md">
       <div className="voice-modal-content">
         {isChaosTarget && (
           <div className="voice-chaos-banner">
@@ -250,7 +291,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
         <div className="voice-header">
           <div className={`mic-status ${isRecording ? 'active' : ''}`}><Mic size={22} strokeWidth={1.8} /></div>
-          <div><strong>{isRecording ? 'Recording' : audioUrl ? 'Ready' : 'Say something.'}</strong><p>{audioUrl ? 'Listen or send.' : 'Up to 60s · bonus Duo XP.'}</p></div>
+          <div><strong>{isStarting ? 'Opening your microphone…' : isRecording ? 'Recording' : audioUrl ? 'Ready' : 'Say something.'}</strong><p>{audioUrl ? 'Listen or send.' : 'Up to 60s · bonus Duo XP.'}</p></div>
         </div>
 
         <div className="recording-area">
@@ -266,7 +307,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
         <div className="voice-controls">
           {!audioUrl ? (
-            <button className={`record-btn ${isRecording ? 'stop' : 'start'}`} onClick={isRecording ? stopRecording : startRecording} aria-label={isRecording ? 'Stop recording' : 'Start recording'}>
+            <button className={`record-btn ${isRecording ? 'stop' : 'start'}`} disabled={isStarting} aria-busy={isStarting} onClick={isRecording ? stopRecording : startRecording} aria-label={isRecording ? 'Stop recording' : isStarting ? 'Opening microphone' : 'Start recording'}>
               {isRecording ? <StopCircle size={34} strokeWidth={1.7} /> : <Mic size={34} strokeWidth={1.7} />}
             </button>
           ) : (
@@ -278,7 +319,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
         </div>
 
         <div className="voice-actions">
-          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="secondary" onClick={close} disabled={loading}>Cancel</Button>
           <Button variant="aura" disabled={!audioBlob || proofBlocked} loading={loading || bountyLoading} onClick={handleSubmit}>
             {bountyLoading ? 'Syncing Arena…' : pressureReady && creditHunter ? `Send & credit ${bounty.hunterName}` : hasOpenBounty ? 'Send & escape bounty' : 'Send voice'}
           </Button>

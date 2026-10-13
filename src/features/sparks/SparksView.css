@@ -27,14 +27,14 @@
 .spark-reactions small { color:var(--text-secondary); font-size:.6875rem; }
 .spark-open-replies { display:flex; align-items:center; gap:6px; min-height:44px; padding:0 10px; color:var(--text-secondary); font-size:.75rem; }
 .sparks-aside { padding:32px 4px; position:sticky; top:12px; }
-.sparks-aside-icon { width:52px; height:52px; display:grid; place-items:center; color:var(--accent-text); border:1px solid var(--border-active); border-radius:16px; margin-bottom:28px; }
+.sparks-aside-icon { width:52px; height:52px; display:flex; align-items:center; color:var(--accent-text); margin-bottom:20px; }
 .sparks-aside h2 { font-size:1.75rem; line-height:1.15; letter-spacing:-.05em; }
 .sparks-aside h2 span { color:var(--text-muted); }
 .sparks-aside > p { color:var(--text-secondary); font-size:.9375rem; line-height:1.7; margin-top:18px; max-width:28ch; }
 .sparks-aside > button { display:flex; align-items:center; gap:10px; min-height:44px; color:var(--accent-text); font-size:.8125rem; margin-top:20px; }
 .sparks-aside > div { display:flex; align-items:flex-start; gap:10px; border-top:1px solid var(--border-subtle); margin-top:28px; padding-top:24px; max-width:30ch; color:var(--text-muted); font-size:.75rem; line-height:1.6; }
 .sparks-aside > div svg { flex:0 0 auto; margin-top:3px; }
-.sparks-empty { display:flex; flex-direction:column; align-items:center; gap:20px; padding:44px 24px; text-align:center; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface-card); }
+.sparks-empty { display:flex; flex-direction:column; align-items:center; gap:20px; padding:44px 0; text-align:center; border-block:1px solid var(--border-subtle); }
 .sparks-empty-mark { width:80px; height:80px; display:grid; place-items:center; color:var(--accent-text); background:var(--accent-soft); border-radius:26px; transform:rotate(-8deg); margin-bottom:8px; }
 .sparks-empty h2 { font-size:2rem; letter-spacing:-.055em; line-height:1.15; }
 .sparks-empty p { max-width:32ch; color:var(--text-secondary); font-size:.875rem; line-height:1.6; }

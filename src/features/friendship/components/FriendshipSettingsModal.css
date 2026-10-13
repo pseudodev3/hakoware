@@ -4,8 +4,8 @@
 .contract-rule-icon { width:24px; height:24px; display:grid; place-items:center; color:var(--aura-gold); }
 .contract-rule-summary.chaos .contract-rule-icon { color:var(--aura-red); }
 .contract-rule-summary > div { min-width:0; display:flex; flex-direction:column; }
-.contract-rule-summary strong { font-size:.83rem; font-weight:670; }
-.contract-rule-summary p { margin-top:3px; color:var(--text-muted); font-size:.62rem; }
+.contract-rule-summary strong { font-size:.9375rem; font-weight:670; }
+.contract-rule-summary p { margin-top:6px; color:var(--text-muted); font-size:.75rem; }
 .contract-duo-badge { display:inline-flex; align-items:center; gap:5px; color:var(--aura-gold); font-family:var(--font-mono); font-size:.58rem; }
 .contract-settings-form { display:flex; flex-direction:column; gap:15px; }
 .contract-settings-form h3 { font-size:.83rem; font-weight:650; }
@@ -13,8 +13,8 @@
 .settings-help { margin-top:-9px; color:var(--text-muted); font-size:.65rem; line-height:1.45; }
 .fixed-rule-panel { padding:2px 0 18px; display:flex; align-items:flex-start; gap:9px; color:var(--aura-gold); border-bottom:1px solid var(--border-subtle); }
 .fixed-rule-panel > div { min-width:0; }
-.fixed-rule-panel strong { display:block; color:var(--text-primary); font-size:.75rem; font-weight:650; }
-.fixed-rule-panel p { margin-top:3px; color:var(--text-muted); font-size:.65rem; line-height:1.5; }
+.fixed-rule-panel strong { display:block; color:var(--text-primary); font-size:.875rem; font-weight:650; }
+.fixed-rule-panel p { margin-top:6px; color:var(--text-muted); font-size:.8125rem; line-height:1.6; }
 .chaos-settings-panel { padding:12px 0; border-top:1px solid color-mix(in srgb,var(--aura-red) 22%,var(--border-subtle)); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 22%,var(--border-subtle)); }
 .chaos-settings-panel > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .chaos-settings-panel span { color:var(--aura-red); font-family:var(--font-mono); font-size:.54rem; font-weight:700; letter-spacing:.07em; }
@@ -22,8 +22,8 @@
 .chaos-settings-panel p { margin-top:6px; color:var(--text-muted); font-size:.65rem; line-height:1.45; }
 .contract-danger { padding-top:18px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid var(--border-subtle); }
 .contract-danger > div { min-width:0; }
-.contract-danger strong { color:var(--aura-red); font-size:.76rem; font-weight:650; }
-.contract-danger p { max-width:360px; margin-top:4px; color:var(--text-muted); font-size:.65rem; line-height:1.5; }
+.contract-danger strong { color:var(--aura-red); font-size:.875rem; font-weight:650; }
+.contract-danger p { max-width:360px; margin-top:6px; color:var(--text-muted); font-size:.8125rem; line-height:1.6; }
 @media (max-width:520px) {
   .contract-rule-summary { grid-template-columns:24px minmax(0,1fr); }
   .contract-duo-badge { grid-column:2; width:max-content; margin-top:3px; }

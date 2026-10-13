@@ -102,18 +102,20 @@ export const LandingPage = ({ onEnter }) => {
   return (
     <div className="lp-root">
       <header className={`lp-nav ${scrolled ? 'is-scrolled' : ''}`}>
-        <div className="lp-brand" aria-label="Hakoware">
-          <img src="/hakoware-mark-v2.png" alt="" />
-          <div><strong>Hakoware</strong><span>social game</span></div>
-        </div>
+        <nav className="lp-nav-inner" aria-label="Main navigation">
+          <div className="lp-brand" aria-label="Hakoware">
+            <img src="/hakoware-mark-v2.png" alt="" />
+            <div><strong>Hakoware</strong><span>social game</span></div>
+          </div>
 
-        <div className="lp-nav-actions">
-          <button className="lp-theme-toggle" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
-            <ThemeIcon size={17} strokeWidth={1.8} />
-          </button>
-          <Button variant="ghost" size="sm" onClick={() => onEnter('login')}>Log in</Button>
-          <Button variant="aura" size="sm" onClick={start}>Get started</Button>
-        </div>
+          <div className="lp-nav-actions">
+            <button className="lp-theme-toggle" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
+              <ThemeIcon size={17} strokeWidth={1.8} />
+            </button>
+            <Button variant="ghost" size="sm" onClick={() => onEnter('login')}>Log in</Button>
+            <Button variant="aura" size="sm" onClick={start}>Get started</Button>
+          </div>
+        </nav>
       </header>
 
       <main>

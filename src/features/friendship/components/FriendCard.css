@@ -1,7 +1,7 @@
 
-.friend-card { min-width:0; padding:0; position:relative; border:1px solid var(--border-subtle); border-radius:20px; background:var(--surface-card); overflow:hidden; }
-.friend-card.has-new { border-color:color-mix(in srgb,var(--accent-text) 35%,var(--border-subtle)); }
-.friend-card.danger { border-color:color-mix(in srgb,var(--aura-red) 42%,var(--border-subtle)); }
+.friend-card { min-width:0; padding:0; position:relative; border-bottom:1px solid var(--border-subtle); }
+.friend-card.has-new { border:1px solid color-mix(in srgb,var(--accent-text) 35%,var(--border-subtle)); border-radius:20px; background:var(--accent-soft); overflow:hidden; }
+.friend-card.danger { border:1px solid color-mix(in srgb,var(--aura-red) 42%,var(--border-subtle)); border-radius:20px; background:var(--aura-red-glow); overflow:hidden; }
 .friend-card-open { width:100%; min-height:100px; display:flex; align-items:center; gap:16px; padding:20px; text-align:left; color:var(--text-primary); }
 .friend-card-open > .user-avatar { width:54px; height:54px; flex:0 0 54px; border-radius:50%; font-size:1.25rem; }
 .friend-card-copy { min-width:0; flex:1; }
@@ -26,7 +26,7 @@
 .friend-card-moment { width:100%; min-height:48px; padding:10px 20px; display:flex; align-items:center; gap:8px; background:var(--play-violet-soft); color:var(--play-violet); text-align:left; font-size:.75rem; line-height:1.5; }
 .friend-card-moment > span { min-width:0; flex:1; }
 .friend-card-moment > svg { flex:0 0 auto; }
-.friend-card-featured { background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent-text) 25%,var(--border-subtle)); }
+.friend-card-featured { background:var(--accent-soft); border:1px solid color-mix(in srgb,var(--accent-text) 25%,var(--border-subtle)); border-radius:20px; overflow:hidden; }
 .friend-card-featured .friend-card-open { align-items:flex-start; padding:24px 24px 14px; min-height:154px; }
 .friend-card-featured .friend-card-open > .user-avatar { width:64px; height:64px; flex-basis:64px; }
 .friend-card-featured .friend-card-identity { margin-top:4px; margin-bottom:10px; }
@@ -40,3 +40,6 @@
 .friend-card-cover { opacity:.065; z-index:-1; }
 .friend-card-duo-name { display:block; color:var(--text-muted); font-size:.625rem; font-weight:600; letter-spacing:.04em; margin-bottom:7px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .friend-card-surface::after { content:''; position:absolute; inset:0 0 auto; height:3px; background:var(--duo-accent); opacity:.75; pointer-events:none; }
+.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-open { padding-inline:0; }
+.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-footer { padding:4px 0 16px; }
+.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-cover,.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-surface::after { display:none; }

@@ -6,8 +6,8 @@
 .home-play-copy { font-size:.75rem; line-height:1.5; color:var(--text-muted); margin-bottom:18px; }
 .home-play-tiles { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .home-play-tiles.has-one { grid-template-columns:1fr; }
-.home-play-tool { min-width:0; text-align:left; border:1px solid var(--border-subtle); border-radius:16px; background:var(--surface-card); overflow:hidden; color:var(--text-primary); }
-.home-play-tool-surface { display:block; padding:14px; }
+.home-play-tool { min-width:0; text-align:left; border-bottom:1px solid var(--border-subtle); color:var(--text-primary); }
+.home-play-tool-surface { display:block; padding:14px 0; }
 .home-play-tool-number { display:block; color:var(--text-muted); font-size:.5625rem; letter-spacing:.05em; }
 .home-play-tool-content { display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:12px; }
 .home-play-tool-content .card-artwork { width:86px; height:86px; flex:0 0 auto; }
@@ -15,7 +15,7 @@
 .home-play-tool-content strong { display:block; font-size:.875rem; font-weight:650; line-height:1.3; letter-spacing:-.02em; }
 .home-play-tool-content small { display:block; font-size:.625rem; line-height:1.5; margin-top:5px; color:var(--text-muted); }
 .home-play-offers { width:100%; min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--border-active); border-radius:10px; background:var(--accent-soft); color:var(--accent-text); font-size:.75rem; margin-bottom:12px; }
-.home-play-empty { width:100%; display:flex; align-items:center; gap:14px; min-height:110px; padding:22px; border:1px solid var(--border-subtle); border-radius:18px; text-align:left; color:var(--text-secondary); background:var(--surface-card); }
+.home-play-empty { width:100%; display:flex; align-items:center; gap:14px; min-height:110px; padding:22px 0; border-block:1px solid var(--border-subtle); text-align:left; color:var(--text-secondary); }
 .home-play-empty > span { flex:1; min-width:0; }
 .home-play-empty strong { display:block; color:var(--text-primary); font-size:1rem; }
 .home-play-empty small { display:block; margin-top:6px; font-size:.8125rem; line-height:1.5; }

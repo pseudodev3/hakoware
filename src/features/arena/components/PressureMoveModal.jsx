@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, Target, Zap } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
+import './PressureMoveModal.css';
 
 export const PressureMoveModal = ({ bounty, moves = [], loading, onClose, onSend }) => {
   if (!bounty) return null;

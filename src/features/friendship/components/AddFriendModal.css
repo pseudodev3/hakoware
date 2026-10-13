@@ -36,10 +36,10 @@
 .mode-intro > span { color:var(--text-muted); font-size:.66rem; }
 .mode-kicker { color:var(--aura-gold); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
 .template-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-.template-option { min-height:68px; padding:10px 11px; display:flex; align-items:center; gap:10px; position:relative; overflow:hidden; border-radius:16px; color:var(--text-secondary); text-align:left; background:var(--surface-1); box-shadow:inset 0 0 0 1px var(--border-subtle); transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out); }
+.template-option { min-height:68px; padding:10px 11px; display:flex; align-items:center; gap:10px; position:relative; overflow:hidden; border:1px solid transparent; border-bottom-color:var(--border-subtle); border-radius:12px; color:var(--text-secondary); text-align:left; transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .template-option:active { transform:scale(.96); }
-.template-option.active { color:var(--text-primary); background:var(--surface-3); box-shadow:inset 0 0 0 1px var(--aura-gold-glow); }
-.template-option.chaos.active { box-shadow:inset 0 0 0 1px rgba(255,116,123,.32); }
+.template-option.active { color:var(--text-primary); background:var(--accent-soft); border-color:var(--accent-text); }
+.template-option.chaos.active { background:var(--play-violet-soft); border-color:var(--play-violet); }
 .template-icon { width:28px; height:28px; flex:0 0 auto; display:grid; place-items:center; color:var(--text-muted); }
 .template-option.active .template-icon { color:var(--aura-gold); }
 .template-option.chaos.active .template-icon { color:var(--aura-red); }
@@ -59,6 +59,10 @@
 .template-option { min-height:76px; }
 .template-copy strong { font-size:.875rem; }
 .template-copy small { font-size:.75rem; }
+.contract-step-intro p:last-child,.contract-confirm > p { font-size:.875rem; line-height:1.6; }
+.contract-stepper b,.contract-stepper small,.mode-intro > span,.mode-rule-stats span,.contract-confirm-rules small { font-size:.6875rem; }
+.mode-rule-card p,.contract-confirm-note,.contract-field-note { font-size:.8125rem; line-height:1.6; }
+.contract-confirm-rules b,.mode-rule-stats b { font-size:.875rem; }
 .new-contract-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; padding-top:4px; }
 .invite-share-icon { width:44px; height:44px; display:grid; place-items:center; border-radius:14px; color:#07150e; background:var(--aura-green); }
 .invite-share-copy strong { display:block; font-size:.84rem; font-weight:650; }

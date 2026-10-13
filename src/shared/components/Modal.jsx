@@ -24,6 +24,24 @@ export const Modal = ({
   closeRef.current = onClose;
 
   useEffect(() => {
+    if (!isOpen || !window.visualViewport) return undefined;
+    const viewport = window.visualViewport;
+    const root = contentRef.current?.closest('.modal-root');
+    const update = () => {
+      if (viewport.scale !== 1) return;
+      root?.style.setProperty('--modal-viewport-height', `${viewport.height}px`);
+      root?.style.setProperty('--modal-viewport-top', `${viewport.offsetTop}px`);
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return undefined;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';

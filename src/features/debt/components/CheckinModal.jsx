@@ -8,10 +8,10 @@ import { useDebt } from '../../../hooks/useDebt';
 import './CheckinModal.css';
 
 const CHECKIN_STATUSES = [
-  { id: 'ALIVE', label: 'alive' },
-  { id: 'LOCKED_IN', label: 'locked in' },
-  { id: 'BARELY', label: 'barely' },
-  { id: 'CHAOS', label: 'chaos' }
+  { id: 'ALIVE', label: 'Alive' },
+  { id: 'LOCKED_IN', label: 'Locked in' },
+  { id: 'BARELY', label: 'Barely' },
+  { id: 'CHAOS', label: 'Chaos' }
 ];
 
 export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRefresh, showToast }) => {
@@ -21,6 +21,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const [bountySyncError, setBountySyncError] = useState(false);
   const [checkinStatus, setCheckinStatus] = useState('');
   const [note, setNote] = useState('');
+  const [error, setError] = useState('');
   const user1Id = friendship?.user1?._id || friendship?.user1;
   const isUser1 = String(user1Id) === String(currentUserId);
   const perspective = isUser1 ? friendship?.user1Perspective : friendship?.user2Perspective;
@@ -31,6 +32,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
     if (!isOpen) return;
     setCheckinStatus('');
     setNote('');
+    setError('');
   }, [isOpen, friendship?._id, friendship?.id]);
 
   useEffect(() => {
@@ -81,10 +83,12 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
     : null;
 
   const handleCheckin = async (creditHunter = false) => {
+    if (loading) return;
     if (bountyLoading) return showToast?.('Arena is still syncing', 'ERROR');
     if (bountySyncError) return showToast?.('Could not verify the bounty. Reopen this check-in.', 'ERROR');
 
     setLoading(true);
+    setError('');
     const creditId = creditHunter && pressureReady ? bounty._id : null;
     const bountyDecision = pressureReady ? (creditHunter ? 'CREDIT' : 'ESCAPE') : null;
     const result = await performCheckin(
@@ -113,6 +117,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
       await onRefresh?.();
       onClose?.();
     } else {
+      setError(result.error || 'Could not check in. Your note is kept here; try again.');
       showToast?.(result.error || 'Could not check in', 'ERROR');
       try {
         const refreshedBounty = await getContractBounty(friendship._id || friendship.id, { force: true });
@@ -132,6 +137,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   const activeChaos = friendship.chaos?.activeEvent;
   const isChaosTarget = activeChaos && String(activeChaos.targetUserId) === String(currentUserId);
   const checkinBlocked = bountyLoading || bountySyncError;
+  const close = () => { if (!loading) onClose?.(); };
   const actions = pressureReady ? (
     <div className="checkin-proof-actions">
       <Button type="button" variant="secondary" disabled={checkinBlocked} loading={loading} onClick={() => handleCheckin(false)}>Escape</Button>
@@ -139,7 +145,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
     </div>
   ) : (
     <div className="checkin-actions">
-      <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+      <Button type="button" variant="secondary" onClick={close} disabled={loading}>Cancel</Button>
       <Button variant="aura" icon={Check} disabled={checkinBlocked} loading={loading || bountyLoading} onClick={() => handleCheckin(false)}>
         {bountyLoading ? 'Syncing Arena…' : hasOpenBounty ? 'Check in & escape' : 'Check in'}
       </Button>
@@ -147,8 +153,9 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Check in with ${friend.displayName}`} size="md" footer={actions}>
+    <Modal isOpen={isOpen} onClose={close} title={`Check in with ${friend.displayName}`} size="md" footer={actions}>
       <div className="checkin-content">
+        <p className="checkin-intro">A little update for {friend.displayName}. Keep your shared story going.</p>
         {isChaosTarget && (
           <div className="checkin-chaos">
             <Sparkles size={17} strokeWidth={1.8} />
@@ -218,7 +225,8 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
                 type="button"
                 key={item.id}
                 className={checkinStatus === item.id ? 'active' : ''}
-                onClick={() => setCheckinStatus(item.id)}
+                disabled={loading}
+                onClick={() => setCheckinStatus(current => current === item.id ? '' : item.id)}
                 aria-pressed={checkinStatus === item.id}
               >
                 {item.label}
@@ -226,16 +234,17 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
             ))}
           </div>
           <label className="checkin-note-field">
-            <span>tiny note</span>
+            <span>A tiny note</span>
             <input
               type="text"
               value={note}
               maxLength={40}
+              disabled={loading}
               onChange={(event) => setNote(event.target.value.slice(0, 40))}
               placeholder="survived this stupid day 😭"
               autoComplete="off"
             />
-            <small>{note.length}/40</small>
+            <small aria-hidden="true">{note.length}/40</small>
           </label>
         </div>
 
@@ -244,6 +253,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
             ? 'Recovery takes two clean check-ins, at least 20h apart.'
             : 'One check-in every 20h. Resets your side + earns Duo XP.'}
         </p>
+        {error && <p className="checkin-error" role="alert">{error}</p>}
 
       </div>
     </Modal>

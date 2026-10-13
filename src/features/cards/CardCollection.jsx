@@ -352,7 +352,7 @@ export const CardCollection = ({
                   key={trade.id}
                   id={'card-offer-' + trade.id}
                   tabIndex={-1}
-                  className={`collection-offer ${trade.id === focusTradeId ? 'is-focused' : ''}`}
+                  className={`collection-offer ${trade.status !== 'PENDING' && !trade.processing ? 'is-settled' : ''} ${trade.id === focusTradeId ? 'is-focused' : ''}`}
                 >
                   <div className="collection-offer-person">
                     <UserAvatar person={trade.partner} size="sm" decorative />

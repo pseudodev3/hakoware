@@ -45,6 +45,8 @@
   outline-offset: 6px;
   border-radius: 10px;
 }
+.collection-offer.is-settled { padding-inline:0; border:0; border-bottom:1px solid var(--border-subtle); border-radius:0; background:transparent; }
+.collection-offer.is-settled.is-focused { border-radius:10px; }
 .collection-offer-person {
   display: flex;
   align-items: center;
