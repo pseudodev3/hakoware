@@ -41,5 +41,6 @@
 .friend-card-duo-name { display:block; color:var(--text-muted); font-size:.625rem; font-weight:600; letter-spacing:.04em; margin-bottom:7px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .friend-card-surface::after { content:''; position:absolute; inset:0 0 auto; height:3px; background:var(--duo-accent); opacity:.75; pointer-events:none; }
 .friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-open { padding-inline:0; }
+.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-surface { overflow:visible; }
 .friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-footer { padding:4px 0 16px; }
 .friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-cover,.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-surface::after { display:none; }
