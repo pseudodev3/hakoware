@@ -12,10 +12,8 @@ import {
   Gamepad2,
   Layers,
   MessageCircle,
-  Moon,
   Share2,
   Sparkles,
-  Sun,
   Swords,
   Trophy,
   UsersRound
@@ -80,24 +78,19 @@ const QUESTIONS = [
 
 export const LandingPage = ({ onEnter }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [theme, setTheme] = useState(getInitialTheme);
   const [demoStep, setDemoStep] = useState(0);
   const reduceMotion = useReducedMotion();
   const start = () => onEnter('signup');
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    applyTheme(getInitialTheme());
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const toggleTheme = () => setTheme((current) => current === 'dark' ? 'light' : 'dark');
-  const ThemeIcon = theme === 'dark' ? Sun : Moon;
-  const themeLabel = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
 
   return (
     <div className="lp-root">
@@ -109,9 +102,6 @@ export const LandingPage = ({ onEnter }) => {
           </div>
 
           <div className="lp-nav-actions">
-            <button className="lp-theme-toggle" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
-              <ThemeIcon size={17} strokeWidth={1.8} />
-            </button>
             <Button variant="ghost" size="sm" onClick={() => onEnter('login')}>Log in</Button>
             <Button variant="aura" size="sm" onClick={start}>Get started</Button>
           </div>
