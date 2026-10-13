@@ -45,6 +45,7 @@
 .privacy-switch.on { background:var(--accent); border-color:transparent; }
 .privacy-switch.on i { margin-left:16px; background:var(--accent-ink); }
 .account-logout-label { font-size:.75rem; color:var(--text-muted); flex:0 0 auto; }
+.game-sound-preview { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 12px; margin:6px 0 12px 42px; color:var(--accent-text); font-size:.75rem; }
 .transaction-row { display:flex; justify-content:space-between; gap:20px; align-items:center; padding:14px 0; border-bottom:1px solid var(--border-subtle); font-size:.8125rem; }
 .transaction-row > div { min-width:0; }
 .transaction-row strong { display:block; font-size:.8125rem; font-weight:550; line-height:1.5; overflow-wrap:anywhere; }

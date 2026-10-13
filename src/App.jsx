@@ -21,6 +21,7 @@ import { FriendSpace } from './features/friendship/components/FriendSpace';
 import { ContractsView } from './features/friendship/components/ContractsView';
 import { ContractRecapModal } from './features/friendship/components/ContractRecapModal';
 import { GameMoment } from './features/friendship/components/GameMoment';
+import { GameSoundManager } from './shared/components/GameSoundManager';
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { LandingPage } from './features/landing/LandingPage';
@@ -491,6 +492,7 @@ function MainApp({ showToast }) {
       />
 
       <GameMoment user={user} friendships={friendships} onAction={handleAction} showToast={showToast} />
+      <GameSoundManager userId={String(user.uid || user.id || user._id)} />
       </Layout>
     </>
   );

@@ -19,6 +19,7 @@
     "check:flare-trial-delivery": "node scripts/checkFlareTrialDelivery.js",
     "check:presentation": "node scripts/checkPresentation.js",
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
+    "check:standalone-trades": "node scripts/checkStandaloneCardTrades.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",
     "check:after-hours-social": "node scripts/checkAfterHoursSocial.js"
   },

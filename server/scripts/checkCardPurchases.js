@@ -145,8 +145,8 @@ const run = async () => {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
       body: JSON.stringify({ clientId: randomUUID(), offeredCardId: 'GHOST', requestedCardId: 'ORBIT', friendshipId: new mongoose.Types.ObjectId() }),
     });
-    assert.equal(tradeResponse.status, 503, 'multi-account trades stay safely unavailable on standalone MongoDB');
-    assert.match((await tradeResponse.json()).msg, /temporarily unavailable/);
+    assert.equal(tradeResponse.status, 404, 'unknown accepted friends cannot reserve a card on standalone MongoDB');
+    assert.match((await tradeResponse.json()).msg, /accepted friend/);
     assert.deepEqual((await User.findById(user._id)).inventory, beforeTrade.inventory);
     console.log('Standalone MongoDB purchases: active tools, concurrent retries/overspending, ledger recovery, retired receipt replay, blocked collectible sales, privacy and safe trade failure passed.');
   } finally {

@@ -16,6 +16,7 @@ import { ViewTabs } from '../../shared/components/ViewTabs';
 import './CardCollection.css';
 import { CardEffectPreview } from './CardEffectPreview';
 import { showGameMoment } from '../../lib/gameMoments';
+import { playGameSound } from '../../lib/gameSounds';
 
 export const CardCollection = ({
   friendships,
@@ -100,8 +101,10 @@ export const CardCollection = ({
       const result = await operation();
       if (!alive.current) return;
       setSheet(null);
-      showToast?.(message, 'SUCCESS');
+      const tradeMessage = { ACCEPTED: 'Cards exchanged.', CANCELLED: 'Offer cancelled. Your card is back.', DECLINED: 'This offer was declined.', EXPIRED: 'This offer expired. Your reserved card is back.', COUNTERED: 'A newer counter-offer replaced this one.' }[result?.status];
+      showToast?.(tradeMessage || message, 'SUCCESS');
       await Promise.allSettled([load(), refreshUser()]);
+      if (alive.current && result?.status === 'ACCEPTED') playGameSound('trade', user._id || user.id || user.uid, result.tradeId);
       if (alive.current && result?.effect?.flareEventId) showGameMoment({ userId: user._id || user.id || user.uid, contractId: target, eventId: result.effect.flareEventId, type: 'SIGNAL_FLARE' });
     } catch (err) {
       if (alive.current) {
@@ -166,7 +169,9 @@ export const CardCollection = ({
   const buy = (card) => {
     buyKeys.current[card.id] ||= crypto.randomUUID();
     void run(async () => {
-      await purchaseCollectionCard(card.id, buyKeys.current[card.id]);
+      const soundId = buyKeys.current[card.id];
+      await purchaseCollectionCard(card.id, soundId);
+      if (alive.current) playGameSound('card', userId, soundId);
       delete buyKeys.current[card.id];
     }, card.name + ' added to your collection.');
   };
@@ -197,7 +202,7 @@ export const CardCollection = ({
   const activate = (event) => {
     event.preventDefault();
     void run(
-      () => activateCollectionCard(selected.id, target || null),
+      async () => { const result = await activateCollectionCard(selected.id, target || null); if (alive.current && !result?.effect?.flareEventId) playGameSound('card', userId); return result; },
       selected.name + ' used.',
     );
   };
@@ -357,7 +362,7 @@ export const CardCollection = ({
                         {trade.partner.displayName}
                       </strong>
                       <small>
-                        {trade.status === 'PENDING'
+                        {trade.processing ? 'Finishing this exchange…' : trade.status === 'PENDING'
                           ? 'Open until ' +
                             new Date(trade.expiresAt).toLocaleDateString(
                               undefined,
@@ -369,13 +374,13 @@ export const CardCollection = ({
                   </div>
                   <div className="collection-offer-swap">
                     <span>
-                      <CardArtwork cardId={trade.offeredCardId} size={25} />
+                      <CardArtwork cardId={trade.offeredCardId} size={64} />
                       <strong>{byId[trade.offeredCardId]?.name}</strong>
                       <small>{trade.mine ? 'You give' : 'You get'}</small>
                     </span>
                     <ArrowLeftRight size={18} />
                     <span>
-                      <CardArtwork cardId={trade.requestedCardId} size={25} />
+                      <CardArtwork cardId={trade.requestedCardId} size={64} />
                       <strong>{byId[trade.requestedCardId]?.name}</strong>
                       <small>{trade.mine ? 'You get' : 'You give'}</small>
                     </span>
@@ -383,7 +388,7 @@ export const CardCollection = ({
                   {trade.status === 'PENDING' && (
                     <>
                       <p className="collection-offer-note">
-                        {trade.mine
+                        {trade.processing ? 'Your cards are reserved while this exchange finishes. This page refreshes automatically.' : trade.mine
                           ? 'Your offered copy is reserved until this closes.'
                           : !byId[trade.requestedCardId]?.owned
                             ? 'You don’t have an available copy to give. Counter or decline.'
@@ -392,7 +397,7 @@ export const CardCollection = ({
                       <div className="collection-offer-actions">
                         {trade.mine ? (
                           <button
-                            disabled={busy}
+                            disabled={busy || trade.processing}
                             onClick={() =>
                               void run(
                                 () => respondToCardOffer(trade.id, 'CANCEL'),
@@ -407,7 +412,7 @@ export const CardCollection = ({
                             <button
                               className="primary"
                               disabled={
-                                busy || !byId[trade.requestedCardId]?.owned
+                                busy || trade.processing || !byId[trade.requestedCardId]?.owned
                               }
                               onClick={() =>
                                 void run(
@@ -420,14 +425,14 @@ export const CardCollection = ({
                             </button>
                             <button
                               disabled={
-                                busy || !cards.some((card) => card.owned)
+                                busy || trade.processing || !cards.some((card) => card.owned)
                               }
                               onClick={() => openOffer('', trade)}
                             >
                               Counter
                             </button>
                             <button
-                              disabled={busy}
+                              disabled={busy || trade.processing}
                               onClick={() =>
                                 void run(
                                   () => respondToCardOffer(trade.id, 'DECLINE'),
@@ -530,6 +535,7 @@ export const CardCollection = ({
                   ))}
                 </select>
               </label>
+              <div className="card-trade-preview" aria-label="Exchange preview"><div>{give ? <CardArtwork cardId={give} size={80} /> : <span className="card-trade-empty-art">?</span>}<small>You give</small><strong>{byId[give]?.name || 'Choose a card'}</strong></div><ArrowLeftRight size={20} /><div>{want ? <CardArtwork cardId={want} size={80} /> : <span className="card-trade-empty-art">?</span>}<small>You get</small><strong>{byId[want]?.name || 'Choose a card'}</strong></div></div>
               <label>
                 You give
                 <select

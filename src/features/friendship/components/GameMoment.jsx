@@ -10,6 +10,7 @@ import { buildDuoShareCard } from '../../../lib/duoShareCard';
 import { shareHakoware } from '../../../lib/share';
 import './GameMoment.css';
 import { getContractRecap } from '../../../services/friendshipService';
+import { playGameSound } from '../../../lib/gameSounds';
 
 export const GameMoment = ({ user, friendships, onAction, showToast }) => {
   const userId = String(user.uid || user.id || user._id);
@@ -31,6 +32,7 @@ export const GameMoment = ({ user, friendships, onAction, showToast }) => {
       }
       seen.current.add(key); try { localStorage.setItem(key, 'seen'); } catch { /* The reveal still works without storage. */ }
       setMoment({ ...detail, contract });
+      playGameSound(detail.type, userId, detail.eventId);
     };
     window.addEventListener('hakoware-game-moment', receive);
     return () => window.removeEventListener('hakoware-game-moment', receive);

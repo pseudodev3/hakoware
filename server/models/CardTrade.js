@@ -35,6 +35,11 @@ const schema = new mongoose.Schema(
     settledAt: Date,
     counterOf: { type: mongoose.Schema.Types.ObjectId, ref: 'CardTrade' },
     counterTradeId: { type: mongoose.Schema.Types.ObjectId, ref: 'CardTrade' },
+    escrowVersion: { type: Number, select: false },
+    phase: { type: String, enum: ['PREPARING', 'OPEN', 'ACCEPTING', 'CLOSING', 'COMPLETE', 'FAILED'], select: false },
+    closingStatus: { type: String, select: false },
+    settlementActorId: { type: mongoose.Schema.Types.ObjectId, select: false },
+    deliveryPending: { type: Boolean, select: false },
   },
   { timestamps: true },
 );

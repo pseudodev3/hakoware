@@ -106,6 +106,10 @@ jobs:
         working-directory: server
         run: npm run check:cards-wall
 
+      - name: Check card exchange on standalone MongoDB with blocked indexes
+        working-directory: server
+        run: npm run check:standalone-trades
+
       - name: Check card purchases on standalone MongoDB
         working-directory: server
         run: npm run check:card-purchases

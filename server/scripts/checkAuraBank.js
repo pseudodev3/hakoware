@@ -18,8 +18,15 @@ async function run() {
     const start = new Date(Date.now()-86400000), checked = new Date(Date.now()-60000);
     const contract = await Friendship.create({ user1: one._id, user2: two._id, user1DisplayName: 'Ari', user2DisplayName: 'Maya', status: 'ACTIVE', season: { number: 1, status: 'ACTIVE', startedAt: start, endsAt: new Date(Date.now()+86400000) }, user1Perspective: { limit: 3, lastInteraction: checked }, user2Perspective: { limit: 3, lastInteraction: start } });
     assert.equal((await bankView(one._id)).eligible, false, 'one-sided activation cannot unlock borrowing');
+    assert.equal((await bankView(one._id)).maxLoan, 25);
     await Friendship.updateOne({ _id: contract._id }, { $set: { 'user2Perspective.lastInteraction': checked } });
     assert.equal((await bankView(one._id)).eligible, true);
+    await assert.rejects(bankAction(one._id, 'BORROW', { amount: 100, clientId: randomUUID() }), /limit is 25/);
+    await Friendship.updateOne({ _id: contract._id }, { $set: { duoXP: 50 } });
+    assert.equal((await bankView(one._id)).maxLoan, 50, 'actual Duo Level 2 unlocks Connected');
+    await assert.rejects(bankAction(one._id, 'BORROW', { amount: 100, clientId: randomUUID() }), /limit is 50/);
+    await Friendship.updateOne({ _id: contract._id }, { $set: { duoXP: 800 } });
+    assert.equal((await bankView(one._id)).maxLoan, 100, 'actual Duo Level 5 unlocks Trusted');
     const loan = { amount: 100, clientId: randomUUID() };
     const loans = await Promise.all(Array.from({ length: 6 }, () => bankAction(one._id, 'BORROW', loan)));
     assert.ok(loans.every(result => result.bank.outstanding===100&&result.bank.balance===120));
@@ -33,6 +40,7 @@ async function run() {
     assert.equal(String((await AuraTransaction.findOne({userId:one._id,type:'CHAOS_BONUS'})).metadata.friendshipId),String(contract._id),'earnings keep their existing ledger linkage');
     const repayment={amount:25,clientId:randomUUID()};await Promise.all(Array.from({length:5},()=>bankAction(one._id,'REPAY',repayment)));
     bank=await bankView(one._id);assert.equal(bank.balance,100);assert.equal(bank.outstanding,69);
+    assert.equal(bank.principal, 100); assert.equal(bank.repaid, 31); assert.equal(bank.repaymentProgress, 31);
     // A ledger outage leaves a durable committed loan, then the same retry repairs it.
     await User.updateOne({_id:two._id},{$set:{auraBalance:10}});
     const original=AuraTransaction.updateOne;let failNext=true;
@@ -46,6 +54,7 @@ async function run() {
     assert.equal(races.filter(result=>result.status==='fulfilled').length,1);assert.equal((await bankView(one._id)).balance,5);
     const debt=(await bankView(one._id)).outstanding;await creditAuraEarnings(one._id,200,'BOUNTY_REWARD','A bounty reward','test:'+randomUUID());
     bank=await bankView(one._id);assert.equal(bank.outstanding,0);assert.equal(bank.balance,205-debt);assert.equal(bank.eligible,false,'repaid loans keep their cooldown');
+    assert.equal(bank.completedLoans, 1); assert.equal(bank.repaymentProgress, 100, 'retries cannot inflate completed loans');
     await User.updateOne({_id:one._id},{$set:{auraBalance:0,'auraBank.lastBorrowedAt':new Date(Date.now()-8*86400000)}});assert.equal((await bankView(one._id)).eligible,true);
     const summary=await buildAuraSummary(two._id);assert.equal(summary.reputation.lifetimeEarned,110,'rank counts the existing welcome and daily bonus, excluding borrowed principal');assert.equal(summary.totalEarned,110);
     const raw=await User.findById(two._id).select('+auraBank +auraWalletReceipts').lean();const view=currentUserView(raw);for(const key of ['auraBank','auraWalletReceipts','lastWorldActivitySeenAt'])assert.equal(key in view,false);
@@ -58,6 +67,36 @@ async function run() {
     const fresh=await request(one,'/borrow',{amount:25,clientId:randomUUID(),userId:String(stranger._id)});assert.equal(fresh.status,200);assert.equal((await bankView(stranger._id)).outstanding,0,'request bodies cannot target another account');
     const readable=await request(one);assert.equal(readable.status,200,'ledger recovery must not block committed bank reads');assert.equal(readable.data.outstanding,25);
     AuraTransaction.updateOne=original;assert.equal((await request(one)).status,200);assert.equal(await AuraTransaction.countDocuments({userId:one._id,type:'BANK_LOAN'}),2);
+    const starter = await User.create({ displayName: 'Fresh', username: 'fresh', email: 'fresh@example.test', password: 'local-fixture', auraBalance: 0 });
+    const freshDuo = await Friendship.create({ user1: starter._id, user2: stranger._id, status: 'ACTIVE', duoXP: 0, season: { startedAt: start }, user1Perspective: { lastInteraction: checked }, user2Perspective: { lastInteraction: checked } });
+    for (let round = 0; round < 3; round++) {
+      await User.updateOne({ _id: starter._id }, { $set: { 'auraBank.lastBorrowedAt': new Date(Date.now() - 8 * 86400000) } });
+      const limit = (await bankView(starter._id)).maxLoan;
+      assert.equal(limit, round === 0 ? 25 : 50);
+      const borrowed = { amount: limit, clientId: randomUUID() };
+      await Promise.all(Array.from({ length: 4 }, () => bankAction(starter._id, 'BORROW', borrowed)));
+      const paid = { amount: limit, clientId: randomUUID() };
+      await Promise.all(Array.from({ length: 4 }, () => bankAction(starter._id, 'REPAY', paid)));
+      assert.equal((await bankView(starter._id)).completedLoans, round + 1);
+    }
+    assert.equal((await bankView(starter._id)).maxLoan, 100, 'three real repayments unlock Trusted without Duo XP');
+    await Friendship.deleteOne({ _id: freshDuo._id });
+    assert.equal((await bankView(starter._id)).maxLoan, 100, 'earned credit limits persist after an ended Duo');
+    assert.equal((await bankView(starter._id)).eligible, false, 'earned limits do not bypass mutual activation');
+    await Friendship.create({ user1: starter._id, user2: stranger._id, status: 'ACTIVE', season: { startedAt: start }, user1Perspective: { lastInteraction: checked }, user2Perspective: { lastInteraction: checked } });
+    await User.updateOne({ _id: starter._id }, { $set: { 'auraBank.lastBorrowedAt': new Date(Date.now() - 8 * 86400000) } });
+    await AuraTransaction.collection.dropIndexes();
+    await mongoose.connection.db.admin().command({ setParameter: 1, indexBuildMinAvailableDiskSpaceMB: 10000000 });
+    await assert.rejects(AuraTransaction.collection.createIndex({ idempotencyKey: 1 }, { unique: true }), /available disk space.*less than required minimum/);
+    const trialLoan = { amount: 25, clientId: randomUUID() };
+    await Promise.all(Array.from({ length: 8 }, () => bankAction(starter._id, 'BORROW', trialLoan)));
+    assert.equal(await AuraTransaction.countDocuments({ idempotencyKey: `wallet:${starter._id}:bank:${trialLoan.clientId}` }), 1, 'loan ledger deduplicates using the primary index under trial storage');
+    const trialEarning = 'trial:' + randomUUID();
+    await Promise.all(Array.from({ length: 8 }, () => creditAuraEarnings(starter._id, 11, 'CHAOS_BONUS', 'Trial storage reward', trialEarning)));
+    assert.equal(await AuraTransaction.countDocuments({ idempotencyKey: `wallet:${starter._id}:${trialEarning}` }), 1);
+    assert.equal(await AuraTransaction.countDocuments({ idempotencyKey: `wallet:${starter._id}:${trialEarning}:repayment` }), 1);
+    assert.equal((await bankView(starter._id)).outstanding, 19);
+    assert.deepEqual((await AuraTransaction.collection.indexes()).map(index => index.name), ['_id_']);
     console.log('Aura bank on standalone MongoDB: mutual activation, atomic loans/repayment/earnings, duplicate retries, ledger repair, cooldown, rank isolation, private payloads and ownership passed.');
   } finally { if(server)await new Promise(resolve=>server.close(resolve));await mongoose.disconnect();await mongo.stop(); }
 }

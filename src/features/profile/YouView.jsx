@@ -12,6 +12,7 @@ import { UserAvatar } from '../../shared/components/UserAvatar';
 import { PageHeading } from '../../shared/components/PageHeading';
 import { AuraBank } from './AuraBank';
 import { ProfileShowcase } from './ProfileShowcase';
+import { GameSoundSettings } from './GameSoundSettings';
 import './YouView.css';
 
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
@@ -242,7 +243,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
-      <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} />
+      <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('circle')} />
       <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
         <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span><ArrowRight size={19} />
       </button>
@@ -342,7 +343,8 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <section className="you-section you-secondary-section account-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Session</h2></div></div>
+        <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Your settings.</h2></div></div>
+        <GameSoundSettings userId={String(userId)} />
         <button className="account-logout-row" type="button" onClick={logout}>
           <span className="account-logout-icon"><LogOut size={18} strokeWidth={1.6} /></span>
           <span className="account-logout-copy"><strong>Sign out</strong><small>End this session on this device.</small></span>

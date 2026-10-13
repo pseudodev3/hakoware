@@ -4,7 +4,7 @@ let active;
 const tick = () => {
   if (active) return;
   active = settleExpiredTrades()
-    .catch((error) => console.error('Trade expiry failed:', error.message))
+    .catch((error) => console.error('Card trade recovery pending:', error.message))
     .finally(() => {
       active = null;
     });
