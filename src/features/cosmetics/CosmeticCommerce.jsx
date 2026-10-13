@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Check, Gift, LockKeyhole, RefreshCw, Sparkles } from 'lucide-react';
+import { Check, Gift, LockKeyhole, RefreshCw, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { COSMETIC_PACKS, collectionFor } from '../../lib/cosmetics';
 import { checkoutRetryKey, clearCheckoutRetryKey, formatCosmeticPrice, goToStripeCheckout } from '../../lib/cosmeticCheckout';
@@ -41,7 +41,7 @@ export const CosmeticCheckout = ({ pack, available, onBusyChange, onChanged }) =
     </div>}
     {delivery === 'self' && pack.unlockedStyles > 0 && !pack.owned && <p className="checkout-existing">You already have {pack.unlockedStyles} of these {pack.grants.length} styles. This purchase adds the remaining styles at the displayed bundle price.</p>}
     <div className="checkout-price"><strong>{formatCosmeticPrice(pack.price)}</strong><span>One-time collection</span></div>
-    {available ? <Button variant="aura" loading={busy} disabled={delivery === 'gift' && (!selectedFriend || selectedFriend.alreadyOwned) || delivery === 'self' && pack.owned} onClick={() => void checkout()}>{delivery === 'gift' ? 'Continue with gift' : 'Continue to checkout'}<ArrowUpRight size={16} /></Button> : <p className="checkout-preview-note">Gifting and purchases open when checkout launches.</p>}
+    {available ? <Button variant="aura" loading={busy} disabled={delivery === 'gift' && (!selectedFriend || selectedFriend.alreadyOwned) || delivery === 'self' && pack.owned} onClick={() => void checkout()}>{delivery === 'gift' ? 'Continue with gift' : 'Continue to checkout'}</Button> : <p className="checkout-preview-note">Gifting and purchases open when checkout launches.</p>}
     {available && <p className="checkout-security"><LockKeyhole size={12} />Pay securely on Stripe. Your edition arrives after payment is confirmed.</p>}
     {error && <p className="shop-error" role="alert">{error}</p>}
   </section>;

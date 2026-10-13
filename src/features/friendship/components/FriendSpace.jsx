@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowDown, ArrowLeft, ArrowUpRight, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, Palette, ScrollText, Send, Smile, X } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowLeft, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, Palette, ScrollText, Send, Smile, X } from 'lucide-react';
 import { getContractTimeline, sendContractMessage, markContractTimelineRead } from '../../../services/friendshipService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { ContractDetails } from './ContractDetails';
@@ -251,12 +251,12 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         </div>
         {item.checkin?.status === 'CHECKED_IN' && <span className="friend-message-checkin"><Check size={13} />Checked in · +{item.checkin.xp} Duo XP</span>}
       </> : <div className="friend-shared-event"><span className="friend-event-label">{item.text}{item.xp > 0 && <small>+{item.xp} Duo XP</small>}</span>
-        {item.milestone && <button type="button" className="friend-milestone-replay" onClick={() => showGameMoment({ userId: currentUserId, contractId: id, eventId: item.id, type: item.type, milestone: item.milestone })}>{item.type === 'SEASON_COMPLETED' ? 'Relive the season' : 'A shared win. Take a look.'}<ArrowUpRight size={14} /></button>}
+        {item.milestone && <button type="button" className="friend-milestone-replay" onClick={() => showGameMoment({ userId: currentUserId, contractId: id, eventId: item.id, type: item.type, milestone: item.milestone })}>{item.type === 'SEASON_COMPLETED' ? 'Relive the season' : 'A shared win. Take a look.'}</button>}
         {item.voice && <VoiceMessage voice={item.voice} />}
         {item.voiceUnavailable && <small>Older voice check-in · audio isn’t linked here.</small>}
         {item.moment && <div className="friend-moment-reveal"><p>{item.moment.prompt}</p>{item.moment.answers.map((answer, index) => <span key={index}><strong>{answer.name}</strong>{answer.value}</span>)}</div>}
         <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>
-        {!item.mine && ['CHECKIN', 'VOICE_CHECKIN'].includes(item.type) && socialState?.latestPartnerCheckin?.eventId === item.id && <div className="friend-event-actions"><button onClick={() => composerRef.current?.focus({ preventScroll: true })}>Reply <MessageCircle size={13} /></button><button onClick={() => openContract(true)}>React <ArrowUpRight size={13} /></button></div>}
+        {!item.mine && ['CHECKIN', 'VOICE_CHECKIN'].includes(item.type) && socialState?.latestPartnerCheckin?.eventId === item.id && <div className="friend-event-actions"><button onClick={() => composerRef.current?.focus({ preventScroll: true })}>Reply <MessageCircle size={13} /></button><button onClick={() => openContract(true)}>React </button></div>}
       </div>}
     </article>;
   };
@@ -264,9 +264,9 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   return <section className="friend-space" style={duoStyle(friendship)} aria-label={`Your space with ${partner?.displayName || 'your friend'}`}>
     <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{friendship.identity?.name || partner?.displayName || 'Your friend'}</h1><span>{friendship.identity?.name ? `With ${partner?.displayName || 'your friend'}` : partner?.username ? '@' + partner.username : 'Your shared space'} · Duo Lv. {friendship.duoLevel || 1}</span></div><button type="button" className="friend-space-style" aria-label="Style your Duo" onClick={() => onAction('SETTINGS', friendship)}><Palette size={18} /></button><button className="friend-space-details" aria-label={contractOpen ? 'Return to conversation' : 'Open contract details'} aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}><ScrollText size={18} /><span>{contractOpen ? 'Conversation' : 'Contract'}</span><ChevronDown className="friend-details-chevron" size={15} /></button></header>
     {showHealth && <div className={`friend-space-health ${summary.tone}`}><span><i aria-hidden="true" />{summary.label}</span><button onClick={() => onAction(friendship.season?.status === 'COMPLETE' ? 'RECAP' : 'CHECKIN', friendship)} disabled={friendship.season?.status !== 'COMPLETE' && !checkinAvailable}>{friendship.season?.status === 'COMPLETE' ? 'See recap' : checkinAvailable ? 'Check in' : 'Checked in'}<Check size={13} /></button></div>}
-    {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span><ArrowUpRight size={15} /></button>}
+    {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span></button>}
     {contractOpen ? <div className="friend-space-contract"><ContractDetails friendship={friendship} currentUserId={currentUserId} onAction={onAction} socialState={socialState} onActivitySeen={onActivitySeen} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>
-      {moment?.status === 'OPEN' && <button className="friend-space-moment" onClick={() => openContract(true)}><span>{moment.type === 'SPLIT_DECISION' ? 'Split Decision' : moment.type === 'DOUBLE_DARE' ? 'Double Dare' : 'Hot Seat'} · {moment.answered ? 'Waiting on them' : 'Your turn'}</span><ArrowUpRight size={15} /></button>}
+      {moment?.status === 'OPEN' && <button className="friend-space-moment" onClick={() => openContract(true)}><span>{moment.type === 'SPLIT_DECISION' ? 'Split Decision' : moment.type === 'DOUBLE_DARE' ? 'Double Dare' : 'Hot Seat'} · {moment.answered ? 'Waiting on them' : 'Your turn'}</span></button>}
       <div className="friend-space-timeline" ref={listRef} onScroll={() => {
         const list = listRef.current;
         // A keyboard resize can emit scroll before ResizeObserver runs. It

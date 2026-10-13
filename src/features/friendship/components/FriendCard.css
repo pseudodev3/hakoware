@@ -11,7 +11,6 @@
 .friend-card-preview-line { display:flex; align-items:center; gap:12px; }
 .friend-card-preview { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; flex:1; font-size:.9375rem; line-height:1.55; color:var(--text-secondary); }
 .friend-card-preview.is-empty { color:var(--text-muted); }
-.friend-card-open-arrow { width:32px; height:32px; flex:0 0 auto; display:grid; place-items:center; color:var(--text-muted); }
 .friend-card-unread { display:inline-flex; align-items:center; gap:5px; color:var(--duo-label); font-size:.625rem; font-weight:600; margin-bottom:5px; }
 .friend-card-unread::before { content:''; width:5px; height:5px; border-radius:50%; background:currentColor; }
 .friend-card-footer { min-height:54px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:4px 20px 10px; }

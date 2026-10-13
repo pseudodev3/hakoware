@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
@@ -59,7 +59,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <Button variant="aura" type="submit" loading={loading} icon={ArrowRight} className="w-full">
+              <Button variant="aura" type="submit" loading={loading} className="w-full">
                 SEND RESET LINK
               </Button>
             </form>

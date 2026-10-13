@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, AtSign, BookOpen, Check, Clock3, Copy, Dice5, Dumbbell, Hammer, HeartHandshake, LockKeyhole, MessageCircle, MoreHorizontal, Share2, SlidersHorizontal, UsersRound } from 'lucide-react';
+import { ArrowLeft, AtSign, BookOpen, Check, Clock3, Copy, Dice5, Dumbbell, Hammer, HeartHandshake, LockKeyhole, MessageCircle, MoreHorizontal, Share2, SlidersHorizontal, UsersRound } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
@@ -224,7 +224,7 @@ export const AddFriendModal = ({ isOpen, onClose, onRefresh, showToast, template
 
               <div className="new-contract-actions single-primary">
                 <Button type="button" variant="secondary" onClick={close}>Cancel</Button>
-                <Button type="submit" variant="aura" icon={ArrowRight}>Choose your pace</Button>
+                <Button type="submit" variant="aura" >Choose your pace</Button>
               </div>
             </form>
           )}

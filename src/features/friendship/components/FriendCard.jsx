@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Check, MessageCircle } from 'lucide-react';
+import { Check, MessageCircle } from 'lucide-react';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { canCheckin, friendSummary, getContractSides } from '../contractState';
 import './FriendCard.css';
@@ -68,7 +68,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, socialStatu
             <span id={`friend-preview-${id}`} className={`friend-card-preview ${!latest && !activity ? 'is-empty' : ''}`}>
               {preview}
             </span>
-            <span className="friend-card-open-arrow" aria-hidden="true"><ArrowRight size={18} strokeWidth={1.8} /></span>
+
           </span>
         </span>
       </button>
@@ -84,7 +84,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, socialStatu
             aria-label={`Open recap with ${name}`}
             onClick={() => onAction('RECAP', friendship)}
           >
-            Recap<ArrowRight size={14} aria-hidden="true" />
+            Recap
           </button>
         ) : (
           <button
@@ -112,7 +112,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, socialStatu
               ? `${momentLabel} · ${moment.answered ? 'Waiting on them' : 'Your turn'}`
               : 'Both showed up. Your first check-in together.'}
           </span>
-          <ArrowRight size={14} aria-hidden="true" />
+
         </button>
       )}
       </div>

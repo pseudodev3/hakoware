@@ -9,7 +9,6 @@
 .showcase-card small { font-size:.625rem; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); }
 .showcase-card strong { display:block; margin-top:9px; font-size:1.25rem; letter-spacing:-.035em; }
 .showcase-card p { font-size:.75rem; line-height:1.6; color:var(--text-secondary); margin-top:8px; }
-.showcase-card > svg { flex:0 0 auto; color:var(--text-muted); }
 .showcase-card-back { width:88px; height:117px; display:grid; place-items:center; border-radius:7px; border:1px solid var(--border-active); background:repeating-linear-gradient(45deg,transparent 0 9px,var(--border-subtle) 10px 11px); flex:0 0 auto; }
 .showcase-card-back span { padding:8px 16px; border:1px solid var(--border-active); background:var(--surface-card); color:var(--aura-gold); font:600 1.8rem Georgia,serif; }
 .showcase-empty { display:grid; align-content:center; gap:12px; padding:24px; border-left:2px solid var(--border-active); color:var(--text-secondary); }

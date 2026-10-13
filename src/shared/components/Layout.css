@@ -14,7 +14,7 @@
 .nav-item small { display:block; margin-top:5px; font-size:.625rem; color:var(--text-muted); font-weight:450; }
 .nav-item.active { color:var(--accent-ink); background:var(--accent); }
 .nav-item.active small { color:var(--accent-ink); opacity:.8; }
-.nav-current-arrow,.nav-count { margin-left:auto; }
+.nav-count { margin-left:auto; }
 .nav-count { font-size:.75rem; color:var(--accent-text); }
 .nav-item.active .nav-count { color:var(--accent-ink); }
 .sidebar-footer { display:flex; flex-direction:column; gap:12px; padding-top:20px; }
@@ -66,7 +66,7 @@
 .friend-unavailable p { margin:16px 0; color:var(--text-secondary); }
 .friend-unavailable button { min-height:44px; margin-right:16px; color:var(--accent-text); }
 @media(hover:hover) and (pointer:fine) { .nav-item:not(.active):hover,.new-contract-btn:hover,.theme-btn:hover,.notification-btn:hover,.header-account-btn:hover,.header-account-actions > button:hover { background:var(--surface-soft-strong); color:var(--text-primary); } }
-@media(max-width:1000px) and (min-width:769px) { .sidebar { width:210px; flex-basis:210px; padding-inline:14px; } .sidebar-brand { padding-inline:3px; gap:8px; } .nav-item { padding-inline:10px; } .nav-current-arrow { display:none; } }
+@media(max-width:1000px) and (min-width:769px) { .sidebar { width:210px; flex-basis:210px; padding-inline:14px; } .sidebar-brand { padding-inline:3px; gap:8px; } .nav-item { padding-inline:10px; } }
 @media(max-width:768px) {
  .sidebar,.desktop-page-label { display:none; }
  .content-header { min-height:72px; padding:max(12px,env(safe-area-inset-top)) 20px 12px; gap:8px; }

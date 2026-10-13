@@ -33,7 +33,6 @@
 .profile-meta b { color:var(--text-muted); font-weight:500; margin-right:4px; }
 .you-collection-link { display:flex; align-items:center; gap:20px; min-height:110px; padding:24px 0; border-block:1px solid var(--border-subtle); text-align:left; color:var(--accent-text); }
 .you-collection-link > svg { flex:0 0 auto; }
-.you-collection-link > svg:last-child { transition:transform var(--transition-fast); }
 .you-collection-link > span { min-width:0; flex:1; }
 .you-collection-link strong { display:block; font-size:1.125rem; font-weight:650; color:var(--text-primary); }
 .you-collection-link small { display:block; margin-top:6px; font-size:.8125rem; line-height:1.5; color:var(--text-secondary); }
@@ -74,6 +73,6 @@
 .grudge-card-amount { color:var(--aura-gold); font-size:1rem; font-weight:600; }
 .grudge-card-amount small { display:block; font-size:.625rem; color:var(--text-muted); font-weight:450; }
 .grudge-action-state { font-size:.6875rem; color:var(--text-muted); }
-@media(hover:hover) and (pointer:fine) { .you-collection-link:hover > svg:last-child { transform:translateX(4px); } .you-collection-link:hover strong { color:var(--accent-text); } }
+@media(hover:hover) and (pointer:fine) { .you-collection-link:hover strong { color:var(--accent-text); } }
 @media(max-width:680px) { .you-view { gap:32px; } .profile-identity { gap:14px; flex-wrap:wrap; } .profile-avatar-button,.identity-avatar { width:60px; height:60px; } .identity-copy h2 { font-size:1.4rem; } .profile-identity > .btn { margin-top:4px; } .profile-aura-row { grid-template-columns:1fr; gap:24px; } .aura-rank { max-width:360px; } .profile-meta { font-size:.6875rem; gap:10px 16px; } .you-collection-link { gap:16px; padding-block:20px; } .grudge-card { flex-wrap:wrap; padding:20px; } .grudge-card-side { width:100%; flex-direction:row; align-items:center; justify-content:space-between; } }
 @media(max-width:680px) { .profile-identity > .identity-copy { min-width:140px; } .profile-identity[data-profile-decoration]:not([data-profile-decoration='none']) > .btn { width:100%; } }

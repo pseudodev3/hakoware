@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Check, Clock3, MessageCircle } from 'lucide-react';
+import { Check, Clock3, MessageCircle } from 'lucide-react';
 import { getNextMove } from '../../lib/nextMove';
 import './NextMove.css';
 
@@ -30,6 +30,6 @@ export const NextMove = ({ friendships, userId, socialContracts, onOpenFriend, o
       <span className={move.ownDone ? 'done' : ''}>{move.ownDone ? <Check size={15} /> : <MessageCircle size={15} />} You</span>
       <span className={move.partnerDone ? 'done' : ''}>{move.partnerDone ? <Check size={15} /> : <Clock3 size={15} />} Your friend</span>
     </div>}
-    <button type="button" className="next-move-action" onClick={open}>{content.action}<ArrowRight size={17} aria-hidden="true" /></button>
+    <button type="button" className="next-move-action" onClick={open}>{content.action}</button>
   </section>;
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Clock3, Sparkles, UserPlus } from 'lucide-react';
+import { Clock3, Sparkles, UserPlus } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { respondToInvitation } from '../../services/friendshipService';
 import { FriendCard } from '../friendship/components/FriendCard';
@@ -133,7 +133,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
             </Button>
             <Button
               variant="aura"
-              icon={ArrowRight}
+
               loading={respondingInviteId === (invitation._id || invitation.id)}
               onClick={() => respondToPending(invitation, 'ACCEPT')}
             >
@@ -224,7 +224,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
       <div className="home-hangout">
         <section className="home-friends" aria-label="Conversations">
-          <div className="home-friends-heading"><h2>Pick up a conversation</h2><button type="button" onClick={() => onNavigate('contracts')}>Your circle <ArrowRight size={16} aria-hidden="true" /></button></div>
+          <div className="home-friends-heading"><h2>Pick up a conversation</h2><button type="button" onClick={() => onNavigate('contracts')}>Your circle </button></div>
           <div className="circle-contracts crew-conversations">{visible.map((friendship, index) => (
             <FriendCard
               key={friendship._id || friendship.id}
@@ -250,7 +250,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
                     <i aria-hidden="true" />
                     <span>{item.text}</span>
                     <time dateTime={item.createdAt}>{pulseTime(item.createdAt)}</time>
-                    <ArrowRight size={14} strokeWidth={1.6} aria-hidden="true" />
+
                   </button>
                 ))}
               </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Share2, Sparkles } from 'lucide-react';
+import { Share2, Sparkles } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { DuoCover } from '../../../shared/components/DuoIdentity';
@@ -62,6 +62,6 @@ export const GameMoment = ({ user, friendships, onAction, showToast }) => {
     <div className="game-moment-people"><UserAvatar person={user} size="sm" decorative />{!flare && <UserAvatar person={partner} size="sm" decorative />}<span>{flare ? 'A little pressure. Your signature.' : duoLabel(contract, `You + ${partner?.displayName || 'your friend'}`)}</span></div>
     <h2>{flare ? 'Your signal is lit.' : season ? 'A shared story, finished.' : 'You kept showing up.'}</h2>
     <p>{flare ? 'Your Flare goes to the shared board. Your friend gets a private notice; the recipient stays private.' : season ? `Season ${number} is in the books. Take a moment to look back at what you built together.` : `${earnedTitle && earnedTitle !== 'New Contract' ? earnedTitle + ' · ' : ''}Another level with ${partner?.displayName || 'your friend'}.`}</p>
-    <div className="game-moment-actions">{flare ? <Button variant="aura" icon={Sparkles} onClick={close}>Back to it</Button> : <><Button variant="secondary" icon={Share2} loading={sharing} onClick={share}>Share your Duo</Button><Button variant="aura" icon={ArrowUpRight} disabled={sharing} onClick={() => { setMoment(null); if (season) onAction?.('RECAP', contract); }}>{season ? 'See your season' : 'Keep the loop alive'}</Button></>}</div>
+    <div className="game-moment-actions">{flare ? <Button variant="aura" icon={Sparkles} onClick={close}>Back to it</Button> : <><Button variant="secondary" icon={Share2} loading={sharing} onClick={share}>Share your Duo</Button><Button variant="aura" disabled={sharing} onClick={() => { setMoment(null); if (season) onAction?.('RECAP', contract); }}>{season ? 'See your season' : 'Keep the loop alive'}</Button></>}</div>
   </section></Modal>;
 };

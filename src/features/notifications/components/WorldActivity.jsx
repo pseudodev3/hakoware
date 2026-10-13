@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowRight, Flame, Layers, Radio, RefreshCw, Trophy } from 'lucide-react';
+import { Flame, Layers, Radio, RefreshCw, Trophy } from 'lucide-react';
 import { getWorldActivity, markWorldActivityRead } from '../../../services/worldActivityService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import './WorldActivity.css';
@@ -43,12 +43,12 @@ export const WorldActivity = ({ onNavigate, onUnreadCountChange, onClose }) => {
   }, [feed.events]);
   return <section className="world-activity" aria-label="Around Hakoware"><header><span><Radio size={16} />Around Hakoware</span><small>Last 7 days</small><button type="button" aria-label="Refresh world activity" disabled={loading} onClick={() => void load()}><RefreshCw size={16} /></button></header>
     <p className="world-activity-intro">The big little moments happening across the game.</p>
-    {fresh && <button className="world-new" type="button" onClick={() => { setFeed(fresh); setFresh(null); }}>New things happening <ArrowRight size={15} /></button>}
+    {fresh && <button className="world-new" type="button" onClick={() => { setFeed(fresh); setFresh(null); }}>New things happening </button>}
     {error && <div className="activity-sync-error" role="alert"><span>{error}</span><button type="button" onClick={() => void load()}>Retry</button></div>}
     {loading && !feed.events.length && <p className="world-loading" role="status">Opening the board…</p>}
     {!loading && !error && !feed.events.length && <div className="world-empty"><Radio size={30} /><h3>A quiet moment.</h3><p>Signal Flares, Duo milestones, and Arena results will appear here as they happen.</p></div>}
-    <div className="world-event-list">{feed.events.map(event => { const item = details(event); const Icon = item.icon; return <article key={event.id} className={`world-event ${event.type === 'SIGNAL_FLARE' ? 'is-flare' : ''}`}><div className="world-event-top"><span className="world-event-icon"><Icon size={19} /></span><span>{item.label}</span><time dateTime={event.createdAt}>{time(event.createdAt)}</time></div>{event.actor && <div className="world-event-actor"><UserAvatar person={event.actor} size="sm" decorative /><span>{event.actor.username ? '@'+event.actor.username : event.actor.displayName}</span></div>}<h3>{item.title}</h3><p>{item.copy}</p>{item.destination && <button type="button" onClick={() => { onNavigate?.('arena', { section: item.destination }); onClose?.(); }}>{item.destination === 'cards' ? 'Find your next move' : 'Open the Arena'}<ArrowRight size={15} /></button>}</article>; })}</div>
-    {feed.hasMore && <button className="world-older" type="button" disabled={loading} onClick={() => { setLoading(true); void load(true); }}>Earlier activity <ArrowRight size={15} /></button>}
+    <div className="world-event-list">{feed.events.map(event => { const item = details(event); const Icon = item.icon; return <article key={event.id} className={`world-event ${event.type === 'SIGNAL_FLARE' ? 'is-flare' : ''}`}><div className="world-event-top"><span className="world-event-icon"><Icon size={19} /></span><span>{item.label}</span><time dateTime={event.createdAt}>{time(event.createdAt)}</time></div>{event.actor && <div className="world-event-actor"><UserAvatar person={event.actor} size="sm" decorative /><span>{event.actor.username ? '@'+event.actor.username : event.actor.displayName}</span></div>}<h3>{item.title}</h3><p>{item.copy}</p>{item.destination && <button type="button" onClick={() => { onNavigate?.('arena', { section: item.destination }); onClose?.(); }}>{item.destination === 'cards' ? 'Find your next move' : 'Open the Arena'}</button>}</article>; })}</div>
+    {feed.hasMore && <button className="world-older" type="button" disabled={loading} onClick={() => { setLoading(true); void load(true); }}>Earlier activity </button>}
     {!loading && feed.events.length > 0 && !feed.hasMore && <p className="world-caught-up">You’re caught up with the week.</p>}
   </section>;
 };

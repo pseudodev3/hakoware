@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy, X } from 'lucide-react';
+import { Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy, X } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { getContractSides } from '../contractState';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
@@ -467,7 +467,7 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
             setReplyOpen(true);
             const checkin = socialState.recentActivity?.find((item) => item.id === socialState.latestPartnerCheckin.eventId);
             onActivitySeen?.([firstMutualCheckin, ...(checkin ? [checkin] : [])]);
-          }}>React / reply <ArrowRight size={14} strokeWidth={1.6} aria-hidden="true" /></button>}
+          }}>React or reply</button>}
           <button type="button" className="contract-detail-first-dismiss" onClick={() => {
             cardRef.current?.focus({ preventScroll: true });
             onActivitySeen?.([firstMutualCheckin]);
@@ -479,7 +479,7 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
         && newActivity.id === socialState.latestPartnerCheckin.eventId) && (
         <button type="button" className="contract-detail-discovery" onClick={() => openActivity(newActivity)}>
           <span><strong>{activityLabel(newActivity.type)}</strong><small>{newActivity.text}</small></span>
-          <ArrowRight size={16} strokeWidth={1.6} aria-hidden="true" />
+
         </button>
       )}
 

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, Check, CheckCheck, Clock, Gift, MessageSquare, MoreHorizontal, Radio, RotateCcw, Sparkles, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap, ArrowUpRight } from 'lucide-react';
+import { Bell, Check, CheckCheck, Clock, Gift, MessageSquare, MoreHorizontal, Radio, RotateCcw, Sparkles, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap } from 'lucide-react';
 import { deleteNotification, getUserNotifications, peekUserNotifications, markAllNotificationsAsRead, markNotificationAsRead, NOTIFICATION_TYPES } from '../../../services/notificationService';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { Button } from '../../../shared/components/Button';
@@ -302,7 +302,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
                   return <article className={`notification-item ${notification.read ? 'read' : 'unread'}`} key={id}>
                     <button className="notification-open" disabled={busy} onClick={() => openNotification(notification)} aria-label={`${formatType(notification.type)}: ${notification.message}. Open ${destinationLabel}`}>
                       <span className={`item-icon ${getTone(notification.type)}`} aria-hidden="true">{getIcon(notification.type)}</span>
-                      <span className="item-body"><span className="item-header"><span className="item-type">{formatType(notification.type)}</span>{!notification.read && <span className="unread-dot" aria-label="Unread" />}</span><span className="item-msg">{notification.message}</span><span className="item-meta"><time dateTime={notification.createdAt}>{formatTime(notification.createdAt)}</time><span>·</span><span>{destinationLabel}</span><ArrowUpRight size={12} aria-hidden="true" /></span></span>
+                      <span className="item-body"><span className="item-header"><span className="item-type">{formatType(notification.type)}</span>{!notification.read && <span className="unread-dot" aria-label="Unread" />}</span><span className="item-msg">{notification.message}</span><span className="item-meta"><time dateTime={notification.createdAt}>{formatTime(notification.createdAt)}</time><span>·</span><span>{destinationLabel}</span></span></span>
                     </button>
                     <button className="activity-more" disabled={busy} aria-label={`More options for ${formatType(notification.type)}`} aria-expanded={expanded === id} aria-controls={`activity-options-${id}`} onClick={() => setExpanded(expanded === id ? null : id)}><MoreHorizontal size={20} /></button>
                     {expanded === id && <div className="activity-options" id={`activity-options-${id}`}>

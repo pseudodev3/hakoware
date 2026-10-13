@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Share2, Zap, ArrowRight, Layers } from 'lucide-react';
+import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Share2, Zap, Layers } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -248,7 +248,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
 
       <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('circle')} />
       <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
-        <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span><ArrowRight size={19} />
+        <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span>
       </button>
 
       {grudges.length > 0 && (

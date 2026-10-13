@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, ArrowUpRight, Check, Plus } from 'lucide-react';
+import { ArrowLeftRight, Check, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ActionSheet } from '../../shared/components/ActionSheet';
 import { UserAvatar } from '../../shared/components/UserAvatar';
@@ -283,7 +283,7 @@ export const CardCollection = ({
                   aria-label={`${card.name}, ${card.owned} available${card.reserved ? ', ' + card.reserved + ' reserved' : ''}`}
                 >
                   <span className="collection-card-number">
-                    {String(card.number).padStart(2, '0')} / {card.series}
+                    {String(card.number).padStart(2, '0')} {card.series}
                   </span>
                   <CardArtwork cardId={card.id} />
                   <strong>{card.name}</strong>
@@ -632,7 +632,7 @@ export const CardCollection = ({
                     setSheet({ mode: 'use', cardId: selected.id });
                   }}
                 >
-                  Use card <ArrowUpRight size={15} />
+                  Use card
                 </button>}
                 <button
                   disabled={!selected.owned || busy || !data.partners.length}

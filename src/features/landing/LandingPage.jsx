@@ -181,7 +181,7 @@ export const LandingPage = ({ onEnter }) => {
               </div>
 
               <div className="lp-preview-actions">
-                <button type="button" className="primary" onClick={() => demoStep < 2 ? setDemoStep(demoStep + 1) : start()}><MessageCircle size={17} /><span>{demoStep === 0 ? 'Try a check-in' : demoStep === 1 ? 'See your friend’s reply' : 'Start your own Duo'}<ArrowRight size={16} /></span></button>
+                <button type="button" className="primary" onClick={() => demoStep < 2 ? setDemoStep(demoStep + 1) : start()}><MessageCircle size={17} /><span>{demoStep === 0 ? 'Try a check-in' : demoStep === 1 ? 'See your friend’s reply' : 'Start your own Duo'}</span></button>
               </div>
 
               <div className="lp-game-footer">
@@ -239,7 +239,7 @@ export const LandingPage = ({ onEnter }) => {
                   <h3>{mode.title}</h3>
                   <p>{mode.copy}</p>
                   <div className="lp-mode-meta">{mode.meta}</div>
-                  <button type="button" className="lp-mode-start" onClick={() => onEnter('signup', MODE_IDS[mode.id])}>Choose {mode.title}<ArrowRight size={16} aria-hidden="true" /></button>
+                  <button type="button" className="lp-mode-start" onClick={() => onEnter('signup', MODE_IDS[mode.id])}>Choose {mode.title}</button>
                   {mode.id === 'chaos' && <div className="lp-chaos-stamp">RULES MAY CHANGE MID-SEASON</div>}
                 </article>
               );
@@ -301,7 +301,7 @@ export const LandingPage = ({ onEnter }) => {
           <span>START SMALL</span>
           <h2>Pick one person.<br />Make it interesting.</h2>
           <p>You only need one contract for Hakoware to start telling a story.</p>
-          <Button variant="aura" size="lg" icon={ArrowRight} onClick={start}>Create your account</Button>
+          <Button variant="aura" size="lg" onClick={start}>Create your account</Button>
         </section>
         <section className="lp-faq" aria-labelledby="lp-faq-heading">
           <div className="lp-section-intro compact"><span>BEFORE YOU START</span><h2 id="lp-faq-heading">A few things to know.</h2></div>

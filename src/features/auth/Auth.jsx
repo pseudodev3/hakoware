@@ -113,7 +113,7 @@ export const Login = ({ onToggle, onBack, showToast }) => {
             <PasswordInput placeholder="Your password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot password</button>
           </div>
-          <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Log in</Button>
+          <Button variant="aura" className="w-full" size="lg" loading={loading} type="submit">Log in</Button>
         </form>
         <div className="auth-footer"><p>New here? <button type="button" onClick={onToggle}>Create an account</button></p></div>
       </motion.div>
@@ -179,7 +179,7 @@ export const Signup = ({ onToggle, onBack }) => {
           />
           <p className="auth-field-note">Used for recovery and important account notifications.</p>
           <PasswordInput placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
-          <Button variant="aura" className="w-full" size="lg" loading={loading} icon={ArrowRight} type="submit">Create account</Button>
+          <Button variant="aura" className="w-full" size="lg" loading={loading} type="submit">Create account</Button>
         </form>
         <p className="auth-legal">Your email stays private. Read our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy policy</Link>.</p>
         <div className="auth-footer"><p>Already have an account? <button type="button" onClick={onToggle}>Log in</button></p></div>
@@ -229,7 +229,7 @@ export const ClaimUsername = () => {
             required
           />
           <p className="auth-field-note">3-20 characters. Letters, numbers, dots and underscores. Usernames are unique.</p>
-          <Button variant="aura" className="w-full" size="lg" loading={saving} icon={ArrowRight} type="submit">Claim @{username.replace(/^@+/, '') || 'username'}</Button>
+          <Button variant="aura" className="w-full" size="lg" loading={saving} type="submit">Claim @{username.replace(/^@+/, '') || 'username'}</Button>
         </form>
         <div className="auth-footer">
           <p>Signed in as {user?.email}. <button type="button" onClick={logout}>Use another account</button></p>

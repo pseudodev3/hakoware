@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Lock, Moon, ShieldCheck, Sun } from 'lucide-react';
+import { ArrowLeft, Lock, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
 import { api } from '../../lib/api';
@@ -109,7 +109,7 @@ export const ResetPassword = ({ showToast }) => {
               className="w-full"
               size="lg"
               loading={loading}
-              icon={ArrowRight}
+
               type="submit"
             >
               Update password

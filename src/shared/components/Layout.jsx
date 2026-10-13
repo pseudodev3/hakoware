@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Bell, Home, Layers, LogOut, Moon, Plus, Sparkles, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
+import { Bell, Home, Layers, LogOut, Moon, Plus, Sparkles, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
@@ -86,7 +86,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
             >
               <item.icon size={19} strokeWidth={1.8} />
               <span>{item.label}<small>{item.description}</small></span>
-              {activeTab === item.id && <ArrowUpRight className="nav-current-arrow" size={16} aria-hidden="true" />}
+
               {item.id === 'contracts' && pendingInvitations.length > 0 && <b className="nav-count">{pendingInvitations.length}</b>}
             </button>
           ))}
@@ -164,7 +164,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
 
       {showAccountActions && <ActionSheet title="Your space" onClose={closeAccountActions} footer={
         <button type="button" className="header-account-balance" onClick={() => accountAction(() => onTabChange('you'))} aria-label={`Your balance: ${user?.auraBalance || 0} Aura. Open your profile.`}>
-          <Zap size={18} strokeWidth={1.8} /><span>Aura balance</span><strong>{Number(user?.auraBalance || 0).toLocaleString()}</strong><ArrowUpRight size={16} aria-hidden="true" />
+          <Zap size={18} strokeWidth={1.8} /><span>Aura balance</span><strong>{Number(user?.auraBalance || 0).toLocaleString()}</strong>
         </button>
       }>
         <div className="header-account-summary">
@@ -173,10 +173,10 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         </div>
         <div className="header-account-actions">
           <button type="button" onClick={() => accountAction(() => onTabChange('you'))}>
-            <UserRound size={20} strokeWidth={1.8} /><span><strong>Your profile</strong><small>Bank, identity and settings</small></span><ArrowUpRight size={16} aria-hidden="true" />
+            <UserRound size={20} strokeWidth={1.8} /><span><strong>Your profile</strong><small>Bank, identity and settings</small></span>
           </button>
           <button type="button" onClick={() => accountAction(onAddFriend)}>
-            <UserRoundPlus size={20} strokeWidth={1.8} /><span><strong>Add a friend</strong><small>Start a Duo together</small></span><ArrowUpRight size={16} aria-hidden="true" />
+            <UserRoundPlus size={20} strokeWidth={1.8} /><span><strong>Add a friend</strong><small>Start a Duo together</small></span>
           </button>
           <button type="button" onClick={toggleTheme} aria-label={themeLabel}>
             <ThemeIcon size={20} strokeWidth={1.8} /><span><strong>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</strong><small>Switch appearance</small></span>
