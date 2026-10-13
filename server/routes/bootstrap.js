@@ -22,11 +22,12 @@ router.get('/', auth, async (req, res) => {
       Notification.find({ toUserId: req.user.id })
         .sort({ createdAt: -1 })
         .limit(50)
-        .select('_id type title message friendshipId contractEventId cardTradeId wallPieceId wallWeekKey afterHoursActivityId sparkPostId sparkReplyId read createdAt')
+        .select('_id type title message friendshipId contractEventId cardTradeId wallPieceId wallWeekKey afterHoursActivityId sparkPostId sparkReplyId cosmeticOrderId read createdAt')
         .lean()
     ]);
 
     if (!user || !aura) return res.status(404).json({ msg: 'User not found' });
+    await require('../services/productMetrics').recordVisit(req.user.id);
 
     const visibleNotifications = notifications
       .filter((notification) => notification.type !== 'CONTRACT_INVITE')

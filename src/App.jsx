@@ -239,6 +239,7 @@ function MainApp({ showToast }) {
       tab = 'contracts';
     }
     const query = new URLSearchParams({ view: tab });
+    if (tab === 'you' && options.cosmeticOrderId) query.set('cosmetic_order', options.cosmeticOrderId);
     if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); }
     if (tab === 'sparks' && options.focusPostId) query.set('spark', options.focusPostId);
     if (tab === 'sparks' && options.focusReplyId) query.set('reply', options.focusReplyId);

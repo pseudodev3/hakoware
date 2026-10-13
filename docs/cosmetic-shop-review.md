@@ -1,5 +1,7 @@
 # Cosmetic editions and profile customization
 
+This records the initial preview release. The subsequent [Stripe, gifting and measurement review](stripe-checkout-and-gifting.md) describes the checkout integration; sales still require merchant configuration.
+
 The user chose to build the shop before selecting a currency or payment provider. This release provides the catalog, previews, saved collections and ownership controls. Checkout is intentionally unavailable; no real-money purchase or revenue is enabled yet.
 
 ## Shop and revenue model

@@ -1,3 +1,10 @@
 import { api } from '../lib/api';
 export const getStyleShop = () => api.get('/cosmetics');
 export const saveStyleCollection = (id, saved) => api.put(`/cosmetics/saved/${id}`, { saved });
+export const getGiftOptions = packId => api.get(`/cosmetics/gift-options?packId=${encodeURIComponent(packId)}`);
+export const getCosmeticPurchases = () => api.get('/cosmetics/orders');
+export const startCosmeticCheckout = body => api.post('/cosmetics/checkout', body);
+export const resumeCosmeticCheckout = id => api.post(`/cosmetics/orders/${id}/resume`, {});
+export const verifyCosmeticPurchase = id => api.post(`/cosmetics/orders/${id}/verify`, {});
+export const cancelCosmeticCheckout = id => api.post(`/cosmetics/orders/${id}/cancel`, {});
+export const acknowledgeCosmeticReceipt = id => api.post(`/cosmetics/orders/${id}/seen`, {});

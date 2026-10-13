@@ -180,6 +180,7 @@ const notificationView = (value) => {
     afterHoursActivityId: data.afterHoursActivityId || null,
     sparkPostId: data.sparkPostId || null,
     sparkReplyId: data.sparkReplyId || null,
+    cosmeticOrderId: data.cosmeticOrderId || null,
     read: Boolean(data.read),
     createdAt: data.createdAt
   };

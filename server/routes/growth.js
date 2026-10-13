@@ -8,6 +8,8 @@ const Friendship = require('../models/Friendship');
 const PendingInvite = require('../models/PendingInvite');
 const ContractEvent = require('../models/ContractEvent');
 const GrowthEvent = require('../models/GrowthEvent');
+const { recordShopEvent, productSnapshot } = require('../services/productMetrics');
+const { sendRouteError } = require('../services/httpError');
 
 const SHARE_SOURCES = new Set([
   'INVITE',
@@ -58,6 +60,15 @@ router.post('/share', auth, shareLimiter, async (req, res) => {
   }
 });
 
+router.post('/shop', auth, shareLimiter, async (req, res) => {
+  try {
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(key => !['type', 'packId'].includes(key))) return res.status(400).json({ msg: 'Choose a valid shop event' });
+    const tracked = await recordShopEvent(req.user.id, body.type, body.packId ?? null);
+    return res.status(201).json({ success: true, tracked: Boolean(tracked) });
+  } catch (error) { sendRouteError(res, error, 'Could not record shop activity'); }
+});
+
 router.post('/plus-interest', auth, async (req, res) => {
   try {
     const interested = req.body.interested !== false;
@@ -81,7 +92,7 @@ router.get('/metrics', auth, founder, async (req, res) => {
     const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
     const [friendships, totalUsers, newUsers7d, pendingExternalInvites, plusInterest, totalShares, sharesBySource] = await Promise.all([
-      Friendship.find({ isTestData: { $ne: true } }).select('_id status season.number').lean(),
+      Friendship.find({ isTestData: { $ne: true } }).select('_id user1 user2 status season.number').lean(),
       User.countDocuments({ isTestAccount: { $ne: true } }),
       User.countDocuments({ isTestAccount: { $ne: true }, createdAt: { $gte: sevenDaysAgo } }),
       PendingInvite.countDocuments({ expiresAt: { $gt: now } }),
@@ -97,12 +108,12 @@ router.get('/metrics', auth, founder, async (req, res) => {
     const friendshipIds = friendships.map((item) => item._id);
     const activeDuos = friendships.filter((item) => item.status === 'ACTIVE').length;
 
-    const [activatedIds, active7dIds, completedSeasons, runItBacks] = friendshipIds.length
+    const [checkinParticipants, active7dIds, completedSeasons, runItBacks] = friendshipIds.length
       ? await Promise.all([
-        ContractEvent.distinct('friendshipId', {
-          friendshipId: { $in: friendshipIds },
-          type: { $in: ['CHECKIN', 'VOICE_CHECKIN'] }
-        }),
+        ContractEvent.aggregate([
+          { $match: { friendshipId: { $in: friendshipIds }, type: { $in: ['CHECKIN', 'VOICE_CHECKIN'] }, createdAt: { $lte: now } } },
+          { $group: { _id: '$friendshipId', users: { $addToSet: '$userId' } } }
+        ]),
         ContractEvent.distinct('friendshipId', {
           friendshipId: { $in: friendshipIds },
           type: { $in: ['CHECKIN', 'VOICE_CHECKIN'] },
@@ -120,14 +131,20 @@ router.get('/metrics', auth, founder, async (req, res) => {
       ])
       : [[], [], 0, 0];
 
-    const activatedDuos = activatedIds.length;
+    const mutualDuos = friendships.filter(friendship => {
+      const actors = checkinParticipants.find(row => String(row._id) === String(friendship._id))?.users.map(String) || [];
+      return actors.includes(String(friendship.user1)) && actors.includes(String(friendship.user2));
+    });
+    const activatedDuos = mutualDuos.length;
     const active7dDuos = active7dIds.length;
     const plusInterestRate = safeRate(plusInterest, totalUsers);
-    const activationRate = safeRate(activatedDuos, activeDuos);
+    const activationRate = safeRate(mutualDuos.filter(duo => duo.status === 'ACTIVE').length, activeDuos);
     const runItBackRate = safeRate(runItBacks, completedSeasons);
 
+    const product = await productSnapshot(now, { duoUserIds: friendships.filter(duo => ['ACTIVE', 'BANKRUPT'].includes(duo.status)).flatMap(duo => [duo.user1, duo.user2]), mutualUserIds: mutualDuos.flatMap(duo => [duo.user1, duo.user2]) });
     return res.json({
       generatedAt: now,
+      product,
       goals: {
         activatedDuosTarget: 20,
         activatedDuosProgress: Math.min(100, safeRate(activatedDuos, 20))

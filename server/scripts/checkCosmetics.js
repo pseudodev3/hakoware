@@ -41,7 +41,8 @@ async function run() {
       assert.equal((await request(ari, '/cosmetics/saved/nocturne', 'PUT', body)).status, 400);
     }
     assert.equal((await request(ari, '/cosmetics/saved/unknown', 'PUT', { saved: true })).status, 404);
-    assert.equal((await request(ari, '/cosmetics/checkout', 'POST', { packId: 'nocturne' })).status, 404);
+    assert.equal((await request(ari, '/cosmetics/checkout', 'POST', { packId: 'nocturne' })).status, 400, 'checkout requires a durable retry key');
+    assert.equal((await request(ari, '/cosmetics/checkout', 'POST', { packId: 'nocturne', clientId: 'valid-preview-key-01' })).status, 503, 'unconfigured sales stay closed');
     assert.equal((await request(ari, '/cosmetics/unlock', 'POST', { packId: 'nocturne' })).status, 404);
     await Promise.all(Array.from({ length: 6 }, () => saveShopWish(ari._id, 'nocturne', { saved: true })));
     let savedUser = await User.findById(ari._id).select('+cosmeticWishlist +cosmeticUnlocks');

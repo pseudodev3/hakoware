@@ -20,6 +20,10 @@
     "check:flare-trial-delivery": "node scripts/checkFlareTrialDelivery.js",
     "check:presentation": "node scripts/checkPresentation.js",
     "check:cosmetics": "node scripts/checkCosmetics.js",
+    "check:cosmetic-checkout": "node scripts/checkCosmeticCheckout.js",
+    "check:product-journeys": "node scripts/checkProductJourneys.js",
+    "sparks:readiness": "node scripts/sparksReadiness.js",
+    "sparks:prepare": "node scripts/sparksReadiness.js --prepare",
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
     "check:standalone-trades": "node scripts/checkStandaloneCardTrades.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",
@@ -37,7 +41,8 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
-    "multer": "^2.4.0"
+    "multer": "^2.4.0",
+    "stripe": "23.0.0"
   },
   "devDependencies": {
     "mongodb-memory-server-core": "^11.3.0"

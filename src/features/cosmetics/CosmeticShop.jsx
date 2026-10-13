@@ -4,6 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { COSMETIC_PACKS, collectionFor } from '../../lib/cosmetics';
 import { getStyleShop, saveStyleCollection } from '../../services/cosmeticService';
 import { saveProfilePresentation } from '../../services/presentationService';
+import { trackShopEvent } from '../../services/growthService';
+import { formatCosmeticPrice } from '../../lib/cosmeticCheckout';
+import { CosmeticCheckout, CosmeticPurchases } from './CosmeticCommerce';
 import { CardArtwork } from '../cards/CardArtwork';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import { Button } from '../../shared/components/Button';
@@ -17,13 +20,16 @@ const PackArt = ({ pack }) => <div className={`shop-pack-art ${pack.bundle ? 'is
   {!pack.bundle && <><span className="shop-art-rule" /><small>{pack.number} / HAKOWARE EDITIONS</small></>}
 </div>;
 
-export const CosmeticShop = ({ onChanged, onBusyChange }) => {
+export const CosmeticShop = ({ onChanged, onBusyChange, returnOrderId, onClearReturn }) => {
   const { user, refreshUser } = useAuth();
   const userId = String(user?.uid || user?.id || user?._id || '');
   const uid = useId().replaceAll(':', '');
   const [shop, setShop] = useState(null), [loading, setLoading] = useState(true), [error, setError] = useState('');
   const [filter, setFilter] = useState('all'), [selectedId, setSelectedId] = useState(null), [editionId, setEditionId] = useState('nocturne');
   const [previewCard, setPreviewCard] = useState('SIGNAL_FLARE'), [busy, setBusy] = useState(null), [notice, setNotice] = useState('');
+  const [commerceBusy, setCommerceBusy] = useState(false);
+  const commerceRef = useRef(false);
+  const commercePending = useCallback(value => { commerceRef.current = value; setCommerceBusy(value); }, []);
   const root = useRef(null), detailHeading = useRef(null), previous = useRef(null);
   const alive = useRef(true), request = useRef(0), owner = useRef({ userId }), busyRef = useRef(false);
   const load = useCallback(async () => {
@@ -33,10 +39,10 @@ export const CosmeticShop = ({ onChanged, onBusyChange }) => {
     finally { if (alive.current && current === request.current) setLoading(false); }
   }, []);
   useEffect(() => {
-    alive.current = true; owner.current = { userId }; busyRef.current = false; setBusy(null); setShop(null); setLoading(true); setError(''); setNotice(''); setSelectedId(null); setFilter('all'); void load();
+    alive.current = true; owner.current = { userId }; busyRef.current = false; setBusy(null); setShop(null); setLoading(true); setError(''); setNotice(''); setSelectedId(null); setFilter('all'); void load(); void trackShopEvent('SHOP_VIEW');
     return () => { alive.current = false; request.current += 1; };
   }, [userId, load]);
-  useEffect(() => { onBusyChange?.(Boolean(busy)); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
+  useEffect(() => { onBusyChange?.(Boolean(busy) || commerceBusy); return () => onBusyChange?.(false); }, [busy, commerceBusy, onBusyChange]);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       if (selectedId) { detailHeading.current?.focus({ preventScroll: true }); detailHeading.current?.scrollIntoView({ block: 'nearest' }); }
@@ -49,21 +55,24 @@ export const CosmeticShop = ({ onChanged, onBusyChange }) => {
   const selected = packs.find(pack => pack.id === selectedId);
   const edition = collectionFor(selected).find(pack => pack.id === editionId) || collectionFor(selected)[0];
   const savedCount = packs.filter(pack => pack.saved).length;
-  const visible = filter === 'saved' ? packs.filter(pack => pack.saved) : packs;
-  const open = pack => { if (busyRef.current) return; setSelectedId(pack.id); setEditionId(collectionFor(pack)[0].id); setPreviewCard('SIGNAL_FLARE'); if (shop) setError(''); setNotice(''); };
+  const ownedCount = packs.filter(pack => pack.owned).length;
+  const visible = filter === 'saved' ? packs.filter(pack => pack.saved) : filter === 'owned' ? packs.filter(pack => pack.owned) : packs;
+  const locked = Boolean(busy) || commerceBusy;
+  const changed = async () => { await onChanged?.(); await load(); };
+  const open = pack => { if (busyRef.current || commerceRef.current) return; setSelectedId(pack.id); setEditionId(collectionFor(pack)[0].id); setPreviewCard('SIGNAL_FLARE'); if (shop) setError(''); setNotice(''); void trackShopEvent('SHOP_PREVIEW', pack.id); };
   const wish = async pack => {
-    if (busyRef.current || !shop) return;
+    if (busyRef.current || commerceRef.current || !shop) return;
     const actor = owner.current; busyRef.current = true; request.current += 1; setBusy({ kind: 'save', id: pack.id }); setError(''); setNotice('');
     try {
       const result = await saveStyleCollection(pack.id, !pack.saved);
       if (!alive.current || actor !== owner.current) return;
-      setShop(result.shop); setNotice(pack.saved ? `${pack.name} removed from your list.` : `${pack.name} saved for launch.`);
+      setShop(result.shop); setNotice(pack.saved ? `${pack.name} removed from your list.` : shop.checkoutAvailable ? `${pack.name} saved to your list.` : `${pack.name} saved for launch.`);
     } catch (failure) {
       if (alive.current && actor === owner.current) { setError(failure.message || 'Could not confirm your saved collections.'); void load(); }
     } finally { if (actor === owner.current) { busyRef.current = false; if (alive.current) setBusy(null); } }
   };
   const apply = async () => {
-    if (busyRef.current || !selected?.owned || !edition) return;
+    if (busyRef.current || commerceRef.current || !selected?.owned || !edition) return;
     const actor = owner.current; busyRef.current = true; setBusy({ kind: 'apply', id: selected.id }); setError('');
     try {
       await saveProfilePresentation({ avatarFrame: edition.frameId, cardFinish: edition.finishId, profileDecoration: edition.decorationId });
@@ -76,28 +85,31 @@ export const CosmeticShop = ({ onChanged, onBusyChange }) => {
     } catch (failure) { if (alive.current && actor === owner.current) setError(failure.message || 'Could not apply that edition.'); }
     finally { if (actor === owner.current) { busyRef.current = false; if (alive.current) setBusy(null); } }
   };
-  const saveButton = pack => <button type="button" className={`shop-save ${pack.saved ? 'is-saved' : ''}`} aria-pressed={Boolean(pack.saved)} aria-label={`${pack.saved ? 'Remove' : 'Save'} ${pack.name} ${pack.saved ? 'from your list' : 'for launch'}`} disabled={!shop || Boolean(busy)} onClick={() => void wish(pack)}><Bookmark size={17} fill={pack.saved ? 'currentColor' : 'none'} /><span>{busy?.kind === 'save' && busy.id === pack.id ? 'Saving…' : pack.saved ? 'Saved' : 'Save for launch'}</span></button>;
-  return <section ref={root} className="cosmetic-shop" aria-label="Style shop">
+  const saveButton = pack => <button type="button" className={`shop-save ${pack.saved ? 'is-saved' : ''}`} aria-pressed={Boolean(pack.saved)} aria-label={`${pack.saved ? 'Remove' : 'Save'} ${pack.name} ${pack.saved ? 'from your list' : shop?.checkoutAvailable ? 'to your list' : 'for launch'}`} disabled={!shop || locked} onClick={() => void wish(pack)}><Bookmark size={17} fill={pack.saved ? 'currentColor' : 'none'} /><span>{busy?.kind === 'save' && busy.id === pack.id ? 'Saving…' : pack.saved ? 'Saved' : shop?.checkoutAvailable ? 'Save collection' : 'Save for launch'}</span></button>;
+  return <section ref={root} className="cosmetic-shop" aria-label="Style shop" aria-busy={locked}>
     {!selected ? <>
-      <div className="shop-hero"><div className="shop-hero-copy"><p className="eyebrow">HAKOWARE / EDITIONS 01–03</p><h2>Your signature,<br /><em>collected.</em></h2><p>Card finishes, avatar frames and profile backdrops. Find the edition that feels like you.</p><span className="shop-launch-note"><Sparkles size={14} />First-drop preview · Not yet on sale</span></div><div className="shop-hero-art" aria-hidden="true"><CardArtwork cardId="PURIFY" finishId="porcelain" size={90} /><CardArtwork cardId="SIGNAL_FLARE" finishId="nocturne" size={112} /><CardArtwork cardId="CHAOS_TICKET" finishId="prism" size={90} /></div></div>
-      <ViewTabs id={`shop-${uid}`} label="Shop collections" className="shop-tabs" value={filter} onChange={setFilter} items={[{ value: 'all', label: 'Collections' }, { value: 'saved', label: 'Saved', count: savedCount }]} />
+      {(returnOrderId || shop?.newEditions?.length > 0) && <CosmeticPurchases newEditions={shop?.newEditions} returnOrderId={returnOrderId} onBusyChange={commercePending} onChanged={changed} onClearReturn={onClearReturn} />}
+      {!returnOrderId && !shop?.newEditions?.length && <div className="shop-hero"><div className="shop-hero-copy"><p className="eyebrow">HAKOWARE / EDITIONS 01–03</p><h2>Your signature,<br /><em>collected.</em></h2><p>Card finishes, avatar frames and profile backdrops. Find the edition that feels like you.</p><span className="shop-launch-note"><Sparkles size={14} />{shop?.checkoutAvailable ? 'One-time collections · Yours to keep' : 'First-drop preview · Not yet on sale'}</span></div><div className="shop-hero-art" aria-hidden="true"><CardArtwork cardId="PURIFY" finishId="porcelain" size={90} /><CardArtwork cardId="SIGNAL_FLARE" finishId="nocturne" size={112} /><CardArtwork cardId="CHAOS_TICKET" finishId="prism" size={90} /></div></div>}
+      <ViewTabs id={`shop-${uid}`} label="Shop collections" className="shop-tabs" value={filter} onChange={value => { if (!busyRef.current && !commerceRef.current) setFilter(value); }} items={[{ value: 'all', label: 'Collections' }, { value: 'saved', label: 'Saved', count: savedCount }, { value: 'owned', label: 'Owned', count: ownedCount }]} />
+      {filter === 'owned' && !returnOrderId && !shop?.newEditions?.length && <CosmeticPurchases newEditions={shop?.newEditions} onBusyChange={commercePending} onChanged={changed} onClearReturn={onClearReturn} />}
       <div role="tabpanel" id={`shop-${uid}-panel-${filter}`} aria-labelledby={`shop-${uid}-tab-${filter}`}>
         {visible.length ? <div className="shop-grid">{visible.map(pack => <article key={pack.id} className="shop-pack" style={{ '--shop-accent': pack.accent }}>
           <button type="button" className="shop-pack-preview" data-open-pack={pack.id} aria-label={`Preview ${pack.name}`} onClick={() => open(pack)}><PackArt pack={pack} /></button>
-          <div className="shop-pack-caption"><span>{pack.bundle ? 'THE FULL COLLECTION' : `EDITION ${pack.number}`}</span>{pack.owned && <small><Check size={12} />Owned</small>}</div><h3>{pack.name}</h3><p>{pack.headline}</p><small className="shop-pack-includes">{pack.bundle ? '3 finishes · 3 frames · 3 backdrops' : 'Deck finish · Avatar frame · Profile backdrop'}</small>
+          <div className="shop-pack-caption"><span>{pack.bundle ? 'THE FULL COLLECTION' : `EDITION ${pack.number}`}</span>{pack.owned && <small><Check size={12} />Owned</small>}</div><h3>{pack.name}</h3><p>{pack.headline}</p><small className="shop-pack-includes">{pack.bundle ? '3 finishes · 3 frames · 3 backdrops' : 'Deck finish · Avatar frame · Profile backdrop'}</small>{pack.price && <p className="shop-pack-price">{formatCosmeticPrice(pack.price)} <small>one-time</small></p>}
           <div className="shop-pack-actions"><button type="button" onClick={() => open(pack)}>{pack.owned ? 'Wear this edition' : 'Explore the collection'}<ArrowUpRight size={16} /></button>{saveButton(pack)}</div>
-        </article>)}</div> : <div className="shop-empty"><Bookmark size={26} /><h3>Keep your favourites here.</h3><p>Save an edition and come back to it when the shop opens.</p><button type="button" onClick={() => setFilter('all')}>Browse collections<ArrowUpRight size={16} /></button></div>}
+        </article>)}</div> : <div className="shop-empty"><Bookmark size={26} /><h3>{filter === 'owned' ? 'Your collection starts here.' : 'Keep your favourites here.'}</h3><p>{filter === 'owned' ? 'Purchased editions and received gifts are yours to keep.' : 'Save an edition and come back to it when the shop opens.'}</p><button type="button" onClick={() => setFilter('all')}>Browse collections<ArrowUpRight size={16} /></button></div>}
       </div>
-      <p className="shop-footnote">Each edition is a permanent cosmetic pack. Your cards and game progress stay yours. Prices will be shown when sales open.</p>
+      <p className="shop-footnote">Each edition is a permanent cosmetic pack. Your cards and game progress stay yours. {shop?.checkoutAvailable ? 'Any applicable taxes appear at checkout.' : 'Prices will be shown when sales open.'}</p>
     </> : <>
-      <button className="shop-back" type="button" disabled={Boolean(busy)} onClick={() => setSelectedId(null)}><ArrowLeft size={17} />All collections</button>
+      <button className="shop-back" type="button" disabled={locked} onClick={() => setSelectedId(null)}><ArrowLeft size={17} />All collections</button>
       <div className="shop-detail-heading"><p className="eyebrow">{selected.bundle ? 'THE COMPLETE SET' : `EDITION ${selected.number}`}</p><h2 ref={detailHeading} tabIndex={-1}>{selected.name}</h2><p>{selected.description}</p></div>
       {selected.bundle && <div className="shop-edition-switch" role="group" aria-label="Preview an edition">{collectionFor(selected).map(pack => <button type="button" key={pack.id} aria-pressed={edition.id === pack.id} onClick={() => setEditionId(pack.id)}>{pack.name}</button>)}</div>}
       <div className="shop-detail-grid"><div className={`shop-card-stage edition-${edition.id}`}><CardArtwork cardId={previewCard} finishId={edition.finishId} size={176} /><span>{edition.name} / DECK FINISH</span></div><div className="shop-detail-copy">
         <label htmlFor={`shop-card-${uid}`}>Try it on a card</label><select id={`shop-card-${uid}`} value={previewCard} onChange={event => setPreviewCard(event.target.value)}>{CARDS.map(([id,name]) => <option key={id} value={id}>{name}</option>)}</select>
         <div className="shop-profile-preview" data-profile-decoration={edition.decorationId}><UserAvatar person={{ ...user, avatarFrame: edition.frameId }} size="lg" decorative /><span><strong>{user.displayName}</strong><small>{user.username ? '@' + user.username : 'Your profile'}<br />{edition.name} frame + backdrop</small></span></div>
         <div className="shop-included"><h3>In the collection</h3><p><Layers size={16} />{selected.bundle ? 'All three finishes for your whole collection' : 'A finish for every card in your collection'}</p><p><Sparkles size={16} />{selected.bundle ? 'Gilt, Prismatic and Ceramic avatar frames' : 'A signature avatar frame'}</p><p><Palette size={16} />{selected.bundle ? 'All three profile backdrops' : 'A matching profile backdrop'}</p><p><Check size={16} />Permanent style unlocks when purchased</p></div>
-        <div className="shop-detail-actions">{selected.owned ? <Button variant="aura" disabled={Boolean(busy)} loading={busy?.kind === 'apply'} onClick={() => void apply()}>Wear {edition.name}</Button> : <><p>Preview only. Purchases open later.</p>{saveButton(selected)}</>}</div>
+        <div className="shop-detail-actions">{selected.owned ? <Button variant="aura" disabled={locked} loading={busy?.kind === 'apply'} onClick={() => void apply()}>Wear {edition.name}</Button> : <>{!shop?.checkoutAvailable && <p>Preview only. Purchases open later.</p>}{saveButton(selected)}</>}</div>
+        <CosmeticCheckout key={`${userId}:${selected.id}`} pack={selected} available={shop?.checkoutAvailable} onBusyChange={commercePending} onChanged={changed} />
       </div></div>
     </>}
     {loading && <p className="shop-status" role="status">Opening your saved collections…</p>}

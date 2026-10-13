@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, Check, CheckCheck, Clock, MessageSquare, MoreHorizontal, Radio, RotateCcw, Sparkles, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap, ArrowUpRight } from 'lucide-react';
+import { Bell, Check, CheckCheck, Clock, Gift, MessageSquare, MoreHorizontal, Radio, RotateCcw, Sparkles, Swords, Trash2, UserCheck, UserMinus, UserPlus, X, Zap, ArrowUpRight } from 'lucide-react';
 import { deleteNotification, getUserNotifications, peekUserNotifications, markAllNotificationsAsRead, markNotificationAsRead, NOTIFICATION_TYPES } from '../../../services/notificationService';
 import { respondToInvitation } from '../../../services/friendshipService';
 import { Button } from '../../../shared/components/Button';
@@ -13,6 +13,7 @@ import './NotificationsPanel.css';
 
 const notificationId = (item) => String(item.id || item._id);
 const destinationFor = (type = '') => {
+  if (type === 'COSMETIC_GIFT') return 'you';
   if (type.startsWith('AFTER_HOURS_') || type.startsWith('SPARK_')) return 'sparks';
   if (type === 'CARD_TRADE' || type.startsWith('BOUNTY_')) return 'arena';
   if (type === 'VOICE_NOTE') return 'voice';
@@ -165,6 +166,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
       return;
     }
     if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
+    if (notification.cosmeticOrderId) { onNavigate?.('you', { cosmeticOrderId: notification.cosmeticOrderId }); onClose(); return; }
     if (notification.cardTradeId) { onNavigate?.('arena', { section: 'cards', focusTradeId: notification.cardTradeId }); onClose(); return; }
     if (notification.sparkPostId) { onNavigate?.('sparks', { focusPostId: notification.sparkPostId, focusReplyId: notification.sparkReplyId }); onClose(); return; }
     if (notification.wallPieceId || notification.type === 'AFTER_HOURS_WALL') { onNavigate?.('sparks', { legacy: true }); onClose(); return; }
@@ -185,6 +187,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
   };
   const getIcon = (type) => {
     switch (type) {
+      case 'COSMETIC_GIFT': return <Gift size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.SPARK_REACTION:
       case NOTIFICATION_TYPES.SPARK_REPLY: return <Sparkles size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.LIMIT_CHANGED: return <Clock size={16} strokeWidth={1.8} />;
@@ -295,7 +298,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
               return <section className="activity-group" key={group} aria-label={group}><h3 className="activity-group-title">{group}</h3><div className="notification-list">
                 {items.map((notification) => {
                   const id = notificationId(notification); const destination = destinationFor(notification.type);
-                  const destinationLabel = { contracts: 'Contracts', arena: 'Arena', sparks: 'Sparks', voice: 'Voice inbox' }[destination];
+                  const destinationLabel = { contracts: 'Contracts', arena: 'Arena', sparks: 'Sparks', voice: 'Voice inbox', you: 'Your editions' }[destination];
                   return <article className={`notification-item ${notification.read ? 'read' : 'unread'}`} key={id}>
                     <button className="notification-open" disabled={busy} onClick={() => openNotification(notification)} aria-label={`${formatType(notification.type)}: ${notification.message}. Open ${destinationLabel}`}>
                       <span className={`item-icon ${getTone(notification.type)}`} aria-hidden="true">{getIcon(notification.type)}</span>

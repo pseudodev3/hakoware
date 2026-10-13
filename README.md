@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://hakoware.vercel.app">Open Hakoware</a>
+  <a href="https://hakoware.xyz">Open Hakoware</a>
 </p>
 
 ## What Hakoware is
@@ -266,11 +266,13 @@ See the in-app legal pages for the current user-facing policies.
 
 ## Deployment
 
-- Frontend: [hakoware.vercel.app](https://hakoware.vercel.app)
+- Frontend: [hakoware.xyz](https://hakoware.xyz)
 - Backend: Railway
 - Database: MongoDB
 
 A merged commit is not automatically considered live. Deployment status should be checked separately before announcing a feature as deployed.
+
+Cosmetic sales use Stripe Checkout and stay disabled until the merchant account, keys and one-time prices are configured. See [checkout and gifting setup](docs/stripe-checkout-and-gifting.md). Sparks publishing remains deferred on Railway trial storage; [VPS preparation](docs/sparks-vps-move.md) documents the readiness and migration checks.
 
 ## Project continuity
 

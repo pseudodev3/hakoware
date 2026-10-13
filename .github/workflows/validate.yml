@@ -109,6 +109,14 @@ jobs:
         working-directory: server
         run: npm run check:cosmetics
 
+      - name: Check verified Stripe cosmetics and gifting with blocked indexes
+        working-directory: server
+        run: npm run check:cosmetic-checkout
+
+      - name: Check private product journeys and real return cohorts
+        working-directory: server
+        run: npm run check:product-journeys
+
       - name: Check After Hours conversations and next-day returns
         working-directory: server
         run: npm run check:after-hours-social

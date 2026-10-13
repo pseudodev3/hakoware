@@ -16,6 +16,7 @@ import {
   triggerTestChaos
 } from '../../services/testLabService';
 import { getGrowthMetrics } from '../../services/growthService';
+import { formatCosmeticPrice } from '../../lib/cosmeticCheckout';
 import './FounderLabPage.css';
 
 const idOf = (value) => String(value?._id || value || '');
@@ -262,6 +263,18 @@ export const FounderLabPage = ({ showToast }) => {
             </div>
           </section>
         )}
+
+        {growth?.product && <section className="founder-journeys" aria-label="Product journeys">
+          <header><p className="eyebrow">Product journeys / last 28 days</p><h2>What brings people back.</h2><p>Real accounts only. Return rates use completed UTC days after the first recorded visit.</p></header>
+          <div className="founder-shop-funnel" aria-label="Signup activation"><h3>Signup → first mutual check-in</h3><div>{[['Real accounts', growth.product.activation.signups], ['Accepted a Duo', growth.product.activation.usersWithFirstDuo], ['Both checked in', growth.product.activation.usersWithFirstMutual]].map(([name, count]) => <span key={name}><small>{name}</small><strong>{count}</strong></span>)}</div><p>All-time account counts. A single participant checking in does not activate a Duo.</p></div>
+          <div className="founder-journey-grid">
+            {[['Next-day return', growth.product.retention.day1], ['Day-seven return', growth.product.retention.day7]].map(([name, metric]) => <article key={name}><span>{name}</span><strong>{metric.rate === null ? 'Collecting data' : `${metric.rate}%`}</strong><small>{metric.returned} returned / {metric.eligible} eligible</small></article>)}
+            <article><span>Active this week</span><strong>{growth.product.retention.active7d}</strong><small>People with a recorded visit</small></article>
+          </div>
+          <div className="founder-shop-funnel" aria-label="Shop conversion"><h3>Shop → purchase</h3><div>{[['Shop visitors', growth.product.shop.visitors], ['Edition previews', growth.product.shop.previewers], ['Started checkout', growth.product.shop.checkouts], ['Paid buyers', growth.product.shop.buyers]].map(([name, count]) => <span key={name}><small>{name}</small><strong>{count}</strong></span>)}</div><p>{growth.product.shop.previewToPurchaseRate === null ? 'Conversion starts measuring with the first preview.' : `${growth.product.shop.previewToPurchaseRate}% of people who previewed also purchased in this window.`} Payment events are counted after server confirmation.</p></div>
+          {growth.product.shop.grossPaidTotals?.length > 0 && <div className="founder-saved-demand"><h3>Gross paid totals</h3>{growth.product.shop.grossPaidTotals.map(sale => <span key={sale.currency}>{sale.currency.toUpperCase()} · {sale.orders} purchase{sale.orders === 1 ? '' : 's'}<strong>{formatCosmeticPrice(sale)}</strong></span>)}<p className="shop-footnote">Confirmed payment totals include any checkout taxes. Stripe fees and refunds are managed in Stripe.</p></div>}
+          <div className="founder-saved-demand"><h3>Saved for launch</h3>{growth.product.shop.savedCollections.map(pack => <span key={pack.id}>{pack.name}<strong>{pack.saved}</strong></span>)}</div>
+        </section>}
 
         <section className="founder-grid">
           <article className="founder-panel">

@@ -3,7 +3,7 @@
 > **Read this first when continuing Hakoware in a new chat.**
 >
 > Repo: `pseudodev3/hakoware`  
-> Frontend: `https://hakoware.vercel.app`  
+> Frontend: `https://hakoware.xyz`<br>
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
@@ -15,6 +15,10 @@
 
 
 ## Latest checkpoint — 2026-10-13
+
+Stripe Checkout, cosmetic gifting, owned receipts/reveals and first-party product journeys are implemented. The user operates from Nigeria and chose to establish an eligible supported-country Stripe account. Sales remain disabled until keys, prices and merchant configuration exist. Use [Stripe checkout and gifting](docs/stripe-checkout-and-gifting.md) for activation and validation. Never treat local Stripe fixtures as live payment verification. The CORS/domain fix was separately pushed as `f7347ab`; it allows `hakoware.xyz` and `www.hakoware.xyz` even with the legacy Vercel CORS environment values. Set Railway's `FRONTEND_URL=https://hakoware.xyz` for outgoing links and checkout returns.
+
+Railway trial storage remains the current database. Sparks publishing is still deferred; [Sparks VPS preparation](docs/sparks-vps-move.md) explains the new read-only readiness and explicit index-preparation commands. No production migration has occurred.
 
 The cosmetic shop is built as a preview release per the user's “Build the shop first” choice. Nocturne, Prism and Porcelain provide deck finishes, avatar frames and profile backdrops; the complete-set bundle includes all three. Players can preview and privately save collections from their profile or the Arena's Cards section. “A little more you” is now grouped inside Profile. Paid styles require private server entitlements; no checkout or public entitlement-grant route exists. Pricing, currency and verified payment fulfillment are the next revenue step. Details and validation: [cosmetic shop review](docs/cosmetic-shop-review.md).
 

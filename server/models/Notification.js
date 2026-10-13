@@ -16,6 +16,7 @@ const NotificationSchema = new mongoose.Schema({
   afterHoursReplyId: { type: mongoose.Schema.Types.ObjectId, ref: 'AfterHoursActivity' },
   sparkPostId: { type: String, maxlength: 24 },
   sparkReplyId: { type: String, maxlength: 24 },
+  cosmeticOrderId: { type: String, maxlength: 38 },
   read: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });

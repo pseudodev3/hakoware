@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, LockKeyhole, Palette, Sparkles } from 'lucide-react';
 import { Modal } from '../../shared/components/Modal';
 import { Button } from '../../shared/components/Button';
@@ -13,6 +14,8 @@ import './ProfileShowcase.css';
 
 export const ProfileShowcase = ({ user, onChanged, onNavigate }) => {
   const userId = user.uid || user.id || user._id;
+  const [params, setParams] = useSearchParams();
+  const returnOrderId = params.get('cosmetic_order');
   const [profile, setProfile] = useState(null), [panel, setPanel] = useState(null), [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false), [shopBusy, setShopBusy] = useState(false), [error, setError] = useState('');
   const generation = useRef(0), busyRef = useRef(false);
@@ -22,6 +25,8 @@ export const ProfileShowcase = ({ user, onChanged, onNavigate }) => {
     catch (failure) { if (current === generation.current) setError(failure.message); }
   }, []);
   useEffect(() => { setProfile(null); setPanel(null); setBusy(false); setShopBusy(false); busyRef.current = false; void load(); return () => { generation.current += 1; }; }, [userId, load]);
+  useEffect(() => { if (returnOrderId) setPanel('shop'); }, [returnOrderId]);
+  const clearReturn = () => setParams(current => { const next = new URLSearchParams(current); next.delete('cosmetic_order'); next.delete('checkout'); return next; }, { replace: true });
   const edit = () => {
     if (!profile) return;
     setDraft({ avatarFrame: profile.avatarFrame, favoriteCardId: profile.favoriteCardId, featuredDuoId: profile.featuredDuoId, cardFinish: profile.cardFinish, profileDecoration: profile.profileDecoration }); setError(''); setPanel('edit');
@@ -56,6 +61,6 @@ export const ProfileShowcase = ({ user, onChanged, onNavigate }) => {
       <label htmlFor="showcase-duo">Featured Duo</label><select id="showcase-duo" disabled={busy} value={draft.featuredDuoId || ''} onChange={event => setDraft({ ...draft, featuredDuoId: event.target.value || null })}><option value="">Use my strongest Duo</option>{profile.duos.map(contract => <option key={contract._id} value={contract._id}>{duoLabel(contract, `${contract.user1?.displayName} + ${contract.user2?.displayName}`)} · Lv. {contract.duoLevel || 1}</option>)}</select>
       {!profile.cards.length && <p>Collect your first card in the Arena to feature it here.</p>}{error && <p className="showcase-error" role="alert">{error}</p>}<div className="showcase-form-actions"><Button variant="secondary" disabled={busy} onClick={close}>Cancel</Button><Button variant="aura" type="submit" loading={busy}>Save your signature</Button></div>
     </form></Modal>}
-    {panel === 'shop' && <Modal isOpen title="Style shop" size="xl" onClose={() => { if (!shopBusy) setPanel(null); }}><CosmeticShop onChanged={changed} onBusyChange={setShopBusy} /></Modal>}
+    {panel === 'shop' && <Modal isOpen title="Style shop" size="xl" onClose={() => { if (!shopBusy) { setPanel(null); if (returnOrderId) clearReturn(); } }}><CosmeticShop onChanged={changed} onBusyChange={setShopBusy} returnOrderId={returnOrderId} onClearReturn={clearReturn} /></Modal>}
   </section>;
 };

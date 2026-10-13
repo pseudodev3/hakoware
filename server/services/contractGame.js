@@ -729,6 +729,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
       messageEventId: social.messageEventId || null
     }
   });
+  await require('./productMetrics').recordMutualActivation(friendship);
 
   if (chaosResolved && chaosEvent) {
     await recordEvent(friendship._id, 'CHAOS_SURVIVED', {

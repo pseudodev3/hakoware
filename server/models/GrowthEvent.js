@@ -4,7 +4,7 @@ const GrowthEventSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   type: {
     type: String,
-    enum: ['SHARE'],
+    enum: ['SHARE', 'SHOP_VIEW', 'SHOP_PREVIEW', 'CHECKOUT_STARTED', 'COSMETIC_PAID'],
     required: true,
     index: true
   },
