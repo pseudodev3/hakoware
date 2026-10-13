@@ -1,9 +1,9 @@
 .profile-showcase > header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
 .profile-showcase h2 { font-size:1.4rem; letter-spacing:-.035em; margin-top:6px; }
 .profile-showcase > header button { display:flex; align-items:center; gap:7px; min-height:44px; padding:0 13px; border:1px solid var(--border-active); border-radius:12px; font-size:.75rem; }
-.showcase-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; }
+.showcase-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:28px; }
 .showcase-duo-open { display:flex; align-items:center; gap:18px; min-height:44px; margin-top:15px; font-size:.75rem; color:var(--text-secondary); }
-.showcase-card { display:flex; align-items:center; gap:20px; text-align:left; padding:28px; background:var(--surface-card); border:1px solid var(--border-active); border-radius:22px; }
+.showcase-card { display:flex; align-items:center; gap:20px; text-align:left; padding:24px 0; }
 .showcase-card > span:not(.card-artwork):not(.showcase-card-back) { flex:1; min-width:0; }
 .showcase-card small { font-size:.625rem; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); }
 .showcase-card strong { display:block; margin-top:9px; font-size:1.25rem; letter-spacing:-.035em; }
@@ -11,7 +11,7 @@
 .showcase-card > svg { flex:0 0 auto; color:var(--text-muted); }
 .showcase-card-back { width:88px; height:117px; display:grid; place-items:center; border-radius:7px; border:1px solid var(--border-active); background:repeating-linear-gradient(45deg,transparent 0 9px,var(--border-subtle) 10px 11px); flex:0 0 auto; }
 .showcase-card-back span { padding:8px 16px; border:1px solid var(--border-active); background:var(--surface-card); color:var(--aura-gold); font:600 1.8rem Georgia,serif; }
-.showcase-empty { display:grid; align-content:center; gap:12px; padding:28px; border:1px dashed var(--border-active); border-radius:22px; color:var(--text-secondary); }
+.showcase-empty { display:grid; align-content:center; gap:12px; padding:24px; border-left:2px solid var(--border-active); color:var(--text-secondary); }
 .showcase-empty button { min-height:44px; display:flex; align-items:center; gap:16px; font-size:.8125rem; }
 .showcase-status { font-size:.8125rem; color:var(--text-muted); }
 .showcase-status button { min-height:44px; padding:0 12px; }
@@ -30,5 +30,6 @@
 .showcase-form p { font-size:.75rem; line-height:1.6; color:var(--text-secondary); }
 .showcase-form .showcase-error { color:var(--aura-red); }
 .showcase-form-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
-@media(max-width:760px) { .showcase-grid { grid-template-columns:1fr; gap:12px; } .showcase-card { padding:24px 20px; } }
+@media(hover:hover) and (pointer:fine) { .showcase-card:hover strong { color:var(--accent-text); } }
+@media(max-width:760px) { .showcase-grid { grid-template-columns:1fr; gap:8px; } .showcase-card { padding:24px 0 8px; } .showcase-empty { padding:20px; } }
 @media(max-width:360px) { .showcase-frames { grid-template-columns:repeat(2,1fr); } }

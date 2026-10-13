@@ -1,11 +1,12 @@
 
-.you-view { max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:28px; }
-.profile-aura-area { position:relative; border:1px solid var(--border-active); border-radius:24px; padding:32px; background:var(--surface-card); }
+.you-view { max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:40px; }
+.you-view > .page-heading { padding-bottom:0; margin-bottom:0; }
+.profile-aura-area { position:relative; padding-top:8px; }
 .profile-identity { display:flex; align-items:center; gap:18px; }
 .profile-avatar-control { position:relative; flex:0 0 auto; }
 .profile-avatar-button { width:76px; height:76px; position:relative; border-radius:50%; display:block; }
 .identity-avatar { width:76px; height:76px; border-radius:50%; font-size:1.5rem; }
-.profile-avatar-camera { position:absolute; bottom:-2px; right:-2px; width:28px; height:28px; display:grid; place-items:center; border:3px solid var(--surface-card); border-radius:50%; color:var(--accent-ink); background:var(--accent); }
+.profile-avatar-camera { position:absolute; bottom:-2px; right:-2px; width:28px; height:28px; display:grid; place-items:center; border:3px solid var(--bg-dark); border-radius:50%; color:var(--accent-ink); background:var(--accent); }
 .profile-avatar-input { display:none; }
 .identity-copy { flex:1; min-width:0; }
 .identity-copy h2 { font-size:1.75rem; font-weight:650; letter-spacing:-.04em; overflow-wrap:anywhere; }
@@ -28,7 +29,9 @@
 .aura-rank-progress > i { display:block; height:100%; background:var(--aura-gold); border-radius:inherit; }
 .profile-meta { display:flex; flex-wrap:wrap; gap:12px 24px; padding-top:22px; color:var(--text-secondary); font-size:.75rem; }
 .profile-meta b { color:var(--text-muted); font-weight:500; margin-right:4px; }
-.you-collection-link { display:flex; align-items:center; gap:16px; min-height:100px; padding:24px; border-radius:18px; border:1px solid var(--border-active); background:var(--accent-soft); text-align:left; color:var(--accent-text); }
+.you-collection-link { display:flex; align-items:center; gap:20px; min-height:110px; padding:24px 0; border-block:1px solid var(--border-subtle); text-align:left; color:var(--accent-text); }
+.you-collection-link > svg { flex:0 0 auto; }
+.you-collection-link > svg:last-child { transition:transform var(--transition-fast); }
 .you-collection-link > span { min-width:0; flex:1; }
 .you-collection-link strong { display:block; font-size:1.125rem; font-weight:650; color:var(--text-primary); }
 .you-collection-link small { display:block; margin-top:6px; font-size:.8125rem; line-height:1.5; color:var(--text-secondary); }
@@ -49,7 +52,7 @@
 .transaction-row { display:flex; justify-content:space-between; gap:20px; align-items:center; padding:14px 0; border-bottom:1px solid var(--border-subtle); font-size:.8125rem; }
 .transaction-row > div { min-width:0; }
 .transaction-row strong { display:block; font-size:.8125rem; font-weight:550; line-height:1.5; overflow-wrap:anywhere; }
-.transaction-row small { display:block; color:var(--text-muted); font-size:.6875rem; margin-top:5px; }
+.transaction-row > div > span { display:block; color:var(--text-muted); font-size:.6875rem; margin-top:5px; }
 .transaction-row b { font-size:.875rem; font-weight:550; flex:0 0 auto; }
 .transaction-row b.positive { color:var(--aura-green); }
 .transaction-row b.negative { color:var(--text-muted); }
@@ -69,4 +72,5 @@
 .grudge-card-amount { color:var(--aura-gold); font-size:1rem; font-weight:600; }
 .grudge-card-amount small { display:block; font-size:.625rem; color:var(--text-muted); font-weight:450; }
 .grudge-action-state { font-size:.6875rem; color:var(--text-muted); }
-@media(max-width:680px) { .you-view { gap:24px; } .profile-aura-area { padding:24px 20px; } .profile-identity { gap:14px; flex-wrap:wrap; } .profile-avatar-button,.identity-avatar { width:60px; height:60px; } .identity-copy h2 { font-size:1.4rem; } .profile-identity > .btn { margin-top:4px; } .profile-aura-row { grid-template-columns:1fr; gap:24px; } .aura-rank { max-width:360px; } .profile-meta { font-size:.6875rem; gap:10px 16px; } .you-collection-link { padding:20px; } .grudge-card { flex-wrap:wrap; padding:20px; } .grudge-card-side { width:100%; flex-direction:row; align-items:center; justify-content:space-between; } }
+@media(hover:hover) and (pointer:fine) { .you-collection-link:hover > svg:last-child { transform:translateX(4px); } .you-collection-link:hover strong { color:var(--accent-text); } }
+@media(max-width:680px) { .you-view { gap:32px; } .profile-identity { gap:14px; flex-wrap:wrap; } .profile-avatar-button,.identity-avatar { width:60px; height:60px; } .identity-copy h2 { font-size:1.4rem; } .profile-identity > .btn { margin-top:4px; } .profile-aura-row { grid-template-columns:1fr; gap:24px; } .aura-rank { max-width:360px; } .profile-meta { font-size:.6875rem; gap:10px 16px; } .you-collection-link { gap:16px; padding-block:20px; } .grudge-card { flex-wrap:wrap; padding:20px; } .grudge-card-side { width:100%; flex-direction:row; align-items:center; justify-content:space-between; } }
