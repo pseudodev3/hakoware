@@ -84,6 +84,7 @@ const FriendshipSchema = new mongoose.Schema({
   grudge: { type: GrudgeSchema, default: () => ({}) },
   claimState: { type: ClaimStateSchema, default: () => ({}) },
   flareReceipts: { type: [new mongoose.Schema({ eventId: mongoose.Schema.Types.ObjectId, senderId: mongoose.Schema.Types.ObjectId, targetId: mongoose.Schema.Types.ObjectId, createdAt: Date, done: { type: Boolean, default: false } }, { _id: false })], default: [], select: false },
+  identity: { type: new mongoose.Schema({ name: { type: String, default: '', maxlength: 64 }, palette: { type: String, enum: ['citron', 'clay', 'iris', 'sky', 'rose', 'sand'], default: 'citron' }, cover: { type: String, enum: ['orbits', 'waves', 'rays'], default: 'orbits' } }, { _id: false }), default: () => ({}) },
   user1Perspective: { type: PerspectiveSchema, default: () => ({}) },
   user2Perspective: { type: PerspectiveSchema, default: () => ({}) }
 }, { timestamps: true });

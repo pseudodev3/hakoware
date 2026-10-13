@@ -1,4 +1,5 @@
 import { drawHakowareStamp } from './shareStamp';
+import { DUO_PALETTES } from './duoIdentity';
 
 const GOLD = '#e7b35a';
 const PAPER = '#f7f4ec';
@@ -26,11 +27,12 @@ const roundedRect = (ctx, x, y, width, height, radius) => {
   ctx.closePath();
 };
 
-const drawOrbit = (ctx, x, y, rx, ry, rotation, alpha) => {
+const drawOrbit = (ctx, x, y, rx, ry, rotation, alpha, accent = GOLD) => {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
-  ctx.strokeStyle = `rgba(231,179,90,${alpha})`;
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = alpha;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
@@ -45,13 +47,18 @@ export const buildDuoShareCard = async ({
   duoTitle = 'New Contract',
   duoXP = 0,
   templateName = 'Contract',
-  seasonNumber = 1
+  seasonNumber = 1,
+  seasonStatus = 'ACTIVE',
+  duoName = '',
+  palette = 'citron',
+  cover = 'orbits'
 }) => {
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
   canvas.height = 1350;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not create Duo card');
+  const accent = DUO_PALETTES[palette]?.color || GOLD;
 
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -62,21 +69,29 @@ export const buildDuoShareCard = async ({
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  drawOrbit(ctx, 980, 230, 430, 160, -0.22, 0.28);
-  drawOrbit(ctx, 80, 1120, 520, 190, 0.18, 0.14);
-  drawOrbit(ctx, 880, 1080, 610, 240, -0.08, 0.08);
+  if (cover === 'rays') {
+    ctx.save(); ctx.strokeStyle = accent; ctx.globalAlpha = .2; ctx.translate(890, 260);
+    for (let index = 0; index < 24; index += 1) { ctx.rotate(Math.PI/12); ctx.beginPath(); ctx.moveTo(100,0); ctx.lineTo(700,0); ctx.stroke(); } ctx.restore();
+  } else if (cover === 'waves') {
+    ctx.save(); ctx.strokeStyle = accent; ctx.globalAlpha = .2;
+    for (let index = 0; index < 8; index += 1) { ctx.beginPath(); ctx.moveTo(500,index*50); ctx.bezierCurveTo(660,index*50+210,950,index*50-120,1160,index*50+180); ctx.stroke(); } ctx.restore();
+  } else {
+    drawOrbit(ctx, 980, 230, 430, 160, -0.22, 0.28, accent);
+    drawOrbit(ctx, 80, 1120, 520, 190, 0.18, 0.14, accent);
+    drawOrbit(ctx, 880, 1080, 610, 240, -0.08, 0.08, accent);
+  }
 
   await drawHakowareStamp(ctx, {
     x: 872,
     y: 264,
     radius: 126,
-    tint: GOLD,
+    tint: accent,
     opacity: 0.12,
     rotation: -0.1,
     footer: 'CONTRACT SYSTEM'
   });
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = accent;
   ctx.font = '700 25px ui-monospace, SFMono-Regular, monospace';
   ctx.fillText('HAKOWARE // DUO CARD', 82, 98);
 
@@ -85,14 +100,16 @@ export const buildDuoShareCard = async ({
   ctx.fillText(`SEASON ${seasonNumber}`, 82, 142);
 
   const names = `${userName || 'Player'} × ${partnerName || 'Partner'}`;
-  const nameSize = fitFont(ctx, names, 900, 82, 46);
+  const headline = duoName || names;
+  const nameSize = fitFont(ctx, headline, 900, 82, 34);
   ctx.fillStyle = PAPER;
   ctx.font = `700 ${nameSize}px system-ui, -apple-system, sans-serif`;
-  ctx.fillText(names, 82, 292);
+  ctx.fillText(headline, 82, 292);
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = accent;
   ctx.font = '650 34px system-ui, -apple-system, sans-serif';
-  ctx.fillText(String(duoTitle || 'New Contract'), 82, 354);
+  ctx.fillText(duoTitle && duoTitle !== 'New Contract' ? String(duoTitle) : 'Your shared story.', 82, 354);
+  if (duoName) { ctx.fillStyle = MUTED; ctx.font = `500 ${fitFont(ctx, names, 900, 28, 18)}px system-ui, sans-serif`; ctx.fillText(names, 82, 405); }
 
   roundedRect(ctx, 82, 450, 916, 286, 34);
   ctx.fillStyle = 'rgba(247,244,236,.035)';
@@ -132,15 +149,15 @@ export const buildDuoShareCard = async ({
 
   ctx.fillStyle = PAPER;
   ctx.font = '650 52px system-ui, -apple-system, sans-serif';
-  ctx.fillText('Still under contract.', 82, 988);
+  ctx.fillText(seasonStatus === 'COMPLETE' ? `Season ${seasonNumber} complete.` : 'Still under contract.', 82, 988);
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = accent;
   ctx.font = '650 24px system-ui, -apple-system, sans-serif';
   ctx.fillText('Keep the loop alive.', 82, 1044);
 
   ctx.fillStyle = MUTED;
   ctx.font = '600 21px system-ui, -apple-system, sans-serif';
-  ctx.fillText('hakoware.vercel.app', 82, 1264);
+  ctx.fillText(/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname) ? 'hakoware' : window.location.host, 82, 1264);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not create Duo card')), 'image/png');

@@ -5,6 +5,10 @@ import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
 import { api } from '../../../lib/api';
 import './FriendshipSettingsModal.css';
+import { DuoIdentity } from '../../../shared/components/DuoIdentity';
+import { DUO_PALETTES, DUO_COVERS } from '../../../lib/duoIdentity';
+import { saveDuoIdentity } from '../../../services/presentationService';
+import { usePresentationViewport } from '../../../shared/hooks/usePresentationViewport';
 
 const MODE_NAMES = {
   DONT_GHOST: "Don't Ghost Me",
@@ -18,6 +22,7 @@ const MODE_NAMES = {
 };
 
 export const FriendshipSettingsModal = ({ isOpen, onClose, friendship, currentUserId, onRefresh, showToast }) => {
+  usePresentationViewport(isOpen);
   const user1Id = friendship?.user1?._id || friendship?.user1;
   const isUser1 = String(user1Id) === String(currentUserId);
   const perspective = isUser1 ? friendship?.user1Perspective : friendship?.user2Perspective;
@@ -25,6 +30,10 @@ export const FriendshipSettingsModal = ({ isOpen, onClose, friendship, currentUs
   const [limit, setLimit] = useState(7);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [identity, setIdentity] = useState({ name: '', palette: 'citron', cover: 'orbits' });
+  const [identityBusy, setIdentityBusy] = useState(false);
+  const [identityError, setIdentityError] = useState('');
+  useEffect(() => { if (isOpen) { setIdentity({ name: friendship?.identity?.name || '', palette: friendship?.identity?.palette || 'citron', cover: friendship?.identity?.cover || 'orbits' }); setIdentityError(''); } }, [isOpen, friendship?._id]);
 
   useEffect(() => {
     if (isOpen) setLimit(perspective?.limit || 7);
@@ -71,6 +80,14 @@ export const FriendshipSettingsModal = ({ isOpen, onClose, friendship, currentUs
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Contract with ${friend.displayName}`} size="md">
       <div className="contract-settings-content">
+        <form className="duo-style-form" onSubmit={async event => { event.preventDefault(); if (identityBusy) return; setIdentityBusy(true); setIdentityError(''); try { await saveDuoIdentity(id, identity); await onRefresh(); showToast?.('Your Duo has a new look.', 'SUCCESS'); onClose(); } catch (error) { setIdentityError(error.message); } finally { setIdentityBusy(false); } }}>
+          <div><h3>Make this Duo yours.</h3><p>One shared name and look. Either of you can change it.</p></div>
+          <DuoIdentity friendship={{ ...friendship, identity }} userId={currentUserId} variant="preview" />
+          <Input label="Duo name" value={identity.name} maxLength={32} placeholder="Your inside joke goes here" onChange={event => setIdentity({ ...identity, name: event.target.value })} disabled={identityBusy} />
+          <fieldset><legend>Color</legend><div className="duo-color-choices">{Object.entries(DUO_PALETTES).map(([key, palette]) => <button key={key} type="button" aria-pressed={identity.palette === key} aria-label={palette.name} style={{ '--swatch': palette.color }} disabled={identityBusy} onClick={() => setIdentity({ ...identity, palette: key })}><span />{palette.name}</button>)}</div></fieldset>
+          <fieldset><legend>Cover</legend><div className="duo-cover-choices">{Object.entries(DUO_COVERS).map(([key, label]) => <button key={key} type="button" aria-pressed={identity.cover === key} disabled={identityBusy} onClick={() => setIdentity({ ...identity, cover: key })}>{label}</button>)}</div></fieldset>
+          {identityError && <p role="alert" className="duo-style-error">{identityError}</p>}<Button variant="aura" type="submit" loading={identityBusy}>Save Duo look</Button>
+        </form>
         <section className={`contract-rule-summary ${isChaos ? 'chaos' : ''}`}>
           <span className="contract-rule-icon">{isChaos ? <Dice5 size={18} /> : <ShieldCheck size={18} />}</span>
           <div>

@@ -6,6 +6,8 @@ import { getContractRecap, runContractBack } from '../../../services/friendshipS
 import { shareHakoware } from '../../../lib/share';
 import { drawHakowareStamp } from '../../../lib/shareStamp';
 import './ContractRecapModal.css';
+import { DuoCover } from '../../../shared/components/DuoIdentity';
+import { duoStyle } from '../../../lib/duoIdentity';
 
 const formatTemplate = (value = '') => value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -22,19 +24,21 @@ const seasonGrade = (recap) => {
   return 'D';
 };
 
-const recapText = (recap) => {
+const recapText = (recap, period = 'week', duoName = '') => {
   const names = (recap.players || []).map((player) => player.displayName).filter(Boolean).join(' × ');
+  const summary = period === 'season' ? recap.season : recap.weekly;
   return [
-    `HAKOWARE // WEEKLY REPORT`,
+    `HAKOWARE // ${period === 'season' ? 'SEASON' : 'WEEKLY'} REPORT`,
+    ...(duoName ? [duoName] : []),
     names,
-    `${recap.weekly?.checkins || 0} check-ins · ${recap.weekly?.voiceNotes || 0} voice`,
-    `${recap.weekly?.chaosSurvived || 0} chaos survived · ${recap.weekly?.chaosFailed || 0} failed`,
-    `+${recap.weekly?.xpGained || 0} Duo XP · Duo Lv. ${recap.duo?.level || 1}`,
-    `“${recap.weekly?.line || 'Still under contract.'}”`
+    `${summary?.checkins || 0} check-ins · ${summary?.voiceNotes || 0} voice`,
+    `${summary?.chaosSurvived || 0} chaos survived · ${summary?.chaosFailed || 0} failed`,
+    `+${summary?.xpGained || 0} Duo XP · Duo Lv. ${recap.duo?.level || 1}`,
+    period === 'season' ? `Season ${recap.season?.number || 1} · ${recap.season?.status?.toLowerCase() || 'active'}` : `“${recap.weekly?.line || 'Still under contract.'}”`
   ].join('\n');
 };
 
-const buildShareImage = async (recap) => {
+const buildShareImage = async (recap, period = 'week', identity = {}) => {
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
   canvas.height = 1350;
@@ -56,19 +60,20 @@ const buildShareImage = async (recap) => {
     tint: '#e7b35a',
     opacity: 0.11,
     rotation: -0.07,
-    footer: 'WEEKLY REPORT'
+    footer: period === 'season' ? 'SEASON REPORT' : 'WEEKLY REPORT'
   });
 
-  const names = (recap.players || []).map((player) => player.displayName).filter(Boolean).join(' × ') || 'Hakoware Duo';
-  const weekly = recap.weekly || {};
+  const names = identity.name || (recap.players || []).map((player) => player.displayName).filter(Boolean).join(' × ') || 'Hakoware Duo';
+  const weekly = (period === 'season' ? recap.season : recap.weekly) || {};
 
   ctx.fillStyle = '#e7b35a';
   ctx.font = '700 28px system-ui, -apple-system, sans-serif';
-  ctx.fillText('HAKOWARE // WEEKLY REPORT', 84, 106);
+  ctx.fillText(`HAKOWARE // ${period === 'season' ? 'SEASON' : 'WEEKLY'} REPORT`, 84, 106);
 
   ctx.fillStyle = '#f7f4ec';
-  ctx.font = '700 66px system-ui, -apple-system, sans-serif';
-  const split = names.length > 24 ? names.split(' × ') : [names];
+  let nameSize = 66;
+  do { ctx.font = `700 ${nameSize}px system-ui, -apple-system, sans-serif`; if (ctx.measureText(names).width <= 900) break; nameSize -= 2; } while (nameSize >= 24);
+  const split = [names];
   split.forEach((line, index) => ctx.fillText(line, 84, 215 + index * 76));
 
   ctx.fillStyle = '#777268';
@@ -103,11 +108,11 @@ const buildShareImage = async (recap) => {
 
   ctx.fillStyle = '#e7b35a';
   ctx.font = '700 25px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`DUO LEVEL ${recap.duo?.level || 1} // ${(recap.duo?.title || 'New Contract').toUpperCase()}`, 84, 980);
+  ctx.fillText(`DUO LEVEL ${recap.duo?.level || 1}${recap.duo?.title && recap.duo.title !== 'New Contract' ? ' // '+recap.duo.title.toUpperCase() : ''}`, 84, 980);
 
   ctx.fillStyle = '#f7f4ec';
   ctx.font = '600 40px system-ui, -apple-system, sans-serif';
-  const line = `“${weekly.line || 'Still alive. Still under contract.'}”`;
+  const line = period === 'season' ? `Season ${recap.season?.number || 1} ${recap.season?.status === 'COMPLETE' ? 'complete. A shared story, finished.' : 'in progress. Keep the loop alive.'}` : `“${weekly.line || 'Still alive. Still under contract.'}”`;
   const words = line.split(' ');
   let current = '';
   let y = 1060;
@@ -123,7 +128,7 @@ const buildShareImage = async (recap) => {
 
   ctx.fillStyle = '#777268';
   ctx.font = '600 22px system-ui, -apple-system, sans-serif';
-  ctx.fillText('hakoware.vercel.app', 84, 1270);
+  ctx.fillText(/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname) ? 'hakoware' : window.location.host, 84, 1270);
 
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not create recap image')), 'image/png'));
 };
@@ -150,7 +155,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
 
   useEffect(() => {
     if (isOpen) {
-      setTab('week');
+      setTab(friendship?.season?.status === 'COMPLETE' ? 'season' : 'week');
       load();
     } else setRecap(null);
   }, [isOpen, friendshipId]);
@@ -162,12 +167,12 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
     if (!recap) return;
     setBusy(true);
     try {
-      const blob = await buildShareImage(recap);
-      const file = new File([blob], 'hakoware-weekly-recap.png', { type: 'image/png' });
+      const blob = await buildShareImage(recap, tab, friendship?.identity);
+      const file = new File([blob], `hakoware-${tab}-recap.png`, { type: 'image/png' });
       const result = await shareHakoware({
-        source: recap.season?.status === 'COMPLETE' ? 'SEASON_COMPLETE' : 'RECAP',
+        source: tab === 'season' && recap.season?.status === 'COMPLETE' ? 'SEASON_COMPLETE' : 'RECAP',
         title: 'Hakoware recap',
-        text: recapText(recap),
+        text: recapText(recap, tab, friendship?.identity?.name),
         url: window.location.origin,
         files: [file]
       });
@@ -205,12 +210,13 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
         <div className="recap-loading"><RefreshCw className="animate-spin" size={20} /><span>Building recap…</span></div>
       ) : recap ? (
         <div className="recap-wrap">
-          <section className={`recap-hero ${recap.template?.chaos ? 'chaos' : ''}`}>
+          <section style={duoStyle(friendship)} className={`recap-hero ${recap.template?.chaos ? 'chaos' : ''}`}>
+            <DuoCover cover={friendship?.identity?.cover} />
             <div className="recap-hero-top">
               <span className="recap-label">HAKOWARE // {tab === 'week' ? 'THIS WEEK' : `SEASON ${recap.season?.number || 1}`}</span>
               <span className="recap-mode">{recap.template?.name}</span>
             </div>
-            <h2>{names || 'Contract duo'}</h2>
+            <h2>{friendship?.identity?.name || names || 'Contract duo'}</h2>
             <p>{tab === 'week' ? recap.weekly?.line : `Grade ${grade} · ${recap.duo?.title}`}</p>
 
             <div className="duo-level-row">

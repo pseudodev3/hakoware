@@ -12,9 +12,9 @@ const id = value => String(value?._id || value || '');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const publicId = value => typeof value === 'string' && /^[a-f0-9]{24}$/.test(value);
 const retryKey = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{16,80}$/.test(value);
-const person = user => ({ displayName: user?.displayName || user?.username || 'Your friend', username: user?.username || null, avatar: user?.avatar || null });
+const person = user => ({ displayName: user?.displayName || user?.username || 'Your friend', username: user?.username || null, avatar: user?.avatar || null, avatarFrame: user?.avatarFrame || 'plain' });
 const contextFor = async viewerId => {
-  const viewer = await User.findById(viewerId).select('displayName username avatar isTestAccount testOwnerId').lean();
+  const viewer = await User.findById(viewerId).select('displayName username avatar avatarFrame isTestAccount testOwnerId').lean();
   if (!viewer) fail(404, 'Account not found');
   const contracts = await Friendship.find({ status: 'ACTIVE', $or: [{ user1: viewer._id }, { user2: viewer._id }] }).select('user1 user2').lean();
   const ids = contracts.map(contract => id(contract.user1) === id(viewer._id) ? contract.user2 : contract.user1);
@@ -42,7 +42,7 @@ const parseCursor = value => {
   } catch { return fail(400, 'That page is unavailable. Refresh your Sparks.'); }
 };
 const postViews = async (rows, context) => {
-  const posts = await SparkPost.populate(rows, { path: 'authorId', select: 'displayName username avatar' });
+  const posts = await SparkPost.populate(rows, { path: 'authorId', select: 'displayName username avatar avatarFrame' });
   const ids = posts.map(post => post._id);
   const [reactions, replyCounts] = ids.length ? await Promise.all([
     SparkReaction.find({ postId: { $in: ids } }).lean(),
@@ -69,7 +69,7 @@ const feedFor = async (context, { before, limit } = {}) => {
   return { posts: await postViews(page, context), hasMore, nextCursor: hasMore ? cursorFor(page.at(-1)) : null, circleSize: context.circleSize };
 };
 const repliesFor = async (post, context, { before } = {}) => {
-  const rows = await SparkReply.find({ postId: post._id, ...(parseCursor(before) || {}) }).sort({ createdAt: -1, _id: -1 }).limit(REPLY_PAGE_SIZE + 1).populate('authorId', 'displayName username avatar').lean();
+  const rows = await SparkReply.find({ postId: post._id, ...(parseCursor(before) || {}) }).sort({ createdAt: -1, _id: -1 }).limit(REPLY_PAGE_SIZE + 1).populate('authorId', 'displayName username avatar avatarFrame').lean();
   const page = rows.slice(0, REPLY_PAGE_SIZE);
   return { replies: page.reverse().map(reply => ({ id: reply.publicId, author: person(reply.authorId), mine: id(reply.authorId) === id(context.viewer), text: reply.text, createdAt: reply.createdAt })), hasMore: rows.length > REPLY_PAGE_SIZE, nextCursor: rows.length > REPLY_PAGE_SIZE ? cursorFor(rows[REPLY_PAGE_SIZE - 1]) : null };
 };

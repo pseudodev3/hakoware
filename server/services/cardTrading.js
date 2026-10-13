@@ -17,8 +17,9 @@ const personView = (value) =>
         displayName: value.displayName,
         username: value.username || null,
         avatar: value.avatar || null,
+        avatarFrame: value.avatarFrame || 'plain',
       }
-    : { displayName: 'Your friend', username: null, avatar: null };
+    : { displayName: 'Your friend', username: null, avatar: null, avatarFrame: 'plain' };
 const retryKey = (value) => {
   if (!/^[a-zA-Z0-9_-]{16,80}$/.test(String(value || '')))
     fail(400, 'A retry key is required');
@@ -311,8 +312,8 @@ const collectionSnapshot = async (actorId) => {
   };
   const populate = (query) =>
     query
-      .populate('senderId', 'displayName username avatar')
-      .populate('recipientId', 'displayName username avatar')
+      .populate('senderId', 'displayName username avatar avatarFrame')
+      .populate('recipientId', 'displayName username avatar avatarFrame')
       .lean();
   const [user, openTrades, history, friendships] = await Promise.all([
     User.findById(actorId)
@@ -332,8 +333,8 @@ const collectionSnapshot = async (actorId) => {
       status: 'ACTIVE',
       $or: [{ user1: actorId }, { user2: actorId }],
     })
-      .populate('user1', 'displayName username avatar')
-      .populate('user2', 'displayName username avatar')
+      .populate('user1', 'displayName username avatar avatarFrame')
+      .populate('user2', 'displayName username avatar avatarFrame')
       .lean(),
   ]);
   if (!user) fail(404, 'Account not found');

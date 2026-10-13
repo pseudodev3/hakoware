@@ -255,3 +255,13 @@
   }
 }
 .card-detail > .card-artwork { width:160px; height:190px; }
+.collection-card .card-artwork { width:min(100%,165px); height:auto; aspect-ratio:3/4; transition:transform .22s ease,box-shadow .22s ease; }
+.collection-card:hover .card-artwork { transform:translateY(-3px) rotate(-1.5deg); box-shadow:0 12px 22px rgba(0,0,0,.2); }
+.collection-card { gap:12px; }
+.card-effect-preview { width:100%; text-align:left; border:1px solid var(--border-active); border-radius:16px; padding:18px; background:var(--surface-card); }
+.card-effect-preview > span { font-size:.625rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-muted); }
+.card-effect-preview > div { display:grid; grid-template-columns:1fr 18px 1fr; align-items:center; gap:12px; margin:14px 0; }
+.card-effect-preview p { color:var(--text-secondary); font-size:.8125rem; margin:0; }
+.card-effect-preview strong { font-size:.875rem; letter-spacing:-.02em; }
+.card-effect-preview small { display:block; font-size:.75rem; line-height:1.6; color:var(--text-muted); }
+@media(prefers-reduced-motion:reduce) { .collection-card .card-artwork { transition:none; } .collection-card:hover .card-artwork { transform:none; } }

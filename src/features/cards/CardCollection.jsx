@@ -14,6 +14,8 @@ import {
 import { CardArtwork } from './CardArtwork';
 import { ViewTabs } from '../../shared/components/ViewTabs';
 import './CardCollection.css';
+import { CardEffectPreview } from './CardEffectPreview';
+import { showGameMoment } from '../../lib/gameMoments';
 
 export const CardCollection = ({
   friendships,
@@ -95,11 +97,12 @@ export const CardCollection = ({
     setFormError('');
     request.current += 1;
     try {
-      await operation();
+      const result = await operation();
       if (!alive.current) return;
       setSheet(null);
       showToast?.(message, 'SUCCESS');
       await Promise.allSettled([load(), refreshUser()]);
+      if (alive.current && result?.effect?.flareEventId) showGameMoment({ userId: user._id || user.id || user.uid, contractId: target, eventId: result.effect.flareEventId, type: 'SIGNAL_FLARE' });
     } catch (err) {
       if (alive.current) {
         setFormError(err.message || 'Could not complete this action');
@@ -602,8 +605,9 @@ export const CardCollection = ({
             </form>
           ) : (
             <div className="card-detail">
-              <CardArtwork cardId={selected.id} size={74} />
+              <CardArtwork cardId={selected.id} size={132} />
               <p>{selected.description}</p>
+              <CardEffectPreview card={selected} friendships={friendships} userId={userId} />
               <small>
                 {selected.owned} available · {selected.reserved} reserved
               </small>

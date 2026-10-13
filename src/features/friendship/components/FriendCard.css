@@ -36,3 +36,7 @@
 .friend-card-featured.danger { background:var(--aura-red-glow); }
 @media(hover:hover) and (pointer:fine) { .friend-card-open:hover { background:var(--surface-soft); } .friend-card-checkin:not(:disabled):hover { filter:brightness(1.1); } }
 @media(max-width:600px) { .friend-card-open { gap:12px; padding:18px 16px; } .friend-card-open > .user-avatar { width:46px; height:46px; flex-basis:46px; } .friend-card-identity > strong { font-size:1.125rem; } .friend-card-preview { font-size:.875rem; } .friend-card-footer { padding-inline:16px; } .friend-card-featured .friend-card-open { min-height:128px; padding:20px 18px 12px; gap:14px; } .friend-card-featured .friend-card-open > .user-avatar { width:52px; height:52px; flex-basis:52px; } .friend-card-featured .friend-card-identity strong { font-size:1.5rem; } .friend-card-featured .friend-card-footer { padding-inline:18px; } }
+.friend-card-surface { position:relative; isolation:isolate; overflow:hidden; }
+.friend-card-cover { opacity:.065; z-index:-1; }
+.friend-card-duo-name { display:block; color:var(--text-muted); font-size:.625rem; font-weight:600; letter-spacing:.04em; margin-bottom:7px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.friend-card-surface::after { content:''; position:absolute; inset:0 0 auto; height:3px; background:var(--duo-accent); opacity:.75; pointer-events:none; }

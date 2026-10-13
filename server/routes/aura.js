@@ -437,7 +437,7 @@ router.post('/use-card', auth, async (req, res) => {
       if (!committed) throw Object.assign(new Error('This Signal Flare is already cooling down. Your card was kept.'), { status: 409 });
       applied = true;
       await require('../services/flareDelivery').reconcileFlareDelivery(friendship._id).catch(error => console.error('Signal Flare delivery pending:', error.message));
-      effect = { cooldownHours: SIGNAL_FLARE_COOLDOWN_HOURS };
+      effect = { cooldownHours: SIGNAL_FLARE_COOLDOWN_HOURS, flareEventId: String(receipt.eventId) };
     }
 
     if (cardId === 'CHAOS_TICKET') {

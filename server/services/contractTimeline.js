@@ -11,7 +11,7 @@ const MESSAGE_MAX_LENGTH = 1000;
 const id = (value) => String(value?._id || value || '');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const TIMELINE_TYPES = Object.freeze([
-  'MESSAGE', 'SIGNAL_FLARE', 'CARD_TRADE_ACCEPTED', 'CHECKIN', 'VOICE_CHECKIN', 'CHECKIN_REPLY', 'CHECKIN_REACTION', 'POKE', 'MUTUAL_POKE',
+  'MESSAGE', 'SIGNAL_FLARE', 'DUO_IDENTITY_CHANGED', 'CARD_TRADE_ACCEPTED', 'CHECKIN', 'VOICE_CHECKIN', 'CHECKIN_REPLY', 'CHECKIN_REACTION', 'POKE', 'MUTUAL_POKE',
   'CONTRACT_CREATED', 'CONTRACT_ACCEPTED', 'SEASON_STARTED', 'SEASON_COMPLETED', 'DUO_LEVEL_UP',
   'CHAOS_TRIGGERED', 'CHAOS_SURVIVED', 'CHAOS_FAILED', 'BANKRUPTCY',
   'BANKRUPTCY_RECOVERY_STARTED', 'BANKRUPTCY_RECOVERED', 'BOUNTY_REWARD', 'BOUNTY_ESCAPED',
@@ -37,6 +37,7 @@ const timelineView = (event, friendship, viewerId, voice = null, moment = null) 
   switch (event.type) {
     case 'MESSAGE': text = meta.kind === 'VOICE' ? 'Voice message' : String(meta.text || ''); break;
     case 'SIGNAL_FLARE': text = `${actor} sent a Signal Flare`; break;
+    case 'DUO_IDENTITY_CHANGED': text = meta.name ? `${actor} named your Duo ${meta.name}` : `${actor} refreshed your Duo’s look`; break;
     case 'CARD_TRADE_ACCEPTED': {
       const { CARD_CATALOG } = require('./cardCatalog');
       text = `Card swap · ${CARD_CATALOG[meta.offeredCardId]?.name || 'a card'} ↔ ${CARD_CATALOG[meta.requestedCardId]?.name || 'a card'}`;
@@ -73,6 +74,7 @@ const timelineView = (event, friendship, viewerId, voice = null, moment = null) 
     && id(moment.friendshipId) === id(friendship._id);
   return {
     id: id(event._id), type: event.type, mine, actorName: actor, text,
+    milestone: event.type === 'DUO_LEVEL_UP' ? { level: Number(meta.level) || 1, title: String(meta.title || '') } : event.type === 'SEASON_COMPLETED' ? { season: Number(meta.season) || 1 } : null,
     xp: Number(event.xp) || 0, createdAt: event.createdAt,
     kind: event.type === 'MESSAGE' ? (meta.kind === 'VOICE' ? 'VOICE' : 'TEXT') : null,
     receipt: event.type === 'MESSAGE' && mine ? { status: meta.readAt ? 'READ' : 'SENT', readAt: meta.readAt || null } : null,

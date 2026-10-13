@@ -23,6 +23,7 @@ const currentUserView = (value) => {
     username: data.username,
     email: data.email,
     avatar: data.avatar || null,
+    avatarFrame: data.avatarFrame || 'plain',
     inventory: Array.isArray(data.inventory) ? data.inventory : [],
     auraBalance: Number(data.auraBalance) || 0,
     plusInterestAt: data.plusInterestAt || null,
@@ -41,7 +42,8 @@ const participantView = (value) => {
     _id: id,
     displayName: data?.displayName,
     username: data?.username || null,
-    avatar: data?.avatar || null
+    avatar: data?.avatar || null,
+    avatarFrame: data?.avatarFrame || 'plain'
   };
 };
 
@@ -99,6 +101,7 @@ const contractView = (value) => {
     duoXP: Number(data.duoXP) || 0,
     duoLevel: Number(data.duoLevel) || 1,
     duoTitle: data.duoTitle || 'New Contract',
+    identity: { name: data.identity?.name || '', palette: data.identity?.palette || 'citron', cover: data.identity?.cover || 'orbits' },
     season: seasonView(data.season),
     chaos: chaosView(data.chaos),
     user1Perspective: perspectiveView(data.user1Perspective),

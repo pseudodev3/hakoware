@@ -434,7 +434,7 @@ router.get('/:id/recap', auth, async (req, res) => {
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
     await ensureActiveGameState(friendship);
-    await friendship.populate('user1 user2', 'displayName username avatar');
+    await friendship.populate('user1 user2', 'displayName username avatar avatarFrame');
 
     const recap = await buildRecap(friendship);
     return res.json(recapView({

@@ -21,10 +21,11 @@ export const UserAvatar = ({
   useEffect(() => setFailed(false), [src]);
 
   const label = alt ?? (person?.displayName || person?.username || 'User');
+  const frame = ['linked', 'orbit', 'crown'].includes(person?.avatarFrame) ? person.avatarFrame : 'plain';
 
   return (
     <span
-      className={`user-avatar user-avatar-${size} ${className}`.trim()}
+      className={`user-avatar user-avatar-${size} avatar-frame-${frame} ${className}`.trim()}
       aria-hidden={decorative ? 'true' : undefined}
       role={decorative ? undefined : 'img'}
       aria-label={decorative ? undefined : label}

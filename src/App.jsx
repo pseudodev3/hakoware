@@ -20,6 +20,7 @@ import { FriendshipSettingsModal } from './features/friendship/components/Friend
 import { FriendSpace } from './features/friendship/components/FriendSpace';
 import { ContractsView } from './features/friendship/components/ContractsView';
 import { ContractRecapModal } from './features/friendship/components/ContractRecapModal';
+import { GameMoment } from './features/friendship/components/GameMoment';
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { LandingPage } from './features/landing/LandingPage';
@@ -489,6 +490,7 @@ function MainApp({ showToast }) {
         showToast={showToast}
       />
 
+      <GameMoment user={user} friendships={friendships} onAction={handleAction} showToast={showToast} />
       </Layout>
     </>
   );

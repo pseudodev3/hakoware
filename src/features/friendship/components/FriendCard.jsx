@@ -3,6 +3,8 @@ import { ArrowRight, Check, MessageCircle } from 'lucide-react';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { canCheckin, friendSummary, getContractSides } from '../contractState';
 import './FriendCard.css';
+import { duoStyle } from '../../../lib/duoIdentity';
+import { DuoCover } from '../../../shared/components/DuoIdentity';
 
 const timestamp = (value) => {
   if (!value) return null;
@@ -41,8 +43,10 @@ export const FriendCard = ({ friendship, currentUserId, socialState, socialStatu
     <article
       className={`friend-card friend-card-${variant} ${summary.tone} ${unread ? 'has-new' : ''}`}
       aria-label={`Friend space with ${name}`}
+      style={duoStyle(friendship)}
     >
       <div className="friend-card-surface">
+      <DuoCover cover={friendship.identity?.cover} className="friend-card-cover" />
       <div className="friend-card-main">
       <button
         type="button"
@@ -54,6 +58,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, socialStatu
       >
         <UserAvatar person={partner} size="lg" decorative />
         <span className="friend-card-copy">
+          {friendship.identity?.name && <span className="friend-card-duo-name">{friendship.identity.name}</span>}
           {unread > 0 && <span id={`friend-updates-${id}`} className="friend-card-unread">New updates</span>}
           <span className="friend-card-identity">
             <strong>{name}</strong>

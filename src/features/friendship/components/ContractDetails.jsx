@@ -379,6 +379,7 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
 
       <div className="contract-detail-content">
         <div className="contract-detail-name-row">
+          {friendship.identity?.name && <span className="eyebrow">{friendship.identity.name}</span>}
           <h3>{name}</h3>
         </div>
         <p className="contract-detail-line">{displayState.hero}</p>

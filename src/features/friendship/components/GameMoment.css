@@ -1,0 +1,21 @@
+.game-moment { text-align:center; }
+.game-moment-art { position:relative; isolation:isolate; height:245px; border-radius:20px; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:var(--surface-card); border:1px solid var(--border-subtle); }
+.game-moment-art::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse,var(--duo-accent),transparent 65%); opacity:.12; }
+.game-moment-art > strong { position:relative; z-index:1; font-size:6.5rem; font-weight:600; line-height:1; letter-spacing:-.07em; color:var(--text-primary); animation:moment-reveal .55s cubic-bezier(.2,.8,.2,1) both; }
+.game-moment-art > span:not(.card-artwork) { position:relative; margin-top:15px; font-size:.625rem; letter-spacing:.15em; color:var(--text-muted); }
+.game-moment-art .duo-cover { opacity:.2; }
+.game-moment-orbit { position:absolute; width:190px; height:190px; border:1px solid var(--duo-accent); border-radius:50%; box-shadow:0 0 0 17px color-mix(in srgb,var(--duo-accent) 7%,transparent),0 0 0 35px color-mix(in srgb,var(--duo-accent) 4%,transparent); }
+.game-moment.is-flare .game-moment-art { background:#241c12; }
+.game-moment.is-flare .game-moment-art::before { opacity:.28; animation:flare-glow 1s ease-out both; }
+.game-moment-art .card-artwork { position:relative; z-index:1; transform:rotate(-7deg); animation:flare-card-in .65s cubic-bezier(.2,.8,.2,1) both; }
+.game-moment-people { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:24px; }
+.game-moment-people .user-avatar + .user-avatar { margin-left:-17px; border:2px solid var(--surface-card); }
+.game-moment-people > span { font-size:.75rem; color:var(--text-secondary); max-width:30ch; overflow-wrap:anywhere; }
+.game-moment h2 { font-size:1.8rem; letter-spacing:-.04em; line-height:1.15; margin-top:18px; }
+.game-moment > p { color:var(--text-secondary); font-size:.875rem; line-height:1.7; max-width:43ch; margin:14px auto 0; }
+.game-moment-actions { display:flex; justify-content:center; gap:10px; margin-top:26px; }
+@keyframes moment-reveal { from { opacity:0; transform:translateY(10px) scale(.92); } to { opacity:1; transform:none; } }
+@keyframes flare-card-in { from { opacity:0; transform:rotate(-14deg) translateY(16px) scale(.85); } to { opacity:1; transform:rotate(-7deg); } }
+@keyframes flare-glow { from { opacity:0; transform:scale(.7); } 55% { opacity:.38; } to { opacity:.28; transform:scale(1); } }
+@media(max-width:400px) { .game-moment-actions { flex-direction:column-reverse; } .game-moment-art { height:215px; } .game-moment h2 { font-size:1.55rem; } }
+@media(prefers-reduced-motion:reduce) { .game-moment-art > strong,.game-moment-art .card-artwork,.game-moment-art::before { animation:none!important; } }

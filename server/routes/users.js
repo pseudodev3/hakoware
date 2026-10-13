@@ -155,7 +155,7 @@ router.get('/leaderboard', auth, async (req, res) => {
         : { isTestAccount: { $ne: true } }),
       'privacySettings.optOutPublicBankruptcy': false
     })
-      .select('displayName username avatar')
+      .select('displayName username avatar avatarFrame')
       .lean();
 
     const usersWithStats = users

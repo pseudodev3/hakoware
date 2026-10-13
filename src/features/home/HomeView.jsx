@@ -5,10 +5,10 @@ import { respondToInvitation } from '../../services/friendshipService';
 import { FriendCard } from '../friendship/components/FriendCard';
 import { HomePlay } from './HomePlay';
 import { NextMove } from './NextMove';
-import { PageHeading } from '../../shared/components/PageHeading';
 import { SparkPreview } from '../sparks/SparkPreview';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
+import { HomeReunion } from './HomeReunion';
 
 const contractState = (friendship, userId) => {
   const user1Id = friendship.user1?._id || friendship.user1;
@@ -193,7 +193,8 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
 
   return (
     <div className="home-view circle-first-home crew-home">
-      <PageHeading eyebrow="Keep the loop alive" title={<>Your people.<br /><span>A little closer.</span></>} description={hot.length ? 'A few things to catch up on. Start with your people.' : hasNewUpdates ? 'Something new. Pick up where you left off.' : 'A small message can make their day.'} />
+      <div className="home-return-heading"><h1>Good to see you, {user.displayName || user.username}.</h1><p>{hot.length ? 'Your people are waiting.' : hasNewUpdates ? 'Pick up where you left off.' : 'Keep a little time for your people.'}</p></div>
+      <HomeReunion friendship={sorted[0]} userId={userId} socialState={socialContracts[sorted[0]._id || sorted[0].id]} onOpenFriend={onOpenFriend} onAction={onAction} />
 
       <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} firstOnly />
 

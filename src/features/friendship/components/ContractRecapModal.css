@@ -51,3 +51,5 @@
   .season-grade strong { font-size:3.3rem; }
   .recap-actions { grid-template-columns:1fr; }
 }
+.recap-hero { position:relative; isolation:isolate; overflow:hidden; }
+.recap-hero .duo-cover { z-index:-1; opacity:.16; }

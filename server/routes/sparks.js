@@ -57,7 +57,7 @@ router.get('/legacy/:activityId', limiter('sparks-legacy', 30), async (req, res)
     const User = require('../models/User');
     const view = async activity => {
       const anonymous = activity.type === 'CONFESSION' && activity.anonymous;
-      const actor = anonymous ? null : await User.findById(activity.actorId).select('displayName username avatar').lean();
+      const actor = anonymous ? null : await User.findById(activity.actorId).select('displayName username avatar avatarFrame').lean();
       return { id: activity.publicId, text: activity.text, createdAt: activity.createdAt, author: anonymous ? { displayName: 'Anonymous', username: null, avatar: null } : { displayName: actor?.displayName || 'Someone', username: actor?.username || null, avatar: actor?.avatar || null } };
     };
     return res.json({ post: await view(linked.parent || linked.activity), reply: linked.parent ? await view(linked.activity) : null });
@@ -115,7 +115,7 @@ router.get('/:postId', limiter('sparks-thread', 90), async (req, res) => {
     let focusReply = null;
     if (req.query.reply) {
       if (typeof req.query.reply !== 'string' || !/^[a-f0-9]{24}$/.test(req.query.reply)) fail(400, 'That reply link is unavailable');
-      const reply = await SparkReply.findOne({ postId: post._id, publicId: req.query.reply }).populate('authorId', 'displayName username avatar').lean();
+      const reply = await SparkReply.findOne({ postId: post._id, publicId: req.query.reply }).populate('authorId', 'displayName username avatar avatarFrame').lean();
       if (reply) focusReply = { id: reply.publicId, author: { displayName: reply.authorId?.displayName || 'Your friend', username: reply.authorId?.username || null, avatar: reply.authorId?.avatar || null }, mine: String(reply.authorId?._id) === String(context.viewer._id), text: reply.text, createdAt: reply.createdAt };
     }
     return res.json({ post: (await postViews([post], context))[0], focusReply, ...await repliesFor(post, context, req.query) });

@@ -70,7 +70,7 @@ const loadContractsForUser = async (userId) => {
 
   await Promise.all(
     friendships.map((friendship) => (
-      friendship.populate('user1 user2', 'displayName username avatar')
+      friendship.populate('user1 user2', 'displayName username avatar avatarFrame')
     ))
   );
 

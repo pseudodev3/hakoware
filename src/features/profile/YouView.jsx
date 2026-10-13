@@ -11,13 +11,14 @@ import { prepareAvatarImage } from '../../lib/avatarImage';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import { PageHeading } from '../../shared/components/PageHeading';
 import { AuraBank } from './AuraBank';
+import { ProfileShowcase } from './ProfileShowcase';
 import './YouView.css';
 
 const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
 export const YouView = ({ friendships, showToast, onNavigate }) => {
-  const { user, refreshUser, logout } = useAuth();
+  const { user, refreshUser, refreshBootstrap, logout } = useAuth();
   const cachedYou = peekYouSnapshot();
   const [aura, setAura] = useState(cachedYou?.aura || {
     balance: Number(user.auraBalance) || 0,
@@ -133,7 +134,11 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         duoTitle: strongest.duoTitle || 'New Contract',
         duoXP: strongest.duoXP || 0,
         templateName: typeLabel(strongest.templateId || 'Contract'),
-        seasonNumber: strongest.season?.number || 1
+        seasonNumber: strongest.season?.number || 1,
+        seasonStatus: strongest.season?.status,
+        duoName: strongest.identity?.name,
+        palette: strongest.identity?.palette,
+        cover: strongest.identity?.cover
       });
       const file = new File([blob], 'hakoware-duo-card.png', { type: 'image/png' });
       const result = await shareHakoware({
@@ -236,6 +241,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         </div>
       </section>
 
+      <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
       <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} />
       <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
         <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span><ArrowRight size={19} />

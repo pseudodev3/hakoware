@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowDown, ArrowLeft, ArrowUpRight, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, ScrollText, Send, Smile, X } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowLeft, ArrowUpRight, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, Palette, ScrollText, Send, Smile, X } from 'lucide-react';
 import { getContractTimeline, sendContractMessage, markContractTimelineRead } from '../../../services/friendshipService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { ContractDetails } from './ContractDetails';
 import { canCheckin, friendSummary, getContractSides } from '../contractState';
 import { VoiceMessage, VoiceMessageComposer } from './VoiceMessage';
 import './FriendSpace.css';
+import { duoStyle } from '../../../lib/duoIdentity';
+import { showGameMoment } from '../../../lib/gameMoments';
 
 const mergeItems = (old, next) => [...new Map([...old, ...next].map((item) => [item.id, item])).values()]
   .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt) || String(a.id).localeCompare(String(b.id)));
@@ -56,6 +58,16 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const readBusy = useRef(false);
   const sendBusy = useRef(false);
   const roomRef = useRef(room);
+  const milestoneHistory = useRef(null);
+  useEffect(() => { milestoneHistory.current = null; }, [id, currentUserId]);
+  useEffect(() => {
+    if (loading) return;
+    const previous = milestoneHistory.current;
+    milestoneHistory.current = new Set(room.items.map(item => item.id));
+    if (!previous) return;
+    const newest = room.items.filter(item => item.milestone && !previous.has(item.id) && Date.now() - new Date(item.createdAt).getTime() < 60000).at(-1);
+    if (newest) showGameMoment({ userId: currentUserId, contractId: id, eventId: newest.id, type: newest.type, milestone: newest.milestone, automatic: true });
+  }, [room.items, loading, currentUserId, id]);
   roomRef.current = room;
   const conversationTop = useRef(0);
   useEffect(() => {
@@ -221,6 +233,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         </div>
         {item.checkin?.status === 'CHECKED_IN' && <span className="friend-message-checkin"><Check size={13} />Checked in · +{item.checkin.xp} Duo XP</span>}
       </> : <div className="friend-shared-event"><span className="friend-event-label">{item.text}{item.xp > 0 && <small>+{item.xp} Duo XP</small>}</span>
+        {item.milestone && <button type="button" className="friend-milestone-replay" onClick={() => showGameMoment({ userId: currentUserId, contractId: id, eventId: item.id, type: item.type, milestone: item.milestone })}>{item.type === 'SEASON_COMPLETED' ? 'Relive the season' : 'A shared win. Take a look.'}<ArrowUpRight size={14} /></button>}
         {item.voice && <VoiceMessage voice={item.voice} />}
         {item.voiceUnavailable && <small>Older voice check-in · audio isn’t linked here.</small>}
         {item.moment && <div className="friend-moment-reveal"><p>{item.moment.prompt}</p>{item.moment.answers.map((answer, index) => <span key={index}><strong>{answer.name}</strong>{answer.value}</span>)}</div>}
@@ -230,8 +243,8 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     </article>;
   };
   const focusOutsidePage = room.focusItem && !room.items.some((item) => item.id === room.focusItem.id);
-  return <section className="friend-space" aria-label={`Your space with ${partner?.displayName || 'your friend'}`}>
-    <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{partner?.displayName || 'Your friend'}</h1><span>{partner?.username ? '@' + partner.username : 'Your shared space'} · Duo Lv. {friendship.duoLevel || 1}</span></div><button className="friend-space-details" aria-label={contractOpen ? 'Return to conversation' : 'Open contract details'} aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}><ScrollText size={18} /><span>{contractOpen ? 'Conversation' : 'Contract'}</span><ChevronDown className="friend-details-chevron" size={15} /></button></header>
+  return <section className="friend-space" style={duoStyle(friendship)} aria-label={`Your space with ${partner?.displayName || 'your friend'}`}>
+    <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{friendship.identity?.name || partner?.displayName || 'Your friend'}</h1><span>{friendship.identity?.name ? `With ${partner?.displayName || 'your friend'}` : partner?.username ? '@' + partner.username : 'Your shared space'} · Duo Lv. {friendship.duoLevel || 1}</span></div><button type="button" className="friend-space-style" aria-label="Style your Duo" onClick={() => onAction('SETTINGS', friendship)}><Palette size={18} /></button><button className="friend-space-details" aria-label={contractOpen ? 'Return to conversation' : 'Open contract details'} aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}><ScrollText size={18} /><span>{contractOpen ? 'Conversation' : 'Contract'}</span><ChevronDown className="friend-details-chevron" size={15} /></button></header>
     {showHealth && <div className={`friend-space-health ${summary.tone}`}><span><i aria-hidden="true" />{summary.label}</span><button onClick={() => onAction(friendship.season?.status === 'COMPLETE' ? 'RECAP' : 'CHECKIN', friendship)} disabled={friendship.season?.status !== 'COMPLETE' && !checkinAvailable}>{friendship.season?.status === 'COMPLETE' ? 'See recap' : checkinAvailable ? 'Check in' : 'Checked in'}<Check size={13} /></button></div>}
     {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span><ArrowUpRight size={15} /></button>}
     {contractOpen ? <div className="friend-space-contract"><ContractDetails friendship={friendship} currentUserId={currentUserId} onAction={onAction} socialState={socialState} onActivitySeen={onActivitySeen} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>

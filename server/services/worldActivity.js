@@ -50,13 +50,13 @@ const worldFeed = async (userId, { before, limit = 20 } = {}) => {
     query.$or = [{ createdAt: { $lt: cursor.createdAt } }, { createdAt: cursor.createdAt, _id: { $lt: cursor._id } }];
   }
   const [rows, unreadCount] = await Promise.all([
-    WorldActivity.find(query).select('+actorId').sort({ createdAt: -1, _id: -1 }).limit(size + 1).populate('actorId', 'displayName username avatar privacySettings').lean(),
+    WorldActivity.find(query).select('+actorId').sort({ createdAt: -1, _id: -1 }).limit(size + 1).populate('actorId', 'displayName username avatar avatarFrame privacySettings').lean(),
     WorldActivity.countDocuments({ scopeKey, createdAt: { $gt: seenSince } })
   ]);
   const page = rows.slice(0, size);
   const events = page.map(row => {
     const actor = row.type === 'SIGNAL_FLARE' || row.type === 'BOUNTY_REWARD' && row.actorId?.privacySettings?.optOutPublicBankruptcy !== true ? row.actorId : null;
-    return { id: row.publicId, type: row.type, value: row.value, createdAt: row.createdAt, unread: new Date(row.createdAt) > seenSince, actor: actor ? { displayName: actor.displayName, username: actor.username || null, avatar: actor.avatar || null } : null };
+    return { id: row.publicId, type: row.type, value: row.value, createdAt: row.createdAt, unread: new Date(row.createdAt) > seenSince, actor: actor ? { displayName: actor.displayName, username: actor.username || null, avatar: actor.avatar || null, avatarFrame: actor.avatarFrame || 'plain' } : null };
   });
   return { events, unreadCount, hasMore: rows.length > size, nextCursor: rows.length > size ? page.at(-1).publicId : null };
 };

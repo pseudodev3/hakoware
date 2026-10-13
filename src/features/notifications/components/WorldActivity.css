@@ -26,3 +26,6 @@
 .activity-view-tabs button.active { background:var(--surface-card); color:var(--accent-text); }
 .activity-view-tabs button > span { font-size:.625rem; color:var(--accent-text); }
 .world-footer-note { font-size:.6875rem; color:var(--text-muted); }
+.world-event.is-flare { animation:world-flare-in .7s ease-out both; }
+@keyframes world-flare-in { from { box-shadow:inset 0 0 0 1px rgba(238,181,92,.7),0 0 24px rgba(238,181,92,.14); } to { box-shadow:none; } }
+@media(prefers-reduced-motion:reduce) { .world-event.is-flare { animation:none; } }

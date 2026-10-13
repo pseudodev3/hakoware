@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const auth = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
+const { sendRouteError } = require('../services/httpError');
+const { updateDuoIdentity, profileSnapshot, updateProfile } = require('../services/presentation');
+router.use(auth);
+const writes = createRateLimiter({ name: 'presentation', windowMs: 60000, max: 20, keyGenerator: req => req.user.id });
+router.patch('/duos/:id', writes, async (req, res) => { try { res.json(await updateDuoIdentity(req.user.id, req.params.id, req.body)); } catch (error) { sendRouteError(res, error, 'Could not save your Duo'); } });
+router.get('/profile', async (req, res) => { try { res.json(await profileSnapshot(req.user.id)); } catch (error) { sendRouteError(res, error, 'Could not open your showcase'); } });
+router.patch('/profile', writes, async (req, res) => { try { res.json(await updateProfile(req.user.id, req.body)); } catch (error) { sendRouteError(res, error, 'Could not save your showcase'); } });
+module.exports = router;

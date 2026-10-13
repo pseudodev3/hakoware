@@ -17,6 +17,7 @@
     "check:aura-bank": "node scripts/checkAuraBank.js",
     "check:world-activity": "node scripts/checkWorldActivity.js",
     "check:flare-trial-delivery": "node scripts/checkFlareTrialDelivery.js",
+    "check:presentation": "node scripts/checkPresentation.js",
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",
     "check:after-hours-social": "node scripts/checkAfterHoursSocial.js"

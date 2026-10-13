@@ -34,6 +34,14 @@ const tintedMark = (image, size, tint) => {
   if (!markCtx) return null;
 
   markCtx.drawImage(image, 0, 0, size, size);
+  // The brand PNG has an opaque dark background. Use its bright mark as the
+  // mask so tinting retains the monogram instead of filling the whole square.
+  const pixels = markCtx.getImageData(0, 0, size, size);
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    const brightness = Math.max(pixels.data[index], pixels.data[index + 1], pixels.data[index + 2]);
+    pixels.data[index + 3] *= Math.max(0, (brightness - 40) / 215);
+  }
+  markCtx.putImageData(pixels, 0, 0);
   markCtx.globalCompositeOperation = 'source-in';
   markCtx.fillStyle = tint;
   markCtx.fillRect(0, 0, size, size);
