@@ -15,6 +15,7 @@
     "check:sparks-legacy-indexes": "node scripts/checkSparkLegacyIndexes.js",
     "check:sparks-storage-recovery": "node scripts/checkSparkStorageRecovery.js",
     "check:aura-bank": "node scripts/checkAuraBank.js",
+    "check:earned-duo-credit": "node scripts/checkEarnedDuoCredit.js",
     "check:world-activity": "node scripts/checkWorldActivity.js",
     "check:flare-trial-delivery": "node scripts/checkFlareTrialDelivery.js",
     "check:presentation": "node scripts/checkPresentation.js",

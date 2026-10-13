@@ -25,6 +25,7 @@ const {
   recordEvent
 } = require('../services/contractGame');
 const { performContractCheckin } = require('../services/contractCheckin');
+const { preserveDuoCredit } = require('../services/auraBank');
 const { ensureActiveGameState, loadContractsForUser } = require('../services/contractQueries');
 const { normalizeUsername } = require('../services/username');
 const { recapView } = require('../services/clientViews');
@@ -568,6 +569,7 @@ router.delete('/:id', auth, async (req, res) => {
     if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
     if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
 
+    await preserveDuoCredit(friendship);
     await refundOpenBountiesForFriendship(friendship._id);
     await recordEvent(friendship._id, 'CONTRACT_ENDED', { userId: req.user.id });
     const otherUserId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;

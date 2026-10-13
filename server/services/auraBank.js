@@ -22,6 +22,13 @@ const journalReceipt = async (userId, receipt) => {
   await User.updateOne({ _id: userId }, { $set: { 'auraWalletReceipts.$[receipt].journaled': true } }, { arrayFilters: [{ 'receipt.key': receipt.key }] });
 };
 const finishReceipt = async (userId, receipt) => { if (!receipt.journaled) await journalReceipt(userId, receipt).catch(error => console.error('Aura wallet journal pending:', error.message)); };
+const preserveDuoCredit = async friendship => {
+  if (!friendship || friendship.status === 'PENDING') return;
+  const level = duoStateFromXP(friendship.duoXP).level;
+  const limit = level >= 5 ? 100 : level >= 2 ? 50 : 25;
+  if (limit === 25) return;
+  await User.updateMany({ _id: { $in: [friendship.user1, friendship.user2] } }, { $max: { 'auraBank.creditLimit': limit } });
+};
 const duoCredit = async (userId) => {
   const contracts = await Friendship.find({ status: 'ACTIVE', $or: [{ user1: userId }, { user2: userId }] }).select('duoXP user1Perspective user2Perspective season').lean();
   const established = contracts.some(contract => {
@@ -124,4 +131,4 @@ const reconcileAuraWallet = async userId => {
   const people = await User.find({ ...(userId ? { _id: userId } : {}), 'auraWalletReceipts.journaled': false }).select({ _id: 1, auraWalletReceipts: 1 }).limit(50).lean();
   for (const person of people) for (const receipt of person.auraWalletReceipts.filter(value => !value.journaled).slice(0, 30)) await journalReceipt(person._id, receipt);
 };
-module.exports = { bankView, bankAction, creditAuraEarnings, reconcileAuraWallet };
+module.exports = { bankView, bankAction, creditAuraEarnings, reconcileAuraWallet, preserveDuoCredit };

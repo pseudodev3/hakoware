@@ -50,13 +50,13 @@ const holdCard = async (trade, side, legacy = false) => {
 };
 // A terminal receipt also acts as a tombstone: a late concurrent request cannot
 // reserve a card after a cancellation has already finished.
-const refundCard = async (trade, side) => {
+const refundCard = async (trade, side, createTombstone = true) => {
   const sender = side === 'SENDER', userId = sender ? trade.senderId : trade.recipientId;
   const cardId = sender ? trade.offeredCardId : trade.requestedCardId, tradeId = oid(trade._id);
   const matching = { $filter: { input: { $ifNull: ['$cardTradeReceipts', []] }, as: 'r', cond: { $eq: ['$$r.tradeId', tradeId] } } };
   const held = { $gt: [{ $size: { $filter: { input: matching, as: 'r', cond: { $eq: ['$$r.state', 'HELD'] } } } }, 0] };
   const tombstone = { tradeId, side, cardId, state: 'REFUNDED', createdAt: new Date() };
-  await User.updateOne({ _id: userId }, [{ $set: {
+  await User.updateOne({ _id: userId, ...(!createTombstone ? { 'cardTradeReceipts.tradeId': tradeId } : {}) }, [{ $set: {
     inventory: { $concatArrays: [{ $ifNull: ['$inventory', []] }, { $cond: [held, [cardId], []] }] },
     cardDiscoveries: { $setUnion: [{ $ifNull: ['$cardDiscoveries', []] }, { $cond: [held, [cardId], []] }] },
     cardTradeReceipts: { $cond: [
@@ -84,12 +84,15 @@ const adoptLegacy = async trade => {
   return readTrade(trade._id);
 };
 const beginClose = async (trade, status, actorId = null, counterTradeId = null) => {
-  await CardTrade.updateOne({ _id: trade._id, phase: { $in: ['PREPARING', 'OPEN'] } }, { $set: { phase: 'CLOSING', closingStatus: status, settlementActorId: actorId || trade.senderId, ...(counterTradeId ? { counterTradeId } : {}) } });
+  await CardTrade.updateOne({ _id: trade._id, phase: { $in: status === 'REJECTED' ? ['PREPARING'] : ['PREPARING', 'OPEN'] } }, { $set: { phase: 'CLOSING', closingStatus: status, settlementActorId: actorId || trade.senderId, ...(counterTradeId ? { counterTradeId } : {}) } });
   return readTrade(trade._id);
 };
 const finishClose = async trade => {
-  await refundCard(trade, 'SENDER'); await refundCard(trade, 'RECIPIENT');
   const failed = trade.closingStatus === 'REJECTED';
+  await refundCard(trade, 'SENDER');
+  // Rejected preparation never opened for the recipient. Refund an existing
+  // receipt for older recoveries, but do not create one on an untouched account.
+  await refundCard(trade, 'RECIPIENT', !failed);
   await CardTrade.updateOne({ _id: trade._id, phase: 'CLOSING' }, { $set: { phase: failed ? 'FAILED' : 'COMPLETE', status: failed ? 'CANCELLED' : trade.closingStatus, settledAt: new Date(), deliveryPending: !failed && ['CANCELLED', 'DECLINED'].includes(trade.closingStatus) } });
   return readTrade(trade._id);
 };

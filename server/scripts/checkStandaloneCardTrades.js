@@ -42,6 +42,31 @@ async function run() {
     assert.equal(await Notification.countDocuments({ cardTradeId: offers[0]._id, title: 'Card trade accepted' }), 1);
     assert.equal((await User.findById(first.one._id)).auraBalance, 40);
 
+    const rejected = await pair([], ['ORBIT']);
+    for (let attempt = 0; attempt < 3; attempt++) await assert.rejects(createOffer(rejected.one._id, { ...rejected.body, clientId: randomUUID() }), /unavailable/);
+    assert.deepEqual((await User.findById(rejected.two._id).select('+cardTradeReceipts')).cardTradeReceipts, [], 'never-opened offers cannot append receipts to an untouched recipient');
+    assert.deepEqual(await inventory(rejected.two), ['ORBIT']);
+    const oldRejected = await pair([], []);
+    const oldFailed = await CardTrade.create({ senderId: oldRejected.one._id, recipientId: oldRejected.two._id, friendshipId: oldRejected.contract._id, offeredCardId: 'PURIFY', requestedCardId: 'ORBIT', clientId: randomUUID(), expiresAt: new Date(Date.now() + 86400000), phase: 'CLOSING', closingStatus: 'REJECTED', escrowVersion: 1 });
+    await User.updateOne({ _id: oldRejected.two._id }, { $push: { cardTradeReceipts: { tradeId: oldFailed._id, side: 'RECIPIENT', cardId: 'ORBIT', state: 'HELD', createdAt: new Date() } } });
+    await Promise.all(Array.from({ length: 3 }, () => reconcileTrade(oldFailed._id)));
+    assert.deepEqual(await inventory(oldRejected.two), ['ORBIT'], 'existing receipts from older rejected recoveries still refund exactly once');
+
+    const latePreparation = await pair(), originalHold = User.findOneAndUpdate;
+    let enteredPreparation, releasePreparation;
+    const preparationEntered = new Promise(resolve => { enteredPreparation = resolve; }), preparationGate = new Promise(resolve => { releasePreparation = resolve; });
+    User.findOneAndUpdate = function(filter, update, options) {
+      if (String(filter._id) === String(latePreparation.one._id) && filter.inventory === 'PURIFY') return { select: selection => (async () => { enteredPreparation(); await preparationGate; return originalHold.call(this, filter, update, options).select(selection); })() };
+      return originalHold.call(this, filter, update, options);
+    };
+    const delayedPreparation = createOffer(latePreparation.one._id, latePreparation.body);
+    await preparationEntered;
+    await Friendship.updateOne({ _id: latePreparation.contract._id }, { $set: { status: 'BLOCKED' } });
+    await settleExpiredTrades(latePreparation.one._id); releasePreparation();
+    await assert.rejects(delayedPreparation, /unavailable/); User.findOneAndUpdate = originalHold;
+    assert.deepEqual(await inventory(latePreparation.one), ['PURIFY'], 'rejected preparation keeps its sender fence against late reservation');
+    assert.deepEqual((await User.findById(latePreparation.two._id).select('+cardTradeReceipts')).cardTradeReceipts, [], 'a never-opened rejected preparation needs no recipient fence');
+
     for (let round = 0; round < 8; round++) {
       const fixture = await pair(), before = await total([fixture.one, fixture.two]);
       const trade = await createOffer(fixture.one._id, fixture.body);

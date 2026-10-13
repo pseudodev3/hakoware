@@ -44,6 +44,9 @@ jobs:
       - name: Check activation and return guidance
         run: npm run check:next-move
 
+      - name: Check durable bank retry recovery
+        run: npm run check:bank-retry
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
@@ -85,6 +88,10 @@ jobs:
       - name: Check Aura bank integrity and repayment
         working-directory: server
         run: npm run check:aura-bank
+
+      - name: Check earned Duo credit without a bank visit
+        working-directory: server
+        run: npm run check:earned-duo-credit
 
       - name: Check public world activity and Flare delivery
         working-directory: server

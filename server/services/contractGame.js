@@ -713,6 +713,7 @@ const completeCheckinGame = async (friendship, userId, source = 'TEXT', prepared
   friendship.duoXP = (friendship.duoXP || 0) + xp;
   const duo = syncDuoState(friendship);
   await friendship.save();
+  await require('./auraBank').preserveDuoCredit(friendship).catch(error => console.error('Duo credit persistence pending:', error.message));
 
   const checkinEvent = await recordEvent(friendship._id, voice ? 'VOICE_CHECKIN' : 'CHECKIN', {
     userId,
@@ -834,6 +835,7 @@ const runItBack = async (friendship) => {
   friendship.duoXP = (friendship.duoXP || 0) + 50;
   syncDuoState(friendship);
   await friendship.save();
+  await require('./auraBank').preserveDuoCredit(friendship).catch(error => console.error('Duo credit persistence pending:', error.message));
   await recordEvent(friendship._id, 'SEASON_STARTED', { xp: 50, metadata: { season: friendship.season.number, runItBack: true } });
   await notifyBoth(friendship, 'Run it back', `Season ${friendship.season.number} starts now. +50 Duo XP.`, 'SEASON_STARTED');
   return friendship;
