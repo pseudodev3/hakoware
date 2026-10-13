@@ -18,6 +18,12 @@ const dateLabel = (value) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
 };
 const messageTypes = new Set(['MESSAGE', 'CHECKIN_REPLY']);
+const messagesTogether = (first, second) => {
+  if (!first || !second || !messageTypes.has(first.type) || !messageTypes.has(second.type) || first.mine !== second.mine) return false;
+  const earlier = new Date(first.createdAt), later = new Date(second.createdAt);
+  const gap = later - earlier;
+  return gap >= 0 && gap < 5 * 60 * 1000 && earlier.toDateString() === later.toDateString();
+};
 const EMOJIS = ['❤️', '😂', '🤝', '👀', '✨', '🥹'];
 const readDraft = (key) => { try { return localStorage.getItem(key) || ''; } catch { return ''; } };
 const readRetry = (key) => { try { const value = JSON.parse(localStorage.getItem(key)); return /^[a-zA-Z0-9_-]{16,80}$/.test(value?.clientId || '') && typeof value.text === 'string' ? value : null; } catch { return null; } };
@@ -219,12 +225,13 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     try { await callbacks.current.onAction?.('POKE', friendship); void load(); }
     finally { if (aliveRef.current) setPoking(false); }
   };
-  const renderItem = (item) => {
+  const pendingTimelineItem = pendingMessage && { ...pendingMessage, type: 'MESSAGE', mine: true };
+  const renderItem = (item, previous = null, next = null) => {
     const conversation = messageTypes.has(item.type);
     const isFocus = item.id === focusEventId;
-    return <article key={item.id} data-friend-event={item.id} tabIndex={-1} className={`friend-event ${conversation ? 'conversation' : 'shared-event'} ${item.mine ? 'mine' : 'theirs'} ${isFocus ? 'is-focused' : ''}`}>
+    return <article key={item.id} data-friend-event={item.id} tabIndex={-1} className={`friend-event ${conversation ? 'conversation' : 'shared-event'} ${item.mine ? 'mine' : 'theirs'} ${messagesTogether(previous, item) ? 'is-grouped-before' : ''} ${messagesTogether(item, next) ? 'is-grouped-after' : ''} ${isFocus ? 'is-focused' : ''}`}>
       {conversation ? <>
-        <div className="friend-message-bubble">
+        <div className={`friend-message-bubble ${item.voice || item.voiceUnavailable ? 'has-voice' : ''}`}>
         {!item.mine && <span className="friend-message-author friend-space-sr-only">{item.actorName}</span>}
         {item.voice ? <VoiceMessage voice={item.voice} /> : <p>{item.text}</p>}
         {item.voiceUnavailable && <small>Audio is no longer available.</small>}
@@ -256,8 +263,8 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
           {shared && <div className="friend-first-shared"><span>First check-in together</span><strong>Both showed up.</strong><p>You + {partner?.displayName} · {shared.xp} Duo XP together.</p><button onClick={() => onActivitySeen?.([shared])} aria-label="Dismiss first shared check-in"><X size={16} /></button></div>}
           {focusOutsidePage && <section className="friend-opened-update" aria-label="Opened from Activity"><span>Opened from Activity</span>{renderItem(room.focusItem)}</section>}
           {!room.items.length && !error && <div className="friend-space-empty"><MessageCircle size={28} strokeWidth={1.5} /><strong>Your space with {partner?.displayName}.</strong><p>Leave a message or a voice note. Your check-ins and shared moments stay here.</p></div>}
-          {room.items.map((item, index) => <React.Fragment key={item.id}>{(index === 0 || dateLabel(room.items[index - 1].createdAt) !== dateLabel(item.createdAt)) && <div className="friend-timeline-date">{dateLabel(item.createdAt)}</div>}{renderItem(item)}</React.Fragment>)}
-          {pendingMessage && <article className={`friend-event mine friend-pending-message ${pendingMessage.status === 'FAILED' ? 'has-failed' : ''}`}><div className="friend-message-bubble"><p>{pendingMessage.text}</p><span className="friend-message-meta" role="status">{pendingMessage.status === 'SENDING' ? <><LoaderCircle size={14} className="friend-sending-icon" />Sending</> : <><AlertCircle size={14} />Delivery unconfirmed</>}</span></div>{pendingMessage.status === 'FAILED' && <button className="friend-message-retry" type="button" onClick={() => void sendText(null, pendingMessage.text)}>Retry message</button>}</article>}
+          {room.items.map((item, index) => <React.Fragment key={item.id}>{(index === 0 || dateLabel(room.items[index - 1].createdAt) !== dateLabel(item.createdAt)) && <div className="friend-timeline-date">{dateLabel(item.createdAt)}</div>}{renderItem(item, room.items[index - 1], room.items[index + 1] || pendingTimelineItem)}</React.Fragment>)}
+          {pendingMessage && <article className={`friend-event conversation mine friend-pending-message ${messagesTogether(room.items.at(-1), pendingTimelineItem) ? 'is-grouped-before' : ''} ${pendingMessage.status === 'FAILED' ? 'has-failed' : ''}`}><div className="friend-message-bubble"><p>{pendingMessage.text}</p><span className="friend-message-meta" role="status">{pendingMessage.status === 'SENDING' ? <><LoaderCircle size={14} className="friend-sending-icon" />Sending</> : <><AlertCircle size={14} />Delivery unconfirmed</>}</span></div>{pendingMessage.status === 'FAILED' && <button className="friend-message-retry" type="button" onClick={() => void sendText(null, pendingMessage.text)}>Retry message</button>}</article>}
         </>}
       </div>
       {newUpdates && <button className="friend-new-updates" onClick={() => { listRef.current.scrollTop = listRef.current.scrollHeight; nearBottomRef.current = true; setNewUpdates(false); acknowledge(room.items); syncReads(); }}>New updates <ArrowDown size={15} /></button>}
