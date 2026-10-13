@@ -17,7 +17,7 @@ router.get('/', auth, async (req, res) => {
 
     const [user, notifications] = await Promise.all([
       User.findById(req.user.id)
-        .select('_id displayName username email avatar avatarFrame inventory auraBalance plusInterestAt isTestAccount privacySettings')
+        .select('_id displayName username email avatar avatarFrame cardFinish profileDecoration inventory auraBalance plusInterestAt isTestAccount privacySettings')
         .lean(),
       Notification.find({ toUserId: req.user.id })
         .sort({ createdAt: -1 })

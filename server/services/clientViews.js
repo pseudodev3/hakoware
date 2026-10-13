@@ -24,6 +24,8 @@ const currentUserView = (value) => {
     email: data.email,
     avatar: data.avatar || null,
     avatarFrame: data.avatarFrame || 'plain',
+    cardFinish: data.cardFinish || 'classic',
+    profileDecoration: data.profileDecoration || 'none',
     inventory: Array.isArray(data.inventory) ? data.inventory : [],
     auraBalance: Number(data.auraBalance) || 0,
     plusInterestAt: data.plusInterestAt || null,

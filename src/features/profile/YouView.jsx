@@ -179,8 +179,9 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
   return (
     <div className="you-view">
       <PageHeading eyebrow="You" title={<>Your corner.<br /><span>Make it yours.</span></>} description="Your Duos, your Aura, your way to play." />
-      <section className="profile-aura-area" aria-label="Profile and Aura">
-        <div className="profile-identity">
+      <section className="profile-section" aria-label="Your profile">
+        <p className="eyebrow">Profile</p>
+        <div className="profile-identity" data-profile-decoration={user.profileDecoration || 'none'}>
           <div className="profile-avatar-control">
             <button
               type="button"
@@ -222,6 +223,9 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
           )}
         </div>
 
+        <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
+      </section>
+      <section className="profile-aura-area" aria-label="Your Aura">
         <div className="profile-aura-row">
           <div className="aura-balance-copy">
             <p className="eyebrow">Aura</p>
@@ -242,7 +246,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         </div>
       </section>
 
-      <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
       <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('circle')} />
       <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
         <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span><ArrowRight size={19} />

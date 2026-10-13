@@ -19,6 +19,7 @@
     "check:world-activity": "node scripts/checkWorldActivity.js",
     "check:flare-trial-delivery": "node scripts/checkFlareTrialDelivery.js",
     "check:presentation": "node scripts/checkPresentation.js",
+    "check:cosmetics": "node scripts/checkCosmetics.js",
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
     "check:standalone-trades": "node scripts/checkStandaloneCardTrades.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",

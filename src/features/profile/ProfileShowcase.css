@@ -1,5 +1,6 @@
-.profile-showcase > header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
+.profile-showcase > header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
 .profile-showcase h2 { font-size:1.4rem; letter-spacing:-.035em; margin-top:6px; }
+.showcase-toolbar { display:flex; flex-wrap:wrap; gap:8px; }
 .profile-showcase > header button { display:flex; align-items:center; gap:7px; min-height:44px; padding:0 13px; border:1px solid var(--border-active); border-radius:12px; font-size:.75rem; }
 .showcase-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:28px; }
 .showcase-duo-open { display:flex; align-items:center; gap:18px; min-height:44px; margin-top:15px; font-size:.75rem; color:var(--text-secondary); }
@@ -17,6 +18,8 @@
 .showcase-status button { min-height:44px; padding:0 12px; }
 .showcase-form { display:flex; flex-direction:column; gap:14px; }
 .showcase-frame-preview { display:flex; align-items:center; gap:18px; padding:12px 4px 20px; }
+.showcase-frame-preview > span:not(.user-avatar) { min-width:0; overflow-wrap:anywhere; }
+.showcase-frame-preview[data-profile-decoration]:not([data-profile-decoration='none']) { padding:24px; }
 .showcase-frame-preview small { display:block; font-size:.75rem; line-height:1.5; color:var(--text-muted); margin-top:5px; }
 .showcase-form fieldset { border:0; min-width:0; padding:0; }
 .showcase-form legend,.showcase-form > label { font-size:.75rem; color:var(--text-secondary); margin-bottom:3px; }
@@ -26,6 +29,22 @@
 .showcase-frames strong { font-size:.75rem; }
 .showcase-frames small { display:flex; align-items:center; gap:4px; color:var(--text-muted); font-size:.5625rem; }
 .showcase-frames button:disabled { opacity:.6; }
+.showcase-frames strong { overflow-wrap:anywhere; }
+.showcase-finishes { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:12px; }
+.showcase-finishes > button { min-width:0; display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px 6px; border:1px solid var(--border-active); border-radius:12px; background:var(--surface-card); }
+.showcase-finishes > button[aria-pressed='true'] { border-color:var(--accent-text); background:var(--accent-soft); }
+.showcase-finishes strong { font-size:.75rem; overflow-wrap:anywhere; }
+.showcase-finishes small { font-size:.5625rem; color:var(--text-muted); }
+.showcase-finishes > button:disabled,.showcase-decorations > button:disabled { opacity:.6; }
+.showcase-decorations { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px; }
+.showcase-decorations > button { display:flex; align-items:center; gap:12px; min-width:0; min-height:72px; text-align:left; padding:10px; border:1px solid var(--border-active); border-radius:12px; }
+.showcase-decorations > button[aria-pressed='true'] { border-color:var(--accent-text); background:var(--accent-soft); }
+.showcase-decoration-swatch { display:block; width:42px; height:42px; flex:0 0 auto; background:var(--surface-card); }
+.showcase-decoration-swatch[data-profile-decoration] { padding:0; border-radius:8px; }
+.showcase-decorations > button > span:last-child { min-width:0; }
+.showcase-decorations strong { display:block; font-size:.6875rem; line-height:1.5; overflow-wrap:anywhere; }
+.showcase-decorations small { display:block; margin-top:3px; font-size:.5625rem; color:var(--text-muted); }
+.showcase-shop-link { display:flex; align-items:center; gap:8px; min-height:44px; color:var(--accent-text); font-size:.75rem; text-align:left; }
 .showcase-form select { min-height:48px; width:100%; min-width:0; padding:0 12px; border:1px solid var(--border-active); border-radius:12px; background:var(--surface-input); color:var(--text-primary); font-size:1rem; }
 .showcase-form p { font-size:.75rem; line-height:1.6; color:var(--text-secondary); }
 .showcase-form .showcase-error { color:var(--aura-red); }
@@ -33,3 +52,4 @@
 @media(hover:hover) and (pointer:fine) { .showcase-card:hover strong { color:var(--accent-text); } }
 @media(max-width:760px) { .showcase-grid { grid-template-columns:1fr; gap:8px; } .showcase-card { padding:24px 0 8px; } .showcase-empty { padding:20px; } }
 @media(max-width:360px) { .showcase-frames { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:380px) { .showcase-finishes { grid-template-columns:repeat(2,minmax(0,1fr)); } }

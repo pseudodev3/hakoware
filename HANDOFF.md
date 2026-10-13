@@ -7,14 +7,20 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-10-08**
+> Last updated: **2026-10-13**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
 
-## Current continuation checkpoint — 2026-10-08
+## Latest checkpoint — 2026-10-13
+
+The cosmetic shop is built as a preview release per the user's “Build the shop first” choice. Nocturne, Prism and Porcelain provide deck finishes, avatar frames and profile backdrops; the complete-set bundle includes all three. Players can preview and privately save collections from their profile or the Arena's Cards section. “A little more you” is now grouped inside Profile. Paid styles require private server entitlements; no checkout or public entitlement-grant route exists. Pricing, currency and verified payment fulfillment are the next revenue step. Details and validation: [cosmetic shop review](docs/cosmetic-shop-review.md).
+
+The implementation uses existing User documents and no new indexes. The shared catalog lives inside the backend package at `server/config/cosmetics.json`, so server-folder deployments include it. Deploy the frontend and backend together. Production deployment has not been verified for this change. Older checkpoints below describe earlier branches and should not be treated as current branch or deployment state.
+
+## Historical continuation checkpoint — 2026-10-08
 
 Current production/main:
 

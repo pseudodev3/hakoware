@@ -91,6 +91,7 @@ app.use('/api/after-hours', require('./routes/afterHours'));
 app.use('/api/sparks', require('./routes/sparks'));
 app.use('/api/world-activity', require('./routes/worldActivity'));
 app.use('/api/presentation', require('./routes/presentation'));
+app.use('/api/cosmetics', require('./routes/cosmetics'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/growth', require('./routes/growth'));
 app.use('/api/test-lab', require('./routes/testLab'));

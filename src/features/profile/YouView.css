@@ -1,6 +1,8 @@
 
 .you-view { max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:40px; }
 .you-view > .page-heading { padding-bottom:0; margin-bottom:0; }
+.profile-section { display:flex; flex-direction:column; gap:24px; }
+.profile-section > .profile-showcase { padding-top:26px; border-top:1px solid var(--border-subtle); }
 .profile-aura-area { position:relative; padding-top:8px; }
 .profile-identity { display:flex; align-items:center; gap:18px; }
 .profile-avatar-control { position:relative; flex:0 0 auto; }
@@ -15,7 +17,7 @@
 .identity-photo-actions button { min-width:44px; min-height:44px; font-size:.75rem; color:var(--accent-text); }
 .identity-photo-actions .remove { color:var(--text-muted); }
 .profile-identity > .btn { flex:0 0 auto; }
-.profile-aura-row { display:grid; grid-template-columns:1.2fr 1fr; gap:32px; align-items:center; padding:28px 0; margin-top:24px; border-block:1px solid var(--border-subtle); }
+.profile-aura-row { display:grid; grid-template-columns:1.2fr 1fr; gap:32px; align-items:center; padding:28px 0; border-block:1px solid var(--border-subtle); }
 .aura-balance-line { display:flex; gap:12px; align-items:baseline; margin-top:5px; }
 .aura-balance-line strong { font-size:clamp(3.5rem,6vw,5rem); line-height:1.15; letter-spacing:-.065em; font-weight:650; color:var(--aura-gold); }
 .aura-balance-line span { color:var(--text-muted); font-size:.75rem; }
@@ -74,3 +76,4 @@
 .grudge-action-state { font-size:.6875rem; color:var(--text-muted); }
 @media(hover:hover) and (pointer:fine) { .you-collection-link:hover > svg:last-child { transform:translateX(4px); } .you-collection-link:hover strong { color:var(--accent-text); } }
 @media(max-width:680px) { .you-view { gap:32px; } .profile-identity { gap:14px; flex-wrap:wrap; } .profile-avatar-button,.identity-avatar { width:60px; height:60px; } .identity-copy h2 { font-size:1.4rem; } .profile-identity > .btn { margin-top:4px; } .profile-aura-row { grid-template-columns:1fr; gap:24px; } .aura-rank { max-width:360px; } .profile-meta { font-size:.6875rem; gap:10px 16px; } .you-collection-link { gap:16px; padding-block:20px; } .grudge-card { flex-wrap:wrap; padding:20px; } .grudge-card-side { width:100%; flex-direction:row; align-items:center; justify-content:space-between; } }
+@media(max-width:680px) { .profile-identity > .identity-copy { min-width:140px; } .profile-identity[data-profile-decoration]:not([data-profile-decoration='none']) > .btn { width:100%; } }

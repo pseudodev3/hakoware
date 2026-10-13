@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const auth = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
+const { sendRouteError } = require('../services/httpError');
+const { shopSnapshot, saveShopWish } = require('../services/cosmetics');
+router.use(auth);
+const writes = createRateLimiter({ name: 'cosmetic-list', windowMs: 60000, max: 30, keyGenerator: req => req.user.id });
+router.get('/', async (req, res) => { try { res.json(await shopSnapshot(req.user.id)); } catch (error) { sendRouteError(res, error, 'Could not open the style shop'); } });
+router.put('/saved/:id', writes, async (req, res) => { try { res.json(await saveShopWish(req.user.id, req.params.id, req.body)); } catch (error) { sendRouteError(res, error, 'Could not confirm your saved collections'); } });
+module.exports = router;

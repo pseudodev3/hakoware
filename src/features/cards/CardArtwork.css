@@ -2,3 +2,6 @@
 .card-artwork svg { display:block; width:100%; height:100%; }
 .card-artwork.is-stamp { width:var(--art-size,74px); height:var(--art-size,74px); border-radius:50%; }
 .card-artwork.is-stamp svg { height:auto; transform:scale(1.22); }
+.card-artwork.finish-nocturne { box-shadow:0 12px 28px #080e0a40,0 0 0 1px #d8b36a55; }
+.card-artwork.finish-prism { box-shadow:0 12px 28px #18122440,0 0 0 1px #baa6ed66; }
+.card-artwork.finish-porcelain { box-shadow:0 12px 28px #17324726,0 0 0 1px #6182a666; }

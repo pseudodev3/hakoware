@@ -44,3 +44,6 @@
 .avatar-frame-linked { outline:2px solid var(--accent-text); outline-offset:2px; }
 .avatar-frame-orbit { outline:2px solid #b9a6ed; outline-offset:3px; box-shadow:0 0 0 6px color-mix(in srgb,#b9a6ed 15%,transparent),inset 0 0 0 1px var(--border-active); }
 .avatar-frame-crown { outline:2px solid var(--aura-gold); outline-offset:3px; box-shadow:0 0 0 6px color-mix(in srgb,var(--aura-gold) 17%,transparent),inset 0 0 0 2px var(--aura-gold); }
+.avatar-frame-gilt { outline:1px dashed #d8b36a; outline-offset:4px; box-shadow:0 0 0 2px #947346,0 0 0 6px #d8b36a22,inset 0 0 0 1px #d8b36a; }
+.avatar-frame-prismatic { box-shadow:0 0 0 2px #c9b5f0,0 0 0 4px #789fd1,0 0 0 6px #b793db35,inset 0 0 0 1px #dfd1ff; }
+.avatar-frame-ceramic { outline:1px dashed #789cba; outline-offset:4px; box-shadow:0 0 0 2px #e9dfcc,0 0 0 6px #6e93b52b,inset 0 0 0 1px #789cba; }

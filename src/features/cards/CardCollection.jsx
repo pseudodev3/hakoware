@@ -12,6 +12,7 @@ import {
   respondToCardOffer,
 } from '../../services/cardService';
 import { CardArtwork } from './CardArtwork';
+import { CosmeticShop } from '../cosmetics/CosmeticShop';
 import { ViewTabs } from '../../shared/components/ViewTabs';
 import './CardCollection.css';
 import { CardEffectPreview } from './CardEffectPreview';
@@ -242,7 +243,7 @@ export const CardCollection = ({
       <div className="collection-progress" style={{ '--collection-size': Math.max(activeCards.length, 1) }} role="progressbar" aria-label="Tools collected" aria-valuemin={0} aria-valuemax={activeCards.length} aria-valuenow={activeCards.filter((card) => card.discovered).length}>
         {activeCards.map((card) => <span key={card.id} className={card.discovered ? 'is-collected' : ''} aria-hidden="true" />)}
       </div>
-      <ViewTabs id="collection" label="Cards views" className="collection-tabs" value={tab} onChange={setTab} items={[{ value: 'collection', label: 'Collection' }, { value: 'offers', label: 'Offers', count: pending.length }]} />
+      <ViewTabs id="collection" label="Cards views" className="collection-tabs" value={tab} onChange={setTab} items={[{ value: 'collection', label: 'Collection' }, { value: 'offers', label: 'Offers', count: pending.length }, { value: 'styles', label: 'Style shop' }]} />
       {error && (
         <div className="cards-error" role="status">
           <p>{error}</p>
@@ -250,7 +251,7 @@ export const CardCollection = ({
         </div>
       )}
       <div role="tabpanel" id={`collection-panel-${tab}`} aria-labelledby={`collection-tab-${tab}`}>
-      {tab === 'collection' ? (
+      {tab === 'styles' ? <CosmeticShop /> : tab === 'collection' ? (
         <>
           <div className="collection-filters" aria-label="Filter cards">
             {[

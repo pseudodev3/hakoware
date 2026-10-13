@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { resolveApiMediaUrl } from '../../lib/api';
+import { COSMETIC_FRAMES } from '../../lib/cosmetics';
 import './UserAvatar.css';
 
 const initialFor = (person) => (
@@ -21,7 +22,7 @@ export const UserAvatar = ({
   useEffect(() => setFailed(false), [src]);
 
   const label = alt ?? (person?.displayName || person?.username || 'User');
-  const frame = ['linked', 'orbit', 'crown'].includes(person?.avatarFrame) ? person.avatarFrame : 'plain';
+  const frame = ['linked', 'orbit', 'crown', ...COSMETIC_FRAMES.map(frame => frame.id)].includes(person?.avatarFrame) ? person.avatarFrame : 'plain';
 
   return (
     <span

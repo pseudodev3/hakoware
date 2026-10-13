@@ -1,0 +1,12 @@
+[data-profile-decoration]:not([data-profile-decoration='none']) { position:relative; isolation:isolate; border-radius:18px; padding:28px; }
+[data-profile-decoration]:not([data-profile-decoration='none'])::before { content:''; position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none; }
+[data-profile-decoration='midnight'] { --text-primary:#f4ecd7; --text-secondary:#d3c6a4; --text-muted:#b8ac8c; --surface-3:#29382f; --border-active:#c7a55e55; color:var(--text-primary); background:#17261f; }
+[data-profile-decoration='midnight']::before { background:repeating-linear-gradient(120deg,transparent 0 34px,#ddbb7130 35px 36px,transparent 37px 70px),radial-gradient(ellipse at 100% 0,#8f783531,transparent 65%); box-shadow:inset 0 0 0 1px #c5a36452; }
+[data-profile-decoration='aurora'] { --text-primary:#f2eafb; --text-secondary:#d5cbea; --text-muted:#b9accb; --surface-3:#44384f; --border-active:#cebaed66; color:var(--text-primary); background:#27233a; }
+[data-profile-decoration='aurora']::before { background:linear-gradient(135deg,transparent 15%,#a7bee437 16%,transparent 35%,#bd95da34 36%,transparent 59%,#7198c52a 60%,transparent 80%); box-shadow:inset 0 0 0 1px #c6b2e647; }
+[data-profile-decoration='gallery'] { --text-primary:#24445f; --text-secondary:#3f5b70; --text-muted:#5f7180; --surface-3:#e0e5e3; --border-active:#6182a655; color:var(--text-primary); background:#efe8d9; }
+[data-profile-decoration='gallery']::before { background:radial-gradient(circle at 95% 20%,transparent 45px,#6182a64d 46px 47px,transparent 48px 64px,#6182a622 65px 66px,transparent 67px),repeating-linear-gradient(0deg,transparent 0 23px,#6182a610 24px 25px); box-shadow:inset 0 0 0 1px #6182a64d; }
+@media(max-width:600px) { [data-profile-decoration]:not([data-profile-decoration='none']) { padding:22px 20px; } }
+[data-profile-decoration='midnight'] { --accent-text:#e2c583; --border-subtle:#c7a55e44; --surface-soft:#ffffff0d; --surface-soft-strong:#ffffff1a; }
+[data-profile-decoration='aurora'] { --accent-text:#d6bdf5; --border-subtle:#cebaed44; --surface-soft:#ffffff0d; --surface-soft-strong:#ffffff1a; }
+[data-profile-decoration='gallery'] { --accent-text:#244969; --border-subtle:#6182a644; --surface-soft:#2449690c; --surface-soft-strong:#24496918; }

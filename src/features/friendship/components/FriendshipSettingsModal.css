@@ -42,5 +42,5 @@
 .duo-cover-choices { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
 .duo-cover-choices button { min-height:44px; border:1px solid var(--border-active); border-radius:12px; font-size:.8125rem; }
 .duo-style-form .duo-style-error { color:var(--aura-red); }
-@media(max-width:640px) { .modal-root:has(.duo-style-form),.modal-root:has(.showcase-form) { top:var(--presentation-viewport-top,0px); height:var(--presentation-viewport-height,100dvh); bottom:auto; } .modal-root:has(.duo-style-form) .modal-content,.modal-root:has(.showcase-form) .modal-content { max-height:min(92dvh,calc(var(--presentation-viewport-height,100dvh) - 8px)); } }
+@media(max-width:640px) { .modal-root:has(.duo-style-form) { top:var(--presentation-viewport-top,0px); height:var(--presentation-viewport-height,100dvh); bottom:auto; } .modal-root:has(.duo-style-form) .modal-content { max-height:min(92dvh,calc(var(--presentation-viewport-height,100dvh) - 8px)); } }
 @media(max-width:400px) { .duo-color-choices { grid-template-columns:repeat(3,1fr); } .duo-color-choices button { min-height:44px; flex-direction:row; justify-content:center; gap:6px; } }

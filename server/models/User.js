@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const cosmeticCatalog = require('../config/cosmetics.json');
 
 const UserSchema = new mongoose.Schema({
   displayName: { type: String, required: true, trim: true, minlength: 2, maxlength: 32 },
@@ -26,7 +27,11 @@ const UserSchema = new mongoose.Schema({
   },
   auraBalance: { type: Number, default: 0, min: 0 },
   cardTradeReceipts: { type: [new mongoose.Schema({ tradeId: mongoose.Schema.Types.ObjectId, side: { type: String, enum: ['SENDER', 'RECIPIENT'] }, cardId: String, pairKey: String, state: { type: String, enum: ['HELD', 'REFUNDED', 'DELIVERED'] }, createdAt: Date }, { _id: false })], default: [], select: false },
-  avatarFrame: { type: String, enum: ['plain', 'linked', 'orbit', 'crown'], default: 'plain' },
+  avatarFrame: { type: String, enum: ['plain', 'linked', 'orbit', 'crown', ...cosmeticCatalog.frames.map(frame => frame.id)], default: 'plain' },
+  cardFinish: { type: String, enum: cosmeticCatalog.finishes.map(finish => finish.id), default: 'classic' },
+  profileDecoration: { type: String, enum: cosmeticCatalog.decorations.map(decoration => decoration.id), default: 'none' },
+  cosmeticUnlocks: { type: [String], enum: [...new Set(cosmeticCatalog.packs.flatMap(pack => pack.grants))], default: [], select: false },
+  cosmeticWishlist: { type: [String], enum: cosmeticCatalog.packs.map(pack => pack.id), default: [], select: false },
   earnedAvatarFrames: { type: [String], enum: ['plain', 'linked', 'orbit', 'crown'], default: ['plain'], select: false },
   showcase: { type: new mongoose.Schema({ favoriteCardId: { type: String, default: null }, featuredDuoId: { type: mongoose.Schema.Types.ObjectId, default: null } }, { _id: false }), default: () => ({}), select: false },
   auraBank: { type: new mongoose.Schema({ outstanding: { type: Number, default: 0, min: 0, max: 100 }, lastBorrowedAt: { type: Date, default: null }, creditLimit: { type: Number, enum: [25, 50, 100], default: 25 } }, { _id: false }), default: () => ({}), select: false },

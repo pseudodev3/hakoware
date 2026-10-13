@@ -1,0 +1,25 @@
+{
+  "finishes": [
+    { "id": "classic", "name": "Original", "packId": null, "description": "The original illustrated collection." },
+    { "id": "nocturne", "name": "Nocturne", "packId": "nocturne", "description": "Dark stock, gilded linework and a foil border.", "palette": ["#182420", "#c5a364", "#f1e5bc"] },
+    { "id": "prism", "name": "Prism", "packId": "prism", "description": "Violet enamel, crystal facets and iridescent edges.", "palette": ["#27223f", "#baa6ed", "#f0e9ff"] },
+    { "id": "porcelain", "name": "Porcelain", "packId": "porcelain", "description": "Warm ivory, cobalt ink and a ceramic seal.", "palette": ["#f2ead9", "#6182a6", "#244969"] }
+  ],
+  "frames": [
+    { "id": "gilt", "name": "Gilt", "packId": "nocturne" },
+    { "id": "prismatic", "name": "Prismatic", "packId": "prism" },
+    { "id": "ceramic", "name": "Ceramic", "packId": "porcelain" }
+  ],
+  "decorations": [
+    { "id": "none", "name": "Open space", "packId": null },
+    { "id": "midnight", "name": "Midnight lines", "packId": "nocturne" },
+    { "id": "aurora", "name": "Aurora glass", "packId": "prism" },
+    { "id": "gallery", "name": "Cobalt gallery", "packId": "porcelain" }
+  ],
+  "packs": [
+    { "id": "nocturne", "name": "Nocturne", "number": "01", "headline": "Dark stock. Gold edges.", "description": "A quieter kind of statement. Warm foil, fine lines and a midnight profile.", "finishId": "nocturne", "frameId": "gilt", "decorationId": "midnight", "accent": "#d8b36a", "grants": ["finish:nocturne", "frame:gilt", "decoration:midnight"] },
+    { "id": "prism", "name": "Prism", "number": "02", "headline": "Catch a different light.", "description": "Violet enamel and refracted colour. A little otherworldly, down to the edges.", "finishId": "prism", "frameId": "prismatic", "decorationId": "aurora", "accent": "#baa6ed", "grants": ["finish:prism", "frame:prismatic", "decoration:aurora"] },
+    { "id": "porcelain", "name": "Porcelain", "number": "03", "headline": "Ink worth keeping.", "description": "Cobalt marks on warm ivory. Illustrated cards with a collector’s finish.", "finishId": "porcelain", "frameId": "ceramic", "decorationId": "gallery", "accent": "#9ab8d6", "grants": ["finish:porcelain", "frame:ceramic", "decoration:gallery"] },
+    { "id": "complete", "name": "The complete set", "number": "01–03", "headline": "Every finish. Your choice.", "description": "All three editions, their avatar frames and profile decorations in one collection.", "bundle": true, "accent": "#d9f779", "grants": ["finish:nocturne", "frame:gilt", "decoration:midnight", "finish:prism", "frame:prismatic", "decoration:aurora", "finish:porcelain", "frame:ceramic", "decoration:gallery"] }
+  ]
+}

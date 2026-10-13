@@ -1,4 +1,6 @@
-import { useId } from 'react';
+import { useContext, useId } from 'react';
+import AuthContext from '../../contexts/AuthContext';
+import { CARD_FINISHES } from '../../lib/cosmetics';
 import './CardArtwork.css';
 
 const colors = {
@@ -23,15 +25,23 @@ const motifs = {
   NO_SIGNAL: <><g fill="none" stroke="var(--art-color)" strokeWidth="3"><path d="M25 69a45 45 0 0170 0M36 82a30 30 0 0148 0M47 95a15 15 0 0126 0" /></g><path d="m26 119 68-76" stroke="var(--art-ink)" strokeWidth="7" /><circle cx="60" cy="108" r="6" fill="var(--art-ink)" /></>,
   WATCHER: <><path d="M17 81c28-37 58-37 86 0-28 37-58 37-86 0Z" fill="var(--art-color)" /><circle cx="60" cy="81" r="23" fill="var(--art-paper)" /><circle cx="60" cy="81" r="13" fill="var(--art-ink)" /><circle cx="65" cy="75" r="4" fill="var(--art-paper)" /><path d="M60 38V25M25 46l-9-8M95 46l9-8" stroke="var(--art-ink)" strokeWidth="2" /></>
 };
-export const CardArtwork = ({ cardId, size = 74, variant = 'card' }) => {
+export const CardArtwork = ({ cardId, size = 74, variant = 'card', finishId }) => {
   const uid = useId().replaceAll(':', '');
-  const palette = colors[cardId] || colors.ORBIT;
-  return <span className={`card-artwork ${variant === 'stamp' ? 'is-stamp' : ''}`} style={{ '--art-size': size+'px', '--art-paper': palette[0], '--art-color': palette[1], '--art-ink': palette[2] }} data-card-art={cardId} aria-hidden="true">
-    <svg viewBox="0 0 120 160"><defs><pattern id={'grain'+uid} width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 0h1M3 3h1" stroke="var(--art-ink)" strokeWidth=".6" opacity=".17" /></pattern></defs>
-      <rect width="120" height="160" rx="5" fill="var(--art-paper)" /><rect x="7" y="7" width="106" height="146" rx="2" fill="none" stroke="var(--art-ink)" strokeWidth=".5" opacity=".45" />
+  const auth = useContext(AuthContext);
+  const finish = CARD_FINISHES.find(finish => finish.id === (finishId ?? auth?.user?.cardFinish ?? 'classic')) || CARD_FINISHES[0];
+  const palette = finish.palette || colors[cardId] || colors.ORBIT;
+  return <span className={`card-artwork finish-${finish.id} ${variant === 'stamp' ? 'is-stamp' : ''}`} style={{ '--art-size': size+'px', '--art-paper': palette[0], '--art-color': palette[1], '--art-ink': palette[2] }} data-card-art={cardId} data-card-finish={finish.id} aria-hidden="true">
+    <svg viewBox="0 0 120 160"><defs><pattern id={'grain'+uid} width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 0h1M3 3h1" stroke="var(--art-ink)" strokeWidth=".6" opacity=".17" /></pattern>
+      <linearGradient id={'foil'+uid} x1="0" y1="0" x2="1" y2="1"><stop stopColor={finish.id === 'prism' ? '#b5d7ed' : '#98713d'} /><stop offset=".4" stopColor={finish.id === 'prism' ? '#f0dcfa' : '#f4dfa0'} /><stop offset=".7" stopColor={finish.id === 'prism' ? '#9c89c8' : '#b48c4b'} /><stop offset="1" stopColor={finish.id === 'prism' ? '#adc6e6' : '#f4dfa0'} /></linearGradient>
+    </defs>
+      <rect width="120" height="160" rx="5" fill="var(--art-paper)" />
+      {finish.id === 'nocturne' && <><path d="M14 5h92l9 9v132l-9 9H14l-9-9V14Z" fill="none" stroke={`url(#foil${uid})`} strokeWidth="1.2" /><path d="M17 10h86l7 7v126l-7 7H17l-7-7V17Z" fill="none" stroke="var(--art-color)" strokeWidth=".4" /><path d="m15 35 6 8-6 8-6-8Zm90 74 6 8-6 8-6-8Z" fill={`url(#foil${uid})`} /><path d="M60 26v9M55 30h10M55 131h10M60 126v9" stroke="var(--art-color)" strokeWidth=".7" /></>}
+      {finish.id === 'prism' && <><path d="m8 29 28 24L8 95Zm104 3L84 53l28 76ZM8 95l31 45H8Zm104 34-42 11h42Z" fill={`url(#foil${uid})`} opacity=".2" /><path d="M8 8h104v144H8Z" fill="none" stroke={`url(#foil${uid})`} strokeWidth="1.5" /><path d="m59 25 5 7-5 7-5-7Zm0 100 5 7-5 7-5-7Z" fill={`url(#foil${uid})`} /></>}
+      {finish.id === 'porcelain' && <><rect x="5" y="5" width="110" height="150" rx="3" fill="none" stroke="var(--art-color)" strokeWidth="1.2" /><path d="M14 31c12-9 5-17-2-12-5 5 3 10 7 1M106 31c-12-9-5-17 2-12 5 5-3 10-7 1M14 129c12 9 5 17-2 12-5-5 3-10 7-1M106 129c-12 9-5 17 2 12 5-5-3-10-7-1" fill="none" stroke="var(--art-color)" strokeWidth=".9" /><circle cx="60" cy="130" r="5" fill="var(--art-color)" /><path d="m57 130 3-3 3 3-3 3Z" fill="var(--art-paper)" /></>}
+      <rect x="7" y="7" width="106" height="146" rx="2" fill="none" stroke="var(--art-ink)" strokeWidth=".5" opacity=".45" />
       <path d="M7 21h106M7 140h106" stroke="var(--art-ink)" strokeWidth=".5" opacity=".4" /><text x="13" y="16" fontSize="5" letterSpacing="1.1" fill="var(--art-ink)">HAKOWARE</text><text x="106" y="16" textAnchor="end" fontSize="5" fill="var(--art-ink)">✦</text>
       {motifs[cardId] || motifs.ORBIT}<rect width="120" height="160" fill={`url(#grain${uid})`} />
-      <text x="60" y="149" textAnchor="middle" fontSize="4.6" letterSpacing="1.2" fill="var(--art-ink)">{['PURIFY','STEAL','SIGNAL_FLARE','CHAOS_TICKET'].includes(cardId) ? 'PRESSURE SERIES' : 'FOUNDING COLLECTION'}</text>
+      <text x="60" y="149" textAnchor="middle" fontSize="4.6" letterSpacing="1.2" fill="var(--art-ink)">{finish.id === 'classic' ? ['PURIFY','STEAL','SIGNAL_FLARE','CHAOS_TICKET'].includes(cardId) ? 'PRESSURE SERIES' : 'FOUNDING COLLECTION' : finish.name.toUpperCase() + ' EDITION'}</text>
     </svg>
   </span>;
 };
