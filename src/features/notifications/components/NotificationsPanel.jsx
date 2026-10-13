@@ -45,14 +45,20 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
   const countCallback = useRef(onUnreadCountChange);
   countCallback.current = onUnreadCountChange;
   const worldCallback = useRef(onWorldUnreadCountChange); worldCallback.current = onWorldUnreadCountChange;
+  const openingActivity = useRef(null);
+  openingActivity.current = { world: worldUnreadCount, personal: notifications.some(item => !item.read) || Boolean(pendingInvitations?.length) };
   useEffect(() => {
     let active = true;
     let request = 0;
     worldCallback.current?.(0);
     const refresh = async () => { const current = ++request; try { const data = await getWorldActivity({ limit: 1 }); if (active && current === request) worldCallback.current?.(data.unreadCount); } catch { /* Personal activity remains available during a board outage. */ } };
-    void refresh(); const interval = setInterval(() => { if (document.visibilityState === 'visible') void refresh(); }, 60000);
+    const refreshVisible = () => { if (document.visibilityState === 'visible') void refresh(); };
+    void refresh(); const interval = setInterval(refreshVisible, 30000);
     window.addEventListener('hakoware-world-read', refresh);
-    return () => { active = false; clearInterval(interval); window.removeEventListener('hakoware-world-read', refresh); };
+    window.addEventListener('hakoware-world-refresh', refresh);
+    window.addEventListener('focus', refreshVisible);
+    document.addEventListener('visibilitychange', refreshVisible);
+    return () => { active = false; clearInterval(interval); window.removeEventListener('hakoware-world-read', refresh); window.removeEventListener('hakoware-world-refresh', refresh); window.removeEventListener('focus', refreshVisible); document.removeEventListener('visibilitychange', refreshVisible); };
   }, [viewerId]);
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
   const shouldReduceMotion = useReducedMotion();
@@ -95,6 +101,8 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
   useEffect(() => {
     if (!isOpen) return undefined;
     setExpanded(null);
+    setSection(openingActivity.current.world > 0 && !openingActivity.current.personal ? 'world' : 'you');
+    window.dispatchEvent(new Event('hakoware-world-refresh'));
     void loadNotifications({ force: true });
     const previousFocus = document.activeElement;
     const previousOverflow = document.body.style.overflow;

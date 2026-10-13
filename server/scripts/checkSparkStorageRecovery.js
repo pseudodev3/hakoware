@@ -44,13 +44,13 @@ async function run() {
     assert.equal(unavailable.status, 503); assert.equal(unavailable.data.code, 'SPARK_STORAGE_UNAVAILABLE');
     assert.equal(await SparkPost.countDocuments(), 0, 'writes stay protected until unique constraints are ready');
     await recordEvent(contractId, 'DUO_LEVEL_UP', { metadata: { level: 3 } });
-    assert.equal((await worldFeed(users[0]._id)).events.length, 0, 'game results remain saved while board index setup is unavailable');
+    assert.equal((await worldFeed(users[0]._id)).events.length, 1, 'the board publishes using the primary key while secondary indexes cannot build');
     await mongoose.connection.db.admin().command({ setParameter: 1, indexBuildMinAvailableDiskSpaceMB: minimum });
     // init() remains rejected, but the route must rebuild and recover in this process.
     await assert.rejects(SparkPost.init(), /available disk space/);
     await assert.rejects(WorldActivity.init(), /available disk space/);
     await reconcileWorldActivity();
-    assert.equal((await worldFeed(users[0]._id)).events.length, 1, 'the public board recovers its pending milestone without a process restart');
+    assert.equal((await worldFeed(users[0]._id)).events.length, 1, 'recovery does not duplicate a milestone published during low storage');
     const posted = await Promise.all(Array.from({ length: 5 }, () => request(0, 'POST', '', draft)));
     assert.ok(posted.every(result => result.status === 200), JSON.stringify(posted));
     assert.equal(await SparkPost.countDocuments(), 1);

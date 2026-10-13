@@ -50,8 +50,16 @@ async function run(){
     const before=(await worldFeed(sol._id)).unreadCount;assert.ok(before>0);await markWorldRead(testOne._id,[publicFlare.id]);assert.equal((await worldFeed(sol._id)).unreadCount,before,'another scope cannot clear your badge');
     await markWorldRead(sol._id,(await worldFeed(sol._id)).events.map(event=>event.id));assert.equal((await worldFeed(sol._id)).unreadCount,0);
     assert.equal((await request(sol,'/world-activity?before=bad')).status,400);assert.equal((await request(sol,'/world-activity/read',{eventIds:['bad']})).status,400);
+    // A public-board outage cannot suppress the recipient's personal Flare.
+    await User.updateOne({_id:maya._id},{$push:{inventory:'SIGNAL_FLARE'}});
+    World.updateOne=function(...args){if(args[1]?.$setOnInsert?.type==='SIGNAL_FLARE')return Promise.reject(new Error('Injected Flare board outage'));return original.apply(this,args);};
+    assert.equal((await request(maya,'/aura/use-card',{cardId:'SIGNAL_FLARE',targetFriendshipId:String(contract._id)})).status,200);
+    assert.equal(await Notification.countDocuments({toUserId:ari._id,type:'SIGNAL_FLARE'}),1,'personal delivery succeeds independently of public publication');
+    World.updateOne=original;await reconcileWorldActivity();
+    assert.equal(await World.countDocuments({type:'SIGNAL_FLARE'}),2);assert.equal(await Notification.countDocuments({toUserId:ari._id,type:'SIGNAL_FLARE'}),1);
+    const existingLive=await World.countDocuments({scopeKey:'live'});
     const at=new Date();await World.insertMany(Array.from({length:25},(_,index)=>({sourceEventId:new mongoose.Types.ObjectId(),scopeKey:'live',type:'DUO_LEVEL_UP',value:index+1,createdAt:at})));
-    const page=await worldFeed(sol._id),next=await worldFeed(sol._id,{before:page.nextCursor});assert.equal(page.events.length,20);assert.equal(new Set([...page.events,...next.events].map(event=>event.id)).size,30);
+    const page=await worldFeed(sol._id),next=await worldFeed(sol._id,{before:page.nextCursor});assert.equal(page.events.length,20);assert.equal(new Set([...page.events,...next.events].map(event=>event.id)).size,25+existingLive);
     await World.create({sourceEventId:new mongoose.Types.ObjectId(),scopeKey:'live',type:'DUO_LEVEL_UP',value:999,createdAt:new Date(Date.now()-8*86400000)});assert.equal((await worldFeed(sol._id)).events.some(event=>event.value===999),false);
     console.log('World activity: real public Flare delivery, concurrent cooldown/card preservation, private-recipient and Duo projection, scope/privacy isolation, outbox recovery, unread acknowledgement, pagination and retention window passed.');
   }finally{if(server)await new Promise(resolve=>server.close(resolve));await mongoose.disconnect();await mongo.stop();}

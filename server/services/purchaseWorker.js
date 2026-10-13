@@ -5,7 +5,7 @@ let timer;
 let active;
 const tick = () => {
   if (active) return;
-  active = Promise.all([reconcileCardPurchases(), reconcileAuraWallet(), reconcileWorldActivity()])
+  active = Promise.all([reconcileCardPurchases(), reconcileAuraWallet(), reconcileWorldActivity({ prune: true })])
     .catch((error) => console.error('Economy and activity recovery failed:', error.message))
     .finally(() => { active = null; });
 };

@@ -90,6 +90,10 @@ jobs:
         working-directory: server
         run: npm run check:world-activity
 
+      - name: Check Flare delivery on trial database storage
+        working-directory: server
+        run: npm run check:flare-trial-delivery
+
       - name: Check After Hours conversations and next-day returns
         working-directory: server
         run: npm run check:after-hours-social
