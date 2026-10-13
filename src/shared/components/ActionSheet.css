@@ -63,6 +63,7 @@
     inset: auto 0 0;
     margin: 0;
     width: 100%;
+    max-width: none;
     max-height: 90dvh;
     border-radius: 22px 22px 0 0;
   }

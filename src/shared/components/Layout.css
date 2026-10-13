@@ -33,8 +33,22 @@
 .header-actions { display:flex; align-items:center; gap:8px; }
 .header-aura { display:flex; align-items:center; gap:6px; min-height:44px; padding:0 12px; border:1px solid var(--border-subtle); border-radius:100px; color:var(--aura-gold); font-size:.8125rem; font-weight:650; font-variant-numeric:tabular-nums; }
 .header-aura small { font-size:.6875rem; font-weight:500; }
-.theme-btn,.notification-btn,.header-add-friend { width:44px; height:44px; flex:0 0 auto; position:relative; display:grid; place-items:center; color:var(--text-secondary); border-radius:100px; }
-.header-add-friend { display:none; }
+.theme-btn,.notification-btn,.header-account-btn { width:44px; height:44px; flex:0 0 auto; position:relative; display:grid; place-items:center; color:var(--text-secondary); border-radius:100px; }
+.header-account-btn { display:none; }
+.header-account-summary { display:flex; align-items:center; gap:14px; padding:4px 4px 22px; }
+.header-account-summary > div { min-width:0; }
+.header-account-summary strong { display:block; font-size:1rem; font-weight:600; overflow-wrap:anywhere; }
+.header-account-summary > div > span { display:block; font-size:.75rem; color:var(--text-muted); margin-top:4px; overflow-wrap:anywhere; }
+.header-account-actions { display:flex; flex-direction:column; }
+.header-account-actions > button { min-height:72px; display:flex; align-items:center; gap:14px; padding:14px 4px; text-align:left; border-top:1px solid var(--border-subtle); }
+.header-account-actions > button > svg { flex:0 0 auto; color:var(--text-secondary); }
+.header-account-actions > button > span { flex:1; min-width:0; }
+.header-account-actions strong { display:block; font-size:.875rem; font-weight:550; color:var(--text-primary); }
+.header-account-actions small { display:block; margin-top:5px; font-size:.75rem; color:var(--text-muted); }
+.header-account-balance { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; text-align:left; color:var(--aura-gold); }
+.header-account-balance > span { flex:1; font-size:.8125rem; color:var(--text-secondary); }
+.header-account-balance > strong { min-width:0; max-width:50%; overflow-wrap:anywhere; font-size:1rem; font-weight:600; font-variant-numeric:tabular-nums; }
+.header-account-balance > svg { flex:0 0 auto; }
 .notification-badge { position:absolute; top:2px; right:1px; min-width:17px; height:17px; padding:0 4px; display:grid; place-items:center; border-radius:100px; color:var(--bg-dark); background:var(--accent-text); font-size:.625rem; font-weight:700; }
 .scroll-content { flex:1; min-height:0; overflow-y:auto; padding:8px clamp(24px,4vw,56px) 48px; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; }
 .tab-stage { width:100%; min-height:100%; }
@@ -49,19 +63,19 @@
 .friend-unavailable h1 { font-size:1.5rem; }
 .friend-unavailable p { margin:16px 0; color:var(--text-secondary); }
 .friend-unavailable button { min-height:44px; margin-right:16px; color:var(--accent-text); }
-@media(hover:hover) and (pointer:fine) { .nav-item:not(.active):hover,.new-contract-btn:hover,.theme-btn:hover,.notification-btn:hover,.header-add-friend:hover { background:var(--surface-soft-strong); color:var(--text-primary); } }
+@media(hover:hover) and (pointer:fine) { .nav-item:not(.active):hover,.new-contract-btn:hover,.theme-btn:hover,.notification-btn:hover,.header-account-btn:hover,.header-account-actions > button:hover { background:var(--surface-soft-strong); color:var(--text-primary); } }
 @media(max-width:1000px) and (min-width:769px) { .sidebar { width:210px; flex-basis:210px; padding-inline:14px; } .sidebar-brand { padding-inline:3px; gap:8px; } .nav-item { padding-inline:10px; } .nav-current-arrow { display:none; } }
 @media(max-width:768px) {
  .sidebar,.desktop-page-label { display:none; }
  .content-header { min-height:72px; padding:max(12px,env(safe-area-inset-top)) 20px 12px; gap:8px; }
  .mobile-brand { display:flex; align-items:center; gap:9px; min-width:0; }
  .mobile-brand img { width:34px; height:34px; border-radius:10px; flex:0 0 auto; }
- .mobile-brand strong { font-size:1rem; letter-spacing:-.04em; }
+ .mobile-brand > div { min-width:0; }
+ .mobile-brand strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1rem; letter-spacing:-.04em; }
  .mobile-brand span { display:none; }
- .header-actions { gap:2px; }
- .header-aura { padding-inline:8px; border:0; font-size:.8125rem; }
- .header-aura small { display:none; }
- .header-add-friend { display:grid; background:var(--accent-soft); color:var(--accent-text); }
+ .header-actions { gap:8px; }
+ .header-aura,.header-actions > .theme-btn { display:none; }
+ .header-account-btn { display:grid; }
  .scroll-content { padding:8px 20px calc(var(--mobile-dock-height) + 28px + env(safe-area-inset-bottom)); }
  .mobile-dock { display:block; position:fixed; bottom:0; inset-inline:0; z-index:1000; padding:6px 12px max(8px,env(safe-area-inset-bottom)); background:var(--bg-dark); border-top:1px solid var(--border-subtle); }
  .mobile-nav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; min-height:62px; }
@@ -73,4 +87,4 @@
  .friend-space-layout .content-header { top:max(16px,env(safe-area-inset-top)); right:14px; }
  .friend-keyboard-open .friend-composer-dock { padding-bottom:8px; }
 }
-@media(max-width:350px) { .content-header,.scroll-content { padding-inline:16px; } .mobile-brand strong { display:none; } .header-aura { padding-inline:4px; } .mobile-dock { padding-inline:5px; } .mobile-nav-item { font-size:.5625rem; } }
+@media(max-width:350px) { .content-header,.scroll-content { padding-inline:16px; } .mobile-dock { padding-inline:5px; } .mobile-nav-item { font-size:.5625rem; } }

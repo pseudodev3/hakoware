@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
 import { UserAvatar } from './UserAvatar';
+import { ActionSheet } from './ActionSheet';
 import './Layout.css';
 
 const NAV_ITEMS = [
@@ -17,16 +18,26 @@ const NAV_ITEMS = [
 export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingInvitations = [], onRefresh, showToast, friendSpace = false }) => {
   const { user, logout, bootstrapData } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAccountActions, setShowAccountActions] = useState(false);
   const [unreadCount, setUnreadCount] = useState(bootstrapData?.notifications?.unreadCount || 0);
   const [worldUnreadCount, setWorldUnreadCount] = useState(0);
   const [theme, setTheme] = useState(getInitialTheme);
   const shellRef = useRef(null);
   const circleContext = ['home', 'contracts', 'arena'].includes(activeTab);
   const closeNotifications = useCallback(() => setShowNotifications(false), []);
+  const closeAccountActions = () => setShowAccountActions(false);
+  const accountAction = action => { setShowAccountActions(false); action(); };
   const currentLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Hakoware';
   const totalBadge = unreadCount + worldUnreadCount + pendingInvitations.length;
 
   useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => { setShowAccountActions(false); }, [activeTab, friendSpace, user?.uid, user?.id, user?._id]);
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 768px)');
+    const closeOnDesktop = () => { if (!mobile.matches) setShowAccountActions(false); };
+    mobile.addEventListener('change', closeOnDesktop);
+    return () => mobile.removeEventListener('change', closeOnDesktop);
+  }, []);
   useEffect(() => {
     if (!friendSpace || !window.visualViewport) return undefined;
     const viewport = window.visualViewport;
@@ -119,7 +130,9 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
               <Bell size={19} strokeWidth={1.8} />
               {totalBadge > 0 && <span className="notification-badge">{totalBadge > 99 ? '99+' : totalBadge}</span>}
             </button>
-            {!friendSpace && ['home', 'contracts'].includes(activeTab) && <button type="button" className="header-add-friend" onClick={onAddFriend} aria-label="Add a friend"><UserRoundPlus size={20} strokeWidth={1.8} /></button>}
+            <button type="button" className="header-account-btn" onClick={() => setShowAccountActions(true)} aria-label="Open account actions" aria-haspopup="dialog" aria-expanded={showAccountActions}>
+              <UserAvatar person={user} size="sm" decorative />
+            </button>
           </div>
         </header>
 
@@ -141,6 +154,28 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
         ))}
         </nav>
       </div>
+
+      {showAccountActions && <ActionSheet title="Your space" onClose={closeAccountActions} footer={
+        <button type="button" className="header-account-balance" onClick={() => accountAction(() => onTabChange('you'))} aria-label={`Your balance: ${user?.auraBalance || 0} Aura. Open your profile.`}>
+          <Zap size={18} strokeWidth={1.8} /><span>Aura balance</span><strong>{Number(user?.auraBalance || 0).toLocaleString()}</strong><ArrowUpRight size={16} aria-hidden="true" />
+        </button>
+      }>
+        <div className="header-account-summary">
+          <UserAvatar person={user} size="md" decorative />
+          <div><strong>{user?.displayName}</strong><span>{user?.username ? `@${user.username}` : 'Your account'}</span></div>
+        </div>
+        <div className="header-account-actions">
+          <button type="button" onClick={() => accountAction(() => onTabChange('you'))}>
+            <UserRound size={20} strokeWidth={1.8} /><span><strong>Your profile</strong><small>Bank, identity and settings</small></span><ArrowUpRight size={16} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => accountAction(onAddFriend)}>
+            <UserRoundPlus size={20} strokeWidth={1.8} /><span><strong>Add a friend</strong><small>Start a Duo together</small></span><ArrowUpRight size={16} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={toggleTheme} aria-label={themeLabel}>
+            <ThemeIcon size={20} strokeWidth={1.8} /><span><strong>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</strong><small>Switch appearance</small></span>
+          </button>
+        </div>
+      </ActionSheet>}
 
       <NotificationsPanel
         isOpen={showNotifications}
