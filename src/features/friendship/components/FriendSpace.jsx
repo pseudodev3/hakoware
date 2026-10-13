@@ -49,6 +49,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [newUpdates, setNewUpdates] = useState(false);
   const listRef = useRef(null);
+  const listHeightRef = useRef(null);
   const composerRef = useRef(null);
   const backRef = useRef(null);
   const callbacks = useRef({ onAction, onRefresh, onActivitySeen });
@@ -86,6 +87,16 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
     if (nearBottomRef.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [draft, voiceOpen, contractOpen, pendingMessage]);
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || contractOpen || !window.ResizeObserver) return undefined;
+    const observer = new ResizeObserver(() => {
+      listHeightRef.current = list.clientHeight;
+      if (nearBottomRef.current) list.scrollTop = list.scrollHeight;
+    });
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [contractOpen]);
   const openContract = (open) => {
     if (open) conversationTop.current = listRef.current?.scrollTop || 0;
     else scrollRef.current = nearBottomRef.current ? { bottom: true } : { restore: conversationTop.current };
@@ -211,7 +222,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     if (draft.length - (end - start) + emoji.length > 1000) return;
     setDraft(draft.slice(0, start) + emoji + draft.slice(end));
     setEmojiOpen(false);
-    requestAnimationFrame(() => { input?.focus(); input?.setSelectionRange(start + emoji.length, start + emoji.length); });
+    requestAnimationFrame(() => { input?.focus({ preventScroll: true }); input?.setSelectionRange(start + emoji.length, start + emoji.length); });
   };
   const shared = socialState?.firstMutualCheckin;
   const moment = socialState?.moment;
@@ -245,7 +256,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         {item.voiceUnavailable && <small>Older voice check-in · audio isn’t linked here.</small>}
         {item.moment && <div className="friend-moment-reveal"><p>{item.moment.prompt}</p>{item.moment.answers.map((answer, index) => <span key={index}><strong>{answer.name}</strong>{answer.value}</span>)}</div>}
         <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>
-        {!item.mine && ['CHECKIN', 'VOICE_CHECKIN'].includes(item.type) && socialState?.latestPartnerCheckin?.eventId === item.id && <div className="friend-event-actions"><button onClick={() => composerRef.current?.focus()}>Reply <MessageCircle size={13} /></button><button onClick={() => openContract(true)}>React <ArrowUpRight size={13} /></button></div>}
+        {!item.mine && ['CHECKIN', 'VOICE_CHECKIN'].includes(item.type) && socialState?.latestPartnerCheckin?.eventId === item.id && <div className="friend-event-actions"><button onClick={() => composerRef.current?.focus({ preventScroll: true })}>Reply <MessageCircle size={13} /></button><button onClick={() => openContract(true)}>React <ArrowUpRight size={13} /></button></div>}
       </div>}
     </article>;
   };
@@ -256,7 +267,14 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span><ArrowUpRight size={15} /></button>}
     {contractOpen ? <div className="friend-space-contract"><ContractDetails friendship={friendship} currentUserId={currentUserId} onAction={onAction} socialState={socialState} onActivitySeen={onActivitySeen} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>
       {moment?.status === 'OPEN' && <button className="friend-space-moment" onClick={() => openContract(true)}><span>{moment.type === 'SPLIT_DECISION' ? 'Split Decision' : moment.type === 'DOUBLE_DARE' ? 'Double Dare' : 'Hot Seat'} · {moment.answered ? 'Waiting on them' : 'Your turn'}</span><ArrowUpRight size={15} /></button>}
-      <div className="friend-space-timeline" ref={listRef} onScroll={() => { const list = listRef.current; nearBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 100; if (nearBottomRef.current) { setNewUpdates(false); acknowledge(room.items); syncReads(); } }}>
+      <div className="friend-space-timeline" ref={listRef} onScroll={() => {
+        const list = listRef.current;
+        // A keyboard resize can emit scroll before ResizeObserver runs. It
+        // should not turn following the latest message into reading history.
+        if (window.ResizeObserver && listHeightRef.current !== list.clientHeight) return;
+        nearBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 100;
+        if (nearBottomRef.current) { setNewUpdates(false); acknowledge(room.items); syncReads(); }
+      }}>
         {error && <div className="friend-space-error" role="status"><span>{error}</span><button onClick={() => void load()}>Retry</button></div>}
         {loading && !room.items.length ? <div className="friend-space-empty" role="status">Opening your space…</div> : <>
           {room.hasMore && <button className="friend-load-older" disabled={loadingOlder} onClick={() => void older()}>{loadingOlder ? 'Loading…' : 'Earlier messages'}</button>}
@@ -270,13 +288,13 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
       {newUpdates && <button className="friend-new-updates" onClick={() => { listRef.current.scrollTop = listRef.current.scrollHeight; nearBottomRef.current = true; setNewUpdates(false); acknowledge(room.items); syncReads(); }}>New updates <ArrowDown size={15} /></button>}
       <div className="friend-composer-dock">
         {unavailable ? <div className="friend-space-ended" role="status"><p>This contract is no longer available.</p><button onClick={onBack}>Back to your circle</button></div> : <>
-        {voiceOpen ? <VoiceMessageComposer friendshipId={id} onCancel={() => { setVoiceOpen(false); composerRef.current?.focus(); }} onSend={async (payload) => { await send(payload); if (aliveRef.current) setVoiceOpen(false); }} /> : <form className={`friend-composer ${draft.trim() ? 'has-draft' : ''}`} onSubmit={sendText}>
+        {voiceOpen ? <VoiceMessageComposer friendshipId={id} onCancel={() => { setVoiceOpen(false); composerRef.current?.focus({ preventScroll: true }); }} onSend={async (payload) => { await send(payload); if (aliveRef.current) setVoiceOpen(false); }} /> : <form className={`friend-composer ${draft.trim() ? 'has-draft' : ''}`} onSubmit={sendText}>
           <button type="button" className="friend-compose-voice" onClick={() => setVoiceOpen(true)} disabled={sending} aria-label="Record a voice message"><Mic size={19} /></button>
           <textarea ref={composerRef} aria-label={`Message ${partner?.displayName || 'your friend'}`} placeholder={`Message ${partner?.displayName || 'your friend'}…`} value={draft} maxLength={1000} rows={1} onChange={(event) => { setDraft(event.target.value); if (pendingMessage?.status === 'FAILED' && event.target.value.trim() !== pendingMessage.text) setPendingMessage(null); }} onKeyDown={(event) => { if (event.key === 'Escape') setEmojiOpen(false); if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia('(pointer:fine)').matches) { event.preventDefault(); void sendText(); } }} />
           <button type="button" className="friend-compose-emoji" aria-label="Add an emoji" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((value) => !value)}><Smile size={19} /></button>
           <button className="friend-compose-send" type="submit" disabled={!draft.trim() || sending} aria-label={sending ? 'Sending message' : 'Send message'}>{sending ? <LoaderCircle size={18} className="friend-sending-icon" /> : <Send size={18} />}</button>
         </form>}
-        {emojiOpen && !voiceOpen && <div className="friend-emoji-tray" role="group" aria-label="Message emojis" onKeyDown={(event) => { if (event.key === 'Escape') { setEmojiOpen(false); composerRef.current?.focus(); } }}>{EMOJIS.map((emoji) => <button type="button" key={emoji} aria-label={`Insert ${emoji}`} onClick={() => insertEmoji(emoji)}>{emoji}</button>)}</div>}
+        {emojiOpen && !voiceOpen && <div className="friend-emoji-tray" role="group" aria-label="Message emojis" onKeyDown={(event) => { if (event.key === 'Escape') { setEmojiOpen(false); composerRef.current?.focus({ preventScroll: true }); } }}>{EMOJIS.map((emoji) => <button type="button" key={emoji} aria-label={`Insert ${emoji}`} onClick={() => insertEmoji(emoji)}>{emoji}</button>)}</div>}
         {sendError && <p className="friend-send-error" role="status">{sendError} Your message is kept here so you can retry.</p>}
         <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}{draft.length >= 850 && <small className="friend-message-count">{draft.length}/1000</small>}</span><button type="button" onClick={() => void poke()} disabled={poking || !canPoke}>{poking ? 'Poking…' : socialState?.pokeBackAvailable ? 'Poke back' : 'Poke'}</button></div>
       </>}

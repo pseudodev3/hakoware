@@ -45,10 +45,17 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
     const update = () => {
       if (viewport.scale !== 1) return;
       shell?.style.setProperty('--friend-viewport-height', `${viewport.height}px`);
+      // Safari can pan the visual viewport after opening the keyboard without
+      // resizing it again. Keep the entire conversation in that visible area.
+      shell?.style.setProperty('--friend-viewport-top', `${viewport.offsetTop}px`);
       shell?.classList.toggle('friend-keyboard-open', viewport.height < window.innerHeight - 100);
     };
-    update(); viewport.addEventListener('resize', update);
-    return () => { viewport.removeEventListener('resize', update); shell?.style.removeProperty('--friend-viewport-height'); shell?.classList.remove('friend-keyboard-open'); };
+    update(); viewport.addEventListener('resize', update); viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update); viewport.removeEventListener('scroll', update);
+      shell?.style.removeProperty('--friend-viewport-height'); shell?.style.removeProperty('--friend-viewport-top');
+      shell?.classList.remove('friend-keyboard-open');
+    };
   }, [friendSpace]);
   useEffect(() => { if (shellRef.current) shellRef.current.inert = showNotifications; }, [showNotifications]);
   useEffect(() => {
