@@ -35,6 +35,7 @@ import { returnToFounderSession } from './services/testLabService';
 import { prefetchCheckinState, prefetchWarmTabs } from './services/prefetchService';
 import Toast from './components/Toast';
 import { applyCircleSeen, markCircleSeen, readCircleSeen } from './lib/circleActivity';
+import { PageMetadata } from './shared/components/PageMetadata';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
 
@@ -505,6 +506,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <PageMetadata />
       <Routes>
         <Route path="/reset-password" element={<ResetPassword showToast={showToast} />} />
         <Route path="/reset-password/:token" element={<ResetPassword showToast={showToast} />} />

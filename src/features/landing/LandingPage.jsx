@@ -126,7 +126,7 @@ export const LandingPage = ({ onEnter }) => {
               </div>
               <h1>Less “we should<br />catch up.”<br /><em>More showing up.</em></h1>
               <p>
-                Turn keeping in touch into a game for two. Pick your pace, send a message,
+                Hakoware turns keeping in touch into a game for two. Pick your pace, send a message,
                 and grow a Duo that belongs to you and your friend.
               </p>
 

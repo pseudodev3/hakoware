@@ -1,7 +1,7 @@
 {
   "name": "Hakoware",
   "short_name": "Hakoware",
-  "description": "Turn staying in touch into a social game with contracts, Duo XP, Aura, bounties and chaos.",
+  "description": "A friendship game for staying in touch. Chat, check in and grow a Duo with your friend.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#141719",

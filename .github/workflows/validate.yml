@@ -38,6 +38,9 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Check crawlable public pages and indexing boundaries
+        run: npm run check:seo
+
       - name: Check circle activity acknowledgement
         run: npm run check:circle-activity
 
