@@ -14,8 +14,12 @@ const { initializeContractGame, recordEvent } = require('../services/contractGam
 const { normalizeUsername, validateUsername } = require('../services/username');
 const { currentUserView } = require('../services/clientViews');
 
-const NEN_TYPES = new Set(['ENHANCER', 'TRANSMUTER', 'CONJURER', 'EMITTER', 'MANIPULATOR', 'SPECIALIST']);
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const passwordError = value => {
+  if (typeof value !== 'string' || value.length < 8) return 'Password must be at least 8 characters';
+  if (Buffer.byteLength(value, 'utf8') > 72) return 'Password must be 72 bytes or fewer';
+  return null;
+};
 const frontendUrl = () => String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 const signToken = (user) => jwt.sign({ user: { id: user.id, v: Number(user.authVersion) || 0 } }, process.env.JWT_SECRET, { expiresIn: '7d' });
 const signupLimiter = createRateLimiter({
@@ -62,11 +66,12 @@ router.post('/signup', signupLimiter, async (req, res) => {
   try {
     const usernameCheck = validateUsername(req.body.username);
     const email = normalizeEmail(req.body.email);
-    const password = String(req.body.password || '');
+    const password = req.body.password;
 
     if (!usernameCheck.valid) return res.status(400).json({ msg: usernameCheck.message });
-    if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ msg: 'Enter a valid email address' });
-    if (password.length < 8) return res.status(400).json({ msg: 'Password must be at least 8 characters' });
+    if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ msg: 'Enter a valid email address' });
+    const invalidPassword = passwordError(password);
+    if (invalidPassword) return res.status(400).json({ msg: invalidPassword });
 
     const existing = await User.findOne({
       $or: [
@@ -199,30 +204,12 @@ router.get('/user', auth, async (req, res) => {
   }
 });
 
-router.put('/nen-type', auth, async (req, res) => {
-  try {
-    const nenType = String(req.body.nenType || '').toUpperCase();
-    if (!NEN_TYPES.has(nenType)) return res.status(400).json({ msg: 'Choose a valid Nen affinity' });
-
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    if (user.nenType) return res.status(400).json({ msg: 'Nen affinity is already set' });
-
-    user.nenType = nenType;
-    await user.save();
-    return res.json(currentUserView(user));
-  } catch (err) {
-    console.error('Set Nen failed:', err.message);
-    return res.status(500).json({ msg: 'Could not set Nen affinity' });
-  }
-});
-
 router.post('/forgot-password', forgotLimiter, async (req, res) => {
   const genericMessage = 'If an account exists for that email, a reset link has been sent.';
 
   try {
     const email = normalizeEmail(req.body.email);
-    if (!/^\S+@\S+\.\S+$/.test(email)) return res.json({ msg: genericMessage });
+    if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return res.json({ msg: genericMessage });
 
     const user = await User.findOne({ email });
     if (!user) return res.json({ msg: genericMessage });
@@ -235,9 +222,9 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     try {
       await sendResetPasswordEmail(user.email, `${frontendUrl()}/reset-password#token=${encodeURIComponent(resetToken)}`);
     } catch (emailError) {
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
-      await user.save();
+      await User.updateOne({ _id: user._id, resetPasswordToken: user.resetPasswordToken }, {
+        $unset: { resetPasswordToken: '', resetPasswordExpire: '' }
+      });
       console.error('Password reset email delivery failed:', emailError.message);
     }
 
@@ -250,24 +237,27 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
 
 const resetPasswordHandler = async (req, res) => {
   try {
-    const password = String(req.body.password || '');
-    if (password.length < 8) return res.status(400).json({ msg: 'Password must be at least 8 characters' });
+    const password = req.body.password;
+    const invalidPassword = passwordError(password);
+    if (invalidPassword) return res.status(400).json({ msg: invalidPassword });
 
     const rawToken = String(req.body.token || req.params.token || '');
-    if (!rawToken) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
+    if (!/^[a-f0-9]{40}$/i.test(rawToken)) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
 
     const resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const user = await User.findOne({
+    const query = {
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() }
+    };
+    if (!await User.exists(query)) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // Consume the token and revoke prior sessions in the same account update.
+    const updated = await User.updateOne({ ...query, resetPasswordExpire: { $gt: Date.now() } }, {
+      $set: { password: hashedPassword },
+      $inc: { authVersion: 1 },
+      $unset: { resetPasswordToken: '', resetPasswordExpire: '' }
     });
-    if (!user) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
-
-    user.password = await bcrypt.hash(password, 10);
-    user.authVersion = (Number(user.authVersion) || 0) + 1;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
+    if (!updated.modifiedCount) return res.status(400).json({ msg: 'Reset link is invalid or expired' });
     return res.json({ msg: 'Password updated' });
   } catch (err) {
     console.error('Reset password failed:', err.message);

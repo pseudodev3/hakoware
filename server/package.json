@@ -9,6 +9,7 @@
     "dev": "node --watch index.js",
     "check:client-payloads": "node scripts/checkClientPayloads.js",
     "check:server-hardening": "node scripts/checkServerHardening.js",
+    "check:security-scaling": "node scripts/checkSecurityScaling.js",
     "check:duo-activation": "node scripts/checkDuoActivation.js",
     "check:friend-spaces": "node scripts/checkFriendSpaces.js",
     "check:sparks": "node scripts/checkSparks.js",

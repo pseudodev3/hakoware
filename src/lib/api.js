@@ -9,10 +9,13 @@ export const resolveApiMediaUrl = (value) => {
   return raw;
 };
 
-const handleResponse = async (response) => {
+const handleResponse = async (response, requestToken) => {
   const contentType = response.headers.get('content-type');
   const isJson = contentType && contentType.includes('application/json');
   const data = isJson ? await response.json() : null;
+  if (localStorage.getItem('token') !== requestToken) {
+    throw Object.assign(new Error('Your session changed. Please try again.'), { code: 'SESSION_CHANGED' });
+  }
 
   if (!response.ok) {
     const error = new Error((data && data.msg) || response.statusText || `Request failed (${response.status})`);
@@ -24,8 +27,7 @@ const handleResponse = async (response) => {
   return data;
 };
 
-const getHeaders = () => {
-  const token = localStorage.getItem('token');
+const getHeaders = (token) => {
   return {
     'Content-Type': 'application/json',
     ...(token ? { 'x-auth-token': token } : {})
@@ -33,18 +35,20 @@ const getHeaders = () => {
 };
 
 const requestWithJson = async (method, endpoint, data) => {
+  const token = localStorage.getItem('token');
   const response = await fetch(`${API_URL}${endpoint}`, {
     method,
-    headers: getHeaders(),
+    headers: getHeaders(token),
     body: JSON.stringify(data)
   });
-  return handleResponse(response);
+  return handleResponse(response, token);
 };
 
 export const api = {
   get: async (endpoint) => {
-    const response = await fetch(`${API_URL}${endpoint}`, { headers: getHeaders() });
-    return handleResponse(response);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}${endpoint}`, { headers: getHeaders(token) });
+    return handleResponse(response, token);
   },
 
   post: (endpoint, data) => requestWithJson('POST', endpoint, data),
@@ -54,11 +58,12 @@ export const api = {
   patch: (endpoint, data) => requestWithJson('PATCH', endpoint, data),
 
   delete: async (endpoint) => {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
-      headers: getHeaders()
+      headers: getHeaders(token)
     });
-    return handleResponse(response);
+    return handleResponse(response, token);
   },
 
   upload: async (endpoint, formData) => {
@@ -70,6 +75,6 @@ export const api = {
       },
       body: formData
     });
-    return handleResponse(response);
+    return handleResponse(response, token);
   }
 };

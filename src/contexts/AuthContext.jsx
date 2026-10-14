@@ -19,6 +19,17 @@ export const AuthProvider = ({ children }) => {
   const purchaseKeys = useRef({});
 
   useEffect(() => {
+    const syncSession = event => {
+      if (event.storageArea !== localStorage || (event.key !== 'token' && event.key !== null)) return;
+      clearResourceCache(); purchaseKeys.current = {};
+      setBootstrapData(null); setUser(null);
+      window.location.reload();
+    };
+    window.addEventListener('storage', syncSession);
+    return () => window.removeEventListener('storage', syncSession);
+  }, []);
+
+  useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -33,6 +44,7 @@ export const AuthProvider = ({ children }) => {
         setBootstrapData(normalized);
         setUser(normalized.user);
       } catch (bootstrapError) {
+        if (localStorage.getItem('token') !== token) return;
         console.warn('Bootstrap restore failed, falling back to account restore:', bootstrapError.message);
         try {
           const nextUser = withUid(await api.get('/auth/user'));
@@ -40,6 +52,7 @@ export const AuthProvider = ({ children }) => {
           setBootstrapData(null);
           setUser(nextUser);
         } catch (error) {
+          if (localStorage.getItem('token') !== token) return;
           console.error('Failed to restore session:', error);
           const founderToken = localStorage.getItem('hakoware_founder_token');
           if (founderToken) {

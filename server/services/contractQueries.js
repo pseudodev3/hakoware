@@ -56,23 +56,18 @@ const ensureActiveGameState = async (friendship) => {
 
 const loadContractsForUser = async (userId) => {
   const [friendships, pendingExternal] = await Promise.all([
-    Friendship.find({ $or: [{ user1: userId }, { user2: userId }] }).sort({ updatedAt: -1 }),
+    Friendship.find({ status: { $in: ['ACTIVE', 'PENDING'] }, $or: [{ user1: userId }, { user2: userId }] }).sort({ updatedAt: -1 }),
     PendingInvite.find({ inviterId: userId, expiresAt: { $gt: new Date() } })
       .sort({ createdAt: -1 })
       .lean()
   ]);
 
-  await Promise.all(
-    friendships
-      .filter((friendship) => friendship.status === 'ACTIVE')
-      .map(ensureActiveGameState)
-  );
+  const activeFriendships = friendships.filter(friendship => friendship.status === 'ACTIVE');
+  for (let offset = 0; offset < activeFriendships.length; offset += 8) {
+    await Promise.all(activeFriendships.slice(offset, offset + 8).map(ensureActiveGameState));
+  }
 
-  await Promise.all(
-    friendships.map((friendship) => (
-      friendship.populate('user1 user2', 'displayName username avatar avatarFrame')
-    ))
-  );
+  await Friendship.populate(friendships, { path: 'user1 user2', select: 'displayName username avatar avatarFrame' });
 
   const userIdString = String(userId);
   const active = friendships

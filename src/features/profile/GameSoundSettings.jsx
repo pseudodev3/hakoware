@@ -13,6 +13,6 @@ export const GameSoundSettings = ({ userId }) => {
     if (next && await unlockGameAudio()) playGameSound('preview', userId);
   };
   return <div className="game-sound-settings"><button className="privacy-row" type="button" role="switch" aria-checked={enabled} aria-label="Game sounds" onClick={() => void toggle()}>
-    <span className="privacy-icon">{enabled ? <Volume2 size={20} /> : <VolumeX size={20} />}</span><span className="privacy-copy"><strong>Game sounds</strong><small>Quiet cues for shared wins, cards, and your bank. {enabled ? 'On for this account on this device.' : 'Off until you turn them on.'}</small></span><span className={`privacy-switch ${enabled ? 'on' : ''}`} aria-hidden="true"><i /></span>
+    <span className="privacy-icon">{enabled ? <Volume2 size={20} /> : <VolumeX size={20} />}</span><span className="privacy-copy"><strong>Game sounds</strong><small>Soft taps for cards, warm notes for shared wins. {enabled ? 'On for this account on this device.' : 'Off until you turn them on.'}</small></span><span className={`privacy-switch ${enabled ? 'on' : ''}`} aria-hidden="true"><i /></span>
   </button>{enabled && <button className="game-sound-preview" type="button" onClick={async () => { if (await unlockGameAudio()) playGameSound('preview', userId); }}>Try the sound <Volume2 size={14} /></button>}</div>;
 };

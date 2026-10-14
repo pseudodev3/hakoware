@@ -29,10 +29,14 @@ const publishWorldEvent = async event => {
   catch (error) { if (error.code !== 11000 || !await WorldActivity.exists(query)) throw error; }
   await ContractEvent.updateOne({ _id: event._id }, { $set: { 'metadata.worldPublished': true } });
 };
+let recovery = null;
 const reconcileWorldActivity = async ({ prune = false } = {}) => {
-  await require('./flareDelivery').reconcileFlareDelivery().catch(error => console.error('Signal Flare delivery pending:', error.message));
-  const events = await ContractEvent.find({ type: { $in: TYPES }, 'metadata.worldEligible': true, 'metadata.worldPublished': { $ne: true } }).sort({ createdAt: 1 }).limit(100).lean();
-  for (const event of events) await publishWorldEvent(event);
+  if (!recovery) recovery = (async () => {
+    await require('./flareDelivery').reconcileFlareDelivery().catch(error => console.error('Signal Flare delivery pending:', error.message));
+    const events = await ContractEvent.find({ type: { $in: TYPES }, 'metadata.worldEligible': true, 'metadata.worldPublished': { $ne: true } }).sort({ createdAt: 1 }).limit(100).lean();
+    for (const event of events) await publishWorldEvent(event);
+  })().finally(() => { recovery = null; });
+  await recovery;
   // Keep the same retention window when the optional TTL index is unavailable.
   if (prune) await WorldActivity.deleteMany({ createdAt: { $lt: new Date(Date.now() - 7 * 86400000) } });
 };

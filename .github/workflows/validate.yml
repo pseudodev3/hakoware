@@ -14,10 +14,10 @@ jobs:
           node-version: 24
 
       - name: Install frontend dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
-      - name: Audit frontend production dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
 
       - name: Reject tracked env files
         run: |
@@ -56,6 +56,9 @@ jobs:
       - name: Check Circle discovery, bundle comparisons and Sparks availability
         run: npm run check:ui-polish
 
+      - name: Check account switching and late private responses
+        run: npm run check:session-boundaries
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
@@ -73,6 +76,14 @@ jobs:
       - name: Check client payload minimization
         working-directory: server
         run: npm run check:client-payloads
+
+      - name: Check request guards and allowed origins
+        working-directory: server
+        run: npm run check:server-hardening
+
+      - name: Check reset-token races, bounded queries and privacy
+        working-directory: server
+        run: npm run check:security-scaling
 
       - name: Check first mutual check-in
         working-directory: server

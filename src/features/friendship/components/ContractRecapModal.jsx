@@ -4,134 +4,10 @@ import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { getContractRecap, runContractBack } from '../../../services/friendshipService';
 import { shareHakoware } from '../../../lib/share';
-import { drawHakowareStamp } from '../../../lib/shareStamp';
+import { buildRecapShareCard, recapText, seasonGrade } from '../../../lib/recapShareCard';
 import './ContractRecapModal.css';
 import { DuoCover } from '../../../shared/components/DuoIdentity';
 import { duoStyle } from '../../../lib/duoIdentity';
-
-const formatTemplate = (value = '') => value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-const seasonGrade = (recap) => {
-  if (!recap?.season || !recap?.template) return '-';
-  const length = Number(recap.template.seasonDays || recap.season.lengthDays || 30);
-  const limit = Math.max(1, Number(recap.template.limit) || 3);
-  const expected = Math.max(2, Math.ceil(length / limit) * 2);
-  const ratio = Math.max(0, (recap.season.checkins || 0) / expected - (recap.season.chaosFailed || 0) * .04);
-  if (ratio >= .95) return 'S';
-  if (ratio >= .8) return 'A';
-  if (ratio >= .62) return 'B';
-  if (ratio >= .45) return 'C';
-  return 'D';
-};
-
-const recapText = (recap, period = 'week', duoName = '') => {
-  const names = (recap.players || []).map((player) => player.displayName).filter(Boolean).join(' × ');
-  const summary = period === 'season' ? recap.season : recap.weekly;
-  return [
-    `HAKOWARE // ${period === 'season' ? 'SEASON' : 'WEEKLY'} REPORT`,
-    ...(duoName ? [duoName] : []),
-    names,
-    `${summary?.checkins || 0} check-ins · ${summary?.voiceNotes || 0} voice`,
-    `${summary?.chaosSurvived || 0} chaos survived · ${summary?.chaosFailed || 0} failed`,
-    `+${summary?.xpGained || 0} Duo XP · Duo Lv. ${recap.duo?.level || 1}`,
-    period === 'season' ? `Season ${recap.season?.number || 1} · ${recap.season?.status?.toLowerCase() || 'active'}` : `“${recap.weekly?.line || 'Still under contract.'}”`
-  ].join('\n');
-};
-
-const buildShareImage = async (recap, period = 'week', identity = {}) => {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1080;
-  canvas.height = 1350;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Could not create recap image');
-
-  ctx.fillStyle = '#0a0a08';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const gradient = ctx.createRadialGradient(180, 0, 0, 180, 0, 700);
-  gradient.addColorStop(0, 'rgba(231,179,90,.24)');
-  gradient.addColorStop(1, 'rgba(231,179,90,0)');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, 760);
-
-  await drawHakowareStamp(ctx, {
-    x: 860,
-    y: 1120,
-    radius: 118,
-    tint: '#e7b35a',
-    opacity: 0.11,
-    rotation: -0.07,
-    footer: period === 'season' ? 'SEASON REPORT' : 'WEEKLY REPORT'
-  });
-
-  const names = identity.name || (recap.players || []).map((player) => player.displayName).filter(Boolean).join(' × ') || 'Hakoware Duo';
-  const weekly = (period === 'season' ? recap.season : recap.weekly) || {};
-
-  ctx.fillStyle = '#e7b35a';
-  ctx.font = '700 28px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`HAKOWARE // ${period === 'season' ? 'SEASON' : 'WEEKLY'} REPORT`, 84, 106);
-
-  ctx.fillStyle = '#f7f4ec';
-  let nameSize = 66;
-  do { ctx.font = `700 ${nameSize}px system-ui, -apple-system, sans-serif`; if (ctx.measureText(names).width <= 900) break; nameSize -= 2; } while (nameSize >= 24);
-  const split = [names];
-  split.forEach((line, index) => ctx.fillText(line, 84, 215 + index * 76));
-
-  ctx.fillStyle = '#777268';
-  ctx.font = '500 28px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`${recap.template?.name || formatTemplate(recap.template?.id)} · Season ${recap.season?.number || 1}`, 84, 350);
-
-  const metrics = [
-    ['CHECK-INS', weekly.checkins || 0],
-    ['VOICE', weekly.voiceNotes || 0],
-    ['CHAOS CLEARED', weekly.chaosSurvived || 0],
-    ['DUO XP', `+${weekly.xpGained || 0}`]
-  ];
-
-  metrics.forEach(([label, value], index) => {
-    const column = index % 2;
-    const row = Math.floor(index / 2);
-    const x = 84 + column * 460;
-    const y = 500 + row * 210;
-    ctx.fillStyle = '#777268';
-    ctx.font = '700 21px system-ui, -apple-system, sans-serif';
-    ctx.fillText(label, x, y);
-    ctx.fillStyle = '#f7f4ec';
-    ctx.font = '700 76px ui-monospace, SFMono-Regular, monospace';
-    ctx.fillText(String(value), x, y + 86);
-  });
-
-  ctx.strokeStyle = 'rgba(247,244,236,.12)';
-  ctx.beginPath();
-  ctx.moveTo(84, 900);
-  ctx.lineTo(996, 900);
-  ctx.stroke();
-
-  ctx.fillStyle = '#e7b35a';
-  ctx.font = '700 25px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`DUO LEVEL ${recap.duo?.level || 1}${recap.duo?.title && recap.duo.title !== 'New Contract' ? ' // '+recap.duo.title.toUpperCase() : ''}`, 84, 980);
-
-  ctx.fillStyle = '#f7f4ec';
-  ctx.font = '600 40px system-ui, -apple-system, sans-serif';
-  const line = period === 'season' ? `Season ${recap.season?.number || 1} ${recap.season?.status === 'COMPLETE' ? 'complete. A shared story, finished.' : 'in progress. Keep the loop alive.'}` : `“${weekly.line || 'Still alive. Still under contract.'}”`;
-  const words = line.split(' ');
-  let current = '';
-  let y = 1060;
-  for (const word of words) {
-    const next = `${current}${current ? ' ' : ''}${word}`;
-    if (ctx.measureText(next).width > 850 && current) {
-      ctx.fillText(current, 84, y);
-      current = word;
-      y += 52;
-    } else current = next;
-  }
-  if (current) ctx.fillText(current, 84, y);
-
-  ctx.fillStyle = '#777268';
-  ctx.font = '600 22px system-ui, -apple-system, sans-serif';
-  ctx.fillText(/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname) ? 'hakoware' : window.location.host, 84, 1270);
-
-  return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not create recap image')), 'image/png'));
-};
 
 export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, showToast }) => {
   const [recap, setRecap] = useState(null);
@@ -167,7 +43,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
     if (!recap) return;
     setBusy(true);
     try {
-      const blob = await buildShareImage(recap, tab, friendship?.identity);
+      const blob = await buildRecapShareCard(recap, tab, friendship?.identity);
       const file = new File([blob], `hakoware-${tab}-recap.png`, { type: 'image/png' });
       const result = await shareHakoware({
         source: tab === 'season' && recap.season?.status === 'COMPLETE' ? 'SEASON_COMPLETE' : 'RECAP',
@@ -213,7 +89,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
           <section style={duoStyle(friendship)} className={`recap-hero ${recap.template?.chaos ? 'chaos' : ''}`}>
             <DuoCover cover={friendship?.identity?.cover} />
             <div className="recap-hero-top">
-              <span className="recap-label">HAKOWARE // {tab === 'week' ? 'THIS WEEK' : `SEASON ${recap.season?.number || 1}`}</span>
+              <span className="recap-label">HAKOWARE · {tab === 'week' ? 'THIS WEEK' : `SEASON ${recap.season?.number || 1}`}</span>
               <span className="recap-mode">{recap.template?.name}</span>
             </div>
             <h2>{friendship?.identity?.name || names || 'Contract duo'}</h2>

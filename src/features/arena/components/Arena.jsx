@@ -269,7 +269,7 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
         </section>
       ) : (
         <section className="arena-panel">
-          <div className="arena-panel-head"><div><Target size={18} strokeWidth={1.8} /><strong>Most overdue</strong></div><span className="arena-privacy-note">Opt-out respected</span></div>
+          <div className="arena-panel-head"><div><Target size={18} strokeWidth={1.8} /><strong>Most overdue</strong></div><span className="arena-privacy-note">Top 50 · Opt-out respected</span></div>
           <div className="arena-list shame-list-new">
             {loading ? <div className="arena-empty">Loading board…</div> : shame.length === 0 ? <div className="arena-empty">Nobody is bankrupt right now.</div> : shame.map((person, index) => (
               <article className="shame-item-new" key={person.username || `${person.displayName}:${index}`}>

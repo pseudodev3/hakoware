@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useAuth } from './contexts/AuthContext';
@@ -26,10 +26,7 @@ import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { LandingPage } from './features/landing/LandingPage';
 import { HomeView } from './features/home/HomeView';
-import { Arena } from './features/arena/components/Arena';
-import { SparksView } from './features/sparks/SparksView';
-import { YouView } from './features/profile/YouView';
-import { FounderLabPage } from './features/testlab/FounderLabPage';
+import { DeferredView } from './shared/components/DeferredView';
 import { LegalPage } from './features/legal/LegalPage';
 import { returnToFounderSession } from './services/testLabService';
 import { prefetchCheckinState, prefetchWarmTabs } from './services/prefetchService';
@@ -38,13 +35,17 @@ import { applyCircleSeen, markCircleSeen, readCircleSeen } from './lib/circleAct
 import { PageMetadata } from './shared/components/PageMetadata';
 
 const isJoinLink = () => new URLSearchParams(window.location.search).get('join') === '1';
+const Arena = lazy(() => import('./features/arena/components/Arena').then(module => ({ default: module.Arena })));
+const SparksView = lazy(() => import('./features/sparks/SparksView').then(module => ({ default: module.SparksView })));
+const YouView = lazy(() => import('./features/profile/YouView').then(module => ({ default: module.YouView })));
+const FounderLabPage = lazy(() => import('./features/testlab/FounderLabPage').then(module => ({ default: module.FounderLabPage })));
 
 function FounderRoute({ showToast }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (user?.isTestAccount) return <Navigate to="/" replace />;
   if (user && !user.username) return <ClaimUsername />;
-  return <FounderLabPage showToast={showToast} />;
+  return <DeferredView><FounderLabPage showToast={showToast} /></DeferredView>;
 }
 
 const TestSessionBar = ({ user }) => {
@@ -376,6 +377,7 @@ function MainApp({ showToast }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: shouldReduceMotion ? 0 : .17, ease: [0.2, 0, 0, 1] }}
       >
+        <DeferredView key={friendKey || activeTab}>
         {openedFriend && <FriendSpace
           key={openedFriend._id || openedFriend.id}
           friendship={openedFriend}
@@ -445,6 +447,7 @@ function MainApp({ showToast }) {
         )}
         {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} onNavigate={navigateTo} focusTradeId={params.get('trade')} initialView={['bounties','grudges','shame'].includes(params.get('section')) ? params.get('section') : 'cards'} />}
         {!friendKey && activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} onNavigate={navigateTo} />}
+        </DeferredView>
       </motion.div>
 
       <AddFriendModal

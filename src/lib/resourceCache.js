@@ -1,4 +1,6 @@
 const resources = new Map();
+let generation = 0;
+const invalidated = () => Object.assign(new Error('This request belongs to an earlier session.'), { code: 'RESOURCE_INVALIDATED' });
 
 const timestamp = () => Date.now();
 
@@ -21,9 +23,15 @@ export const fetchResource = async (key, loader, { ttl = 30000, force = false } 
   if (!force && isFresh) return current.data;
   if (current?.promise) return current.promise;
 
+  const requestGeneration = generation;
+  const isCurrent = () => generation === requestGeneration && resources.get(key)?.promise === promise;
   const promise = Promise.resolve()
-    .then(loader)
+    .then(() => {
+      if (!isCurrent()) throw invalidated();
+      return loader();
+    })
     .then((data) => {
+      if (!isCurrent()) throw invalidated();
       resources.set(key, {
         data,
         updatedAt: timestamp(),
@@ -32,6 +40,7 @@ export const fetchResource = async (key, loader, { ttl = 30000, force = false } 
       return data;
     })
     .catch((error) => {
+      if (!isCurrent()) throw error;
       const latest = resources.get(key);
       resources.set(key, {
         data: latest?.data,
@@ -58,4 +67,4 @@ export const invalidateResource = (key) => {
 
 export const deleteResource = (key) => resources.delete(key);
 
-export const clearResourceCache = () => resources.clear();
+export const clearResourceCache = () => { generation += 1; resources.clear(); };
