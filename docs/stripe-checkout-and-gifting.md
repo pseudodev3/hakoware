@@ -1,5 +1,7 @@
 # Stripe cosmetics, gifts and product journeys
 
+NOWPayments is now the default provider for new orders; use [NOWPayments activation](nowpayments-checkout.md). This document retains the earlier Stripe implementation and validation details for existing-order recovery or a future explicitly configured Stripe account. The user declined US incorporation and reported NOWPayments verification; no Stripe merchant account was activated here.
+
 Hakoware now has Stripe Checkout integration, purchase receipts, an edition reveal, cosmetic gifting and a founder dashboard for activation, return visits and shop conversion. Sales remain closed until the merchant account, keys and real Stripe prices are configured. No live payment was made during implementation.
 
 The user operates from Nigeria and chose to establish an eligible account in a supported Stripe country. This code does not create or qualify that merchant account. It uses the official Stripe Node SDK, pinned to 23.0.0, and its 2026-09-30 API contract. The SDK's [webhook guidance](https://github.com/stripe/stripe-node#webhook-signing) requires the original request bytes; the webhook route is mounted before JSON parsing.

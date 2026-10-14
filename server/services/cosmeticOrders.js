@@ -7,16 +7,22 @@ const Notification = require('../models/Notification');
 const GrowthEvent = require('../models/GrowthEvent');
 const catalog = require('../config/cosmetics.json');
 const provider = require('./stripeCheckout');
+const nowpayments = require('./nowpaymentsCheckout');
+const { active } = require('./cosmeticPaymentProvider');
+const { exponent, minorAmount, atLeast } = require('./checkoutHelpers');
 const { eventId, quiet } = require('./productMetrics');
 const id = value => String(value?._id || value || '');
-const privateFields = '+clientId +grants +priceId +stripeSessionId +checkoutUrl';
+const privateFields = '+clientId +grants +priceId +stripeSessionId +nowInvoiceId +nowPaymentId +nowSandbox +invoiceCreation +invoiceCreationStartedAt +checkoutUrl';
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const closed = message => { throw Object.assign(new Error(message), { status: 409, publicCode: 'COSMETIC_CHECKOUT_CLOSED' }); };
 const orderKey = (actor, clientId) => 'style_' + createHash('sha256').update(`cosmetic:${actor}:${clientId}`).digest('hex').slice(0, 32);
 const person = user => ({ displayName: user?.displayName || 'Your friend', username: user?.username || null, avatar: user?.avatar || null, avatarFrame: user?.avatarFrame || 'plain' });
+const needsInvoiceRecovery = order => order.invoiceCreation === 'UNCERTAIN' || order.invoiceCreation === 'SENDING' && Date.now() - new Date(order.invoiceCreationStartedAt || order.updatedAt).getTime() > 30000;
 const orderView = async (order, viewerId) => {
   const [buyer, recipient] = await Promise.all([User.findById(order.buyerId).select('displayName username avatar avatarFrame').lean(), User.findById(order.recipientId).select('displayName username avatar avatarFrame').lean()]);
-  return { id: order._id, packId: order.packId, status: order.status, amount: order.amount, currency: order.currency, exponent: provider.exponent(order.currency), paidTotal: order.paidTotal, paidAt: order.paidAt, forMe: id(order.recipientId) === id(viewerId), isGift: id(order.buyerId) !== id(order.recipientId), ...(id(order.buyerId) === id(viewerId) ? { checkoutFriendshipId: id(order.friendshipId) || null } : {}), buyer: person(buyer), recipient: person(recipient) };
+  const paymentProvider = order.provider || 'stripe';
+  const canResume = ['PREPARING', 'OPEN'].includes(order.status) && (paymentProvider === 'stripe' || Boolean(order.nowInvoiceId && order.checkoutUrl) || order.invoiceCreation === 'READY');
+  return { id: order._id, packId: order.packId, status: order.status, provider: paymentProvider, paymentStatus: order.nowPaymentStatus || null, canResume, canCancel: paymentProvider === 'stripe' && order.status === 'OPEN', needsSupport: paymentProvider === 'nowpayments' && order.status === 'PREPARING' && needsInvoiceRecovery(order), amount: order.amount, currency: order.currency, exponent: exponent(order.currency), paidTotal: order.paidTotal, paidAt: order.paidAt, forMe: id(order.recipientId) === id(viewerId), isGift: id(order.buyerId) !== id(order.recipientId), ...(id(order.buyerId) === id(viewerId) ? { checkoutFriendshipId: id(order.friendshipId) || null } : {}), buyer: person(buyer), recipient: person(recipient) };
 };
 const giftOptions = async (actorId, packId) => {
   const pack = catalog.packs.find(pack => pack.id === packId);
@@ -74,7 +80,7 @@ const reconcileSession = async (sessionId, { failed = false } = {}) => {
   const orderId = session.metadata?.hakoware_order;
   if (!/^style_[a-f0-9]{32}$/.test(orderId || '')) return null;
   let order = await CosmeticOrder.findById(orderId).select(privateFields).lean();
-  if (!order || order.stripeSessionId && order.stripeSessionId !== session.id || session.client_reference_id !== order._id || session.currency !== order.currency || session.mode !== 'payment') return null;
+  if (!order || order.provider === 'nowpayments' || order.stripeSessionId && order.stripeSessionId !== session.id || session.client_reference_id !== order._id || session.currency !== order.currency || session.mode !== 'payment') return null;
   if (session.payment_status === 'paid' && session.status === 'complete') {
     const lines = await provider.client().checkout.sessions.listLineItems(session.id, { limit: 2 });
     if (lines.has_more || lines.data.length !== 1 || lines.data[0].quantity !== 1 || lines.data[0].price?.id !== order.priceId || session.amount_subtotal !== order.amount || !Number.isSafeInteger(session.amount_total) || session.amount_total < order.amount) throw new Error('Stripe payment does not match the stored order');
@@ -94,7 +100,65 @@ const reconcileSession = async (sessionId, { failed = false } = {}) => {
   }
   return CosmeticOrder.findById(order._id).select(privateFields).lean();
 };
+const nowStatuses = new Set(['waiting', 'confirming', 'confirmed', 'sending', 'partially_paid', 'finished', 'failed', 'refunded', 'expired']);
+const reconcileNowPayment = async paymentId => {
+  const payment = await nowpayments.getPayment(paymentId);
+  const orderId = String(payment.order_id || '');
+  if (!/^style_[a-f0-9]{32}$/.test(orderId)) return null;
+  let order = await CosmeticOrder.findById(orderId).select(privateFields).lean();
+  if (!order || order.provider !== 'nowpayments') return null;
+  if (Boolean(order.nowSandbox) !== nowpayments.sandbox()) provider.fail('This payment needs its original provider environment to be confirmed.');
+  const invoiceId = nowpayments.providerId(payment.invoice_id), reference = nowpayments.providerId(payment.payment_id);
+  if (!invoiceId || reference !== String(paymentId) || order.nowInvoiceId && order.nowInvoiceId !== invoiceId || String(payment.price_currency).toLowerCase() !== order.currency || minorAmount(payment.price_amount, exponent(order.currency)) !== order.amount || !nowStatuses.has(payment.payment_status)) throw new Error('NOWPayments payment does not match the stored order');
+  if (['PAID', 'DELIVERED'].includes(order.status)) return deliverOrder(order._id);
+  if (!['PREPARING', 'OPEN'].includes(order.status)) throw new Error('A closed purchase needs manual payment review');
+  // A failed/expired coin quote does not revoke its hosted invoice. Keep the
+  // same order and reservation: the buyer can resume it for a fresh quote.
+  if (payment.payment_status === 'finished' && !atLeast(payment.actually_paid, payment.pay_amount)) throw new Error('NOWPayments payment is not fully funded');
+  const paid = payment.payment_status === 'finished';
+  const recoveredUrl = order.checkoutUrl || nowpayments.invoiceUrl(`https://nowpayments.io/payment/?iid=${invoiceId}`, invoiceId);
+  const update = { nowInvoiceId: invoiceId, nowPaymentId: reference, nowPaymentStatus: payment.payment_status, invoiceCreation: 'CREATED', ...(paid ? { status: 'PAID', paidAt: new Date(), paidTotal: order.amount, checkoutUrl: null } : { status: 'OPEN', checkoutUrl: recoveredUrl }) };
+  const changed = await CosmeticOrder.updateOne({ _id: order._id, provider: 'nowpayments', status: { $in: ['PREPARING', 'OPEN'] }, $or: [{ nowInvoiceId: null }, { nowInvoiceId: invoiceId }] }, { $set: update });
+  order = await CosmeticOrder.findById(order._id).select(privateFields).lean();
+  if (paid && changed.matchedCount || ['PAID', 'DELIVERED'].includes(order.status)) return deliverOrder(order._id);
+  return order;
+};
+const openNowCheckout = async order => {
+  if (['PAID', 'DELIVERED'].includes(order.status)) return { order: await orderView(await deliverOrder(order._id), order.buyerId), checkoutUrl: null };
+  if (Boolean(order.nowSandbox) !== nowpayments.sandbox()) provider.fail('This checkout needs its original payment environment.');
+  if (order.nowPaymentId) {
+    order = await reconcileNowPayment(order.nowPaymentId);
+    if (['PAID', 'DELIVERED'].includes(order.status)) return { order: await orderView(order, order.buyerId), checkoutUrl: null };
+  }
+  if (order.nowInvoiceId && order.checkoutUrl) return { order: await orderView(order, order.buyerId), checkoutUrl: nowpayments.invoiceUrl(order.checkoutUrl, order.nowInvoiceId) };
+  if (['FAILED', 'EXPIRED'].includes(order.status)) closed('That checkout did not open. You can start a fresh purchase.');
+  nowpayments.requireConfigured();
+  order = await ensureHold(order);
+  if (['PAID', 'DELIVERED'].includes(order.status)) return openNowCheckout(order);
+  const lock = await CosmeticOrder.updateOne({ _id: order._id, provider: 'nowpayments', status: 'PREPARING', invoiceCreation: 'READY', nowInvoiceId: null }, { $set: { invoiceCreation: 'SENDING', invoiceCreationStartedAt: new Date() } });
+  if (!lock.modifiedCount) {
+    const latest = await CosmeticOrder.findById(order._id).select(privateFields).lean();
+    if (latest.nowInvoiceId && latest.checkoutUrl || ['PAID', 'DELIVERED'].includes(latest.status)) return openNowCheckout(latest);
+    provider.fail(needsInvoiceRecovery(latest) ? 'Your payment link needs confirmation. Contact support with the purchase reference before starting another purchase.' : 'Your payment link is being confirmed. Check your saved purchase in a moment.');
+  }
+  let invoice, invoiceId, url;
+  try {
+    invoice = await nowpayments.createInvoice(order); invoiceId = nowpayments.providerId(invoice.id);
+    if (!invoiceId || invoice.order_id !== order._id || String(invoice.price_currency).toLowerCase() !== order.currency || minorAmount(invoice.price_amount, exponent(order.currency)) !== order.amount) throw new Error('NOWPayments returned an invalid invoice');
+    url = nowpayments.invoiceUrl(invoice.invoice_url, invoiceId);
+  } catch (error) {
+    const changed = await CosmeticOrder.updateOne({ _id: order._id, status: 'PREPARING', invoiceCreation: 'SENDING', nowInvoiceId: null }, { $set: error.definitive ? { status: 'FAILED', invoiceCreation: 'READY' } : { invoiceCreation: 'UNCERTAIN' } });
+    if (error.definitive && changed.modifiedCount) { await releaseHold(order); closed('The payment provider could not open this checkout. Refresh the shop and try again.'); }
+    throw error;
+  }
+  // An IPN may have finished delivery while the invoice response was in flight.
+  await CosmeticOrder.updateOne({ _id: order._id, provider: 'nowpayments', status: { $in: ['PREPARING', 'OPEN'] }, $or: [{ nowInvoiceId: null }, { nowInvoiceId: invoiceId }] }, { $set: { status: 'OPEN', invoiceCreation: 'CREATED', nowInvoiceId: invoiceId, checkoutUrl: url } });
+  order = await CosmeticOrder.findById(order._id).select(privateFields).lean();
+  await recordPaymentEvent(order, 'CHECKOUT_STARTED');
+  return { order: await orderView(order, order.buyerId), checkoutUrl: ['PAID', 'DELIVERED'].includes(order.status) ? null : order.checkoutUrl };
+};
 const openCheckout = async order => {
+  if (order.provider === 'nowpayments') return openNowCheckout(order);
   if (['PAID', 'DELIVERED'].includes(order.status)) return { order: await orderView(await deliverOrder(order._id), order.buyerId), checkoutUrl: null };
   if (order.stripeSessionId) {
     order = await reconcileSession(order.stripeSessionId);
@@ -144,7 +208,7 @@ const createCheckout = async (actorId, body) => {
     if (existing.packId !== body.packId || id(existing.friendshipId) !== id(body.friendshipId)) fail(409, 'This retry belongs to a different purchase.');
     return openCheckout(existing);
   }
-  provider.requireConfigured();
+  const checkoutProvider = active(); checkoutProvider.requireConfigured();
   let recipientId = actorId;
   if (body.friendshipId) {
     if (!mongoose.isValidObjectId(body.friendshipId)) fail(404, 'Choose an accepted friend');
@@ -153,8 +217,8 @@ const createCheckout = async (actorId, body) => {
     recipientId = id(duo.user1) === id(actorId) ? duo.user2 : duo.user1;
     if (!await User.exists({ _id: recipientId, isTestAccount: { $ne: true } })) fail(404, 'Choose an accepted friend');
   }
-  const price = await provider.priceFor(pack.id);
-  const fields = { buyerId: actorId, recipientId, friendshipId: body.friendshipId || null, packId: pack.id, grants: pack.grants, clientId: body.clientId, priceId: price.id, amount: price.amount, currency: price.currency, checkoutExpiresAt: new Date(Date.now() + 86400000), taxEnabled: process.env.STRIPE_AUTOMATIC_TAX_ENABLED === 'true', status: 'PREPARING' };
+  const price = await checkoutProvider.priceFor(pack.id);
+  const fields = { buyerId: actorId, recipientId, friendshipId: body.friendshipId || null, packId: pack.id, grants: pack.grants, clientId: body.clientId, provider: checkoutProvider.name, priceId: price.id, amount: price.amount, currency: price.currency, checkoutExpiresAt: checkoutProvider.name === 'stripe' ? new Date(Date.now() + 86400000) : null, taxEnabled: checkoutProvider.name === 'stripe' && process.env.STRIPE_AUTOMATIC_TAX_ENABLED === 'true', nowSandbox: checkoutProvider.name === 'nowpayments' && nowpayments.sandbox(), invoiceCreation: 'READY', status: 'PREPARING' };
   try { await CosmeticOrder.updateOne({ _id: key }, { $setOnInsert: fields }, { upsert: true }); }
   catch (error) { if (error.code !== 11000 || !await CosmeticOrder.exists({ _id: key })) throw error; }
   let order = await CosmeticOrder.findById(key).select(privateFields).lean();
@@ -174,12 +238,14 @@ const purchases = async actorId => {
 const verifyOrder = async (actorId, orderId) => {
   let order = await ownedOrder(actorId, orderId);
   if (order.status === 'PAID') order = await deliverOrder(order._id);
+  else if (order.provider === 'nowpayments' && order.nowPaymentId && order.status !== 'DELIVERED') order = await reconcileNowPayment(order.nowPaymentId);
   else if (order.stripeSessionId && !['DELIVERED', 'FAILED', 'EXPIRED'].includes(order.status)) order = await reconcileSession(order.stripeSessionId);
   return { order: await orderView(order, actorId) };
 };
 const resumeCheckout = async (actorId, orderId) => openCheckout(await ownedOrder(actorId, orderId, true));
 const cancelCheckout = async (actorId, orderId) => {
   let order = await ownedOrder(actorId, orderId, true);
+  if (order.provider === 'nowpayments') fail(409, 'This hosted invoice cannot be closed here. Resume the same saved purchase or contact support.');
   if (!order.stripeSessionId) fail(409, 'That checkout needs to be confirmed before it can be closed.');
   if (order.status === 'OPEN') {
     try { await provider.client().checkout.sessions.expire(order.stripeSessionId); }
@@ -194,4 +260,4 @@ const acknowledgeReceipt = async (actorId, orderId) => {
   await User.updateOne({ _id: actorId, cosmeticReceipts: { $elemMatch: { orderId, seenAt: null } } }, { $set: { 'cosmeticReceipts.$.seenAt': new Date() } });
   return { success: true };
 };
-module.exports = { createCheckout, resumeCheckout, cancelCheckout, verifyOrder, purchases, giftOptions, acknowledgeReceipt, reconcileSession, deliverOrder, orderKey, orderView };
+module.exports = { createCheckout, resumeCheckout, cancelCheckout, verifyOrder, purchases, giftOptions, acknowledgeReceipt, reconcileSession, reconcileNowPayment, deliverOrder, orderKey, orderView };

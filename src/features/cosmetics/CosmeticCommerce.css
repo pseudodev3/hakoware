@@ -18,6 +18,9 @@
 .checkout-preview-note { font-size:.75rem; color:var(--text-muted); line-height:1.7; }
 .checkout-security { display:flex; gap:7px; align-items:flex-start; margin-top:12px; font-size:.625rem; line-height:1.7; color:var(--text-muted); }
 .checkout-security > svg { flex:0 0 auto; margin-top:3px; }
+.purchase-support code { display:block; overflow-wrap:anywhere; margin:8px 0; font-size:.75rem; color:var(--text-muted); }
+.purchase-support a { display:inline-flex; align-items:center; min-height:44px; color:var(--accent-text); text-decoration:underline; text-underline-offset:4px; }
+.checkout-recovery { display:flex; align-items:center; min-height:44px; margin-top:8px; color:var(--accent-text); text-decoration:underline; text-underline-offset:4px; font-size:.8125rem; }
 .cosmetic-purchases { margin:28px 0; min-width:0; }
 .cosmetic-purchases > header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-top:20px; border-top:1px solid var(--border-subtle); }
 .cosmetic-purchases h3 { font-size:1rem; font-weight:600; }

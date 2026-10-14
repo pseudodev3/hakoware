@@ -3,7 +3,7 @@ const User = require('../models/User');
 const GrowthEvent = require('../models/GrowthEvent');
 const ContractEvent = require('../models/ContractEvent');
 const CosmeticOrder = require('../models/CosmeticOrder');
-const { exponent } = require('./stripeCheckout');
+const { exponent } = require('./checkoutHelpers');
 const catalog = require('../config/cosmetics.json');
 const DAY = 86400000;
 const id = value => String(value?._id || value);

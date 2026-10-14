@@ -30,7 +30,7 @@ const privacySections = [
   ['When information is shared', (
     <>
       <p>We do not sell your personal information. Information may be processed by service providers that help us run Hakoware, including hosting, database, file-storage and transactional-email providers.</p>
-      <p>When cosmetic checkout is available, Stripe processes your payment on its hosted checkout. Hakoware receives payment confirmations and purchase references; we do not collect or store your payment-card number. A cosmetic gift shows the sender's display name to the recipient.</p>
+      <p>Cosmetic payments are processed on the payment provider’s hosted checkout. NOWPayments processes crypto payments; any available card option is handled by its payment partner. Hakoware receives payment confirmations and purchase references, and does not collect or store your card number or wallet’s private keys. A cosmetic gift shows the sender’s display name to the recipient.</p>
       <p>We may also disclose information when reasonably necessary to comply with law, protect users or the service, investigate abuse or security issues, or as part of a legitimate business transfer.</p>
     </>
   )],

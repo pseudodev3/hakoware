@@ -11,7 +11,8 @@
     "check:circle-activity": "node scripts/checkCircleActivity.mjs",
     "check:next-move": "node scripts/checkNextMove.mjs",
     "check:bank-retry": "node scripts/checkBankRetry.mjs",
-    "check:seo": "node scripts/checkSeo.mjs"
+    "check:seo": "node scripts/checkSeo.mjs",
+    "check:checkout-links": "node scripts/checkCheckoutLinks.mjs"
   },
   "dependencies": {
     "framer-motion": "12.35.0",

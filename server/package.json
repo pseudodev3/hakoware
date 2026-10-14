@@ -21,6 +21,7 @@
     "check:presentation": "node scripts/checkPresentation.js",
     "check:cosmetics": "node scripts/checkCosmetics.js",
     "check:cosmetic-checkout": "node scripts/checkCosmeticCheckout.js",
+    "check:nowpayments-checkout": "node scripts/checkNowpaymentsCheckout.js",
     "check:product-journeys": "node scripts/checkProductJourneys.js",
     "sparks:readiness": "node scripts/sparksReadiness.js",
     "sparks:prepare": "node scripts/sparksReadiness.js --prepare",

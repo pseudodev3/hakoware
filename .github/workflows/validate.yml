@@ -50,6 +50,9 @@ jobs:
       - name: Check durable bank retry recovery
         run: npm run check:bank-retry
 
+      - name: Check hosted checkout link boundaries and displayed prices
+        run: npm run check:checkout-links
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
@@ -115,6 +118,10 @@ jobs:
       - name: Check verified Stripe cosmetics and gifting with blocked indexes
         working-directory: server
         run: npm run check:cosmetic-checkout
+
+      - name: Check NOWPayments confirmation, invoice recovery and gifting with blocked indexes
+        working-directory: server
+        run: npm run check:nowpayments-checkout
 
       - name: Check private product journeys and real return cohorts
         working-directory: server

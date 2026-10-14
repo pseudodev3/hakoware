@@ -1,14 +1,14 @@
 const User = require('../models/User');
 const catalog = require('../config/cosmetics.json');
-const { storefront } = require('./stripeCheckout');
+const { active } = require('./cosmeticPaymentProvider');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const hasStyle = (user, kind, id) => (user.cosmeticUnlocks || []).includes(`${kind}:${id}`);
 const shopSnapshot = async userId => {
   const user = await User.findById(userId).select('+cosmeticUnlocks +cosmeticWishlist +cosmeticReceipts').lean();
   if (!user) fail(404, 'Account not found');
-  const sales = await storefront();
+  const provider = active(), sales = await provider.storefront();
   return {
-    status: sales.available ? 'open' : 'preview', checkoutAvailable: sales.available && !user.isTestAccount, currency: null,
+    status: sales.available ? 'open' : 'preview', checkoutAvailable: sales.available && !user.isTestAccount, currency: null, checkoutProvider: provider.name,
     newEditions: (user.cosmeticReceipts || []).filter(receipt => !receipt.seenAt).slice(-10).map(receipt => ({ orderId: receipt.orderId, packId: receipt.packId })),
     packs: catalog.packs.map(pack => ({ ...pack, price: sales.prices[pack.id] ? { amount: sales.prices[pack.id].amount, currency: sales.prices[pack.id].currency, exponent: sales.prices[pack.id].exponent } : null, unlockedStyles: pack.grants.filter(grant => (user.cosmeticUnlocks || []).includes(grant)).length, owned: pack.grants.every(grant => (user.cosmeticUnlocks || []).includes(grant)), saved: (user.cosmeticWishlist || []).includes(pack.id) }))
   };

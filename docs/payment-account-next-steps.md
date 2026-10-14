@@ -1,6 +1,8 @@
 # Merchant account next steps
 
-The user operates from Nigeria without a registered business. They declined US incorporation through Stripe Atlas and began Flutterwave onboarding after asking for the easiest option with international customer payments. Their ID review is pending. The signup UI offered Startup and NGO rather than Individual; support must confirm whether Startup fits their unregistered business and whether additional registration is required for international cards. Hakoware is not an NGO. No merchant approval or international payment access has been verified, and checkout has not been changed to Flutterwave.
+The user operates from Nigeria without a registered business, declined US incorporation through Stripe Atlas, and reported completing NOWPayments verification on October 14, 2026. NOWPayments is now the default cosmetic-checkout integration. Payout wallets are not yet configured, API credentials are absent in this workspace, and card enablement is unknown. Use [NOWPayments activation](nowpayments-checkout.md) for wallet setup, secure server variables, pricing proposals and the remaining account-level checks. No live payment was made and sales have not been activated.
+
+Flutterwave onboarding remains an earlier pending route. Its signup offered Startup and NGO rather than Individual; support must confirm whether Startup fits an unregistered business. Hakoware is not an NGO. Checkout has not been migrated to Flutterwave.
 
 ## Account signup
 
@@ -21,6 +23,6 @@ Official Flutterwave documentation/dashboard domains were added to the draft whi
 
 ## Crypto and card candidate — October 14, 2026
 
-The user asked about accepting crypto alongside cards while Flutterwave review remains pending. [NOWPayments](https://nowpayments.io/) with a fiat-on-ramp partner such as [Guardarian](https://guardarian.com/) is a candidate to investigate. This model converts a customer's card payment into crypto; it should not be presented as ordinary card acquiring or guaranteed worldwide access.
+The user selected [NOWPayments](https://nowpayments.io/) after reporting verification. Its crypto checkout is integrated; a fiat-on-ramp partner such as [Guardarian](https://guardarian.com/) remains a method to confirm with the account. That model converts a customer's card payment into crypto and does not establish guaranteed worldwide access.
 
-Official provider pages were blocked by the current environment's network allowlist. Nigerian merchant eligibility, unregistered-business support, Nigerian customer card access, permitted game cosmetics, minimum purchases, fees and refunds have not been verified. Confirm those points directly with the provider before choosing or integrating it. No crypto account or checkout integration was created, and no production payment method was enabled.
+Official provider API/docs pages were blocked by the current environment's network allowlist; its official SDK reference was accessible. Nigerian merchant eligibility and product acceptance were not independently checked, and customer card access, minimum purchases, fees and refunds remain account-level checks. The account was created by the user, and no production payment method was enabled by this work.

@@ -99,7 +99,7 @@ export const CosmeticShop = ({ onChanged, onBusyChange, returnOrderId, onClearRe
           <div className="shop-pack-actions"><button type="button" onClick={() => open(pack)}>{pack.owned ? 'Wear this edition' : 'Explore the collection'}</button>{saveButton(pack)}</div>
         </article>)}</div> : <div className="shop-empty"><Bookmark size={26} /><h3>{filter === 'owned' ? 'Your collection starts here.' : 'Keep your favourites here.'}</h3><p>{filter === 'owned' ? 'Purchased editions and received gifts are yours to keep.' : 'Save an edition and come back to it when the shop opens.'}</p><button type="button" onClick={() => setFilter('all')}>Browse collections</button></div>}
       </div>
-      <p className="shop-footnote">Each edition is a permanent cosmetic pack. Your cards and game progress stay yours. {shop?.checkoutAvailable ? 'Any applicable taxes appear at checkout.' : 'Prices will be shown when sales open.'}</p>
+      <p className="shop-footnote">Each edition is a permanent cosmetic pack. Your cards and game progress stay yours. {shop?.checkoutAvailable ? 'Final payment details appear at checkout.' : 'Prices will be shown when sales open.'}</p>
     </> : <>
       <button className="shop-back" type="button" disabled={locked} onClick={() => setSelectedId(null)}><ArrowLeft size={17} />All collections</button>
       <div className="shop-detail-heading"><p className="eyebrow">{selected.bundle ? 'THE COMPLETE SET' : `EDITION ${selected.number}`}</p><h2 ref={detailHeading} tabIndex={-1}>{selected.name}</h2><p>{selected.description}</p></div>
@@ -109,7 +109,7 @@ export const CosmeticShop = ({ onChanged, onBusyChange, returnOrderId, onClearRe
         <div className="shop-profile-preview" data-profile-decoration={edition.decorationId}><UserAvatar person={{ ...user, avatarFrame: edition.frameId }} size="lg" decorative /><span><strong>{user.displayName}</strong><small>{user.username ? '@' + user.username : 'Your profile'}<br />{edition.name} frame + backdrop</small></span></div>
         <div className="shop-included"><h3>In the collection</h3><p><Layers size={16} />{selected.bundle ? 'All three finishes for your whole collection' : 'A finish for every card in your collection'}</p><p><Sparkles size={16} />{selected.bundle ? 'Gilt, Prismatic and Ceramic avatar frames' : 'A signature avatar frame'}</p><p><Palette size={16} />{selected.bundle ? 'All three profile backdrops' : 'A matching profile backdrop'}</p><p><Check size={16} />Permanent style unlocks when purchased</p></div>
         <div className="shop-detail-actions">{selected.owned ? <Button variant="aura" disabled={locked} loading={busy?.kind === 'apply'} onClick={() => void apply()}>Wear {edition.name}</Button> : <>{!shop?.checkoutAvailable && <p>Preview only. Purchases open later.</p>}{saveButton(selected)}</>}</div>
-        <CosmeticCheckout key={`${userId}:${selected.id}`} pack={selected} available={shop?.checkoutAvailable} onBusyChange={commercePending} onChanged={changed} />
+        <CosmeticCheckout key={`${userId}:${selected.id}`} pack={selected} available={shop?.checkoutAvailable} checkoutProvider={shop?.checkoutProvider} onBusyChange={commercePending} onChanged={changed} onOpenPurchases={() => { setSelectedId(null); setFilter('owned'); }} />
       </div></div>
     </>}
     {loading && <p className="shop-status" role="status">Opening your saved collections…</p>}

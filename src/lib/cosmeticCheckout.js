@@ -14,8 +14,11 @@ export const clearCheckoutRetryKey = (userId, packId, friendshipId = null) => {
   try { localStorage.removeItem(key); } catch { /* Optional storage. */ }
 };
 export const formatCosmeticPrice = price => price ? new Intl.NumberFormat(undefined, { style: 'currency', currency: price.currency }).format(price.amount / (10 ** price.exponent)) : 'Prices at launch';
-export const goToStripeCheckout = url => {
+export const checkoutTarget = (url, provider = 'stripe') => {
   const target = new URL(url);
-  if (target.protocol !== 'https:' || target.hostname !== 'checkout.stripe.com') throw new Error('Could not confirm a secure checkout link.');
-  window.location.assign(target.toString());
+  const stripe = provider === 'stripe' && target.hostname === 'checkout.stripe.com';
+  const nowpayments = provider === 'nowpayments' && ['nowpayments.io', 'sandbox.nowpayments.io'].includes(target.hostname) && ['/payment', '/payment/'].includes(target.pathname) && /^[1-9]\d{0,39}$/.test(target.searchParams.get('iid') || '');
+  if (target.protocol !== 'https:' || target.username || target.password || target.port || !stripe && !nowpayments) throw new Error('Could not confirm a secure checkout link.');
+  return target;
 };
+export const goToHostedCheckout = (url, provider) => window.location.assign(checkoutTarget(url, provider).toString());

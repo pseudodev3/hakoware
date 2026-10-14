@@ -40,7 +40,7 @@ async function run() {
     await mongoose.connection.db.admin().command({ setParameter: 1, indexBuildMinAvailableDiskSpaceMB: 10000000 });
     await assert.rejects(Order.collection.createIndex({ buyerId: 1 }), /available disk space.*less than required minimum/);
     process.env.JWT_SECRET = randomBytes(32).toString('hex'); process.env.STRIPE_WEBHOOK_SECRET = randomBytes(32).toString('hex'); process.env.STRIPE_SECRET_KEY = 'sk_test_local_fixture';
-    process.env.FRONTEND_URL = 'https://hakoware.xyz'; process.env.COSMETIC_SALES_ENABLED = 'true';
+    process.env.FRONTEND_URL = 'https://hakoware.xyz'; process.env.COSMETIC_SALES_ENABLED = 'true'; process.env.COSMETIC_PAYMENT_PROVIDER = 'stripe';
     for (const pack of catalog.packs) process.env['STRIPE_PRICE_' + pack.id.toUpperCase()] = 'price_' + pack.id;
     provider.client = () => fake;
     const people = await User.create(['Ari', 'Maya', 'Sol', 'Nia', 'Jules', 'Kai', 'Rin'].map(name => ({ displayName: name, email: name + '@example.test', password: 'fixture', auraBalance: 100, inventory: ['PURIFY'], notificationPreferences: { email: false } })));

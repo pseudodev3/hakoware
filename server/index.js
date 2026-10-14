@@ -59,6 +59,7 @@ app.get('/brand/hakoware-mark-v2.jpg', (req, res) => {
 app.use(cors(require('./services/siteCors').createCorsOptions()));
 // Signature verification requires the original bytes, before JSON parsing.
 app.use('/api/payments/stripe/webhook', require('./routes/stripeWebhook'));
+app.use('/api/payments/nowpayments/webhook', require('./routes/nowpaymentsWebhook'));
 app.use(express.json({ limit: '1mb' }));
 app.use(requestGuard);
 
