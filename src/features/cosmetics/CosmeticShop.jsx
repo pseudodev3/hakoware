@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { ArrowLeft, Bookmark, Check, Layers, Palette, Sparkles } from 'lucide-react';
+import { ArrowLeft, Bookmark, Check, Layers, Palette, ShoppingBag, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { COSMETIC_PACKS, collectionFor } from '../../lib/cosmetics';
 import { getStyleShop, saveStyleCollection } from '../../services/cosmeticService';
@@ -89,7 +89,7 @@ export const CosmeticShop = ({ onChanged, onBusyChange, returnOrderId, onClearRe
   return <section ref={root} className="cosmetic-shop" aria-label="Style shop" aria-busy={locked}>
     {!selected ? <>
       {(returnOrderId || shop?.newEditions?.length > 0) && <CosmeticPurchases newEditions={shop?.newEditions} returnOrderId={returnOrderId} onBusyChange={commercePending} onChanged={changed} onClearReturn={onClearReturn} />}
-      {!returnOrderId && !shop?.newEditions?.length && <div className="shop-hero"><div className="shop-hero-copy"><p className="eyebrow">HAKOWARE EDITIONS 01–03</p><h2>Your signature,<br /><em>collected.</em></h2><p>Card finishes, avatar frames and profile backdrops. Find the edition that feels like you.</p><span className="shop-launch-note"><Sparkles size={14} />{shop?.checkoutAvailable ? 'One-time collections · Yours to keep' : 'First-drop preview · Not yet on sale'}</span></div><div className="shop-hero-art" aria-hidden="true"><CardArtwork cardId="PURIFY" finishId="porcelain" size={90} /><CardArtwork cardId="SIGNAL_FLARE" finishId="nocturne" size={112} /><CardArtwork cardId="CHAOS_TICKET" finishId="prism" size={90} /></div></div>}
+      {!returnOrderId && !shop?.newEditions?.length && <div className="shop-hero"><div className="shop-hero-copy"><p className="eyebrow">HAKOWARE EDITIONS 01–03</p><h2>Your signature,<br /><em>collected.</em></h2><p>Card finishes, avatar frames and profile backdrops. Find the edition that feels like you.</p><span className="shop-launch-note"><ShoppingBag size={14} aria-hidden="true" />{shop?.checkoutAvailable ? 'One-time collections · Yours to keep' : 'First-drop preview · Not yet on sale'}</span></div><div className="shop-hero-art" aria-hidden="true"><CardArtwork cardId="PURIFY" finishId="porcelain" size={90} /><CardArtwork cardId="SIGNAL_FLARE" finishId="nocturne" size={112} /><CardArtwork cardId="CHAOS_TICKET" finishId="prism" size={90} /></div></div>}
       <ViewTabs id={`shop-${uid}`} label="Shop collections" className="shop-tabs" value={filter} onChange={value => { if (!busyRef.current && !commerceRef.current) setFilter(value); }} items={[{ value: 'all', label: 'Collections' }, { value: 'saved', label: 'Saved', count: savedCount }, { value: 'owned', label: 'Owned', count: ownedCount }]} />
       {filter === 'owned' && !returnOrderId && !shop?.newEditions?.length && <CosmeticPurchases newEditions={shop?.newEditions} onBusyChange={commercePending} onChanged={changed} onClearReturn={onClearReturn} />}
       <div role="tabpanel" id={`shop-${uid}-panel-${filter}`} aria-labelledby={`shop-${uid}-tab-${filter}`}>
