@@ -60,3 +60,20 @@ test('a future interaction timestamp cannot mark either first move complete', ()
   assert.equal(move(data).ownDone, false);
   assert.equal(move(data).partnerDone, false);
 });
+test('A message already offered by the Home lead leaves the next unread friend reachable', () => {
+  const first = contract({ season:{ status:'ACTIVE', number:2, startedAt:start } });
+  const second = { ...first, _id:'second' };
+  const result = getNextMove([first, second], 'one', { duo:{ unseenActivity:[{ type:'MESSAGE', id:'lead-message' }] }, second:{ unseenActivity:[{ type:'MESSAGE', id:'second-message' }] } }, now, 'duo');
+  assert.equal(result.kind, 'reply'); assert.equal(result.eventId, 'second-message');
+});
+test('A handled recap does not repeat, and another completed season remains discoverable', () => {
+  const first = contract({ season:{ status:'COMPLETE' } });
+  assert.equal(getNextMove([first], 'one', {}, now, 'duo'), null);
+  const result = getNextMove([first, { ...first, _id:'second' }], 'one', {}, now, 'duo');
+  assert.equal(result.kind, 'recap'); assert.equal(result.contract._id, 'second');
+});
+test('Handling the lead never removes its first-check-in guide or eligible check-in window', () => {
+  assert.equal(getNextMove([contract()], 'one', {}, now, 'duo').kind, 'first');
+  const due = contract({ season:{ status:'ACTIVE', number:2, startedAt:now - 2 * 24 * hour }, user1Perspective:{ lastInteraction:now - 21 * hour } });
+  assert.equal(getNextMove([due], 'one', {}, now, 'duo').kind, 'ready');
+});

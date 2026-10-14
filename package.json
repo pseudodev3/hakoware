@@ -12,7 +12,8 @@
     "check:next-move": "node scripts/checkNextMove.mjs",
     "check:bank-retry": "node scripts/checkBankRetry.mjs",
     "check:seo": "node scripts/checkSeo.mjs",
-    "check:checkout-links": "node scripts/checkCheckoutLinks.mjs"
+    "check:checkout-links": "node scripts/checkCheckoutLinks.mjs",
+    "check:ui-polish": "node scripts/checkUiPolish.mjs"
   },
   "dependencies": {
     "framer-motion": "12.35.0",

@@ -14,3 +14,8 @@
 .home-sparks-empty > span { min-width:0; flex:1; }
 .home-sparks-empty strong { display:block; font-size:.8125rem; font-weight:550; line-height:1.4; }
 .home-sparks-empty small { display:block; color:var(--text-muted); font-size:.6875rem; line-height:1.5; margin-top:6px; }
+.home-sparks-unavailable { padding:8px 0; }
+.home-sparks-unavailable strong { font-size:.875rem; font-weight:550; color:var(--text-secondary); }
+.home-sparks-unavailable p,.home-sparks-loading { font-size:.75rem; line-height:1.7; color:var(--text-muted); max-width:40ch; }
+.home-sparks-unavailable p { margin-top:8px; }
+.home-sparks-unavailable button { min-height:44px; margin-top:4px; color:var(--accent-text); font-size:.75rem; }

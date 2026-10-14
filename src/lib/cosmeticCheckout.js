@@ -14,6 +14,17 @@ export const clearCheckoutRetryKey = (userId, packId, friendshipId = null) => {
   try { localStorage.removeItem(key); } catch { /* Optional storage. */ }
 };
 export const formatCosmeticPrice = price => price ? new Intl.NumberFormat(undefined, { style: 'currency', currency: price.currency }).format(price.amount / (10 ** price.exponent)) : 'Prices at launch';
+export const bundleSavings = (bundle, packs) => {
+  if (!bundle?.bundle || bundle.unlockedStyles > 0) return null;
+  const members = packs.filter(pack => !pack.bundle && pack.grants?.length && pack.grants.every(grant => bundle.grants?.includes(grant)));
+  if (members.length < 2 || !bundle.grants?.every(grant => members.some(pack => pack.grants.includes(grant))) || members.some(pack => pack.owned || pack.unlockedStyles > 0)) return null;
+  const price = bundle.price;
+  const valid = value => value && /^[a-z]{3}$/i.test(value.currency || '') && Number.isSafeInteger(value.amount) && value.amount > 0 && Number.isInteger(value.exponent) && value.exponent >= 0 && value.exponent <= 6;
+  if (!valid(price) || members.some(pack => !valid(pack.price) || pack.price.currency !== price.currency || pack.price.exponent !== price.exponent)) return null;
+  const total = members.reduce((sum, pack) => sum + pack.price.amount, 0);
+  if (!Number.isSafeInteger(total) || total <= price.amount) return null;
+  return { amount: total - price.amount, currency: price.currency, exponent: price.exponent };
+};
 export const checkoutTarget = (url, provider = 'stripe') => {
   const target = new URL(url);
   const stripe = provider === 'stripe' && target.hostname === 'checkout.stripe.com';

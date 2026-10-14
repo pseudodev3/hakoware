@@ -22,7 +22,7 @@ const activityTime = (value) => {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(time);
 };
 
-export const FriendCard = ({ friendship, currentUserId, socialState, socialStatus = 'ready', onOpen, onAction, variant = 'roster' }) => {
+export const FriendCard = ({ friendship, currentUserId, socialState, socialStatus = 'ready', onOpen, onAction }) => {
   const { partner, ownPerspective } = getContractSides(friendship, currentUserId);
   const name = partner?.displayName || 'Your friend';
   const summary = friendSummary(friendship, currentUserId);
@@ -41,7 +41,7 @@ export const FriendCard = ({ friendship, currentUserId, socialState, socialStatu
   const checkinLabel = available ? 'Check in' : friendship.status === 'ACTIVE' && ownPerspective ? 'Checked in' : 'Unavailable';
   return (
     <article
-      className={`friend-card friend-card-${variant} ${summary.tone} ${unread ? 'has-new' : ''}`}
+      className={`friend-card ${summary.tone} ${unread ? 'has-new' : ''}`}
       aria-label={`Friend space with ${name}`}
       style={duoStyle(friendship)}
     >

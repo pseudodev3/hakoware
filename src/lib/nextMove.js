@@ -8,7 +8,7 @@ const checkedAfter = (value, start, now) => {
 };
 
 // Season-start timestamps are baselines, not completed check-ins.
-export const getNextMove = (friendships, userId, social = {}, now = Date.now()) => {
+export const getNextMove = (friendships, userId, social = {}, now = Date.now(), handledContractId = null) => {
   const contracts = friendships.filter(contract => contract.status === 'ACTIVE');
   const sides = contract => {
     const isFirst = id(contract.user1) === id(userId);
@@ -31,10 +31,11 @@ export const getNextMove = (friendships, userId, social = {}, now = Date.now()) 
     return { kind: 'first', contract: first, partner, ownDone: checkedAfter(own.lastInteraction, started, now), partnerDone: checkedAfter(other.lastInteraction, started, now) };
   }
   for (const contract of contracts) {
+    if (handledContractId && id(contract) === id(handledContractId)) continue;
     const message = social[id(contract)]?.unseenActivity?.find(item => item.type === 'MESSAGE');
     if (message) return { kind: 'reply', contract, partner: sides(contract).partner, eventId: message.id };
   }
-  const recap = contracts.find(contract => contract.season?.status === 'COMPLETE');
+  const recap = contracts.find(contract => contract.season?.status === 'COMPLETE' && (!handledContractId || id(contract) !== id(handledContractId)));
   if (recap) return { kind: 'recap', contract: recap, partner: sides(recap).partner };
   const moment = contracts.find(contract => social[id(contract)]?.moment?.status === 'OPEN');
   if (moment) return { kind: 'moment', contract: moment, partner: sides(moment).partner };

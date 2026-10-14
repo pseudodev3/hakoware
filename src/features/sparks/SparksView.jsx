@@ -6,6 +6,7 @@ import { Modal } from '../../shared/components/Modal';
 import { Button } from '../../shared/components/Button';
 import { createSpark, deleteSpark, fetchSparkPhoto, getPreviousActivity, getSpark, getSparks, reactSpark, replySpark } from '../../services/sparkService';
 import { prepareSparkPhoto } from '../../lib/sparkPhoto';
+import { sparkFailure } from '../../lib/sparkAvailability';
 import './SparksView.css';
 
 const REACTIONS = ['❤️', '😂', '👀', '🤝', '✨'];
@@ -76,7 +77,7 @@ const SparkComposer = ({ user, onClose, onShared }) => {
       const result = await createSpark({ text: text.trim(), photo, clientId: retry.current });
       save(key, ''); save(`${key}:retry`, '');
       if (alive.current) onShared(result.post);
-    } catch (failure) { if (alive.current) setError(failure.message || 'Couldn’t confirm this Spark. Try again.'); }
+    } catch (failure) { if (alive.current) setError(sparkFailure(failure).paused ? 'Sharing is temporarily unavailable. Your draft is saved for later.' : failure.message || 'Couldn’t confirm this Spark. Try again.'); }
     finally { busyRef.current = false; if (alive.current) setBusy(false); }
   };
   return <Modal isOpen title="Drop a Spark" onClose={() => { if (!busy) onClose(); }} initialFocusSelector="textarea"><form className="spark-compose" onSubmit={submit}>
@@ -110,7 +111,7 @@ const SparkThread = ({ id, focusReplyId, user, onClose, onUpdate, onChat, onReac
     try {
       const data = await getSpark(id, { reply: focusReplyId });
       if (alive.current && version === request.current) { setThread(previous => ({ ...data, replies: merge(previous?.replies || [], data.replies), hasMore: previous?.hasMore ?? data.hasMore, nextCursor: previous?.nextCursor || data.nextCursor })); setError(''); }
-    } catch (failure) { if (alive.current && version === request.current) setError(failure.message); }
+    } catch (failure) { if (alive.current && version === request.current) setError(sparkFailure(failure).paused ? sparkFailure(failure).message : failure.message); }
   }, [id, focusReplyId]);
   useEffect(() => { alive.current = true; void load(); const interval = setInterval(() => { if (document.visibilityState === 'visible' && !busyRef.current && !reactionBusy.current) void load(); }, 15000); return () => { alive.current = false; request.current += 1; clearInterval(interval); }; }, [load]);
   useEffect(() => { save(key, draft); }, [key, draft]);
@@ -165,6 +166,7 @@ export const SparksView = ({ user, friendships, onOpenFriend, onNavigate, showTo
   const request = useRef(0);
   const busyRef = useRef(false);
   const feedRef = useRef(feed); feedRef.current = feed;
+  const foregroundRequest = useRef(0);
   const headingRef = useRef(null);
   useEffect(() => {
     if ((!composing && !selected) || !window.visualViewport) return undefined;
@@ -175,14 +177,17 @@ export const SparksView = ({ user, friendships, onOpenFriend, onNavigate, showTo
     return () => { viewport.removeEventListener('resize', update); viewport.removeEventListener('scroll', update); root.style.removeProperty('--spark-viewport-height'); root.style.removeProperty('--spark-viewport-top'); };
   }, [composing, selected]);
   const load = useCallback(async (older = false, background = false) => {
+    // Polling must not supersede an explicit refresh or its loading state.
+    if (background && foregroundRequest.current) return;
     const version = ++request.current;
+    if (!background) { foregroundRequest.current = version; setLoading(true); }
     try {
       const data = await getSparks(older ? { before: feedRef.current.nextCursor } : {});
       if (!alive.current || version !== request.current) return;
-      if (background) { if (data.posts.some(post => !feedRef.current.posts.some(old => old.id === post.id))) setFresh(data); return; }
+      if (background) { setError(''); if (!feedRef.current.posts.length) { setFeed(data); setFresh(null); } else if (data.posts.some(post => !feedRef.current.posts.some(old => old.id === post.id))) setFresh(data); return; }
       setFeed(previous => older ? { ...data, posts: merge(previous.posts, data.posts) } : data); setFresh(null); setError('');
-    } catch (failure) { if (alive.current && version === request.current && !background) setError(failure.message); }
-    finally { if (alive.current && version === request.current && !background) setLoading(false); }
+    } catch (failure) { if (alive.current && version === request.current && (!background || sparkFailure(failure).paused)) setError(sparkFailure(failure)); }
+    finally { if (alive.current && !background && foregroundRequest.current === version) { foregroundRequest.current = 0; setLoading(false); } }
   }, []);
   useEffect(() => { alive.current = true; void load(); const interval = setInterval(() => { if (document.visibilityState === 'visible' && !busyRef.current) void load(false, true); }, 60000); return () => { alive.current = false; request.current += 1; clearInterval(interval); }; }, [load]);
   useEffect(() => { if (focusPostId) setSelected(focusPostId); }, [focusPostId]);
@@ -211,18 +216,18 @@ export const SparksView = ({ user, friendships, onOpenFriend, onNavigate, showTo
     });
     if (friendship) onOpenFriend(friendship); else showToast?.('This person is no longer in your circle.', 'ERROR');
   };
-  return <div className="sparks-view"><PageHeading eyebrow="Sparks · Your circle" title={<>Little moments.<br /><span>Big energy.</span></>} description="A photo. A thought. Something your people would get." headingRef={headingRef} headingId="sparks-heading"><Button variant="aura" icon={Plus} onClick={() => setComposing(true)}>Drop a Spark</Button></PageHeading>
+  return <div className="sparks-view"><PageHeading eyebrow="Sparks · Your circle" title={<>Little moments.<br /><span>Big energy.</span></>} description="A photo. A thought. Something your people would get." headingRef={headingRef} headingId="sparks-heading"><Button variant="aura" icon={Plus} disabled={loading || Boolean(error)} onClick={() => setComposing(true)}>Drop a Spark</Button></PageHeading>
     {(legacy || legacyActivityId) && <section className="sparks-legacy" aria-label="Previous room activity"><strong>The room has moved on.</strong><p>Sparks is for the people in your circle. Previous posts keep their original visibility; the room game has retired.</p>{previous?.post && <blockquote><b>{label(previous.post.author)}</b><p>{previous.post.text}</p>{previous.reply && <><b>{label(previous.reply.author)}</b><p>{previous.reply.text}</p></>}</blockquote>}<button type="button" onClick={() => onNavigate('sparks', { replace: true })}>Continue to Sparks </button></section>}
-    <div className="sparks-layout"><section className="sparks-feed" aria-label="Your circle’s Sparks"><div className="sparks-feed-heading"><h2>From your people</h2><span><ShieldCheck size={14} />Circle only</span><button type="button" aria-label="Refresh Sparks" disabled={loading || Boolean(busy)} onClick={() => void load()}><RefreshCw size={17} /></button></div>
+    <div className={`sparks-layout ${error ? 'is-unavailable' : ''}`}><section className="sparks-feed" aria-label="Your circle’s Sparks"><div className="sparks-feed-heading"><h2>From your people</h2><span><ShieldCheck size={14} />Circle only</span><button type="button" aria-label="Refresh Sparks" disabled={loading || Boolean(busy)} onClick={() => void load()}><RefreshCw size={17} /></button></div>
       {fresh && <button className="spark-new-posts" type="button" onClick={() => { setFeed(fresh); setFresh(null); headingRef.current?.focus({ preventScroll: true }); }}><Sparkles size={16} />New Sparks from your circle </button>}
-      {error && <div className="spark-error" role="alert"><p>{error}</p><button type="button" onClick={() => void load()}>Try again</button></div>}
+      {error && <div className="sparks-unavailable" role="status"><h2>{error.title}</h2><p>{error.message}</p><div><button type="button" disabled={loading} onClick={() => void load()}>Check again</button><button type="button" onClick={() => onNavigate('contracts')}>Open your circle</button></div></div>}
       {loading && <div className="spark-loading" role="status">Gathering your circle’s moments…</div>}
       {!loading && !error && !feed.posts.length && <div className="sparks-empty"><span className="sparks-empty-mark"><Sparkles size={30} /></span><h2>Small things.<br />Good company.</h2><p>{feed.circleSize ? 'Your circle is here. Give them a little glimpse of your day.' : 'Sparks come from accepted friends. Start a Duo, then share a little of your day.'}</p><Button variant="aura" icon={feed.circleSize ? Plus : MessageCircle} onClick={() => feed.circleSize ? setComposing(true) : onNavigate('contracts')}>{feed.circleSize ? 'Share the first Spark' : 'Find your people'}</Button></div>}
       {feed.posts.map(post => <SparkCard key={post.id} post={post} onOpen={setSelected} onReact={react} busy={Boolean(busy)}>{post.mine && <button className="spark-delete" type="button" aria-label="Remove your Spark" onClick={() => setConfirmDelete(post.id)}><Trash2 size={15} /></button>}</SparkCard>)}
       {feed.hasMore && <button className="spark-load-more" type="button" disabled={loading || Boolean(busy)} onClick={() => { setLoading(true); void load(true); }}>Earlier Sparks </button>}
-      {!loading && feed.posts.length > 0 && !feed.hasMore && <div className="sparks-caught-up"><Check size={20} /><strong>You’re caught up.</strong><p>A little glimpse of your people. Go make your next moment.</p></div>}
-    </section><aside className="sparks-aside"><span className="sparks-aside-icon"><Sparkles size={26} /></span><h2>The little stuff<br /><span>is the good stuff.</span></h2><p>The coffee spot. A small win. That thing only your friends would understand.</p><button type="button" onClick={() => setComposing(true)}>Pass it on <Plus size={17} /></button><div><ShieldCheck size={16} /><p>Shared with your accepted friends. Your photos stay in your circle.</p></div></aside></div>
-    {composing && <SparkComposer user={user} onClose={() => setComposing(false)} onShared={post => { request.current += 1; setLoading(false); setFresh(null); setFeed(previous => ({ ...previous, posts: merge([post], previous.posts) })); setComposing(false); showToast?.('Spark shared with your circle', 'SUCCESS'); }} />}
+      {!loading && !error && feed.posts.length > 0 && !feed.hasMore && <div className="sparks-caught-up"><Check size={20} /><strong>You’re caught up.</strong><p>A little glimpse of your people. Go make your next moment.</p></div>}
+    </section>{!loading && !error && <aside className="sparks-aside"><span className="sparks-aside-icon"><Sparkles size={26} /></span><h2>The little stuff<br /><span>is the good stuff.</span></h2><p>The coffee spot. A small win. That thing only your friends would understand.</p><button type="button" onClick={() => setComposing(true)}>Pass it on <Plus size={17} /></button><div><ShieldCheck size={16} /><p>Shared with your accepted friends. Your photos stay in your circle.</p></div></aside>}</div>
+    {composing && <SparkComposer user={user} onClose={() => setComposing(false)} onShared={post => { request.current += 1; setLoading(false); setError(''); setFresh(null); setFeed(previous => ({ ...previous, posts: merge([post], previous.posts) })); setComposing(false); showToast?.('Spark shared with your circle', 'SUCCESS'); }} />}
     {selected && <SparkThread key={selected} id={selected} focusReplyId={focusReplyId} user={user} onClose={closeThread} onUpdate={updatePost} onChat={chat} onReact={react} reacting={Boolean(busy)} />}
     {confirmDelete && <Modal isOpen title="Remove this Spark?" size="sm" onClose={() => { if (!busy) setConfirmDelete(null); }}><div className="spark-delete-confirm"><p>The photo, thought, replies, and reactions will be removed from your circle.</p><div><Button variant="secondary" disabled={Boolean(busy)} onClick={() => setConfirmDelete(null)}>Keep it</Button><Button variant="danger" loading={Boolean(busy)} onClick={() => void remove()}>Remove Spark</Button></div></div></Modal>}
   </div>;

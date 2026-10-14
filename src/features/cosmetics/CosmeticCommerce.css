@@ -1,4 +1,4 @@
-.cosmetic-checkout { margin-top:24px; border-top:1px solid var(--border-subtle); padding-top:22px; }
+.cosmetic-checkout { padding-bottom:24px; border-bottom:1px solid var(--border-subtle); }
 .checkout-delivery { display:flex; gap:8px; }
 .checkout-delivery > button { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border:1px solid var(--border-active); border-radius:10px; color:var(--text-secondary); font-size:.75rem; }
 .checkout-delivery > button[aria-pressed='true'] { color:var(--accent-text); border-color:var(--accent-text); background:var(--accent-soft); }
@@ -47,3 +47,4 @@
 @keyframes edition-arrives { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 @media(max-width:460px) { .purchase-reveal-art { gap:5px; } .purchase-reveal-art .card-artwork { --art-size:82px!important; } .checkout-price { flex-wrap:wrap; gap:8px; } }
 @media(prefers-reduced-motion:reduce) { .purchase-reveal.is-paid .purchase-reveal-art { animation:none; } }
+.checkout-bundle-saving { color:var(--accent-text); font-size:.75rem; line-height:1.5; margin:-4px 0 16px; }

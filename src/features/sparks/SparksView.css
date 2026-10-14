@@ -94,3 +94,9 @@
 @media(max-width:640px) { .sparks-view .page-heading { flex-direction:column; gap:18px; } .sparks-view .page-heading-copy { width:100%; } .sparks-view .page-heading-action { padding:0; } .modal-root:has(.spark-thread,.spark-compose) { top:var(--spark-viewport-top,0px); height:var(--spark-viewport-height,100dvh); bottom:auto; } .modal-root:has(.spark-thread,.spark-compose) .modal-content { max-height:calc(var(--spark-viewport-height,100dvh) - 8px); } }
 @media(max-width:380px) { .spark-card-footer { flex-direction:column; align-items:flex-start; } .spark-open-replies { align-self:flex-end; } .spark-compose-actions > .btn { width:100%; } }
 @media(prefers-reduced-motion:reduce) { .spark-spinner { animation:none; } }
+.sparks-layout.is-unavailable { grid-template-columns:1fr; }
+.sparks-unavailable { max-width:640px; padding:32px 0; border-block:1px solid var(--border-subtle); margin:18px 0; }
+.sparks-unavailable h2 { font-size:clamp(1.4rem,3vw,2rem); font-weight:600; letter-spacing:-.035em; }
+.sparks-unavailable p { font-size:.875rem; color:var(--text-secondary); line-height:1.7; margin-top:12px; max-width:48ch; }
+.sparks-unavailable > div { display:flex; flex-wrap:wrap; gap:8px 24px; margin-top:16px; }
+.sparks-unavailable button { min-height:44px; font-size:.8125rem; color:var(--accent-text); }

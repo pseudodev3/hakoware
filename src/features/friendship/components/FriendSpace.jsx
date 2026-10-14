@@ -18,6 +18,7 @@ const dateLabel = (value) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
 };
 const messageTypes = new Set(['MESSAGE', 'CHECKIN_REPLY']);
+const routineTypes = new Set(['CHECKIN', 'CHECKIN_REACTION', 'POKE', 'DUO_IDENTITY_CHANGED', 'BANKRUPTCY_RECOVERY_STARTED', 'BANKRUPTCY_RECOVERED', 'CONTRACT_CREATED', 'CONTRACT_ACCEPTED', 'SEASON_STARTED']);
 const messagesTogether = (first, second) => {
   if (!first || !second || !messageTypes.has(first.type) || !messageTypes.has(second.type) || first.mine !== second.mine) return false;
   const earlier = new Date(first.createdAt), later = new Date(second.createdAt);
@@ -240,7 +241,8 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const renderItem = (item, previous = null, next = null) => {
     const conversation = messageTypes.has(item.type);
     const isFocus = item.id === focusEventId;
-    return <article key={item.id} data-friend-event={item.id} tabIndex={-1} className={`friend-event ${conversation ? 'conversation' : 'shared-event'} ${item.mine ? 'mine' : 'theirs'} ${messagesTogether(previous, item) ? 'is-grouped-before' : ''} ${messagesTogether(item, next) ? 'is-grouped-after' : ''} ${isFocus ? 'is-focused' : ''}`}>
+    const routine = routineTypes.has(item.type) && !item.milestone && !item.voice && !item.voiceUnavailable && !item.moment;
+    return <article key={item.id} data-friend-event={item.id} tabIndex={-1} className={`friend-event ${conversation ? 'conversation' : 'shared-event'} ${routine ? 'is-routine' : ''} ${item.mine ? 'mine' : 'theirs'} ${messagesTogether(previous, item) ? 'is-grouped-before' : ''} ${messagesTogether(item, next) ? 'is-grouped-after' : ''} ${isFocus ? 'is-focused' : ''}`}>
       {conversation ? <>
         <div className={`friend-message-bubble ${item.voice || item.voiceUnavailable ? 'has-voice' : ''}`}>
         {!item.mine && <span className="friend-message-author friend-space-sr-only">{item.actorName}</span>}

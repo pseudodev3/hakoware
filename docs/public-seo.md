@@ -8,7 +8,7 @@ The build generates `/sitemap.xml` from the public-page list. `/robots.txt` poin
 
 ## Search Console
 
-The user confirmed on October 14, 2026 that Search Console has not been configured. This does not prove why Google has not indexed or ranked the site: Google can discover a site without Search Console. Verification gives the owner the actual crawl/indexing diagnosis and the ability to request a crawl.
+The user initially reported on October 14, 2026 that Search Console had not been configured, then reported completing setup. Ownership, sitemap acceptance and actual Google indexing have not been independently checked here. Google can discover a site without Search Console; verification gives the owner the actual crawl/indexing diagnosis and the ability to request a crawl.
 
 After deploying the build:
 

@@ -53,6 +53,9 @@ jobs:
       - name: Check hosted checkout link boundaries and displayed prices
         run: npm run check:checkout-links
 
+      - name: Check Circle discovery, bundle comparisons and Sparks availability
+        run: npm run check:ui-polish
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund

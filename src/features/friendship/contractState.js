@@ -1,4 +1,4 @@
-import { calculateDebt } from '../../hooks/useDebt';
+import { calculateDebt } from '../../hooks/useDebt.js';
 
 const entityId = (value) => String(value?._id || value?.id || value || '');
 

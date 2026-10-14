@@ -3,7 +3,7 @@ import { Check, Clock3, MessageCircle } from 'lucide-react';
 import { getNextMove } from '../../lib/nextMove';
 import './NextMove.css';
 
-export const NextMove = ({ friendships, userId, socialContracts, onOpenFriend, onAction, firstOnly = false }) => {
+export const NextMove = ({ friendships, userId, socialContracts, onOpenFriend, onAction, firstOnly = false, handledContractId }) => {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const update = () => setNow(Date.now());
@@ -11,7 +11,7 @@ export const NextMove = ({ friendships, userId, socialContracts, onOpenFriend, o
     document.addEventListener('visibilitychange', update);
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', update); };
   }, []);
-  const move = getNextMove(friendships, userId, socialContracts, now);
+  const move = getNextMove(friendships, userId, socialContracts, now, handledContractId);
   if (!move || (move.kind === 'first') !== firstOnly) return null;
   const name = move.partner?.username ? `@${move.partner.username}` : move.partner?.displayName || 'your friend';
   const date = move.kind === 'later' ? new Intl.DateTimeFormat(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(move.at)) : null;

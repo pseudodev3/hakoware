@@ -25,7 +25,7 @@ const paymentCopy = order => {
   return 'Your edition arrives after payment is confirmed. You can check again or continue the same checkout.';
 };
 
-export const CosmeticCheckout = ({ pack, available, checkoutProvider = 'stripe', onBusyChange, onChanged, onOpenPurchases }) => {
+export const CosmeticCheckout = ({ pack, available, checkoutProvider = 'stripe', saving, onBusyChange, onChanged, onOpenPurchases }) => {
   const { user } = useAuth(), userId = String(user.uid || user._id);
   const [delivery, setDelivery] = useState(pack.owned ? 'gift' : 'self'), [friends, setFriends] = useState(null), [recipient, setRecipient] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
@@ -55,8 +55,9 @@ export const CosmeticCheckout = ({ pack, available, checkoutProvider = 'stripe',
       {selectedFriend && <div className="checkout-recipient"><UserAvatar person={selectedFriend.person} size="sm" decorative /><span><strong>For {selectedFriend.person.displayName}</strong><small>{pack.name} · Permanent collection</small></span></div>}
     </div>}
     {delivery === 'self' && pack.unlockedStyles > 0 && !pack.owned && <p className="checkout-existing">You already have {pack.unlockedStyles} of these {pack.grants.length} styles. This purchase adds the remaining styles at the displayed bundle price.</p>}
-    <div className="checkout-price"><strong>{formatCosmeticPrice(pack.price)}</strong><span>One-time collection</span></div>
-    {available ? <Button variant="aura" loading={busy} disabled={delivery === 'gift' && (!selectedFriend || selectedFriend.alreadyOwned) || delivery === 'self' && pack.owned} onClick={() => void checkout()}>{delivery === 'gift' ? 'Continue with gift' : 'Continue to checkout'}</Button> : <p className="checkout-preview-note">Gifting and purchases open when checkout launches.</p>}
+    <div className="checkout-price"><strong>{formatCosmeticPrice(pack.price)}</strong><span>{pack.price && `${pack.price.currency.toUpperCase()} · `}One-time collection</span></div>
+    {saving && delivery === 'self' && <p className="checkout-bundle-saving">Save {formatCosmeticPrice(saving)} vs. individual editions</p>}
+    {available ? <Button variant="aura" loading={busy} disabled={delivery === 'gift' && (!selectedFriend || selectedFriend.alreadyOwned) || delivery === 'self' && pack.owned} onClick={() => void checkout()}>{checkoutProvider === 'nowpayments' ? delivery === 'gift' ? 'Gift with crypto' : 'Pay with crypto' : delivery === 'gift' ? 'Continue with gift' : 'Continue to checkout'}</Button> : <p className="checkout-preview-note">Gifting and purchases open when checkout launches.</p>}
     {available && <p className="checkout-security"><LockKeyhole size={12} />Pay securely on {providerName(checkoutProvider)}.{checkoutProvider === 'nowpayments' ? ' Choose a supported coin and network in checkout.' : ''} Your edition arrives after payment is confirmed.</p>}
     {error && <p className="shop-error" role="alert">{error}</p>}
     {error && onOpenPurchases && <button type="button" className="checkout-recovery" disabled={busy} onClick={onOpenPurchases}>View saved purchases</button>}

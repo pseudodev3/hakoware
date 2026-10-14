@@ -25,16 +25,8 @@
 .friend-card-moment { width:100%; min-height:48px; padding:10px 20px; display:flex; align-items:center; gap:8px; background:var(--play-violet-soft); color:var(--play-violet); text-align:left; font-size:.75rem; line-height:1.5; }
 .friend-card-moment > span { min-width:0; flex:1; }
 .friend-card-moment > svg { flex:0 0 auto; }
-.friend-card-featured { background:var(--duo-surface); border:1px solid color-mix(in srgb,var(--duo-label) 25%,var(--border-subtle)); border-radius:20px; overflow:hidden; }
-.friend-card-featured .friend-card-open { align-items:flex-start; padding:24px 24px 14px; min-height:154px; }
-.friend-card-featured .friend-card-open > .user-avatar { width:64px; height:64px; flex-basis:64px; }
-.friend-card-featured .friend-card-identity { margin-top:4px; margin-bottom:10px; }
-.friend-card-featured .friend-card-identity strong { font-size:1.875rem; font-weight:700; }
-.friend-card-featured .friend-card-footer { padding-inline:24px; padding-bottom:14px; }
-.friend-card-featured .friend-card-checkin { background:var(--surface-card); }
-.friend-card-featured.danger { background:var(--duo-surface); }
 @media(hover:hover) and (pointer:fine) { .friend-card-open:hover { background:var(--surface-soft); } .friend-card-checkin:not(:disabled):hover { filter:brightness(1.1); } }
-@media(max-width:600px) { .friend-card-open { gap:12px; padding:18px 16px; } .friend-card-open > .user-avatar { width:46px; height:46px; flex-basis:46px; } .friend-card-identity > strong { font-size:1.125rem; } .friend-card-preview { font-size:.875rem; } .friend-card-footer { padding-inline:16px; } .friend-card-featured .friend-card-open { min-height:128px; padding:20px 18px 12px; gap:14px; } .friend-card-featured .friend-card-open > .user-avatar { width:52px; height:52px; flex-basis:52px; } .friend-card-featured .friend-card-identity strong { font-size:1.5rem; } .friend-card-featured .friend-card-footer { padding-inline:18px; } }
+@media(max-width:600px) { .friend-card-open { gap:12px; padding:18px 16px; } .friend-card-open > .user-avatar { width:46px; height:46px; flex-basis:46px; } .friend-card-identity > strong { font-size:1.125rem; } .friend-card-preview { font-size:.875rem; } .friend-card-footer { padding-inline:16px; } }
 .friend-card-surface { flex:1; display:flex; flex-direction:column; position:relative; isolation:isolate; overflow:hidden; }
 .friend-card-surface > .friend-card-cover { opacity:.065; z-index:-1; }
 .friend-card-main { flex:1; display:flex; flex-direction:column; }
@@ -42,7 +34,7 @@
 [data-theme='light'] .friend-card { --duo-label:var(--duo-ink); }
 .friend-card-duo-name { display:block; color:var(--text-muted); font-size:.625rem; font-weight:600; letter-spacing:.04em; margin-bottom:7px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .friend-card-surface::after { content:''; position:absolute; inset:0 0 auto; height:3px; background:var(--duo-accent); opacity:.75; pointer-events:none; }
-.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-open { padding-inline:0; }
-.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-surface { overflow:visible; }
-.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-footer { padding:4px 0 16px; }
-.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-cover,.friend-card:not(.has-new):not(.danger):not(.friend-card-featured) .friend-card-surface::after { display:none; }
+.friend-card:not(.has-new):not(.danger) .friend-card-open { padding-inline:0; }
+.friend-card:not(.has-new):not(.danger) .friend-card-surface { overflow:visible; }
+.friend-card:not(.has-new):not(.danger) .friend-card-footer { padding:4px 0 16px; }
+.friend-card:not(.has-new):not(.danger) .friend-card-cover,.friend-card:not(.has-new):not(.danger) .friend-card-surface::after { display:none; }

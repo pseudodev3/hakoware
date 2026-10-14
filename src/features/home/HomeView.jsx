@@ -71,16 +71,16 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       || state.daysLeft <= 1;
   });
   const [showAllPulse, setShowAllPulse] = useState(false);
-  const visible = sorted.slice(0, 3);
+  const visible = sorted.slice(1, 4);
   const hasNewUpdates = sorted.some((item) => {
     const social = socialContracts[item._id || item.id];
     return social?.firstMutualCheckin || social?.unseenActivity?.length;
   });
   const [respondingInviteId, setRespondingInviteId] = useState(null);
 
-  const previewedMessageIds = new Set(visible.map((friendship) => socialContracts[friendship._id || friendship.id]?.lastMessage?.id).filter(Boolean));
+  const previewedMessageIds = new Set(sorted.slice(0, 4).map((friendship) => socialContracts[friendship._id || friendship.id]?.lastMessage?.id).filter(Boolean));
   // Only the exact latest message is already represented above. Older replies
-  // and messages from friends outside these three cards stay in this list.
+  // and messages outside the featured Duo and three other rows stay in this list.
   const pulse = (socialPresence?.pulse || []).filter((item) => item.type !== 'MESSAGE' || !previewedMessageIds.has(item.id));
   const shownPulse = showAllPulse ? pulse : pulse.slice(0, 4);
 
@@ -222,13 +222,12 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
         );
       })()}
 
-      <div className="home-hangout">
-        <section className="home-friends" aria-label="Conversations">
-          <div className="home-friends-heading"><h2>Pick up a conversation</h2><button type="button" onClick={() => onNavigate('contracts')}>Your circle </button></div>
-          <div className="circle-contracts crew-conversations">{visible.map((friendship, index) => (
+      <div className={`home-hangout ${!visible.length && !pulse.length ? 'is-quiet' : ''}`}>
+        {(visible.length > 0 || pulse.length > 0) && <section className="home-friends" aria-label="Conversations">
+          {visible.length > 0 && <><div className="home-friends-heading"><h2>More from your circle</h2><button type="button" onClick={() => onNavigate('contracts')}>Your circle</button></div>
+          <div className="circle-contracts crew-conversations">{visible.map((friendship) => (
             <FriendCard
               key={friendship._id || friendship.id}
-              variant={index === 0 ? 'featured' : 'crew'}
               friendship={friendship}
               currentUserId={userId}
               onAction={onAction}
@@ -236,7 +235,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
               socialState={socialPresence?.contracts?.[friendship._id || friendship.id]}
               socialStatus={socialStatus}
             />
-          ))}</div>
+          ))}</div></>}
 
           {pulse.length > 0 && (
             <section className="circle-pulse" aria-label="While you were gone">
@@ -257,10 +256,10 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
               {pulse.length > 4 && <button className="circle-pulse-more" type="button" onClick={() => setShowAllPulse((value) => !value)}>{showAllPulse ? 'Show less' : `See ${pulse.length - 4} more`}</button>}
             </section>
           )}
-        </section>
+        </section>}
 
         <aside className="home-side">
-          <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} />
+          <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} handledContractId={sorted[0]?._id || sorted[0]?.id} onOpenFriend={onOpenFriend} onAction={onAction} />
           <SparkPreview onNavigate={onNavigate} />
           <HomePlay user={user} onNavigate={onNavigate} />
         </aside>
