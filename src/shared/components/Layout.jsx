@@ -120,8 +120,8 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
       </aside>
 
       <main className="content-container">
-        <header className="content-header">
-          <span className="desktop-page-label">{friendSpace ? 'Your friend space' : currentLabel}</span>
+        {!friendSpace && <header className="content-header">
+          <span className="desktop-page-label">{currentLabel}</span>
           <div className="mobile-brand">
             <img src="/hakoware-mark-v2.png" alt="" />
             <div><strong>Hakoware</strong><span>{currentLabel}</span></div>
@@ -141,7 +141,7 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
               <UserAvatar person={user} size="sm" decorative />
             </button>
           </div>
-        </header>
+        </header>}
 
         <div className="scroll-content" id="main-app-content">{children}</div>
       </main>

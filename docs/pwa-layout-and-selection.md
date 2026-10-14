@@ -5,7 +5,8 @@ The user's installed iPhone screenshots showed chat controls underneath the syst
 ## Changes
 
 - Shared `--safe-area-top` and `--safe-area-bottom` values come from the browser's native safe-area environment values.
-- Mobile app and chat headers add normal breathing room after the top inset. The bell follows the chat header's normal and compact keyboard positions.
+- Mobile app and chat headers add normal breathing room after the top inset. Friend spaces omit the shared notification header and reclaim its reserved right-hand spacing; notifications remain available from the other app pages.
+- Customize and Contract use plain controls without visible borders or filled backgrounds, including hover and the expanded contract state. Their touch targets remain at least 44px, with keyboard focus visible.
 - The Duo color is a subdued bottom divider instead of a line across the status-bar area.
 - Landing, signup and legal headers also respect installed-app top spacing. The manifest and dark theme metadata match the application's background.
 - The active mobile navigation item uses accent color and stronger type/icon weight without a filled tile. `aria-current` and keyboard focus remain.
@@ -13,8 +14,8 @@ The user's installed iPhone screenshots showed chat controls underneath the syst
 
 ## Verification
 
-The production build and public SEO checks pass. Lint reports zero errors and the existing 415 warnings.
+The production build and public SEO checks pass. The latest friend-header change passed the production build and lint, with zero errors and the existing 417 warnings.
 
-The local browser probe uses production assets, mock API responses and simulated safe-area values. It covers both themes at 320, 390, 414, 844 and 1280px, including ordinary browser insets and installed-app insets. Checks cover header/control bounds, home-indicator spacing, pointer and keyboard message focus, contract/conversation navigation, keyboard resize and viewport panning, plus landing, signup and legal pages.
+The local browser probe uses production assets, mock API responses and simulated safe-area values. Its 12 cases cover both themes at 320, 390, 414, 844 and 1280px, including ordinary browser insets and installed-app insets. Checks cover header/control bounds, the absent friend-space bell and preserved Home bell, unboxed controls and keyboard focus, Customize dialog opening/closing and focus restoration, home-indicator spacing, pointer and keyboard message focus, contract/conversation navigation, keyboard resize and viewport panning, plus landing, signup and legal pages.
 
 No production accounts, messages or payments are used by the probe. Native iPhone Safari status-bar and keyboard behavior still need a device check after deployment; the simulation does not establish that the deployed version is live.
