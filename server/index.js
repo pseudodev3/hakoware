@@ -41,6 +41,11 @@ try {
   process.exit(1);
 }
 
+if (!process.env.COSMETIC_PAYMENT_PROVIDER || process.env.COSMETIC_PAYMENT_PROVIDER === 'nowpayments') {
+  const issues = require('./services/nowpaymentsCheckout').configurationIssues();
+  if (issues.length) console.warn('Cosmetic checkout configuration incomplete:', issues.join('; '));
+}
+
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);

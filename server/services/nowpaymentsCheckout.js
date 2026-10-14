@@ -22,16 +22,20 @@ const configuredPrice = packId => {
   if (!amount || amount > 100000000) return null;
   return { id: `nowpayments:${packId}:${currency}:${amount}`, amount, currency, exponent: places };
 };
-const isConfigured = () => {
-  if (process.env.COSMETIC_SALES_ENABLED !== 'true' || !process.env.NOWPAYMENTS_API_KEY || !process.env.NOWPAYMENTS_IPN_SECRET || process.env.NODE_ENV === 'production' && sandbox()) return false;
-  try {
-    configuredUrl(process.env.FRONTEND_URL, 'Checkout'); callbackUrl();
-    return catalog.packs.every(pack => Boolean(configuredPrice(pack.id)));
-  } catch { return false; }
+const configurationIssues = () => {
+  const issues = [];
+  if (process.env.COSMETIC_SALES_ENABLED !== 'true') issues.push('COSMETIC_SALES_ENABLED must be true');
+  for (const name of ['NOWPAYMENTS_API_KEY', 'NOWPAYMENTS_IPN_SECRET']) if (!process.env[name]) issues.push(`${name} is missing`);
+  if (process.env.NODE_ENV === 'production' && sandbox()) issues.push('NOWPAYMENTS_SANDBOX must be false in production');
+  try { configuredUrl(process.env.FRONTEND_URL, 'Checkout'); } catch { issues.push('FRONTEND_URL is missing or invalid'); }
+  try { callbackUrl(); } catch { issues.push('PUBLIC_API_URL (or API_URL) is missing or invalid'); }
+  for (const pack of catalog.packs) if (!configuredPrice(pack.id)) issues.push(`${priceKeys[pack.id]} is missing or invalid; also check COSMETIC_PRICE_CURRENCY`);
+  return issues;
 };
+const isConfigured = () => configurationIssues().length === 0;
 const requireConfigured = () => { if (!isConfigured()) fail('The shop is preview-only while checkout is being set up.'); };
 const priceFor = async packId => { requireConfigured(); return configuredPrice(packId) || fail('That collection is not on sale yet.'); };
-const storefront = async () => ({ available: isConfigured(), prices: isConfigured() ? Object.fromEntries(catalog.packs.map(pack => [pack.id, configuredPrice(pack.id)])) : {} });
+const storefront = async () => ({ available: isConfigured(), prices: Object.fromEntries(catalog.packs.map(pack => [pack.id, configuredPrice(pack.id)]).filter(([, price]) => price)) });
 const request = async (method, path, body) => {
   if (!process.env.NOWPAYMENTS_API_KEY || process.env.NODE_ENV === 'production' && sandbox()) fail('Payment verification is being configured. Please try again later.');
   const base = sandbox() ? 'https://api-sandbox.nowpayments.io/v1' : 'https://api.nowpayments.io/v1';
@@ -74,4 +78,4 @@ const verifyIpn = (body, signature) => {
     return timingSafeEqual(expected, Buffer.from(signature, 'hex'));
   } catch { return false; }
 };
-module.exports = { name: 'nowpayments', sandbox, isConfigured, requireConfigured, priceFor, storefront, request, createInvoice, getPayment, invoiceUrl, providerId, verifyIpn };
+module.exports = { name: 'nowpayments', sandbox, configurationIssues, isConfigured, requireConfigured, priceFor, storefront, request, createInvoice, getPayment, invoiceUrl, providerId, verifyIpn };

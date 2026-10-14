@@ -35,6 +35,10 @@ COSMETIC_PRICE_PORCELAIN=4.99
 COSMETIC_PRICE_COMPLETE=11.99
 ```
 
+These variables belong in **Railway's backend service**, not NOWPayments' manual payment-link form or the frontend build settings. Save/deploy Railway variable changes, then reopen the shop. Hakoware generates its own per-order description and amount; manually created dashboard links do not deliver cosmetics.
+
+Valid configured prices appear in the shop even when checkout is closed. Missing or invalid prices stay hidden; no launch price is silently invented. Purchases still require all four prices, credentials, public origins, the correct production mode and the sales flag. If checkout remains unavailable, look for the backend startup line beginning `Cosmetic checkout configuration incomplete:`. It names missing or invalid settings without printing credentials or their values.
+
 Each invoice explicitly supplies the IPN URL:
 
 `https://hakoware-production.up.railway.app/api/payments/nowpayments/webhook`
@@ -64,6 +68,7 @@ Founder totals now say Completed order value: crypto orders use their confirmed 
 - `check:nowpayments-checkout` covers signed callbacks, authenticated proof, tampered references/amounts, partial funding, final delivery, duplicate callbacks, concurrent orders, invoice uncertainty, stale creation recovery, notification outages, gifts, partial bundle ownership, quote expiry, private receipts and the production sandbox guard on isolated MongoDB with secondary indexes blocked.
 - Existing Stripe recovery, cosmetic ownership, client-payload and product-journey suites pass. The build, public SEO checks, checkout-link tests and existing frontend checks pass; lint has zero errors with 415 existing warnings.
 - Production-asset Chromium checks at 320, 390 and 1280px in both themes use the actual controllers and isolated MongoDB with a mocked NOWPayments boundary. They cover hosted redirect, partial-payment copy, automatic confirmation, self purchase/equip, gifts/recipient choice, and saved-purchase recovery after a lost response.
+- Price-visibility regression checks verify catalog and edition prices at 390 and 1280px in both themes while sales are closed, matching preview copy, no checkout action, and checkout reopening after configuration is complete. Backend checks cover missing credentials/origins, malformed or absent product prices, production sandbox mode and diagnostics that contain no credential values.
 - Official invoice parameters and payment-status retrieval were checked against [NOWPayments' SDK reference](https://github.com/NowPaymentsIO/nowpayments-api-js). The official npm reference source was SHA-512 verified and read; no SDK dependency was installed. The current network policy blocked direct provider API/docs access. Real account/API, sandbox, live funds, card availability and native iPhone checkout behavior remain unverified.
 
 ## Cloud environment draft

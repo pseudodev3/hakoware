@@ -99,7 +99,7 @@ export const CosmeticShop = ({ onChanged, onBusyChange, returnOrderId, onClearRe
           <div className="shop-pack-actions"><button type="button" onClick={() => open(pack)}>{pack.owned ? 'Wear this edition' : 'Explore the collection'}</button>{saveButton(pack)}</div>
         </article>)}</div> : <div className="shop-empty"><Bookmark size={26} /><h3>{filter === 'owned' ? 'Your collection starts here.' : 'Keep your favourites here.'}</h3><p>{filter === 'owned' ? 'Purchased editions and received gifts are yours to keep.' : 'Save an edition and come back to it when the shop opens.'}</p><button type="button" onClick={() => setFilter('all')}>Browse collections</button></div>}
       </div>
-      <p className="shop-footnote">Each edition is a permanent cosmetic pack. Your cards and game progress stay yours. {shop?.checkoutAvailable ? 'Final payment details appear at checkout.' : 'Prices will be shown when sales open.'}</p>
+      <p className="shop-footnote">Each edition is a permanent cosmetic pack. Your cards and game progress stay yours. {shop?.checkoutAvailable ? 'Final payment details appear at checkout.' : packs.some(pack => pack.price) ? 'Purchases are not available yet. Save your favourites for later.' : 'Prices will appear when they are confirmed.'}</p>
     </> : <>
       <button className="shop-back" type="button" disabled={locked} onClick={() => setSelectedId(null)}><ArrowLeft size={17} />All collections</button>
       <div className="shop-detail-heading"><p className="eyebrow">{selected.bundle ? 'THE COMPLETE SET' : `EDITION ${selected.number}`}</p><h2 ref={detailHeading} tabIndex={-1}>{selected.name}</h2><p>{selected.description}</p></div>

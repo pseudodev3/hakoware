@@ -132,9 +132,34 @@ async function run() {
     global.fetch = async () => ({ ok: false, status: 422 }); await assert.rejects(provider.request('POST', '/invoice', {}), e => e.definitive === true);
     global.fetch = async () => ({ ok: false, status: 502 }); await assert.rejects(provider.request('POST', '/invoice', {}), e => e.definitive === false);
     global.fetch = originalFetch; provider.request = async () => { throw new Error('not used'); };
-    process.env.COSMETIC_PRICE_NOCTURNE = ''; assert.equal((await shopSnapshot(ari._id)).checkoutAvailable, false); process.env.COSMETIC_PRICE_NOCTURNE = '4.99';
-    process.env.NOWPAYMENTS_SANDBOX = 'true'; process.env.NODE_ENV = 'production'; assert.equal(provider.isConfigured(), false); process.env.NOWPAYMENTS_SANDBOX = 'false'; process.env.NODE_ENV = 'test';
-    console.log('NOWPayments: signed canonical callbacks, authenticated final status/amount/invoice checks, underpayment gates, concurrency, single invoice creation, stale/unknown response recovery, gifts, delivery outage recovery, resumable failed quotes, private receipts, production sandbox guard and server-only API requests passed with secondary indexes blocked. No real payment or provider API was used.');
+    // Display confirmed catalog prices even if another checkout setting is incomplete.
+    const beforeClosed = created, beforeClosedOrders = await Order.countDocuments();
+    for (const [name, value] of [['COSMETIC_SALES_ENABLED', 'false'], ['NOWPAYMENTS_API_KEY', ''], ['NOWPAYMENTS_IPN_SECRET', ''], ['FRONTEND_URL', 'invalid'], ['API_URL', 'invalid']]) {
+      const previous = process.env[name]; process.env[name] = value;
+      const preview = (await request(zoe, '')).data;
+      assert.equal(preview.status, 'preview'); assert.equal(preview.checkoutAvailable, false);
+      assert.deepEqual(preview.packs.map(pack => pack.price), catalog.packs.map(pack => ({ amount: pack.bundle ? 1199 : 499, currency: 'usd', exponent: 2 })));
+      assert.ok(provider.configurationIssues().some(issue => issue.includes(name)));
+      assert.equal((await request(zoe, '/checkout', 'POST', { packId: 'porcelain', clientId: randomUUID() })).status, 503);
+      process.env[name] = previous;
+    }
+    assert.equal(created, beforeClosed); assert.equal(await Order.countDocuments(), beforeClosedOrders);
+    for (const invalid of ['', '4.999', '-4.99', 'USD 4.99']) {
+      process.env.COSMETIC_PRICE_NOCTURNE = invalid;
+      const preview = await shopSnapshot(ari._id); assert.equal(preview.checkoutAvailable, false);
+      assert.equal(preview.packs.find(pack => pack.id === 'nocturne').price, null);
+      assert.equal(preview.packs.find(pack => pack.id === 'prism').price.amount, 499);
+      assert.ok(provider.configurationIssues().some(issue => issue.includes('COSMETIC_PRICE_NOCTURNE')));
+    }
+    process.env.COSMETIC_PRICE_NOCTURNE = '4.99';
+    process.env.NOWPAYMENTS_SANDBOX = 'true'; process.env.NODE_ENV = 'production'; assert.equal(provider.isConfigured(), false);
+    assert.ok(provider.configurationIssues().some(issue => issue.includes('NOWPAYMENTS_SANDBOX')));
+    assert.equal((await shopSnapshot(ari._id)).packs.find(pack => pack.id === 'complete').price.amount, 1199);
+    process.env.NOWPAYMENTS_SANDBOX = 'false'; process.env.NODE_ENV = 'test'; assert.deepEqual(provider.configurationIssues(), []);
+    const secrets = [process.env.NOWPAYMENTS_API_KEY, process.env.NOWPAYMENTS_IPN_SECRET]; process.env.COSMETIC_SALES_ENABLED = 'false';
+    for (const secret of secrets) assert.equal(provider.configurationIssues().join('; ').includes(secret), false);
+    process.env.COSMETIC_SALES_ENABLED = 'true';
+    console.log('NOWPayments: signed canonical callbacks, authenticated final status/amount/invoice checks, underpayment gates, concurrency, single invoice creation, stale/unknown response recovery, gifts, delivery outage recovery, resumable failed quotes, private receipts, visible configured prices with closed checkout, safe configuration diagnostics, production sandbox guard and server-only API requests passed with secondary indexes blocked. No real payment or provider API was used.');
   } finally { provider.request = originalRequest; global.fetch = originalFetch; Notification.updateOne = originalNotice; if (server) await new Promise(resolve => server.close(resolve)); await mongoose.disconnect(); await mongo.stop(); }
 }
 run().catch(error => { console.error(error.message); process.exitCode = 1; });
