@@ -3,6 +3,7 @@ import { AlertTriangle, Mic, Pause, Play, ShieldCheck, StopCircle, Target, Trash
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
+import { playGameSound } from '../../../lib/gameSounds';
 import { getContractBounty } from '../../../services/bountyService';
 import { sendVoiceNote } from '../../../services/voiceNoteService';
 import { useDebt } from '../../../hooks/useDebt';
@@ -202,6 +203,7 @@ export const VoiceCheckinModal = ({ isOpen, onClose, friendship, currentUserId, 
 
     const checkin = await performCheckin(contractId, 'VOICE', bountyCreditId, bountyDecision, voice.voiceNoteId);
     if (checkin.success) {
+      playGameSound('checkin', currentUserId, checkin.game?.checkinEventId);
       const xp = checkin.game?.xp;
       const chaos = checkin.game?.chaosResolved ? ' · anomaly survived' : '';
       const wanted = checkin.game?.wantedCleared ? ' · Wanted cleared' : '';

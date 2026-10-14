@@ -8,6 +8,7 @@ import { VoiceMessage, VoiceMessageComposer } from './VoiceMessage';
 import './FriendSpace.css';
 import { duoStyle } from '../../../lib/duoIdentity';
 import { showGameMoment } from '../../../lib/gameMoments';
+import { playGameSound } from '../../../lib/gameSounds';
 
 const mergeItems = (old, next) => [...new Map([...old, ...next].map((item) => [item.id, item])).values()]
   .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt) || String(a.id).localeCompare(String(b.id)));
@@ -196,6 +197,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     try { result = await sendContractMessage(id, payload); }
     catch (err) { if (aliveRef.current && (err.status === 404 || err.status === 403)) setUnavailable(true); throw err; }
     if (!aliveRef.current) return;
+    if (result.item?.checkin?.status === 'CHECKED_IN') playGameSound('checkin', currentUserId, result.item.id);
     scrollRef.current = { bottom: true }; nearBottomRef.current = true;
     setRoom((previous) => ({ ...previous, items: mergeItems(previous.items, [result.item]) }));
     setSendError(''); setNewUpdates(false);

@@ -4,12 +4,8 @@ import { useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
   AudioLines,
-  BarChart3,
-  CalendarDays,
   Check,
-  FileText,
   Flame,
-  Gamepad2,
   Layers,
   MessageCircle,
   Share2,
@@ -20,9 +16,10 @@ import {
 } from 'lucide-react';
 import { Button } from '../../shared/components/Button';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
-import { LANDING_DESKTOP_BG } from './landingDesktopBackground';
 import { CardArtwork } from '../cards/CardArtwork';
+import { DuoIdentity } from '../../shared/components/DuoIdentity';
 import './LandingPage.css';
+import './LandingHero.css';
 
 const GAME_MODES = [
   {
@@ -82,6 +79,14 @@ const LandingAction = ({ children, onClick, secondary = false, compact = false }
   </button>;
 };
 
+const DEMO_DUO = {
+  user1: { _id: 'demo-you', displayName: 'You' },
+  user2: { _id: 'demo-friend', displayName: 'Friend' },
+  identity: { name: 'The usual trouble.', palette: 'citron', cover: 'rays' },
+  duoLevel: 1,
+  season: { number: 1 }
+};
+
 export const LandingPage = ({ onEnter }) => {
   const [scrolled, setScrolled] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
@@ -115,89 +120,48 @@ export const LandingPage = ({ onEnter }) => {
       </header>
 
       <main>
-        <section className="lp-hero">
-          <div
-            className="lp-hero-grid"
-            aria-hidden="true"
-            style={{ '--lp-desktop-bg': `url("${LANDING_DESKTOP_BG}")` }}
-          />
+        <section className="lp-hero" aria-labelledby="lp-hero-title">
+          <div className="lp-hero-atmosphere" aria-hidden="true" />
           <div className="lp-hero-shell">
             <div className="lp-hero-copy">
-              <div className="lp-season-marker">
-                <span className="lp-season-rail" aria-hidden="true"><i /></span>
-                <div className="lp-season-copy">
-                  <span>A SOCIAL GAME FOR YOUR PEOPLE</span>
-                  <strong>A little effort. A shared story.</strong>
-                </div>
-              </div>
-              <h1>Less “we should<br />catch up.”<br /><em>More showing up.</em></h1>
-              <p>
-                Hakoware turns keeping in touch into a game for two. Pick your pace, send a message,
-                and grow a Duo that belongs to you and your friend.
-              </p>
-
+              <p className="lp-hero-eyebrow">A social game for your kind of people</p>
+              <h1 id="lp-hero-title"><span>Good company.</span><span>A little <em>chaos.</em></span></h1>
+              <p className="lp-hero-description">Keep a friend close. Meet someone over a card game. Turn a little time together into a story that’s yours.</p>
               <div className="lp-hero-actions">
-                <LandingAction onClick={start}>Start with one friend</LandingAction>
+                <LandingAction onClick={start}>Start playing</LandingAction>
                 <LandingAction secondary onClick={() => document.getElementById('contract-demo')?.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'center' })}>Try the demo</LandingAction>
               </div>
-              <p className="lp-start-note">One friend. Your pace. A story worth keeping.</p>
-
-              <div className="lp-proof-row" aria-label="Hakoware game systems">
-                <div><Gamepad2 size={18} strokeWidth={1.7} /><span>8 game modes</span></div>
-                <div><BarChart3 size={18} strokeWidth={1.7} /><span>Duo progression</span></div>
-                <div><CalendarDays size={18} strokeWidth={1.7} /><span>30–45 day seasons</span></div>
-                <div><FileText size={18} strokeWidth={1.7} /><span>Shareable recaps</span></div>
-              </div>
+              <p className="lp-start-note">Free to play. A little better together.</p>
+              <div className="lp-hero-features" aria-label="Ways to play"><span><MessageCircle size={16} />Private chats</span><span><Swords size={16} />Free card duels</span><span><UsersRound size={16} />Shared Duos</span></div>
             </div>
 
-            <div id="contract-demo" className="lp-game-shell lp-contract-demo" aria-label="Interactive example contract">
-              <div className="lp-game-topbar">
-                <div><span className="lp-status-dot" /><strong>Don’t Ghost Me</strong></div>
-                <span className="lp-demo-label">Interactive demo</span>
-              </div>
-
-              <div className="lp-duo-block">
-                <div className="lp-duo-avatars" aria-hidden="true"><span>Y</span><span>F</span></div>
-                <div className="lp-duo-copy">
-                  <small>You × your friend</small>
-                  <strong>Lv. 1 · New Contract</strong>
+            <div className="lp-hero-stage">
+              <div className="lp-hero-hand" aria-hidden="true"><CardArtwork cardId="WATCHER" finishId="porcelain" size={76} /><CardArtwork cardId="ORBIT" size={76} /><CardArtwork cardId="SIGNAL_FLARE" finishId="nocturne" size={76} /></div>
+              <div id="contract-demo" className="lp-contract-demo" role="region" aria-label="Interactive example Duo">
+                <header className="lp-demo-heading"><span>A Duo in the making</span><span>Interactive example</span></header>
+                <DuoIdentity friendship={DEMO_DUO} userId="demo-you" variant="card">
+                  <p className="lp-demo-duo-pace">Don’t Ghost Me · Every 3 days</p>
+                  <div className="lp-demo-progress-label"><span>New Contract</span><strong>{demoStep * 10} Duo XP</strong></div>
+                  <div className="lp-xp-track" role="progressbar" aria-label="Example Duo XP toward level 2" aria-valuemin={0} aria-valuemax={50} aria-valuenow={demoStep * 10}><span style={{ width: `${demoStep * 20}%` }} /></div>
+                </DuoIdentity>
+                <div className="lp-demo-conversation" aria-live="polite" aria-atomic="true">
+                  <div className={`lp-demo-message own ${demoStep === 0 ? 'is-draft' : ''}`}><small>{demoStep === 0 ? 'YOUR FIRST HELLO' : 'YOU'}</small><p>Made it through Monday. How’s your day going?</p><span>{demoStep === 0 ? 'A little message. A good place to start.' : <><Check size={12} />Checked in · +10 Duo XP</>}</span></div>
+                  {demoStep === 2 && <div className="lp-demo-message"><small>YOUR FRIEND</small><p>Survived. Coffee later this week?</p><span><Check size={12} />Checked in · +10 Duo XP</span></div>}
+                  {demoStep < 2 && <p className="lp-demo-nudge">{demoStep === 0 ? 'Try sending the first check-in.' : 'Your side of the story. Now theirs.'}</p>}
                 </div>
-                <span className="lp-duo-xp">{demoStep * 10} XP</span>
-              </div>
-
-              <div className="lp-xp-track" role="progressbar" aria-label="Example Duo XP toward level 2" aria-valuemin={0} aria-valuemax={50} aria-valuenow={demoStep * 10}><span style={{ width: `${demoStep * 20}%` }} /></div>
-              <div className="lp-demo-conversation" aria-live="polite" aria-atomic="true">
-                <span className="lp-demo-day">YOUR FIRST MOMENT TOGETHER</span>
-                {demoStep === 0 ? <p className="lp-demo-prompt">Big life updates, tiny wins, or just “how was your day?” It all starts with showing up.</p> : <>
-                  <div className="lp-demo-message own"><p>Made it through Monday. How’s your day going?</p><span><Check size={13} /> Your check-in · +10 Duo XP</span></div>
-                  {demoStep === 2 && <div className="lp-demo-message"><p>Survived. Coffee later this week?</p><span><Check size={13} /> Your friend’s check-in · +10 Duo XP</span></div>}
-                </>}
-              </div>
-
-              <div className="lp-contract-status">
-                <div><small>Your pace</small><strong>Every 3 days</strong></div>
-                <div><small>Season</small><strong>30 days</strong></div>
-                <div><small>Together</small><strong>{demoStep}/2 checked in</strong></div>
-              </div>
-
-              <div className="lp-preview-actions">
-                <button type="button" className="primary" onClick={() => demoStep < 2 ? setDemoStep(demoStep + 1) : start()}><MessageCircle size={17} /><span>{demoStep === 0 ? 'Try a check-in' : demoStep === 1 ? 'See your friend’s reply' : 'Start your own Duo'}</span></button>
-              </div>
-
-              <div className="lp-game-footer">
-                <span>Example · base XP · no account needed</span>
-                {demoStep > 0 && <button type="button" onClick={() => setDemoStep(0)}>Replay demo</button>}
+                <button type="button" className="lp-demo-play" onClick={() => demoStep < 2 ? setDemoStep(step => step + 1) : start()}>{demoStep === 0 ? 'Try a check-in' : demoStep === 1 ? 'See your friend’s reply' : 'Start your own Duo'}</button>
+                <footer className="lp-demo-footer"><span>{demoStep}/2 checked in · 30-day season</span>{demoStep > 0 ? <button type="button" onClick={() => setDemoStep(0)}>Replay demo</button> : <span>No account needed</span>}</footer>
               </div>
             </div>
           </div>
         </section>
 
         <section className="lp-hangout-section" aria-label="Things to do in Hakoware">
-          <div className="lp-section-intro compact"><span>MORE THAN A CHECK-IN</span><h2>Something worth coming back for.</h2><p>Private friend spaces, useful cards, and little moments from your circle.</p></div>
+          <div className="lp-section-intro compact"><span>MORE THAN A CHECK-IN</span><h2>Something worth coming back for.</h2><p>Private friend spaces, useful cards, and a good first round with someone new.</p></div>
           <div className="lp-hangout-grid">
             <article className="lp-hangout-card"><MessageCircle size={22} /><h3>Your friend space.</h3><p>Text, send a voice note, and keep your shared story in one place. An eligible message counts as your check-in.</p><span className="lp-hangout-tag">Between you and your friend</span></article>
             <article className="lp-hangout-card is-cards"><Layers size={22} /><h3>A few good tricks.</h3><div className="lp-card-shelf" aria-label="Examples of collectible cards"><CardArtwork cardId="SIGNAL_FLARE" size={48} /><CardArtwork cardId="PURIFY" size={48} /><CardArtwork cardId="CHAOS_TICKET" size={48} /></div><p>Spend earned Aura on useful tools. Trade a spare with an accepted friend.</p><span className="lp-hangout-tag">Pick the card you actually want</span></article>
-            <article className="lp-hangout-card is-room"><Sparkles size={22} /><h3>Sparks.</h3><p>A photo from your day. A thought your people would get. React, reply, and keep it going with your circle.</p><span className="lp-hangout-tag">Little moments. Good company.</span></article>
+            <article className="lp-hangout-card is-room"><Swords size={22} /><h3>A new face at the table.</h3><p>A free deck. A few clever moves. Play someone new, then connect if you both want to keep talking.</p><span className="lp-hangout-tag">Meet through play</span></article>
           </div>
         </section>
 

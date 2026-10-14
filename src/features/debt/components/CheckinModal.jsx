@@ -5,6 +5,7 @@ import { Button } from '../../../shared/components/Button';
 import { performCheckin } from '../../../services/friendshipService';
 import { getContractBounty, peekContractBounty } from '../../../services/bountyService';
 import { useDebt } from '../../../hooks/useDebt';
+import { playGameSound } from '../../../lib/gameSounds';
 import './CheckinModal.css';
 
 const CHECKIN_STATUSES = [
@@ -100,6 +101,7 @@ export const CheckinModal = ({ isOpen, onClose, friendship, currentUserId, onRef
       { checkinStatus, note: note.trim() }
     );
     if (result.success) {
+      playGameSound('checkin', currentUserId, result.game?.checkinEventId);
       const xp = result.game?.xp;
       const chaos = result.game?.chaosResolved ? ' · anomaly survived' : '';
       const wanted = result.game?.wantedCleared ? ' · Wanted cleared' : '';

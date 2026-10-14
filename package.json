@@ -15,6 +15,7 @@
     "check:checkout-links": "node scripts/checkCheckoutLinks.mjs",
     "check:ui-polish": "node scripts/checkUiPolish.mjs",
     "check:duel-feedback": "node scripts/checkDuelFeedback.mjs",
+    "check:game-sounds": "node --test scripts/checkGameSounds.mjs",
     "check:session-boundaries": "node --test scripts/checkSessionBoundaries.mjs"
   },
   "dependencies": {

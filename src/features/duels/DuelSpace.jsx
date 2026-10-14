@@ -32,6 +32,7 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
   const [busy, setBusy] = useState(false), [selected, setSelected] = useState(null), [guess, setGuess] = useState(''), [target, setTarget] = useState('');
   const [rules, setRules] = useState(false), [leaving, setLeaving] = useState(false);
   const alive = useRef(false), sequence = useRef(0), busyRef = useRef(false), acknowledged = useRef(''), title = useRef(null), context = useRef(''), root = useRef(null), controls = useRef(null);
+  const soundView = useRef(null);
   const acknowledge = useCallback(view => {
     const key = `${view.matchId}:${view.revision}`;
     if (!view.matchId || acknowledged.current === key) return;
@@ -44,15 +45,17 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
     try {
       const result = await (focusDuelId ? getDuel(focusDuelId) : getDuels());
       if (!alive.current || request !== sequence.current) return;
+      const previous = soundView.current; soundView.current = result;
+      if (focusDuelId && previous?.status === 'ACTIVE' && previous.matchId === result.matchId && result.status === 'FINISHED') playGameSound(result.winner === 'YOU' ? 'duel_win' : 'duel_end', userId, `${result.matchId}:${result.revision}`);
       setData(result); setError('');
       if (focusDuelId) acknowledge(result);
     } catch (err) {
       if (alive.current && request === sequence.current) { setError(err.message || 'Could not load your duels.'); if ([403, 404].includes(err.status)) setData(null); }
     } finally { if (alive.current && request === sequence.current) setLoading(false); }
-  }, [focusDuelId, acknowledge]);
+  }, [focusDuelId, acknowledge, userId]);
   useEffect(() => {
     alive.current = true; context.current = `${userId}:${focusDuelId || 'lobby'}`;
-    busyRef.current = false; setBusy(false); setData(null); setSelected(null); setError(''); acknowledged.current = '';
+    busyRef.current = false; setBusy(false); setData(null); setSelected(null); setError(''); acknowledged.current = ''; soundView.current = null;
     root.current?.closest('.scroll-content')?.scrollTo({ top: 0, behavior: 'instant' });
     void load();
     const visible = () => { if (document.visibilityState === 'visible' && !busyRef.current) void load({ quiet: true }); };
@@ -75,8 +78,8 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
     try {
       const result = await makeDuelMove(userId, data, action, values);
       if (!alive.current || requestContext !== context.current) return;
-      setData(result); acknowledge(result); setLeaving(false);
-      if (action === 'PLAY') playGameSound('card', userId, `${result.matchId}:${result.revision}`);
+      setData(result); soundView.current = result; acknowledge(result); setLeaving(false);
+      if (action === 'PLAY') playGameSound(result.status === 'FINISHED' ? result.winner === 'YOU' ? 'duel_win' : 'duel_end' : 'card', userId, `${result.matchId}:${result.revision}`);
     } catch (err) {
       if (alive.current && requestContext === context.current) {
         setError(err.message || 'Could not confirm your move. Your choice is kept so you can retry.');

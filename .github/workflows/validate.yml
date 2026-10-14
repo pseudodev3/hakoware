@@ -62,6 +62,9 @@ jobs:
       - name: Check deciding duel feedback
         run: npm run check:duel-feedback
 
+      - name: Check sound activation, interruption recovery and account boundaries
+        run: npm run check:game-sounds
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
