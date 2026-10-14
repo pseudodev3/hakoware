@@ -1,6 +1,6 @@
 .legal-page {
   min-height: 100dvh;
-  padding: 24px;
+  padding: calc(24px + var(--safe-area-top)) 24px calc(24px + var(--safe-area-bottom));
   color: var(--text-primary);
   background:
     radial-gradient(circle at 70% -10%, var(--aura-gold-glow), transparent 34rem),
@@ -156,7 +156,7 @@
 }
 
 @media (max-width: 640px) {
-  .legal-page { padding: 16px; }
+  .legal-page { padding:calc(16px + var(--safe-area-top)) 16px calc(16px + var(--safe-area-bottom)); }
   .legal-hero { padding: 64px 0 38px; }
   .legal-section {
     grid-template-columns: 1fr;

@@ -43,7 +43,7 @@
   top: 0;
   inset-inline: 0;
   min-height: 80px;
-  padding: max(16px, env(safe-area-inset-top)) 24px 16px;
+  padding: calc(16px + var(--safe-area-top)) 24px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -138,7 +138,7 @@
 .lp-hero {
   position: relative;
   min-height: 820px;
-  padding: 136px 24px 92px;
+  padding: calc(136px + var(--safe-area-top)) 24px 92px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -1009,7 +1009,7 @@
 }
 
 @media (max-width: 980px) {
-  .lp-hero { padding-top: 122px; }
+  .lp-hero { padding-top: calc(122px + var(--safe-area-top)); }
   .lp-hero-shell { grid-template-columns: 1fr; gap: 56px; }
   .lp-hero-copy { max-width: 760px; }
   .lp-game-shell { width: min(560px,100%); }
@@ -1020,10 +1020,10 @@
 }
 
 @media (max-width: 760px) {
-  .lp-nav { min-height:72px; padding:max(12px,env(safe-area-inset-top)) 20px 12px; }
+  .lp-nav { min-height:calc(72px + var(--safe-area-top)); padding:calc(12px + var(--safe-area-top)) 20px 12px; }
   .lp-brand > div { display: none; }
   .lp-nav-actions .btn-ghost { display: none; }
-  .lp-hero { min-height: auto; padding: 108px 16px 68px; }
+  .lp-hero { min-height: auto; padding: calc(108px + var(--safe-area-top)) 16px 68px; }
   .lp-hero-grid {
     inset: 0 0 auto;
     height: clamp(780px, 108svh, 980px);
@@ -1177,7 +1177,7 @@
 .lp-faq details p { margin-bottom:20px; color:var(--text-secondary); font-size:.9375rem; line-height:1.7; }
 @media(max-width:980px) { .lp-hero-shell { grid-template-columns:1fr; gap:36px; } .lp-contract-demo { justify-self:center; max-width:560px; } }
 @media(max-width:760px) {
-  .lp-hero { min-height:auto; padding:112px 20px 48px; }
+  .lp-hero { min-height:auto; padding:calc(112px + var(--safe-area-top)) 20px 48px; }
   .lp-hero h1 { font-size:clamp(2.6rem,10.5vw,4.5rem); }
   .lp-nav-actions { gap:3px; }
   .lp-nav-actions .btn { padding-inline:10px; font-size:.75rem; }

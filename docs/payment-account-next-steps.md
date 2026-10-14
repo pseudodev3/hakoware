@@ -18,3 +18,9 @@ Stripe's [official global list](https://stripe.com/global), read on October 13, 
 The cloud configuration draft includes an optional `HAKOWARE_STRIPE_SETUP_KEY` requirement restricted to `api.stripe.com`, prepared before the user clarified the account-signup scope. It is not needed to create a merchant account. No key was supplied or validated in this work, and the saved draft requires publication before it applies. Production credentials belong in the API host's secure environment settings and never in frontend build variables.
 
 Official Flutterwave documentation/dashboard domains were added to the draft while preserving the existing network destinations. The current proxy blocked their documentation before those changes were published, so current individual-account and international-payment requirements were not independently verified here. The provider's signup/review screens must establish eligibility; this guide does not promise approval.
+
+## Crypto and card candidate — October 14, 2026
+
+The user asked about accepting crypto alongside cards while Flutterwave review remains pending. [NOWPayments](https://nowpayments.io/) with a fiat-on-ramp partner such as [Guardarian](https://guardarian.com/) is a candidate to investigate. This model converts a customer's card payment into crypto; it should not be presented as ordinary card acquiring or guaranteed worldwide access.
+
+Official provider pages were blocked by the current environment's network allowlist. Nigerian merchant eligibility, unregistered-business support, Nigerian customer card access, permitted game cosmetics, minimum purchases, fees and refunds have not been verified. Confirm those points directly with the provider before choosing or integrating it. No crypto account or checkout integration was created, and no production payment method was enabled.

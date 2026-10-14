@@ -7,14 +7,18 @@
 > Backend: Railway service `joyful-clarity - hakoware`  
 > Database: MongoDB  
 > Transactional email: Brevo  
-> Last updated: **2026-10-13**
+> Last updated: **2026-10-14**
 >
 > Safe resume prompt:
 >
 > **Read `HANDOFF.md`, inspect current `main`, then continue Hakoware from there. Do not assume a merged change is live until the exact deployment status or device behavior is verified.**
 
 
-## Latest checkpoint — 2026-10-13
+## Latest checkpoint — 2026-10-14
+
+Installed iPhone screenshots exposed a chat header/status-bar overlap. App, chat, landing, auth and legal layouts now use consistent safe-area spacing; the bell follows the normal and compact chat header. The Duo-colored top edge is replaced with a subtle bottom divider. Active mobile navigation is unboxed, and message arrival highlighting is confined to the bubble while keyboard focus remains visible. See [installed-app layout and selection](docs/pwa-layout-and-selection.md) for verification and the remaining physical-device check.
+
+Flutterwave verification remains pending. The user asked about crypto plus cards; NOWPayments with a fiat-on-ramp partner is a candidate, not an approved Nigerian route. Official provider pages were blocked here, so merchant eligibility, card access and small cosmetic purchase requirements remain unverified. No crypto integration or payment activation occurred. Details: [merchant next steps](docs/payment-account-next-steps.md).
 
 The navbar Get started and both hero buttons use scoped landing actions. The user rejected the arrow/play badges as generic; they have been removed with their styling. Primary actions are flat lime with restrained corners; Try the demo is an unboxed underlined action. The cleanup now extends to decorative button arrows throughout Home, Circle, friend spaces, profiles, shop, notifications, Sparks and auth. Back controls, trade indicators and explanatory flows retain meaningful icons; the icon-only reunion conversation control uses a chat icon. Decorative slash separators (including Hakoware Aura Bank and edition labels) are removed; numeric progress remains intact. Keyboard focus and pressed feedback remain. Header targets remain at least 44px; hero actions stack on small screens. Reduced motion is respected. Physical iPhone Safari and deployment remain unverified.
 

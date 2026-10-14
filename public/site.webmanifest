@@ -4,8 +4,8 @@
   "description": "A friendship game for staying in touch. Chat, check in and grow a Duo with your friend.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#141719",
-  "theme_color": "#141719",
+  "background_color": "#101313",
+  "theme_color": "#101313",
   "icons": [
     {
       "src": "/hakoware-mark-v2.png",
