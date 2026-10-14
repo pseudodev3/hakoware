@@ -2,16 +2,20 @@
 .you-view { max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:40px; }
 .you-view > .page-heading { padding-bottom:0; margin-bottom:0; }
 .profile-section { display:flex; flex-direction:column; gap:24px; }
-.profile-section > .discovery-profile { margin:0; border-bottom:0; padding-bottom:0; }
 .you-style-area { border-top:1px solid var(--border-subtle); padding-top:28px; display:flex; flex-direction:column; gap:24px; }
 .you-play-area,.you-wallet-area { display:flex; flex-direction:column; gap:28px; }
+.you-duo-open { display:inline-flex; align-items:center; min-height:44px; font-size:.8125rem; color:var(--text-secondary); margin-top:12px; }
 .you-play-area { border-top:1px solid var(--border-subtle); padding-top:28px; }
 .you-section-heading.you-duo-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:0; }
 .you-duo-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; margin:0; }
+.you-duo-overview { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); align-items:center; gap:36px; }
+.you-duo-overview .you-duo-summary { grid-template-columns:1fr; }
+.you-duo-overview.is-empty { display:block; }
+.you-duo-overview.is-empty .you-duo-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media(max-width:760px) { .you-duo-overview { grid-template-columns:minmax(0,1fr); gap:24px; } .you-duo-overview .you-duo-summary { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 .you-duo-summary dt { font-size:.75rem; color:var(--text-muted); }
 .you-duo-summary dd { font-size:1.5rem; font-weight:600; letter-spacing:-.035em; line-height:1.3; margin:10px 0 0; overflow-wrap:anywhere; }
 .you-grudges .you-section-heading h3 { font-size:1.2rem; font-weight:600; letter-spacing:-.035em; margin-top:8px; }
-.you-style-area > .you-collection-link { border-bottom:0; }
 .you-privacy-area .blocked-people-row { border-top:0; }
 .profile-aura-area { position:relative; padding-top:8px; }
 .profile-identity { display:flex; align-items:center; gap:18px; }
@@ -38,11 +42,6 @@
 .aura-rank > svg { position:absolute; right:0; top:0; color:var(--aura-gold); }
 .aura-rank-progress { display:block; height:5px; border-radius:100px; background:var(--surface-soft-strong); overflow:hidden; margin-top:12px; }
 .aura-rank-progress > i { display:block; height:100%; background:var(--aura-gold); border-radius:inherit; }
-.you-collection-link { display:flex; align-items:center; gap:20px; min-height:110px; padding:24px 0; border-block:1px solid var(--border-subtle); text-align:left; color:var(--accent-text); }
-.you-collection-link > svg { flex:0 0 auto; }
-.you-collection-link > span { min-width:0; flex:1; }
-.you-collection-link strong { display:block; font-size:1.125rem; font-weight:650; color:var(--text-primary); }
-.you-collection-link small { display:block; margin-top:6px; font-size:.8125rem; line-height:1.5; color:var(--text-secondary); }
 .you-section { padding-top:6px; }
 .you-section-heading { margin-bottom:18px; }
 .you-section-heading h2 { margin-top:8px; font-size:1.5rem; font-weight:600; letter-spacing:-.035em; }
@@ -80,8 +79,7 @@
 .grudge-card-amount { color:var(--aura-gold); font-size:1rem; font-weight:600; }
 .grudge-card-amount small { display:block; font-size:.625rem; color:var(--text-muted); font-weight:450; }
 .grudge-action-state { font-size:.6875rem; color:var(--text-muted); }
-@media(hover:hover) and (pointer:fine) { .you-collection-link:hover strong { color:var(--accent-text); } }
-@media(max-width:680px) { .you-view { gap:32px; } .profile-identity { gap:14px; flex-wrap:wrap; } .profile-avatar-button,.identity-avatar { width:60px; height:60px; } .identity-copy h2 { font-size:1.4rem; } .profile-aura-row { grid-template-columns:1fr; gap:24px; } .aura-rank { max-width:360px; } .you-collection-link { gap:16px; padding-block:20px; } .grudge-card { flex-wrap:wrap; padding:20px; } .grudge-card-side { width:100%; flex-direction:row; align-items:center; justify-content:space-between; } }
+@media(max-width:680px) { .you-view { gap:32px; } .profile-identity { gap:14px; flex-wrap:wrap; } .profile-avatar-button,.identity-avatar { width:60px; height:60px; } .identity-copy h2 { font-size:1.4rem; } .profile-aura-row { grid-template-columns:1fr; gap:24px; } .aura-rank { max-width:360px; } .grudge-card { flex-wrap:wrap; padding:20px; } .grudge-card-side { width:100%; flex-direction:row; align-items:center; justify-content:space-between; } }
 @media(max-width:680px) { .profile-identity > .identity-copy { min-width:140px; } }
 
 @media(max-width:680px) { .you-style-area,.you-play-area { padding-top:24px; } .you-section-heading.you-duo-heading { align-items:flex-start; flex-wrap:wrap; gap:6px; } .you-duo-summary { gap:12px; } .you-duo-summary dd { font-size:1.25rem; } .you-duo-summary dt { font-size:.6875rem; } .you-wallet-area { gap:24px; } }

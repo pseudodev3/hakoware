@@ -4,6 +4,9 @@ import { RESOURCE_KEYS } from './bootstrapService';
 
 export const getDuels = () => api.get('/duels');
 export const getDuel = id => api.get(`/duels/${encodeURIComponent(id)}`);
+export const getOpenTable = ticketId => api.get(`/duels/open-table${ticketId ? `?ticket=${encodeURIComponent(ticketId)}` : ''}`);
+export const enterOpenTable = clientId => api.post('/duels/open-table/enter', { clientId });
+export const leaveOpenTable = ticketId => api.post('/duels/open-table/leave', { ticketId });
 const refreshActivity = () => {
   invalidateResource(RESOURCE_KEYS.notifications);
   window.dispatchEvent(new Event('hakoware-notifications-read'));

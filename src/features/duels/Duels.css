@@ -124,3 +124,15 @@
 .duel-connection p { font-size:13px; color:var(--text-muted); line-height:1.65; }
 @keyframes duel-settle { from { opacity:.65; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 @media(prefers-reduced-motion:reduce) { .duel-last-move,.duel-hand { animation:none; } }
+.open-table { display:grid; grid-template-columns:minmax(0,1fr) 230px; align-items:center; gap:32px; padding:32px 0; margin:30px 0; border-block:1px solid var(--border-active); }
+.open-table-copy { min-width:0; }
+.open-table h3 { font-size:clamp(1.6rem,3vw,2.2rem); line-height:1.12; letter-spacing:-.04em; margin:10px 0 14px; }
+.open-table-description { max-width:470px; color:var(--text-secondary); font-size:.875rem; line-height:1.7; }
+.open-table-actions { display:flex; align-items:center; flex-wrap:wrap; gap:14px 20px; margin-top:22px; }
+.open-table-actions > span { font-size:.6875rem; color:var(--text-muted); line-height:1.5; }
+.open-table-art { display:flex; align-items:center; justify-content:center; padding:24px 0; }
+.open-table-art > :first-child { transform:translate(22px,8px) rotate(-16deg); }
+.open-table-art > :nth-child(2) { position:relative; z-index:1; transform:translateY(-8px); }
+.open-table-art > :last-child { transform:translate(-22px,8px) rotate(16deg); }
+.open-table.is-waiting .open-table-art { opacity:.65; }
+@media(max-width:600px) { .open-table { grid-template-columns:1fr; gap:8px; padding:26px 0; } .open-table-art { grid-row:1; justify-content:flex-start; transform-origin:left center; transform:scale(.72); height:112px; padding:0; margin-bottom:-6px; } .open-table-actions { align-items:flex-start; flex-direction:column; gap:12px; } }

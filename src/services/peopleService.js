@@ -4,11 +4,7 @@ import { RESOURCE_KEYS } from './bootstrapService';
 const pendingInMemory = new Map();
 
 export const people = {
-  profile: () => api.get('/people/profile'),
-  saveProfile: profile => api.put('/people/profile', profile),
-  discover: filters => api.get(`/people/discover?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
   person: username => api.get(`/people/${encodeURIComponent(username)}`),
-  prepareDuel: username => api.post(`/people/${encodeURIComponent(username)}/duel`, {}),
   connections: () => api.get('/people/connections'),
   chat: (id, before) => api.get(`/people/connections/${id}/messages${before ? `?before=${before}` : ''}`),
   report: (username, reason, note) => api.post(`/people/${encodeURIComponent(username)}/report`, { reason, note }),

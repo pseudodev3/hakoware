@@ -1,5 +1,7 @@
 # Friend card duel — v1
 
+Duels also support voluntary games with new players through [open tables](open-tables-and-connections.md). The deck and turn rules below are shared by both entry points.
+
 Selected for exploration on 2026-10-06 and approved for implementation on 2026-10-14. The first playable version adds Arena Duels, friend invitations, private hands, turns, results and rematches. See [implementation and validation](friend-duels-review.md). Balance and retention still need voluntary playtesting.
 
 ## What you do

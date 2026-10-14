@@ -15,6 +15,7 @@
     "check:poke-retirement": "node scripts/checkPokeRetirement.js",
     "check:duels": "node --test scripts/checkDuelRules.js && node scripts/checkDuels.js",
     "check:people": "node scripts/checkPeople.js",
+    "check:open-tables": "node scripts/checkOpenTables.js",
     "check:sparks": "node scripts/checkSparks.js",
     "check:sparks-legacy-indexes": "node scripts/checkSparkLegacyIndexes.js",
     "check:sparks-storage-recovery": "node scripts/checkSparkStorageRecovery.js",

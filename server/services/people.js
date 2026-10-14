@@ -6,17 +6,13 @@ const Message = require('../models/SocialMessage');
 const Report = require('../models/CommunityReport');
 const Notification = require('../models/Notification');
 const DuelRoom = require('../models/DuelRoom');
-const INTERESTS = ['Gaming', 'Music', 'Films', 'Art', 'Tech', 'Fitness', 'Books', 'Building'];
-const INTENTS = ['games', 'conversation', 'accountability'];
-const FIELDS = 'displayName username usernameNormalized avatar avatarFrame discovery isTestAccount testOwnerId';
+const FIELDS = 'displayName username usernameNormalized avatar avatarFrame isTestAccount testOwnerId';
 const id = value => String(value?._id || value || '');
 const digest = value => createHash('sha256').update(value).digest('hex');
 const pairId = (a, b) => digest(`social:${[id(a), id(b)].sort().join(':')}`).slice(0, 24);
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const sameScope = (a, b) => a && b && id(a) !== id(b) && Boolean(a.isTestAccount) === Boolean(b.isTestAccount) && (!a.isTestAccount || id(a.testOwnerId) === id(b.testOwnerId));
-const scope = user => user.isTestAccount ? { isTestAccount: true, testOwnerId: user.testOwnerId } : { isTestAccount: { $ne: true } };
-const profile = user => ({ enabled: Boolean(user.discovery?.enabled), bio: user.discovery?.bio || '', interests: user.discovery?.interests || [], intent: user.discovery?.intent || 'games' });
-const publicPerson = user => ({ displayName: user.displayName, username: user.username, avatar: user.avatar || null, avatarFrame: user.avatarFrame || 'plain', ...(user.discovery?.enabled ? { bio: user.discovery.bio || '', interests: user.discovery.interests || [], intent: user.discovery.intent || 'games' } : { bio: '', interests: [], intent: null }) });
+const publicPerson = user => ({ displayName: user.displayName, username: user.username, avatar: user.avatar || null, avatarFrame: user.avatarFrame || 'plain' });
 const read = key => Connection.findById(key).select('+blockedBy +receipts +outbox').lean();
 const ensure = async (a, b) => {
   const key = pairId(a, b);
@@ -32,14 +28,13 @@ const visibleRelation = async (userId, key, { allowOwnBlock = false } = {}) => {
   if (!sameScope(actor, other) || connection.blockedBy.length && !(allowOwnBlock && connection.blockedBy.includes(userId))) fail(404, 'Connection unavailable.');
   return { connection, actor, other };
 };
-const byUsername = async (userId, username, { requireDiscover = false, allowOwnBlock = false } = {}) => {
+const byUsername = async (userId, username, { allowOwnBlock = false } = {}) => {
   if (typeof username !== 'string' || !/^[a-zA-Z0-9_]{3,20}$/.test(username)) fail(404, 'Person unavailable.');
   const [actor, other] = await Promise.all([User.findById(userId).select(FIELDS).lean(), User.findOne({ usernameNormalized: username.toLowerCase() }).select(FIELDS).lean()]);
   if (!sameScope(actor, other)) fail(404, 'Person unavailable.');
   const connection = await read(pairId(actor, other));
   if (connection?.blockedBy.length && !(allowOwnBlock && connection.blockedBy.includes(userId))) fail(404, 'Person unavailable.');
-  if (requireDiscover && (!actor.discovery?.enabled || !other.discovery?.enabled)) fail(403, 'Both profiles must be visible in Discover to send a new invitation.');
-  if (!other.discovery?.enabled && !['CONNECTED', 'PENDING'].includes(connection?.status) && !await DuelRoom.exists({ _id: pairId(actor, other) })) fail(404, 'Person unavailable.');
+  if (!connection || !['CONNECTED', 'PENDING'].includes(connection.status) && !await DuelRoom.exists({ _id: pairId(actor, other), 'state.current.id': { $exists: true } })) fail(404, 'Meet at an open table first.');
   return { actor, other, connection };
 };
 const view = (connection, other, userId) => ({ id: id(connection), revision: connection.revision, status: connection.status, requestedByMe: connection.requestedBy === userId, partner: publicPerson(other), updatedAt: connection.updatedAt });
@@ -71,32 +66,12 @@ const flush = async connection => {
     await Connection.updateOne({ _id: connection._id }, { $pull: { outbox: { key: job.key } } });
   }
 };
-const getProfile = async userId => {
-  const user = await User.findById(userId).select(FIELDS).lean();
-  if (!user) fail(404, 'Account unavailable.');
-  return { profile: profile(user), interests: INTERESTS, intents: INTENTS };
-};
-const saveProfile = async (userId, body) => {
-  if (!body || typeof body.enabled !== 'boolean' || typeof body.bio !== 'string' || body.bio.trim().length > 160 || !INTENTS.includes(body.intent) || !Array.isArray(body.interests) || body.interests.length > 4 || body.interests.some(value => !INTERESTS.includes(value)) || new Set(body.interests).size !== body.interests.length) fail(400, 'Choose up to four interests, an intent and a bio of 160 characters or fewer.');
-  await User.updateOne({ _id: userId }, { $set: { discovery: { enabled: body.enabled, bio: body.bio.trim(), interests: body.interests, intent: body.intent } } });
-  return getProfile(userId);
-};
-const discover = async (userId, query) => {
-  const actor = await User.findById(userId).select(FIELDS).lean();
-  if (!actor) fail(404, 'Account unavailable.');
-  if (query.intent && !INTENTS.includes(query.intent) || query.interest && !INTERESTS.includes(query.interest) || query.after && !/^[a-z0-9_]{3,20}$/.test(query.after)) fail(400, 'Choose a valid Discover filter.');
-  const relations = await Connection.find({ participants: userId }).select('+blockedBy').lean();
-  const excluded = relations.filter(value => value.blockedBy.length || value.status === 'CONNECTED').flatMap(value => value.participants).filter(value => id(value) !== userId);
-  const users = await User.find({ ...scope(actor), _id: { $nin: [actor._id, ...excluded] }, 'discovery.enabled': true, usernameNormalized: { $exists: true, ...(query.after ? { $gt: query.after } : {}) }, ...(query.intent ? { 'discovery.intent': query.intent } : {}), ...(query.interest ? { 'discovery.interests': query.interest } : {}) }).sort({ usernameNormalized: 1 }).limit(13).select(FIELDS).lean();
-  return { people: users.slice(0, 12).map(publicPerson), next: users.length > 12 ? users[11].usernameNormalized : null, profile: profile(actor), interests: INTERESTS, intents: INTENTS };
-};
 const getPerson = async (userId, username) => {
   const context = await byUsername(userId, username);
   return { person: publicPerson(context.other), connection: context.connection ? view(context.connection, context.other, userId) : null };
 };
 const prepareDuel = async (userId, username) => {
   const { actor, other, connection } = await byUsername(userId, username);
-  if (connection?.status !== 'CONNECTED' && (!actor.discovery?.enabled || !other.discovery?.enabled)) fail(403, 'Turn on your Discover profile before inviting someone new.');
   const row = connection || await ensure(actor, other);
   return { id: id(row) };
 };
@@ -128,7 +103,7 @@ const mutate = async (userId, key, action, body) => {
   let blockedBy = [...connection.blockedBy], sequence = connection.sequence;
   const outbox = [];
   if (action === 'REQUEST') {
-    if (!actor.discovery?.enabled || !other.discovery?.enabled) fail(403, 'Both profiles must be visible in Discover to connect.');
+    if (!await DuelRoom.exists({ _id: key, $or: [{ 'state.current.status': 'FINISHED' }, { 'state.history.0': { $exists: true } }] })) fail(403, 'Finish a round together before connecting.');
     if (['CONNECTED', 'PENDING'].includes(status)) fail(409, 'A connection or invitation already exists.');
     if (connection.requestedAt && stamp - new Date(connection.requestedAt) < 86400000) fail(429, 'Give this person a day before inviting them again.');
     if (await Connection.countDocuments({ participants: userId, requestedBy: userId, status: 'PENDING' }) >= 5) fail(429, 'You have five invitations waiting. Let people respond first.');
@@ -162,7 +137,7 @@ const mutate = async (userId, key, action, body) => {
   return { success: true, connection: view(committed, other, userId) };
 };
 const requestConnection = async (userId, username, body) => {
-  const { actor, other, connection } = await byUsername(userId, username, { requireDiscover: true });
+  const { actor, other, connection } = await byUsername(userId, username);
   const row = connection || await ensure(actor, other);
   return mutate(userId, id(row), 'REQUEST', body);
 };
@@ -201,4 +176,4 @@ const listBlocked = async userId => {
   const users = await User.find({ _id: { $in: rows.flatMap(value => value.participants) } }).select(FIELDS).lean();
   return { connections: rows.map(value => view(value, users.find(person => id(person) !== userId && value.participants.some(part => id(part) === id(person))) || { displayName: 'Unavailable account' }, userId)) };
 };
-module.exports = { INTERESTS, getProfile, saveProfile, discover, getPerson, prepareDuel, listConnections, listBlocked, mutate, requestConnection, getChat, seen, blockPerson, reportPerson, visibleRelation, blocked, pairId, publicPerson, sameScope };
+module.exports = { ensure, getPerson, prepareDuel, listConnections, listBlocked, mutate, requestConnection, getChat, seen, blockPerson, reportPerson, visibleRelation, blocked, pairId, publicPerson, sameScope };

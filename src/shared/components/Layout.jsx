@@ -10,7 +10,7 @@ import './Layout.css';
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', description: 'Your people, closer', icon: Home },
   { id: 'contracts', label: 'Circle', description: 'Duos & invitations', icon: Users },
-  { id: 'arena', label: 'Arena', description: 'Cards & consequences', icon: Layers },
+  { id: 'arena', label: 'Arena', description: 'Duels & cards', icon: Layers },
   { id: 'sparks', label: 'Sparks', description: 'From your people', icon: Sparkles },
   { id: 'you', label: 'You', description: 'Your corner of it all', icon: UserRound }
 ];

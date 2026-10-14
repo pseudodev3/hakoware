@@ -14,9 +14,8 @@ const run = action => async (req, res) => {
   try { res.json(await action(req)); }
   catch (error) { if (!error.status) console.error('People request failed:', error.message); sendRouteError(res, error, 'Could not update this space. Please try again.'); }
 };
-router.get('/profile', run(req => people.getProfile(req.user.id)));
-router.put('/profile', edits, run(req => people.saveProfile(req.user.id, req.body)));
-router.get('/discover', run(req => people.discover(req.user.id, req.query)));
+// Give previously cached clients an explicit retirement response, without exposing profiles.
+router.all(['/profile', '/discover'], (_req, res) => res.status(410).json({ msg: 'Discover has closed. Meet new opponents at an open table in Arena.' }));
 router.get('/connections', run(req => people.listConnections(req.user.id)));
 router.get('/blocked', run(req => people.listBlocked(req.user.id)));
 router.get('/connections/:id/messages', run(req => people.getChat(req.user.id, req.params.id, req.query.before)));

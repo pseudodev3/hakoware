@@ -162,7 +162,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <ol className="onboarding-path" aria-label="Your first Duo"><li className="complete"><span>01</span>Invite your person</li><li className="current"><span>02</span>They accept</li><li><span>03</span>Check in together</li></ol>
           <div className="first-contract-actions">
             <Button variant="aura" onClick={() => onNavigate('contracts')}>View your invitation</Button>
-            <Button variant="secondary" onClick={() => onNavigate('contracts', { section: 'discover' })}>Find people</Button>
+            <Button variant="secondary" onClick={() => onNavigate('arena', { section: 'duels' })}>Play someone new</Button>
           </div>
         </section>
         <DuelReturn userId={userId} onNavigate={onNavigate} />
@@ -183,7 +183,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
           <ol className="onboarding-path" aria-label="Your first Duo"><li className="current"><span>01</span>Invite your person</li><li><span>02</span>Pick your pace</li><li><span>03</span>Check in together</li></ol>
           <div className="first-contract-actions">
             <Button variant="aura" icon={UserPlus} onClick={onAddFriend}>Invite your first friend</Button>
-            <Button variant="secondary" onClick={() => onNavigate('contracts', { section: 'discover' })}>Find people</Button>
+            <Button variant="secondary" onClick={() => onNavigate('arena', { section: 'duels' })}>Play someone new</Button>
           </div>
           <p className="onboarding-short-rule">Invite someone you know. Conversations and circle-only Sparks open up when they accept.</p>
         </section>

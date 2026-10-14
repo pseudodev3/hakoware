@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { createHash } = require('node:crypto');
 const DuelRoom = require('../models/DuelRoom');
+const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const Connection = require('../models/SocialConnection');
 const people = require('./people');
@@ -89,7 +90,7 @@ const listDuels = async userId => {
   let allowed = friendships.filter(f => f.user1 && f.user2 && id(f.user1) !== id(f.user2) && Boolean(f.user1.isTestAccount) === Boolean(f.user2.isTestAccount)
     && (!f.user1.isTestAccount || id(f.user1.testOwnerId) === id(f.user2.testOwnerId)));
   const [connections, blocks] = await Promise.all([
-    Connection.find({ participants: userId, 'blockedBy.0': { $exists: false } }).populate('participants', 'displayName username avatar avatarFrame discovery isTestAccount testOwnerId').sort({ updatedAt: -1 }).limit(100).lean(),
+    Connection.find({ participants: userId, 'blockedBy.0': { $exists: false } }).populate('participants', 'displayName username avatar avatarFrame isTestAccount testOwnerId').sort({ updatedAt: -1 }).limit(100).lean(),
     Connection.find({ participants: userId, 'blockedBy.0': { $exists: true } }).select('_id').lean(),
   ]);
   const blockedPairs = new Set(blocks.map(value => id(value)));
@@ -135,7 +136,7 @@ const mutateDuel = async (userId, roomId, kind, body) => {
     const now = new Date(), stamp = now.toISOString();
     if (kind === 'INVITE') {
       if (friendship.casual && friendship.connectionStatus !== 'CONNECTED') {
-        if (!friendship.user1.discovery?.enabled || !friendship.user2.discovery?.enabled) fail(403, 'Both profiles must be visible in Discover to send a new invitation.');
+        if (before?.status !== 'FINISHED' && !state.history.length) fail(403, 'Meet at an open table before inviting a new opponent.');
         if (['DECLINED', 'CANCELLED', 'ABANDONED'].includes(before?.status) && now - new Date(before.updatedAt) < 86400000) fail(429, 'Give this person a day before inviting them again.');
         const pairs = await Connection.find({ participants: userId }).select('_id').lean();
         if (await DuelRoom.countDocuments({ _id: { $in: pairs.map(value => value._id) }, 'state.current.status': 'INVITED', 'state.current.inviterId': userId, 'state.current.expiresAt': { $gt: stamp } }) >= 5) fail(429, 'You have five duel invitations waiting. Let people respond first.');
@@ -173,6 +174,32 @@ const mutateDuel = async (userId, roomId, kind, body) => {
   }
   fail(409, 'The duel changed. Refresh to see the latest turn.');
 };
+const startOpenTable = async match => {
+  const users = await User.find({ _id: { $in: match.players } }).select('displayName username avatar avatarFrame isTestAccount testOwnerId').lean();
+  const [one, two] = match.players.map(player => users.find(user => id(user) === player));
+  if (!people.sameScope(one, two)) fail(404, 'Table unavailable.');
+  const connection = await people.ensure(one, two);
+  await people.visibleRelation(match.players[0], id(connection));
+  await DuelRoom.updateOne({ _id: match.roomId }, { $setOnInsert: { revision: 0, state: { current: null, wins: {}, draws: 0, lastStarterId: null, history: [], receipts: [] }, noticeQueue: [] } }, { upsert: true }).catch(error => { if (error.code !== 11000) throw error; });
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await people.visibleRelation(match.players[0], match.roomId);
+    const room = await expireRoom(await readRoom(match.roomId));
+    if (room.state.current?.id === match.id) { await flushNotices(room); return { id: match.roomId }; }
+    if (room.state.history.some(round => round.id === match.id) || new Date(room.state.current?.createdAt) > new Date(match.createdAt)) fail(409, 'This table has already moved on to another round.');
+    if (LIVE.includes(room.state.current?.status)) fail(409, 'This opponent already has a round with you.');
+    const now = new Date(), stamp = now.toISOString(), state = structuredClone(room.state);
+    const starterId = state.lastStarterId ? match.players.find(player => player !== state.lastStarterId) : match.players[parseInt(match.id.slice(-1), 16) % 2];
+    state.current = { ...deal(match.players, starterId), id: match.id, openTable: true, inviterId: match.players[0], starterId, createdAt: stamp, updatedAt: stamp, expiresAt: new Date(+now + WEEK).toISOString() };
+    state.lastStarterId = starterId;
+    const jobs = match.players.map(player => {
+      const other = users.find(user => id(user) !== player);
+      return { _id: new mongoose.Types.ObjectId(hash(`duel:${match.roomId}:${match.id}:${room.revision + 1}:${player}`).slice(0, 24)), toUserId: player, fromUserId: id(other), type: player === starterId ? 'DUEL_TURN' : 'DUEL_UPDATE', title: 'Your open table is ready', message: `You’re playing ${other.displayName}. ${player === starterId ? 'Take the first turn.' : 'They have the first turn.'}`, duelId: match.roomId, duelMatchId: match.id, duelRevision: room.revision + 1, createdAt: now };
+    });
+    const result = await DuelRoom.updateOne({ _id: match.roomId, revision: room.revision }, { $set: { state }, $inc: { revision: 1 }, $push: { noticeQueue: { $each: jobs, $slice: -24 } } });
+    if (result.matchedCount) { await flushNotices(await readRoom(match.roomId)); await people.visibleRelation(match.players[0], match.roomId); return { id: match.roomId }; }
+  }
+  fail(409, 'The table changed. Try another seat.');
+};
 const markDuelSeen = async (userId, roomId, body) => {
   await relation(userId, roomId);
   body ||= {};
@@ -182,4 +209,4 @@ const markDuelSeen = async (userId, roomId, body) => {
   return { success: true };
 };
 
-module.exports = { listDuels, getDuel, mutateDuel, markDuelSeen };
+module.exports = { listDuels, getDuel, mutateDuel, markDuelSeen, startOpenTable };

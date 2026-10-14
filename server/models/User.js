@@ -57,6 +57,8 @@ const UserSchema = new mongoose.Schema({
   privacySettings: {
     optOutPublicBankruptcy: { type: Boolean, default: false }
   },
+  // Historical Discover data is retained for compatibility; it is no longer
+  // displayed, editable through the API or used to authorize any social action.
   discovery: {
     enabled: { type: Boolean, default: false },
     bio: { type: String, default: '', maxlength: 160 },

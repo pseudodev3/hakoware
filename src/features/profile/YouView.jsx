@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Zap, Layers } from 'lucide-react';
+import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
@@ -7,11 +7,11 @@ import { Button } from '../../shared/components/Button';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
 import { prepareAvatarImage } from '../../lib/avatarImage';
 import { UserAvatar } from '../../shared/components/UserAvatar';
+import { DuoIdentity } from '../../shared/components/DuoIdentity';
 import { PageHeading } from '../../shared/components/PageHeading';
 import { AuraBank } from './AuraBank';
 import { ProfileShowcase } from './ProfileShowcase';
 import { GameSoundSettings } from './GameSoundSettings';
-import { DiscoveryProfile } from '../people/DiscoveryProfile';
 import { BlockedPeople } from '../people/BlockedPeople';
 import './YouView.css';
 
@@ -166,23 +166,21 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
             </div>
           </div>
         </div>
-
-        <DiscoveryProfile showBlockedPeople={false} />
       </section>
-      <section className="you-style-area" aria-label="Your style and cards">
-        <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
-        <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
-          <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span>
-        </button>
+      <section className="you-style-area" aria-label="Your style">
+        <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} />
       </section>
 
       <section className="you-play-area" aria-label="Your Duos and activity">
         <div className="you-section-heading you-duo-heading"><div><p className="eyebrow">Your circle</p><h2>Your Duos.</h2></div><button type="button" className="people-text-button" onClick={() => onNavigate?.('contracts')}>Open your Circle</button></div>
-        <dl className="you-duo-summary" aria-label="Duo progress">
-          <div><dt>Strongest Duo</dt><dd>{strongest ? `Lv. ${strongest.duoLevel || 1}` : 'No Duo yet'}</dd></div>
-          <div><dt>Active seasons</dt><dd>{activeSeasons}</dd></div>
-          <div><dt>Duo XP</dt><dd>{totalDuoXP}</dd></div>
-        </dl>
+        <div className={`you-duo-overview ${strongest ? '' : 'is-empty'}`}>
+          {strongest && <DuoIdentity friendship={strongest} userId={userId} variant="card"><button type="button" className="you-duo-open" onClick={() => onNavigate?.('friend', { contractKey: strongest.contractKey })}>Open your strongest Duo</button></DuoIdentity>}
+          <dl className="you-duo-summary" aria-label="Duo progress">
+            <div><dt>Duos</dt><dd>{friendships.length}</dd></div>
+            <div><dt>Active seasons</dt><dd>{activeSeasons}</dd></div>
+            <div><dt>Duo XP</dt><dd>{totalDuoXP}</dd></div>
+          </dl>
+        </div>
         {grudges.length > 0 && (
           <section className="you-section you-grudges" aria-label="Your grudges">
             <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h3>Somebody made it personal.</h3></div></div>

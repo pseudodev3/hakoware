@@ -66,7 +66,8 @@ function MainApp({ showToast }) {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
-  const requestedTab = params.get('view') || 'home';
+  const legacyDiscover = params.get('view') === 'contracts' && params.get('section') === 'discover';
+  const requestedTab = legacyDiscover ? 'arena' : params.get('view') || 'home';
   const activeTab = requestedTab === 'afterHours' ? 'sparks' : ['home', 'contracts', 'sparks', 'arena', 'you'].includes(requestedTab) ? requestedTab : 'home';
   const friendKey = location.pathname.startsWith('/circle/') ? location.pathname.split('/')[2] : null;
   const returnFocusRef = useRef(null);
@@ -221,7 +222,7 @@ function MainApp({ showToast }) {
     if (activeTab === 'sparks' && params.get('spark')) query.set('spark', params.get('spark'));
     if (activeTab === 'sparks' && params.get('reply')) query.set('reply', params.get('reply'));
     if (activeTab === 'arena') {
-      query.set('section', params.get('section') || 'cards');
+      query.set('section', params.get('section') || 'duels');
       if (params.get('duel')) query.set('duel', params.get('duel'));
     }
     if (options.focusEventId) query.set('event', options.focusEventId);
@@ -246,7 +247,7 @@ function MainApp({ showToast }) {
     }
     const query = new URLSearchParams({ view: tab });
     if (tab === 'you' && options.cosmeticOrderId) query.set('cosmetic_order', options.cosmeticOrderId);
-    if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); if (options.duelId) query.set('duel', options.duelId); }
+    if (tab === 'arena') { query.set('section', options.section || (options.focusTradeId ? 'cards' : 'duels')); if (options.focusTradeId) query.set('trade', options.focusTradeId); if (options.duelId) query.set('duel', options.duelId); }
     if (tab === 'contracts') { query.set('section', options.section || 'duos'); if (options.connectionId) query.set('connection', options.connectionId); }
     if (tab === 'sparks' && options.focusPostId) query.set('spark', options.focusPostId);
     if (tab === 'sparks' && options.focusReplyId) query.set('reply', options.focusReplyId);
@@ -447,7 +448,7 @@ function MainApp({ showToast }) {
             showToast={showToast}
           />
         )}
-        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} onNavigate={navigateTo} focusTradeId={params.get('trade')} focusDuelId={params.get('duel')} initialView={['duels','bounties','grudges','shame'].includes(params.get('section')) ? params.get('section') : 'cards'} />}
+        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} onNavigate={navigateTo} focusTradeId={params.get('trade')} focusDuelId={params.get('duel')} initialView={legacyDiscover ? 'duels' : ['cards','duels','bounties','grudges','shame'].includes(params.get('section')) ? params.get('section') : 'duels'} />}
         {!friendKey && activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} onNavigate={navigateTo} />}
         </DeferredView>
       </motion.div>

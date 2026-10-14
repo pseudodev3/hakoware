@@ -3,12 +3,14 @@ const auth = require('../middleware/auth');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendRouteError } = require('../services/httpError');
 const { listDuels, getDuel, mutateDuel, markDuelSeen } = require('../services/duels');
+const { getOpenTable, enterOpenTable, leaveOpenTable } = require('../services/openTables');
 const router = express.Router();
 const Connection = require('../models/SocialConnection');
 router.use(auth);
 const moves = createRateLimiter({ name: 'duel-moves', windowMs: 600000, max: 120, keyGenerator: req => req.user.id });
 const invites = createRateLimiter({ name: 'duel-invites', windowMs: 600000, max: 10, keyGenerator: req => req.user.id, message: 'Give your invitations a moment. Try again shortly.' });
 const casualInvites = createRateLimiter({ name: 'casual-duel-invites', windowMs: 3600000, max: 5, keyGenerator: req => req.user.id });
+const openTables = createRateLimiter({ name: 'open-tables', windowMs: 600000, max: 30, keyGenerator: req => req.user.id });
 const limitCasual = async (req, res, next) => {
   try { if (/^[a-f0-9]{24}$/i.test(req.params.id) && await Connection.exists({ _id: req.params.id })) return casualInvites(req, res, next); next(); }
   catch (error) { next(error); }
@@ -18,6 +20,9 @@ const run = action => async (req, res) => {
   catch (error) { if (!error.status) console.error('Duel request failed:', error.message); sendRouteError(res, error, 'Could not load or update your duel. Try again.'); }
 };
 router.get('/', run(req => listDuels(req.user.id)));
+router.get('/open-table', run(req => getOpenTable(req.user.id, req.query.ticket)));
+router.post('/open-table/enter', openTables, run(req => enterOpenTable(req.user.id, req.body)));
+router.post('/open-table/leave', moves, run(req => leaveOpenTable(req.user.id, req.body)));
 router.get('/:id', run(req => getDuel(req.user.id, req.params.id)));
 router.post('/:id/seen', run(req => markDuelSeen(req.user.id, req.params.id, req.body)));
 router.post('/:id/invite', invites, limitCasual, run(req => mutateDuel(req.user.id, req.params.id, 'INVITE', req.body)));
