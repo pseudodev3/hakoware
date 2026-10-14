@@ -12,6 +12,7 @@ import { AuraBank } from './AuraBank';
 import { ProfileShowcase } from './ProfileShowcase';
 import { GameSoundSettings } from './GameSoundSettings';
 import { DiscoveryProfile } from '../people/DiscoveryProfile';
+import { BlockedPeople } from '../people/BlockedPeople';
 import './YouView.css';
 
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
@@ -166,130 +167,140 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
           </div>
         </div>
 
+        <DiscoveryProfile showBlockedPeople={false} />
+      </section>
+      <section className="you-style-area" aria-label="Your style and cards">
         <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
-        <DiscoveryProfile />
-      </section>
-      <section className="profile-aura-area" aria-label="Your Aura">
-        <div className="profile-aura-row">
-          <div className="aura-balance-copy">
-            <p className="eyebrow">Aura</p>
-            <div className="aura-balance-line"><strong>{aura.balance}</strong><span>spendable</span></div>
-            <small>Earned through play · {reputation.lifetimeEarned} lifetime</small>
-          </div>
-          <div className="aura-rank">
-            <div><strong>{reputation.name}</strong><small>{reputation.nextRankAt ? reputation.nextRankAt - reputation.lifetimeEarned + ' to next rank' : 'Top Aura rank'}</small></div>
-            <span className="aura-rank-progress" aria-label={(reputation.progress || 0) + '% to next Aura rank'}><i style={{ width: (reputation.progress || 0) + '%' }} /></span>
-            <Zap size={18} strokeWidth={1.6} />
-          </div>
-        </div>
-
-        <div className="profile-meta" aria-label="Profile summary">
-          <span><b>Strongest Duo</b> {strongest ? `Lv. ${strongest.duoLevel || 1}` : 'Start your first Duo'}</span>
-          <span><b>Active</b> {activeSeasons} season{activeSeasons === 1 ? '' : 's'}</span>
-          <span><b>Duo XP</b> {totalDuoXP}</span>
-        </div>
+        <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
+          <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span>
+        </button>
       </section>
 
-      <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('circle')} />
-      <button className="you-collection-link" onClick={() => onNavigate?.('arena', { section: 'cards' })}>
-        <Layers size={24} strokeWidth={1.5} /><span><strong>Your card collection</strong><small>Collect tools and trade spare cards with friends.</small></span>
-      </button>
+      <section className="you-play-area" aria-label="Your Duos and activity">
+        <div className="you-section-heading you-duo-heading"><div><p className="eyebrow">Your circle</p><h2>Your Duos.</h2></div><button type="button" className="people-text-button" onClick={() => onNavigate?.('contracts')}>Open your Circle</button></div>
+        <dl className="you-duo-summary" aria-label="Duo progress">
+          <div><dt>Strongest Duo</dt><dd>{strongest ? `Lv. ${strongest.duoLevel || 1}` : 'No Duo yet'}</dd></div>
+          <div><dt>Active seasons</dt><dd>{activeSeasons}</dd></div>
+          <div><dt>Duo XP</dt><dd>{totalDuoXP}</dd></div>
+        </dl>
+        {grudges.length > 0 && (
+          <section className="you-section you-grudges" aria-label="Your grudges">
+            <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h3>Somebody made it personal.</h3></div></div>
+            <div className="grudge-list">
+              {grudges.map((grudge) => {
+                const isVictim = grudge.role === 'VICTIM';
+                const otherPerson = isVictim
+                  ? { displayName: grudge.claimantName, avatar: grudge.claimantAvatar }
+                  : { displayName: grudge.victimName, avatar: grudge.victimAvatar };
+                const otherName = otherPerson.displayName || 'Contract partner';
+                const revengeAffordable = aura.balance >= grudge.revengeCost;
+                const stateLabel = isVictim
+                  ? grudge.revengeReady ? 'REVENGE OPEN' : 'GRUDGE'
+                  : 'YOU CLAIMED';
 
-      {grudges.length > 0 && (
-        <section className="you-section you-secondary-section">
-          <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h2>Somebody made it personal.</h2></div></div>
-          <div className="grudge-list">
-            {grudges.map((grudge) => {
-              const isVictim = grudge.role === 'VICTIM';
-              const otherPerson = isVictim
-                ? { displayName: grudge.claimantName, avatar: grudge.claimantAvatar }
-                : { displayName: grudge.victimName, avatar: grudge.victimAvatar };
-              const otherName = otherPerson.displayName || 'Contract partner';
-              const revengeAffordable = aura.balance >= grudge.revengeCost;
-              const stateLabel = isVictim
-                ? grudge.revengeReady ? 'REVENGE OPEN' : 'GRUDGE'
-                : 'YOU CLAIMED';
+                return (
+                  <article className={`grudge-card ${grudge.revengeReady ? 'revenge-ready' : ''}`} key={grudge.friendshipId}>
+                    <UserAvatar person={otherPerson} size="lg" className="grudge-person-avatar" decorative />
 
-              return (
-                <article className={`grudge-card ${grudge.revengeReady ? 'revenge-ready' : ''}`} key={grudge.friendshipId}>
-                  <UserAvatar person={otherPerson} size="lg" className="grudge-person-avatar" decorative />
+                    <div className="grudge-card-main">
+                      <div className="grudge-card-top">
+                        <strong>{otherName}</strong>
+                        <span className={grudge.revengeReady ? 'ready' : ''}>{stateLabel}</span>
+                      </div>
 
-                  <div className="grudge-card-main">
-                    <div className="grudge-card-top">
-                      <strong>{otherName}</strong>
-                      <span className={grudge.revengeReady ? 'ready' : ''}>{stateLabel}</span>
+                      <p>
+                        {isVictim
+                          ? grudge.revengeReady
+                            ? `${otherName} went bankrupt. Your window is open.`
+                            : `${otherName} claimed ${grudge.originalClaimAmount} Aura from you.`
+                          : `You claimed ${grudge.originalClaimAmount} Aura from ${otherName}.`}
+                      </p>
+
+                      <div className="grudge-card-meta">
+                        <span><Clock3 size={12} /> {daysLeft(grudge.expiresAt)}d left</span>
+                        {isVictim && !grudge.revengeReady && <span>Opens if they go bankrupt</span>}
+                        {!isVictim && <span>Stay solvent</span>}
+                      </div>
                     </div>
 
-                    <p>
-                      {isVictim
-                        ? grudge.revengeReady
-                          ? `${otherName} went bankrupt. Your window is open.`
-                          : `${otherName} claimed ${grudge.originalClaimAmount} Aura from you.`
-                        : `You claimed ${grudge.originalClaimAmount} Aura from ${otherName}.`}
-                    </p>
+                    <div className="grudge-card-side">
+                      <div className="grudge-card-amount">
+                        <Flame size={14} strokeWidth={1.8} />
+                        <strong>{grudge.originalClaimAmount}</strong>
+                        <small>Aura</small>
+                      </div>
 
-                    <div className="grudge-card-meta">
-                      <span><Clock3 size={12} /> {daysLeft(grudge.expiresAt)}d left</span>
-                      {isVictim && !grudge.revengeReady && <span>Opens if they go bankrupt</span>}
-                      {!isVictim && <span>Stay solvent</span>}
-                    </div>
-                  </div>
-
-                  <div className="grudge-card-side">
-                    <div className="grudge-card-amount">
-                      <Flame size={14} strokeWidth={1.8} />
-                      <strong>{grudge.originalClaimAmount}</strong>
-                      <small>Aura</small>
-                    </div>
-
-                    {isVictim && grudge.revengeReady ? (
-                      revengeAffordable ? (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          loading={busy === 'revenge-' + grudge.friendshipId}
-                          onClick={() => revenge(grudge)}
-                        >
-                          Return the Favor · {grudge.revengeCost}
-                        </Button>
+                      {isVictim && grudge.revengeReady ? (
+                        revengeAffordable ? (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            loading={busy === 'revenge-' + grudge.friendshipId}
+                            onClick={() => revenge(grudge)}
+                          >
+                            Return the Favor · {grudge.revengeCost}
+                          </Button>
+                        ) : (
+                          <span className="grudge-action-state">Need {grudge.revengeCost} Aura</span>
+                        )
                       ) : (
-                        <span className="grudge-action-state">Need {grudge.revengeCost} Aura</span>
-                      )
-                    ) : (
-                      <span className="grudge-action-state">
-                        {isVictim ? 'Waiting on them' : 'Window active'}
-                      </span>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+                        <span className="grudge-action-state">
+                          {isVictim ? 'Waiting on them' : 'Window active'}
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+      </section>
+
+      <section className="you-wallet-area" aria-label="Your Aura and bank">
+        <section className="profile-aura-area" aria-label="Your Aura">
+          <div className="profile-aura-row">
+            <div className="aura-balance-copy">
+              <p className="eyebrow">Aura</p>
+              <div className="aura-balance-line"><strong>{aura.balance}</strong><span>spendable</span></div>
+              <small>Earned through play · {reputation.lifetimeEarned} lifetime</small>
+            </div>
+            <div className="aura-rank">
+              <div><strong>{reputation.name}</strong><small>{reputation.nextRankAt ? reputation.nextRankAt - reputation.lifetimeEarned + ' to next rank' : 'Top Aura rank'}</small></div>
+              <span className="aura-rank-progress" aria-label={(reputation.progress || 0) + '% to next Aura rank'}><i style={{ width: (reputation.progress || 0) + '%' }} /></span>
+              <Zap size={18} strokeWidth={1.6} />
+            </div>
+          </div>
+
+        </section>
+
+        <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('contracts')} />
+        <section className="you-section you-secondary-section">
+          <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Your Aura, accounted for.</h2></div></div>
+          <div className="transaction-list">
+            {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
+              <div className="transaction-row" key={transaction._id}>
+                <div><strong>{transaction.description}</strong><span>{new Date(transaction.createdAt).toLocaleDateString()}</span></div>
+                <b className={transaction.amount >= 0 ? 'positive' : 'negative'}>{transaction.amount >= 0 ? '+' : ''}{transaction.amount}</b>
+              </div>
+            ))}
           </div>
         </section>
-      )}
 
-      <section className="you-section you-secondary-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Privacy</p><h2>Public pressure</h2></div></div>
+      </section>
+
+      <section className="you-section you-secondary-section you-privacy-area" aria-label="Privacy and safety">
+        <div className="you-section-heading"><div><p className="eyebrow">Privacy</p><h2>Visibility &amp; safety.</h2></div></div>
         <button className="privacy-row" type="button" onClick={toggleShameBoard} disabled={savingPrivacy} aria-pressed={appearsOnShameBoard}>
           <span className="privacy-icon">{appearsOnShameBoard ? <Eye size={18} strokeWidth={1.6} /> : <EyeOff size={18} strokeWidth={1.6} />}</span>
           <span className="privacy-copy"><strong>Appear on the Shame Board</strong><small>{appearsOnShameBoard ? 'If you become bankrupt, the Arena can show your public debt total.' : 'Your bankruptcy stays out of the public ranking.'}</small></span>
           <span className={'privacy-switch ' + (appearsOnShameBoard ? 'on' : '')} aria-hidden="true"><i /></span>
         </button>
+        <BlockedPeople variant="settings" />
       </section>
 
-      <section className="you-section you-secondary-section">
-        <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Your Aura, accounted for.</h2></div></div>
-        <div className="transaction-list">
-          {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
-            <div className="transaction-row" key={transaction._id}>
-              <div><strong>{transaction.description}</strong><span>{new Date(transaction.createdAt).toLocaleDateString()}</span></div>
-              <b className={transaction.amount >= 0 ? 'positive' : 'negative'}>{transaction.amount >= 0 ? '+' : ''}{transaction.amount}</b>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="you-section you-secondary-section account-section">
+      <section className="you-section you-secondary-section account-section" aria-label="Account settings">
         <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Your settings.</h2></div></div>
         <GameSoundSettings userId={String(userId)} />
         <button className="account-logout-row" type="button" onClick={logout}>

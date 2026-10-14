@@ -7,12 +7,17 @@
 .people-intro h1 { font-size:clamp(32px,5vw,56px); line-height:1.06; letter-spacing:-.045em; max-width:620px; margin:0 0 18px; }
 .people-intro > p:last-child,.discovery-profile p { color:var(--text-muted); line-height:1.6; margin:0; max-width:560px; }
 .discovery-profile { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:26px 0; border-block:1px solid var(--border-subtle); margin-bottom:28px; }
+.discovery-profile > div:first-child { min-width:0; }
+.discovery-profile p { overflow-wrap:anywhere; white-space:pre-wrap; }
 .discovery-profile h2 { font-size:24px; letter-spacing:-.035em; margin:0 0 9px; }
 .discovery-profile-actions { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-.discovery-profile-actions > :last-child { color:var(--text-muted); }
+.discovery-profile-actions > :nth-child(2) { color:var(--text-muted); }
 .discovery-profile.is-compact { padding:18px 0; margin-bottom:24px; }
 .discovery-profile.is-compact h2 { font-size:15px; letter-spacing:0; margin-bottom:6px; }
 .discovery-profile.is-compact p { font-size:12px; }
+.discovery-profile-interests { margin-top:14px; }
+.discovery-profile-interests:empty { display:none; }
+.discovery-profile .discovery-profile-visibility { margin-top:14px; font-size:11px; }
 .people-person .user-avatar,.people-person-detail .user-avatar,.people-connection-row .user-avatar,.connection-chat-header .user-avatar { border-radius:50%; }
 .people-text-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; background:none; padding:10px 0; color:var(--accent-text); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .people-text-button:disabled { opacity:.5; cursor:default; }
