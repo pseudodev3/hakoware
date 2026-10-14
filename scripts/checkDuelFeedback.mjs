@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { log } from 'node:console';
+import { duelResultCopy } from '../src/lib/duelFeedback.js';
+const cards = { OATH: { name: 'Oath', rank: 6 }, WATCHER: { name: 'Watcher', rank: 2 }, GHOST: { name: 'Ghost', rank: 3 } };
+const base = { partner: { displayName: 'Maya' }, result: { reason: 'HIGH_CARD', winner: 'YOU', you: ['OATH'], partner: ['WATCHER'] }, moves: [] };
+assert.match(duelResultCopy(base, cards), /Your Oath \(6\) beat Maya’s Watcher \(2\)/);
+assert.match(duelResultCopy({ ...base, result: { ...base.result, winner: 'PARTNER', you: ['WATCHER'], partner: ['GHOST'] } }, cards), /lost to Maya’s Ghost \(3\)/);
+assert.match(duelResultCopy({ ...base, result: { ...base.result, reason: 'DRAW', you: ['GHOST'], partner: ['GHOST'] } }, cards), /both held Ghost, rank 3/);
+assert.match(duelResultCopy({ ...base, result: { ...base.result, reason: 'GUESS' }, moves: [{ actor: 'PARTNER', guess: 'OATH' }] }, cards), /Maya called Oath/);
+assert.match(duelResultCopy({ ...base, result: { ...base.result, reason: 'OATH_DISCARDED' }, moves: [{ actor: 'YOU', cardId: 'OATH' }] }, cards), /You played Oath/);
+assert.match(duelResultCopy({ ...base, result: { ...base.result, reason: 'OATH_DISCARDED' }, moves: [{ actor: 'PARTNER', cardId: 'PURIFY', target: 'YOU' }] }, cards), /Your Oath was forced out/);
+log('PASS: six concrete duel outcomes explain the deciding move and rank.');

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// One room per accepted friendship. The built-in _id constraint serializes
+// One room per accepted friendship or casual connection. The _id constraint serializes
 // rounds without transactions or an additional production index build.
 const schema = new mongoose.Schema({
   revision: { type: Number, default: 0 },

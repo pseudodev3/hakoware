@@ -91,6 +91,7 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
         {bankruptPartners > 0 && <span className="danger"><b>{bankruptPartners}</b> bankrupt partner{bankruptPartners === 1 ? '' : 's'}</span>}
         {chaosContracts > 0 && <span><b>{chaosContracts}</b> Chaos</span>}
       </div>
+      <button type="button" className="people-text-button" onClick={() => onNavigate('contracts', { section: 'discover' })}>Meet someone new in Discover</button>
 
 
       {waitingOnThem > 0 && (

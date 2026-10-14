@@ -59,6 +59,9 @@ jobs:
       - name: Check account switching and late private responses
         run: npm run check:session-boundaries
 
+      - name: Check deciding duel feedback
+        run: npm run check:duel-feedback
+
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --no-audit --no-fund
@@ -100,6 +103,10 @@ jobs:
       - name: Check friend duels, hidden hands and concurrent turns on standalone MongoDB
         working-directory: server
         run: npm run check:duels
+
+      - name: Check opt-in discovery, mutual chat, moderation and casual duels
+        working-directory: server
+        run: npm run check:people
 
       - name: Check private Sparks, photos, reactions and reply recovery
         working-directory: server

@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const { createHash } = require('node:crypto');
 const DuelRoom = require('../models/DuelRoom');
 const Friendship = require('../models/Friendship');
+const Connection = require('../models/SocialConnection');
+const people = require('./people');
 const Notification = require('../models/Notification');
 const { publicKey } = require('./clientViews');
 const { CARDS, deal, play } = require('./duelRules');
@@ -16,9 +18,13 @@ const relation = async (userId, roomId) => {
   if (!mongoose.isValidObjectId(roomId)) fail(404, 'Duo not found.');
   const friendship = await Friendship.findOne({ _id: roomId, status: 'ACTIVE', $or: [{ user1: userId }, { user2: userId }] })
     .populate('user1 user2', 'displayName username avatar avatarFrame isTestAccount testOwnerId').lean();
-  if (!friendship?.user1 || !friendship.user2) fail(404, 'Duo not found.');
+  if (!friendship?.user1 || !friendship.user2) {
+    const { connection, actor, other } = await people.visibleRelation(userId, roomId);
+    return { _id: connection._id, user1: actor, user2: other, casual: true, connectionStatus: connection.status };
+  }
   const [a, b] = [friendship.user1, friendship.user2];
   if (id(a) === id(b) || Boolean(a.isTestAccount) !== Boolean(b.isTestAccount) || a.isTestAccount && id(a.testOwnerId) !== id(b.testOwnerId)) fail(404, 'Duo not found.');
+  if (await people.blocked(a, b)) fail(404, 'Duel unavailable.');
   return friendship;
 };
 const expireRoom = async room => {
@@ -34,6 +40,9 @@ const flushNotices = async room => {
     if (job.duelRevision !== room.revision || job.duelMatchId !== room.state.current?.id) {
       await DuelRoom.updateOne({ _id: room._id }, { $pull: { noticeQueue: { _id: job._id } } }); continue;
     }
+    if (await Connection.exists({ _id: room._id, 'blockedBy.0': { $exists: true } })) {
+      await DuelRoom.updateOne({ _id: room._id }, { $pull: { noticeQueue: { _id: job._id } } }); continue;
+    }
     try {
       await Notification.updateOne({ _id: job._id }, { $setOnInsert: job }, { upsert: true });
       await DuelRoom.updateOne({ _id: room._id }, { $pull: { noticeQueue: { _id: job._id } } });
@@ -44,7 +53,7 @@ const summary = (room, friendship, userId) => {
   const current = room?.state.current;
   const partner = id(friendship.user1) === userId ? friendship.user2 : friendship.user1;
   return {
-    id: id(friendship), contractKey: publicKey(friendship._id, 'contract'), partner: person(partner), revision: room?.revision || 0,
+    id: id(friendship), contractKey: friendship.casual ? null : publicKey(friendship._id, 'contract'), casual: Boolean(friendship.casual), connectionId: friendship.casual ? id(friendship) : null, connectionStatus: friendship.connectionStatus || null, partner: person(partner), revision: room?.revision || 0,
     matchId: current?.id || null, status: current?.status || 'NONE', invitedByMe: current?.inviterId === userId,
     myTurn: current?.status === 'ACTIVE' && current.currentPlayerId === userId,
     turn: current?.turn || 0, updatedAt: current?.updatedAt || null, expiresAt: current?.expiresAt || null,
@@ -71,17 +80,28 @@ const getDuel = async (userId, roomId) => {
   const friendship = await relation(userId, roomId);
   const room = await expireRoom(await readRoom(roomId));
   await flushNotices(room);
+  if (friendship.casual) await people.visibleRelation(userId, roomId);
   return detail(room, friendship, userId);
 };
 const listDuels = async userId => {
   const friendships = await Friendship.find({ status: 'ACTIVE', $or: [{ user1: userId }, { user2: userId }] })
     .populate('user1 user2', 'displayName username avatar avatarFrame isTestAccount testOwnerId').lean();
-  const allowed = friendships.filter(f => f.user1 && f.user2 && id(f.user1) !== id(f.user2) && Boolean(f.user1.isTestAccount) === Boolean(f.user2.isTestAccount)
+  let allowed = friendships.filter(f => f.user1 && f.user2 && id(f.user1) !== id(f.user2) && Boolean(f.user1.isTestAccount) === Boolean(f.user2.isTestAccount)
     && (!f.user1.isTestAccount || id(f.user1.testOwnerId) === id(f.user2.testOwnerId)));
+  const [connections, blocks] = await Promise.all([
+    Connection.find({ participants: userId, 'blockedBy.0': { $exists: false } }).populate('participants', 'displayName username avatar avatarFrame discovery isTestAccount testOwnerId').sort({ updatedAt: -1 }).limit(100).lean(),
+    Connection.find({ participants: userId, 'blockedBy.0': { $exists: true } }).select('_id').lean(),
+  ]);
+  const blockedPairs = new Set(blocks.map(value => id(value)));
+  allowed = allowed.filter(value => !blockedPairs.has(people.pairId(value.user1, value.user2)));
+  for (const connection of connections) {
+    const actor = connection.participants.find(value => id(value) === userId), other = connection.participants.find(value => id(value) !== userId);
+    if (people.sameScope(actor, other)) allowed.push({ _id: connection._id, user1: actor, user2: other, casual: true, connectionStatus: connection.status });
+  }
   const rooms = await DuelRoom.find({ _id: { $in: allowed.map(f => f._id) } }).select('+state +noticeQueue').lean();
   const byId = new Map();
   for (const value of rooms) { const room = await expireRoom(value); await flushNotices(room); byId.set(id(room), room); }
-  const partners = allowed.map(friendship => summary(byId.get(id(friendship)), friendship, userId));
+  const partners = allowed.filter(value => !value.casual || value.connectionStatus === 'CONNECTED' || byId.get(id(value))?.state.current).map(friendship => summary(byId.get(id(friendship)), friendship, userId));
   return { rooms: partners.filter(item => item.matchId).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)), partners, cards: Object.values(CARDS) };
 };
 const notices = (roomId, revision, current, userId, otherId, actorName, kind) => {
@@ -99,6 +119,7 @@ const notices = (roomId, revision, current, userId, otherId, actorName, kind) =>
 };
 const mutateDuel = async (userId, roomId, kind, body) => {
   const friendship = await relation(userId, roomId);
+  roomId = id(friendship);
   body ||= {};
   if (typeof body.clientId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(body.clientId)) fail(400, 'A retry key is required.');
   if (!Number.isSafeInteger(body.revision) || body.revision < 0) fail(400, 'Refresh the duel before making a move.');
@@ -113,6 +134,12 @@ const mutateDuel = async (userId, roomId, kind, body) => {
     const state = structuredClone(room.state), before = state.current;
     const now = new Date(), stamp = now.toISOString();
     if (kind === 'INVITE') {
+      if (friendship.casual && friendship.connectionStatus !== 'CONNECTED') {
+        if (!friendship.user1.discovery?.enabled || !friendship.user2.discovery?.enabled) fail(403, 'Both profiles must be visible in Discover to send a new invitation.');
+        if (['DECLINED', 'CANCELLED', 'ABANDONED'].includes(before?.status) && now - new Date(before.updatedAt) < 86400000) fail(429, 'Give this person a day before inviting them again.');
+        const pairs = await Connection.find({ participants: userId }).select('_id').lean();
+        if (await DuelRoom.countDocuments({ _id: { $in: pairs.map(value => value._id) }, 'state.current.status': 'INVITED', 'state.current.inviterId': userId, 'state.current.expiresAt': { $gt: stamp } }) >= 5) fail(429, 'You have five duel invitations waiting. Let people respond first.');
+      }
       if ((before?.id || null) !== (body.previousMatchId || null)) fail(409, 'Refresh before inviting your friend again.');
       if (LIVE.includes(before?.status)) fail(409, 'You already have a duel in progress with this friend.');
       const starterId = state.lastStarterId ? players.find(value => value !== state.lastStarterId) : otherId;

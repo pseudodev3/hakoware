@@ -17,7 +17,6 @@ import { ResetPassword } from './features/auth/ResetPassword';
 import { AddFriendModal } from './features/friendship/components/AddFriendModal';
 import { FriendshipSettingsModal } from './features/friendship/components/FriendshipSettingsModal';
 import { FriendSpace } from './features/friendship/components/FriendSpace';
-import { ContractsView } from './features/friendship/components/ContractsView';
 import { ContractRecapModal } from './features/friendship/components/ContractRecapModal';
 import { GameMoment } from './features/friendship/components/GameMoment';
 import { GameSoundManager } from './shared/components/GameSoundManager';
@@ -38,6 +37,7 @@ const isJoinLink = () => new URLSearchParams(window.location.search).get('join')
 const Arena = lazy(() => import('./features/arena/components/Arena').then(module => ({ default: module.Arena })));
 const SparksView = lazy(() => import('./features/sparks/SparksView').then(module => ({ default: module.SparksView })));
 const YouView = lazy(() => import('./features/profile/YouView').then(module => ({ default: module.YouView })));
+const CircleSpace = lazy(() => import('./features/people/CircleSpace').then(module => ({ default: module.CircleSpace })));
 const FounderLabPage = lazy(() => import('./features/testlab/FounderLabPage').then(module => ({ default: module.FounderLabPage })));
 
 function FounderRoute({ showToast }) {
@@ -247,6 +247,7 @@ function MainApp({ showToast }) {
     const query = new URLSearchParams({ view: tab });
     if (tab === 'you' && options.cosmeticOrderId) query.set('cosmetic_order', options.cosmeticOrderId);
     if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); if (options.duelId) query.set('duel', options.duelId); }
+    if (tab === 'contracts') { query.set('section', options.section || 'duos'); if (options.connectionId) query.set('connection', options.connectionId); }
     if (tab === 'sparks' && options.focusPostId) query.set('spark', options.focusPostId);
     if (tab === 'sparks' && options.focusReplyId) query.set('reply', options.focusReplyId);
     if (tab === 'sparks' && (previousRoom || options.legacy)) { query.set('legacy', '1'); if (options.focusActivityId) query.set('activity', options.focusActivityId); }
@@ -370,13 +371,13 @@ function MainApp({ showToast }) {
       showToast={showToast}
     >
       <motion.div
-        key={friendKey || activeTab}
+        key={`${user.uid || user.id || user._id}:${friendKey || activeTab}`}
         className="tab-stage"
         initial={shouldReduceMotion ? false : { opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: shouldReduceMotion ? 0 : .17, ease: [0.2, 0, 0, 1] }}
       >
-        <DeferredView key={friendKey || activeTab}>
+        <DeferredView key={`${user.uid || user.id || user._id}:${friendKey || activeTab}`}>
         {openedFriend && <FriendSpace
           key={openedFriend._id || openedFriend.id}
           friendship={openedFriend}
@@ -411,7 +412,9 @@ function MainApp({ showToast }) {
         )}
 
         {!friendKey && activeTab === 'contracts' && (
-          <ContractsView
+          <CircleSpace
+            section={params.get('section')}
+            connectionId={params.get('connection')}
             user={user}
             friendships={friendships}
             pendingReceived={pendingReceived}
@@ -419,7 +422,7 @@ function MainApp({ showToast }) {
             pendingExternal={pendingExternal}
             templates={contractMeta.templates}
             onAction={handleAction}
-            onAddFriend={() => openNewContract()}
+            onAddFriend={person => openNewContract(person)}
             onRefresh={loadData}
             onNavigate={navigateTo}
             showToast={showToast}

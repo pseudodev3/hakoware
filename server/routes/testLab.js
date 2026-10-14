@@ -15,6 +15,9 @@ const PendingInvite = require('../models/PendingInvite');
 const VoiceNote = require('../models/VoiceNote');
 const CardTrade = require('../models/CardTrade');
 const DuelRoom = require('../models/DuelRoom');
+const SocialConnection = require('../models/SocialConnection');
+const SocialMessage = require('../models/SocialMessage');
+const CommunityReport = require('../models/CommunityReport');
 const CardPurchase = require('../models/CardPurchase');
 const RoomWall = require('../models/RoomWall');
 const SparkPost = require('../models/SparkPost');
@@ -339,6 +342,7 @@ router.delete('/reset', async (req, res) => {
       $or: [{ user1: { $in: ids } }, { user2: { $in: ids } }]
     }).select('_id');
     const friendshipIds = friendships.map((friendship) => friendship._id);
+    const connectionIds = (await SocialConnection.find({ participants: { $in: ids } }).select('_id')).map(value => value._id);
     const voiceNotes = await VoiceNote.find({
       $or: [
         { senderId: { $in: ids } },
@@ -371,7 +375,10 @@ router.delete('/reset', async (req, res) => {
       Notification.deleteMany({ $or: [{ toUserId: { $in: ids } }, { fromUserId: { $in: ids } }, { friendshipId: { $in: friendshipIds } }] }),
       AuraTransaction.deleteMany({ userId: { $in: ids } }),
       CardTrade.deleteMany({ $or: [{ senderId: { $in: ids } }, { recipientId: { $in: ids } }] }),
-      DuelRoom.deleteMany({ _id: { $in: friendshipIds } }),
+      DuelRoom.deleteMany({ _id: { $in: [...friendshipIds, ...connectionIds] } }),
+      SocialMessage.deleteMany({ connectionId: { $in: connectionIds } }),
+      SocialConnection.deleteMany({ _id: { $in: connectionIds } }),
+      CommunityReport.deleteMany({ $or: [{ reporterId: { $in: ids } }, { targetId: { $in: ids } }] }),
       CardPurchase.deleteMany({ userId: { $in: ids } }),
       RoomWall.deleteMany({ scopeKey: 'test:' + req.user.id }),
       WorldActivity.deleteMany({ scopeKey: 'test:' + req.user.id }),

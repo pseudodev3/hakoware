@@ -11,6 +11,7 @@ import { PageHeading } from '../../shared/components/PageHeading';
 import { AuraBank } from './AuraBank';
 import { ProfileShowcase } from './ProfileShowcase';
 import { GameSoundSettings } from './GameSoundSettings';
+import { DiscoveryProfile } from '../people/DiscoveryProfile';
 import './YouView.css';
 
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
@@ -166,6 +167,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         </div>
 
         <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
+        <DiscoveryProfile />
       </section>
       <section className="profile-aura-area" aria-label="Your Aura">
         <div className="profile-aura-row">

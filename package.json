@@ -14,6 +14,7 @@
     "check:seo": "node scripts/checkSeo.mjs",
     "check:checkout-links": "node scripts/checkCheckoutLinks.mjs",
     "check:ui-polish": "node scripts/checkUiPolish.mjs",
+    "check:duel-feedback": "node scripts/checkDuelFeedback.mjs",
     "check:session-boundaries": "node --test scripts/checkSessionBoundaries.mjs"
   },
   "dependencies": {

@@ -178,6 +178,8 @@ const notificationView = (value) => {
     duelId: data.duelId || null,
     duelMatchId: data.duelMatchId || null,
     duelRevision: data.duelRevision ?? null,
+    connectionId: data.connectionId || null,
+    connectionRevision: data.connectionRevision ?? null,
     wallPieceId: data.wallPieceId || null,
     wallWeekKey: data.wallWeekKey || null,
     afterHoursActivityId: data.afterHoursActivityId || null,

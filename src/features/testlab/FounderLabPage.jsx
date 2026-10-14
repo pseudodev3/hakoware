@@ -18,6 +18,7 @@ import {
 import { getGrowthMetrics } from '../../services/growthService';
 import { formatCosmeticPrice } from '../../lib/cosmeticCheckout';
 import './FounderLabPage.css';
+import { CommunityReports } from './CommunityReports';
 
 const idOf = (value) => String(value?._id || value || '');
 const nameOf = (value) => value?.displayName || 'Test player';
@@ -216,6 +217,7 @@ export const FounderLabPage = ({ showToast }) => {
       </header>
 
       <main className="founder-route-main">
+        <CommunityReports />
         <section className="founder-hero">
           <div className="founder-hero-icon"><FlaskConical size={22} /></div>
           <div>

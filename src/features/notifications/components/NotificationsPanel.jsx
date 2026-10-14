@@ -168,6 +168,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
     if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
     if (notification.cosmeticOrderId) { onNavigate?.('you', { cosmeticOrderId: notification.cosmeticOrderId }); onClose(); return; }
     if (notification.duelId) { onNavigate?.('arena', { section: 'duels', duelId: notification.duelId }); onClose(); return; }
+    if (notification.connectionId) { onNavigate?.('contracts', { section: 'connections', ...(notification.type === 'CONNECTION_MESSAGE' || notification.type === 'CONNECTION_ACCEPTED' ? { connectionId: notification.connectionId } : {}) }); onClose(); return; }
     if (notification.cardTradeId) { onNavigate?.('arena', { section: 'cards', focusTradeId: notification.cardTradeId }); onClose(); return; }
     if (notification.sparkPostId) { onNavigate?.('sparks', { focusPostId: notification.sparkPostId, focusReplyId: notification.sparkReplyId }); onClose(); return; }
     if (notification.wallPieceId || notification.type === 'AFTER_HOURS_WALL') { onNavigate?.('sparks', { legacy: true }); onClose(); return; }
@@ -189,6 +190,9 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
   const getIcon = (type) => {
     switch (type) {
       case 'COSMETIC_GIFT': return <Gift size={16} strokeWidth={1.8} />;
+      case 'CONNECTION_INVITE': return <UserPlus size={16} strokeWidth={1.8} />;
+      case 'CONNECTION_ACCEPTED': return <UserCheck size={16} strokeWidth={1.8} />;
+      case 'CONNECTION_MESSAGE': return <MessageSquare size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.SPARK_REACTION:
       case NOTIFICATION_TYPES.SPARK_REPLY: return <Sparkles size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.LIMIT_CHANGED: return <Clock size={16} strokeWidth={1.8} />;

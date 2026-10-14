@@ -57,6 +57,12 @@ const UserSchema = new mongoose.Schema({
   privacySettings: {
     optOutPublicBankruptcy: { type: Boolean, default: false }
   },
+  discovery: {
+    enabled: { type: Boolean, default: false },
+    bio: { type: String, default: '', maxlength: 160 },
+    interests: { type: [String], default: [] },
+    intent: { type: String, enum: ['games', 'conversation', 'accountability'], default: 'games' }
+  },
   resetPasswordToken: String,
   resetPasswordExpire: Date
 }, { timestamps: true });

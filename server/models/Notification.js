@@ -12,6 +12,8 @@ const NotificationSchema = new mongoose.Schema({
   duelId: { type: String, maxlength: 24 },
   duelMatchId: { type: String, maxlength: 24 },
   duelRevision: { type: Number, min: 0 },
+  connectionId: { type: String, maxlength: 24 },
+  connectionRevision: { type: Number, min: 0 },
   wallPieceId: String,
   wallWeekKey: String,
   voiceNoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'VoiceNote' },

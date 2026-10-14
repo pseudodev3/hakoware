@@ -138,7 +138,7 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, focusD
       {!(tab === 'duels' && focusDuelId) && <ViewTabs id="arena" label="Arena views" className="arena-tabs" value={tab} onChange={(value) => { setTab(value); onNavigate?.('arena', { section: value }); }} items={[{ value: 'cards', label: 'Cards' }, { value: 'duels', label: 'Duels' }, { value: 'bounties', label: 'Bounties' }, { value: 'grudges', label: 'Grudges', count: grudges.length }, { value: 'shame', label: 'Shame', count: shame.length }]} />}
 
       <div role={tab === 'duels' && focusDuelId ? 'region' : 'tabpanel'} id={`arena-panel-${tab}`} aria-label={tab === 'duels' && focusDuelId ? 'Friend duel' : undefined} aria-labelledby={tab === 'duels' && focusDuelId ? undefined : `arena-tab-${tab}`}>
-      {tab === 'duels' ? <DuelSpace key={userId} focusDuelId={focusDuelId} onNavigate={onNavigate} /> : tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
+      {tab === 'duels' ? <DuelSpace key={`${userId}:${focusDuelId || 'lobby'}`} focusDuelId={focusDuelId} onNavigate={onNavigate} /> : tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
         <section className="arena-panel">
           <div className="arena-panel-head">
             <div><Target size={18} strokeWidth={1.8} /><strong>Live hunts</strong></div>

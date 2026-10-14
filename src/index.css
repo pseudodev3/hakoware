@@ -135,6 +135,7 @@ button:disabled { cursor:not-allowed; }
 a { color:inherit; text-decoration:none; }
 ::selection { background:var(--accent-soft); color:var(--text-primary); }
 :focus-visible { outline:2px solid var(--accent-text); outline-offset:3px; }
+html[data-input-modality="pointer"] :is(button, a, [tabindex], dialog):focus-visible { outline: none; }
 ::-webkit-scrollbar { width:7px; height:7px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border-active); border-radius:999px; }

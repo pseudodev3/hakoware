@@ -6,11 +6,13 @@ import { UserAvatar } from '../../shared/components/UserAvatar';
 import { CardArtwork } from '../cards/CardArtwork';
 import { getDuel, getDuels, makeDuelMove, markDuelSeen } from '../../services/duelService';
 import { playGameSound } from '../../lib/gameSounds';
+import { duelResultCopy } from '../../lib/duelFeedback';
+import { PersonActions } from '../people/PersonActions';
+import { DuelConnection } from '../people/DuelConnection';
 import './Duels.css';
 
 const time = value => value ? new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
 const stateCopy = room => room.status === 'INVITED' ? room.invitedByMe ? 'Invitation sent' : 'Invited you' : room.status === 'ACTIVE' ? room.myTurn ? 'Your turn' : 'Their turn' : room.status === 'FINISHED' ? room.winner === 'YOU' ? 'You won' : room.winner === 'PARTNER' ? 'They won' : 'A draw' : { DECLINED: 'Invitation declined', CANCELLED: 'Invitation cancelled', ABANDONED: 'Round ended', EXPIRED: 'Round expired' }[room.status] || 'Start a round';
-const reasonCopy = { GUESS: 'The winning guess landed.', OATH_DISCARDED: 'Oath was played or forced out.', HIGH_CARD: 'The deck ran out. Higher held rank wins.', DRAW: 'The deck ran out with equal held ranks.' };
 const moveCopy = (move, cards, partner) => {
   const actor = move.actor === 'YOU' ? 'You' : partner, name = cards[move.cardId]?.name || 'a card';
   const prefix = `${actor} played ${name}.`;
@@ -44,7 +46,7 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
       setData(result); setError('');
       if (focusDuelId) acknowledge(result);
     } catch (err) {
-      if (alive.current && request === sequence.current) setError(err.message || 'Could not load your duels.');
+      if (alive.current && request === sequence.current) { setError(err.message || 'Could not load your duels.'); if ([403, 404].includes(err.status)) setData(null); }
     } finally { if (alive.current && request === sequence.current) setLoading(false); }
   }, [focusDuelId, acknowledge]);
   useEffect(() => {
@@ -77,6 +79,7 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
     } catch (err) {
       if (alive.current && requestContext === context.current) {
         setError(err.message || 'Could not confirm your move. Your choice is kept so you can retry.');
+        if ([403, 404].includes(err.status)) setData(null);
         if (err.status === 409) await load({ quiet: true });
       }
     } finally { if (requestContext === context.current) { busyRef.current = false; if (alive.current) setBusy(false); } }
@@ -100,8 +103,9 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
       <div className="duel-lobby-intro"><div><p className="duel-kicker">Twelve cards. Two people.</p><h2>A little friendly trouble.</h2><p>Peek, protect, swap. Keep your best card close.</p></div><button className="duel-text-action" type="button" onClick={() => setRules(true)} disabled={!data}><BookOpen size={16} />How to play</button></div>
       {errorNotice}{loading && !data && <p role="status" className="duel-loading">Finding your table…</p>}
       {live.length > 0 && <section className="duel-lobby-section"><h3>At the table</h3>{live.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><UserAvatar person={room.partner} size="sm" decorative /><span><strong>{room.partner.displayName}</strong><small>{stateCopy(room)}</small></span><span className={room.myTurn || room.status === 'INVITED' && !room.invitedByMe ? 'duel-row-ready' : ''}>{room.status === 'INVITED' ? room.invitedByMe ? 'View' : 'Review' : room.myTurn ? 'Play' : 'Open'}</span></button>)}</section>}
-      {!loading && data && <section className="duel-lobby-section"><h3>{live.length ? 'Another table' : 'Choose your opponent'}</h3>{available.length ? available.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><UserAvatar person={room.partner} size="sm" decorative /><span><strong>{room.partner.displayName}</strong><small>{room.score.you || room.score.partner ? `${room.score.you} wins · ${room.score.partner} losses` : 'One short round. Your call.'}</small></span><Swords size={19} aria-hidden="true" /></button>) : <p className="duel-empty">{partners.length ? 'Your friends already have a place at the table.' : 'Start a Duo with a friend, then invite them to play.'}</p>}</section>}
+      {!loading && data && <section className="duel-lobby-section"><h3>{live.length ? 'Another table' : 'Choose your opponent'}</h3>{available.length ? available.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><UserAvatar person={room.partner} size="sm" decorative /><span><strong>{room.partner.displayName}</strong><small>{room.score.you || room.score.partner ? `${room.score.you} wins · ${room.score.partner} losses` : 'One short round. Your call.'}</small></span><Swords size={19} aria-hidden="true" /></button>) : <p className="duel-empty">{partners.length ? 'Your friends already have a place at the table.' : 'Your next opponent could be someone new.'}</p>}</section>}
       {recent.length > 0 && <section className="duel-lobby-section"><h3>Last rounds</h3>{recent.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><Trophy size={21} aria-hidden="true" /><span><strong>{room.partner.displayName}</strong><small>{stateCopy(room)}</small></span><span>Rematch</span></button>)}</section>}
+      <button type="button" className="duel-text-action" onClick={() => onNavigate('contracts', { section: 'discover' })}>Find someone to play</button>
       {rulesSheet}
     </section>;
   }
@@ -111,19 +115,20 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
   const headline = active ? data.myTurn ? 'Your turn. Play one.' : `${partner} is thinking.` : completed ? data.winner === 'YOU' ? 'You won.' : data.winner === 'PARTNER' ? `${partner} won.` : 'A draw.' : invited ? data.invitedByMe ? 'The invitation is out.' : 'A duel with your name on it.' : data.status === 'NONE' ? 'Settle it with cards.' : stateCopy(data) + '.';
   const blocked = data.protected.partner && ['SIGNAL_FLARE', 'WATCHER', 'ORBIT'].includes(cardId) || data.protected.partner && cardId === 'PURIFY' && target === 'OPPONENT';
   const choiceReady = card && (cardId !== 'SIGNAL_FLARE' || guess) && (cardId !== 'PURIFY' || target);
-  const conversation = () => onNavigate('friend', { contractKey: data.contractKey });
+  const conversation = () => data.casual ? onNavigate('contracts', { section: data.connectionStatus === 'CONNECTED' ? 'connections' : 'discover', ...(data.connectionStatus === 'CONNECTED' ? { connectionId: data.connectionId } : {}) }) : onNavigate('friend', { contractKey: data.contractKey });
   return <section ref={root} className="duel-space" aria-label={`Duel with ${partner}`}>
-    <div className="duel-toolbar"><button type="button" className="duel-text-action" onClick={back}><ArrowLeft size={16} />All duels</button><button type="button" className="duel-text-action" onClick={() => setRules(true)}><BookOpen size={16} />Rules</button></div>
+    <div className="duel-toolbar"><button type="button" className="duel-text-action" onClick={back}><ArrowLeft size={16} />All duels</button><button type="button" className="duel-text-action" onClick={() => setRules(true)}><BookOpen size={16} />Rules</button>{data.casual && <PersonActions person={data.partner} onBlocked={() => onNavigate('contracts', { section: 'discover' })} />}</div>
     <div className="duel-opponents"><UserAvatar person={data.partner} size="sm" decorative /><div><strong>You &amp; {partner}</strong><span>{data.score.you}–{data.score.partner} <small>· {data.score.draws} draws</small></span></div>{active && <span className="duel-round-meta">Turn {data.turn}<small>{data.remaining} in the deck</small></span>}</div>
     <h1 className="duel-title" ref={title} tabIndex={-1}>{headline}</h1>
-    <p className="duel-state-copy" role="status" aria-live="polite">{active ? data.myTurn ? 'Keep the other card hidden.' : 'Your card stays hidden. Come back for your next move.' : completed ? reasonCopy[data.result.reason] : invited ? data.invitedByMe ? `Waiting for ${partner} to accept.` : 'A free deck, a few clever moves, and room for a rematch.' : data.status === 'NONE' ? `Invite ${partner} to one short round.` : 'No cards or Aura were spent. Invite them when you feel like another round.'}</p>
+    <p className="duel-state-copy" role="status" aria-live="polite">{active ? data.myTurn ? 'Keep the other card hidden.' : 'Your card stays hidden. Come back for your next move.' : completed ? duelResultCopy(data, cards) : invited ? data.invitedByMe ? `Waiting for ${partner} to accept.` : 'A free deck, a few clever moves, and room for a rematch.' : data.status === 'NONE' ? `Invite ${partner} to one short round.` : 'No cards or Aura were spent. Invite them when you feel like another round.'}</p>
     {errorNotice}
     {active && <>
+      {data.moves.length > 0 && <div className="duel-last-move" key={`${data.matchId}:${data.moves.at(-1).turn}`}><CardArtwork cardId={data.moves.at(-1).cardId} size={36} /><p>{moveCopy(data.moves.at(-1), cards, partner)}</p></div>}
       <div className="duel-table">
         <div className="duel-opponent-hand"><div className="duel-card-back" aria-label="Your friend’s card is hidden"><span>H</span><i /></div><p>{partner}<small>{data.protected.partner ? <><Shield size={12} />Protected by Ghost</> : 'One card kept secret'}</small></p></div>
         {data.peek && <aside className={`duel-peek ${data.peek.stale ? 'is-stale' : ''}`}><Eye size={15} aria-hidden="true" /><div><strong>You saw {cards[data.peek.cardId]?.name}</strong><small>Turn {data.peek.turn} · {data.peek.stale ? 'Their hand may have changed since.' : 'A memory, not a live view of their hand.'}</small></div></aside>}
         <div className="duel-hand-label"><span>{data.myTurn ? 'Choose a card to play' : 'Your hidden card'}</span>{data.protected.you && <small><Shield size={12} />Protected by Ghost</small>}</div>
-        <div className="duel-hand" role="group" aria-label="Your duel hand">{data.hand.map((value, index) => <button type="button" key={`${value}-${index}`} className={`duel-hand-card ${selected === index ? 'is-selected' : ''}`} aria-pressed={selected === index} aria-label={`Play ${cards[value].name}, rank ${cards[value].rank}`} disabled={!data.myTurn || busy} onClick={() => { setSelected(index); setGuess(''); setTarget(''); }}><span className="duel-card-label"><small>Duel</small><b>{cards[value].rank}</b></span><CardArtwork cardId={value} size={112} /><strong>{cards[value].name}</strong></button>)}</div>
+        <div key={`${data.matchId}:${data.turn}:${data.myTurn}`} className="duel-hand" role="group" aria-label="Your duel hand">{data.hand.map((value, index) => <button type="button" key={`${value}-${index}`} className={`duel-hand-card ${selected === index ? 'is-selected' : ''}`} aria-pressed={selected === index} aria-label={`Play ${cards[value].name}, rank ${cards[value].rank}`} disabled={!data.myTurn || busy} onClick={() => { setSelected(index); setGuess(''); setTarget(''); }}><span className="duel-card-label"><small>Duel</small><b>{cards[value].rank}</b></span><CardArtwork cardId={value} size={112} /><strong>{cards[value].name}</strong></button>)}</div>
       </div>
       {data.myTurn && <div ref={controls} className="duel-move-controls">
         {card ? <><div className="duel-chosen-effect"><strong>{card.name}</strong><p>{card.effect}</p></div>
@@ -134,11 +139,12 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
         </> : <p className="duel-choice-hint">Pick one of your two cards to see its move.</p>}
       </div>}
       {data.moves.length > 0 && <details className="duel-move-history"><summary>Moves so far <span>{data.moves.length}</span></summary><ol>{data.moves.map(move => <li key={move.turn}><CardArtwork cardId={move.cardId} size={28} /><div><p>{moveCopy(move, cards, partner)}</p><time dateTime={move.createdAt}>Turn {move.turn} · {time(move.createdAt)}</time></div></li>)}</ol></details>}
-      <div className="duel-quiet-actions"><button type="button" className="duel-text-action" onClick={conversation}>Back to conversation</button><button type="button" className="duel-text-action" onClick={() => setLeaving(true)} disabled={busy}>Leave round</button></div>
+      <div className="duel-quiet-actions"><button type="button" className="duel-text-action" onClick={conversation}>{data.casual ? data.connectionStatus === 'CONNECTED' ? 'Open conversation' : 'Back to Discover' : 'Back to conversation'}</button><button type="button" className="duel-text-action" onClick={() => setLeaving(true)} disabled={busy}>Leave round</button></div>
     </>}
     {!active && <>
       {completed ? <div className="duel-final-hands">{[['you', 'You'], ['partner', partner]].map(([role, label]) => <div key={role}><span>{label}</span>{data.result[role].length ? data.result[role].map(value => <div key={value}><CardArtwork cardId={value} size={92} /><strong>{cards[value].name}</strong><small>Held rank {cards[value].rank}</small></div>) : <p>Oath discarded</p>}</div>)}</div> : <div className="duel-invitation-art" aria-hidden="true"><CardArtwork cardId="WATCHER" size={86} /><CardArtwork cardId="GHOST" size={86} /><CardArtwork cardId="ORBIT" size={86} /></div>}
-      <div className="duel-result-actions">{invited ? data.invitedByMe ? <button type="button" className="duel-text-action" disabled={busy} onClick={() => void act('CANCEL')}>Cancel invitation</button> : <><button type="button" className="duel-primary" disabled={busy} onClick={() => void act('ACCEPT')}>{busy ? 'Opening the table…' : 'Accept duel'}</button><button type="button" className="duel-text-action" disabled={busy} onClick={() => void act('DECLINE')}>Decline</button></> : <button type="button" className="duel-primary" disabled={busy} onClick={() => void act('INVITE')}>{busy ? 'Inviting…' : completed ? 'Rematch' : `Invite ${partner}`}</button>}<button type="button" className="duel-text-action" onClick={conversation}>Back to conversation</button></div>
+      <div className="duel-result-actions">{invited ? data.invitedByMe ? <button type="button" className="duel-text-action" disabled={busy} onClick={() => void act('CANCEL')}>Cancel invitation</button> : <><button type="button" className="duel-primary" disabled={busy} onClick={() => void act('ACCEPT')}>{busy ? 'Opening the table…' : 'Accept duel'}</button><button type="button" className="duel-text-action" disabled={busy} onClick={() => void act('DECLINE')}>Decline</button></> : <button type="button" className="duel-primary" disabled={busy} onClick={() => void act('INVITE')}>{busy ? 'Inviting…' : completed ? 'Rematch' : `Invite ${partner}`}</button>}<button type="button" className="duel-text-action" onClick={conversation}>{data.casual ? data.connectionStatus === 'CONNECTED' ? 'Open conversation' : 'Back to Discover' : 'Back to conversation'}</button></div>
+      {completed && data.casual && <DuelConnection person={data.partner} onNavigate={onNavigate} />}
       {completed && <details className="duel-move-history"><summary>The deciding moves</summary><ol>{data.moves.map(move => <li key={move.turn}><CardArtwork cardId={move.cardId} size={28} /><div><p>{moveCopy(move, cards, partner)}</p><small>Turn {move.turn}</small></div></li>)}</ol></details>}
       {!invited && data.history.length > 1 && <details className="duel-move-history"><summary>Your rivalry <span>{data.history.length} recent rounds</span></summary><ol>{data.history.map(round => <li key={round.matchId}><Trophy size={16} /><div><p>{round.winner === 'YOU' ? 'You won' : round.winner === 'PARTNER' ? `${partner} won` : 'A draw'}</p><time dateTime={round.endedAt}>{new Date(round.endedAt).toLocaleDateString()}</time></div></li>)}</ol></details>}
     </>}
