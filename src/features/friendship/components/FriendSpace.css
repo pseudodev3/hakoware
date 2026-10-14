@@ -103,9 +103,8 @@
 .friend-emoji-tray button { width:44px; height:44px; border-radius:12px; font-size:1.4rem; }
 .friend-emoji-tray button:hover { background:var(--accent-soft); }
 .friend-message-count { display:inline-block; margin-left:8px; font-size:inherit; }
-.friend-composer-context { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:5px; }
+.friend-composer-context { margin-top:5px; }
 .friend-composer-context > span { color:var(--text-muted); font-size:.6875rem; line-height:1.5; }
-.friend-composer-context > button { min-height:44px; padding:0 8px; font-size:.75rem; color:var(--text-muted); }
 .friend-keyboard-open .friend-space-header { min-height:calc(64px + var(--safe-area-top)); padding-top:calc(10px + var(--safe-area-top)); padding-bottom:10px; }
 .friend-keyboard-open .friend-composer-context { display:none; }
 .friend-keyboard-open .friend-composer-dock { padding-block:8px; }

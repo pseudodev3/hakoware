@@ -4,9 +4,6 @@ const { getMomentViews } = require('./contractMoments');
 const { getFirstMutualPayoffs } = require('./duoActivation');
 
 const HOUR = 60 * 60 * 1000;
-const POKE_COOLDOWN_MS = 4 * HOUR;
-const MUTUAL_POKE_WINDOW_MS = 2 * HOUR;
-const MUTUAL_MENACE_MS = 3 * HOUR;
 const REACTION_WINDOW_MS = 36 * HOUR;
 const REPLY_MAX_LENGTH = 40;
 const MAX_PULSE_AGE_MS = 48 * HOUR;
@@ -15,10 +12,8 @@ const SOCIAL_EVENT_TYPES = new Set([
   'MESSAGE',
   'CHECKIN',
   'VOICE_CHECKIN',
-  'POKE',
   'CHECKIN_REACTION',
   'CHECKIN_REPLY',
-  'MUTUAL_POKE',
   'HOT_SEAT_BREWING',
   'HOT_SEAT_OPENED',
   'HOT_SEAT_ANSWERED',
@@ -64,7 +59,6 @@ const formatPulseEvent = (event, friendship, viewerId) => {
     'MESSAGE',
     'CHECKIN',
     'VOICE_CHECKIN',
-    'POKE',
     'CHECKIN_REACTION',
     'CHECKIN_REPLY',
     'HOT_SEAT_ANSWERED',
@@ -95,14 +89,6 @@ const formatPulseEvent = (event, friendship, viewerId) => {
       tone = 'good';
       break;
     }
-    case 'POKE':
-      text = `${actor} poked you.`;
-      tone = 'gold';
-      break;
-    case 'MUTUAL_POKE':
-      text = `You and ${partner} hit Mutual Menace.`;
-      tone = 'gold';
-      break;
     case 'HOT_SEAT_BREWING':
       text = `Hot Seat started brewing with ${partner}.`;
       tone = 'gold';
@@ -221,33 +207,11 @@ const findLatestPartnerCheckin = async (friendship, userId) => {
   }).sort({ createdAt: -1 }).lean();
 };
 
-const latestOwnPoke = async (friendshipId, userId) => ContractEvent.findOne({
-  friendshipId,
-  userId,
-  type: 'POKE'
-}).sort({ createdAt: -1 }).lean();
-
 const findReplyForCheckin = async (friendshipId, checkinEventId, userId) => ContractEvent.findOne({
   friendshipId,
   userId,
   type: 'CHECKIN_REPLY',
   'metadata.checkinEventId': String(checkinEventId)
-}).sort({ createdAt: -1 }).lean();
-
-const findRecentPartnerPoke = async (friendship, userId, now = new Date()) => {
-  const partnerId = idString(friendship.user1) === idString(userId) ? friendship.user2 : friendship.user1;
-  return ContractEvent.findOne({
-    friendshipId: friendship._id,
-    userId: partnerId,
-    type: 'POKE',
-    createdAt: { $gte: new Date(now.getTime() - MUTUAL_POKE_WINDOW_MS) }
-  }).sort({ createdAt: -1 }).lean();
-};
-
-const findRecentMutualPoke = async (friendshipId, since) => ContractEvent.findOne({
-  friendshipId,
-  type: 'MUTUAL_POKE',
-  createdAt: { $gte: since }
 }).sort({ createdAt: -1 }).lean();
 
 const buildSocialPresence = async (userId, friendships, sinceValue) => {
@@ -260,7 +224,7 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     getMomentViews(userId, active),
     getFirstMutualPayoffs(active)
   ]);
-  const stateCutoff = new Date(Date.now() - Math.max(REACTION_WINDOW_MS, POKE_COOLDOWN_MS));
+  const stateCutoff = new Date(Date.now() - REACTION_WINDOW_MS);
   const stateEvents = await ContractEvent.find({
     friendshipId: { $in: ids },
     type: { $in: Array.from(SOCIAL_EVENT_TYPES).filter((type) => type !== 'MESSAGE') },
@@ -270,7 +234,7 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     .populate('userId', 'displayName username')
     .lean();
 
-  // Conversation traffic is bounded per contract and does not crowd out check-in/poke state.
+  // Conversation traffic is bounded per contract and does not crowd out check-in state.
   const messageEvents = (await Promise.all(active.map((friendship) => ContractEvent.find({ friendshipId: friendship._id, type: 'MESSAGE', 'metadata.notified': true })
     .sort({ createdAt: -1, _id: -1 }).limit(12).lean()))).flat();
   const events = [...stateEvents, ...messageEvents.filter((event) => new Date(event.createdAt) >= since)]
@@ -281,7 +245,8 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
     latestPartnerCheckin: null,
     reaction: null,
     reply: null,
-    canPoke: true,
+    // Older installed clients still read these fields; Poke stays unavailable.
+    canPoke: false,
     pokeAvailableAt: null,
     lastOwnPokeAt: null,
     lastPokeFromPartnerAt: null,
@@ -325,27 +290,6 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
       };
       partnerCheckinIds.push(event._id);
     }
-
-    if (event.type === 'POKE') {
-      if (isViewer && !state.lastOwnPokeAt) {
-        state.lastOwnPokeAt = event.createdAt;
-        const nextAt = new Date(new Date(event.createdAt).getTime() + POKE_COOLDOWN_MS);
-        state.canPoke = nextAt <= new Date();
-        state.pokeAvailableAt = state.canPoke ? null : nextAt;
-      } else if (!isViewer && !state.lastPokeFromPartnerAt) {
-        state.lastPokeFromPartnerAt = event.createdAt;
-      }
-    }
-
-    if (event.type === 'MUTUAL_POKE' && !state.mutualMenace) {
-      const expiresAt = new Date(event.metadata?.expiresAt || 0);
-      if (expiresAt > new Date()) {
-        state.mutualMenace = {
-          startedAt: event.createdAt,
-          expiresAt
-        };
-      }
-    }
   }
 
   if (partnerCheckinIds.length) {
@@ -360,15 +304,6 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
       }
     });
   }
-
-  Object.values(contractState).forEach((state) => {
-    if (!state.lastPokeFromPartnerAt || state.mutualMenace) return;
-    const partnerPokeAt = new Date(state.lastPokeFromPartnerAt);
-    const ownPokeAt = state.lastOwnPokeAt ? new Date(state.lastOwnPokeAt) : null;
-    state.pokeBackAvailable = partnerPokeAt >= new Date(Date.now() - MUTUAL_POKE_WINDOW_MS)
-      && (!ownPokeAt || ownPokeAt < partnerPokeAt)
-      && state.canPoke;
-  });
 
   Object.entries(momentViews).forEach(([friendshipId, moment]) => {
     if (contractState[friendshipId]) contractState[friendshipId].moment = moment;
@@ -399,15 +334,9 @@ const buildSocialPresence = async (userId, friendships, sinceValue) => {
 };
 
 module.exports = {
-  POKE_COOLDOWN_MS,
-  MUTUAL_POKE_WINDOW_MS,
-  MUTUAL_MENACE_MS,
   REACTIONS,
   REPLY_MAX_LENGTH,
   buildSocialPresence,
   findLatestPartnerCheckin,
-  latestOwnPoke,
-  findReplyForCheckin,
-  findRecentPartnerPoke,
-  findRecentMutualPoke
+  findReplyForCheckin
 };

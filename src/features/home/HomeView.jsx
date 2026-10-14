@@ -38,7 +38,6 @@ const priority = (friendship, userId, socialContracts = {}) => {
   const state = contractState(friendship, userId);
   if (state.debt > 0) return 47000 + Math.min(state.debt, 9) * 100;
   if (social?.moment?.status === 'OPEN') return 46000;
-  if (social?.mutualMenace) return 44000;
   if (social?.firstMutualCheckin) return 30000;
   if (social?.unseenActivity?.length) return 20000;
   if (social?.moment?.status === 'BREWING') return 1500;
@@ -65,7 +64,6 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       || (friendship.chaos?.wantedUserId && friendship.chaos?.wantedUntil)
       || friendship.chaos?.activeEvent
       || social?.moment?.status === 'OPEN'
-      || Boolean(social?.mutualMenace)
       || friendship.season?.status === 'COMPLETE'
       || state.debt > 0
       || state.daysLeft <= 1;

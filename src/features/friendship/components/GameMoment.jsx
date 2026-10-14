@@ -6,10 +6,8 @@ import { DuoCover } from '../../../shared/components/DuoIdentity';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { CardArtwork } from '../../cards/CardArtwork';
 import { duoLabel, duoStyle } from '../../../lib/duoIdentity';
-import { buildDuoShareCard } from '../../../lib/duoShareCard';
-import { shareHakoware } from '../../../lib/share';
+import { duoShareFeedback, shareDuo } from '../../../services/duoSharingService';
 import './GameMoment.css';
-import { getContractRecap } from '../../../services/friendshipService';
 import { playGameSound } from '../../../lib/gameSounds';
 
 export const GameMoment = ({ user, friendships, onAction, showToast }) => {
@@ -50,10 +48,9 @@ export const GameMoment = ({ user, friendships, onAction, showToast }) => {
   const share = async () => {
     if (sharing) return; setSharing(true);
     try {
-      const recap = await getContractRecap(contract._id || contract.id);
-      const blob = await buildDuoShareCard({ userName: user.username ? '@'+user.username : user.displayName, partnerName: partner?.username ? '@'+partner.username : partner?.displayName, duoName: contract.identity?.name, palette: contract.identity?.palette, cover: contract.identity?.cover, duoLevel: recap.duo.level, duoTitle: recap.duo.title, duoXP: recap.duo.xp, templateName: recap.template?.name, seasonNumber: recap.season.number, seasonStatus: recap.season.status });
-      const result = await shareHakoware({ source: 'DUO', title: duoLabel(contract, 'Our Hakoware Duo'), text: `${duoLabel(contract, `${user.displayName} + ${partner?.displayName || 'my friend'}`)} · Duo Lv. ${recap.duo.level}`, url: '', files: [new File([blob], 'hakoware-duo.png', { type: 'image/png' })] });
-      if (!result.cancelled) { if (result.success && result.method === 'CLIPBOARD') showToast?.('Duo text copied. Image sharing is unavailable here.', 'SUCCESS'); else if (!result.success) showToast?.(result.error || 'Could not share your Duo', 'ERROR'); }
+      const result = await shareDuo(contract, user);
+      const feedback = duoShareFeedback(result);
+      if (feedback) showToast?.(feedback.message, feedback.type);
     } catch (error) { showToast?.(error.message || 'Could not share your Duo', 'ERROR'); }
     finally { setSharing(false); }
   };

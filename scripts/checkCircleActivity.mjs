@@ -35,6 +35,13 @@ test('Acknowledging the shared first does not silently clear the partner check-i
   assert.deepEqual(result.contracts.a.unseenActivity, [checkin]);
 });
 
+test('Retired Pokes cannot create discovery badges or crowd out messages from an older server response', () => {
+  const poke = item('poke', 'POKE'), mutual = item('mutual', 'MUTUAL_POKE'), message = item('message', 'MESSAGE');
+  const presence = applyCircleSeen({ pulse: [poke, mutual, message], contracts: { a: { recentActivity: [poke, mutual, message] } } }, {});
+  assert.deepEqual(presence.pulse, [message]);
+  assert.deepEqual(presence.contracts.a.unseenActivity, [message]);
+});
+
 test('Corrupt/unavailable storage and expired acknowledgements do not break Home', () => {
   assert.deepEqual(readCircleSeen({ getItem: () => '{' }, 'one'), {});
   const failing = { getItem: () => { throw Error('blocked'); }, setItem: () => { throw Error('blocked'); } };

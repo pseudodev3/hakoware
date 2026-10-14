@@ -229,14 +229,6 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const moment = socialState?.moment;
   const checkinAvailable = canCheckin(friendship, currentUserId);
   const showHealth = summary.needsAction || checkinAvailable || contractOpen;
-  const canPoke = socialState?.canPoke !== false;
-  const [poking, setPoking] = useState(false);
-  const poke = async () => {
-    if (poking || !canPoke) return;
-    setPoking(true);
-    try { await callbacks.current.onAction?.('POKE', friendship); void load(); }
-    finally { if (aliveRef.current) setPoking(false); }
-  };
   const pendingTimelineItem = pendingMessage && { ...pendingMessage, type: 'MESSAGE', mine: true };
   const renderItem = (item, previous = null, next = null) => {
     const conversation = messageTypes.has(item.type);
@@ -267,7 +259,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     <header className="friend-space-header"><button ref={backRef} className="friend-space-back" onClick={onBack} aria-label="Back to your circle"><ArrowLeft size={20} /></button><UserAvatar person={partner} size="sm" decorative /><div className="friend-space-identity"><h1>{friendship.identity?.name || partner?.displayName || 'Your friend'}</h1><span>{friendship.identity?.name ? `With ${partner?.displayName || 'your friend'}` : partner?.username ? '@' + partner.username : 'Your shared space'} · Duo Lv. {friendship.duoLevel || 1}</span></div><button type="button" className="friend-space-style" aria-label="Style your Duo" onClick={() => onAction('SETTINGS', friendship)}><Palette size={18} /></button><button className="friend-space-details" aria-label={contractOpen ? 'Return to conversation' : 'Open contract details'} aria-expanded={contractOpen} onClick={() => openContract(!contractOpen)}><ScrollText size={18} /><span>{contractOpen ? 'Conversation' : 'Contract'}</span><ChevronDown className="friend-details-chevron" size={15} /></button></header>
     {showHealth && <div className={`friend-space-health ${summary.tone}`}><span><i aria-hidden="true" />{summary.label}</span><button onClick={() => onAction(friendship.season?.status === 'COMPLETE' ? 'RECAP' : 'CHECKIN', friendship)} disabled={friendship.season?.status !== 'COMPLETE' && !checkinAvailable}>{friendship.season?.status === 'COMPLETE' ? 'See recap' : checkinAvailable ? 'Check in' : 'Checked in'}<Check size={13} /></button></div>}
     {summary.needsAction && !contractOpen && <button className="friend-space-attention" onClick={() => openContract(true)}><span>{summary.detail}</span></button>}
-    {contractOpen ? <div className="friend-space-contract"><ContractDetails friendship={friendship} currentUserId={currentUserId} onAction={onAction} socialState={socialState} onActivitySeen={onActivitySeen} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>
+    {contractOpen ? <div className="friend-space-contract"><ContractDetails friendship={friendship} currentUserId={currentUserId} onAction={onAction} socialState={socialState} onActivitySeen={onActivitySeen} onOpenConversation={() => openContract(false)} /><button className="friend-contract-return" onClick={() => openContract(false)}>Back to conversation <MessageCircle size={16} /></button></div> : <>
       {moment?.status === 'OPEN' && <button className="friend-space-moment" onClick={() => openContract(true)}><span>{moment.type === 'SPLIT_DECISION' ? 'Split Decision' : moment.type === 'DOUBLE_DARE' ? 'Double Dare' : 'Hot Seat'} · {moment.answered ? 'Waiting on them' : 'Your turn'}</span></button>}
       <div className="friend-space-timeline" ref={listRef} onScroll={() => {
         const list = listRef.current;
@@ -298,7 +290,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         </form>}
         {emojiOpen && !voiceOpen && <div className="friend-emoji-tray" role="group" aria-label="Message emojis" onKeyDown={(event) => { if (event.key === 'Escape') { setEmojiOpen(false); composerRef.current?.focus({ preventScroll: true }); } }}>{EMOJIS.map((emoji) => <button type="button" key={emoji} aria-label={`Insert ${emoji}`} onClick={() => insertEmoji(emoji)}>{emoji}</button>)}</div>}
         {sendError && <p className="friend-send-error" role="status">{sendError} Your message is kept here so you can retry.</p>}
-        <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}{draft.length >= 850 && <small className="friend-message-count">{draft.length}/1000</small>}</span><button type="button" onClick={() => void poke()} disabled={poking || !canPoke}>{poking ? 'Poking…' : socialState?.pokeBackAvailable ? 'Poke back' : 'Poke'}</button></div>
+        <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}{draft.length >= 850 && <small className="friend-message-count">{draft.length}/1000</small>}</span></div>
       </>}
       </div>
     </>}

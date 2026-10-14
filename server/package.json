@@ -12,6 +12,7 @@
     "check:security-scaling": "node scripts/checkSecurityScaling.js",
     "check:duo-activation": "node scripts/checkDuoActivation.js",
     "check:friend-spaces": "node scripts/checkFriendSpaces.js",
+    "check:poke-retirement": "node scripts/checkPokeRetirement.js",
     "check:sparks": "node scripts/checkSparks.js",
     "check:sparks-legacy-indexes": "node scripts/checkSparkLegacyIndexes.js",
     "check:sparks-storage-recovery": "node scripts/checkSparkStorageRecovery.js",

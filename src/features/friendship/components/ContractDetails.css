@@ -17,6 +17,8 @@
 .contract-detail-meter > span { height:100%; display:block; border-radius:inherit; background:var(--accent); }
 .contract-detail-duo-copy { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:8px; font-size:.6875rem; color:var(--text-muted); }
 .contract-detail-duo-copy strong { font-size:.6875rem; font-weight:550; }
+.contract-detail-share { display:inline-flex; align-items:center; gap:8px; min-height:44px; margin-top:4px; color:var(--text-secondary); font-size:.75rem; }
+.contract-detail-share:disabled { opacity:.6; }
 .contract-detail-actions { display:flex; align-items:center; gap:6px; }
 .contract-detail-action { width:44px; height:44px; display:grid; place-items:center; border-radius:12px; color:var(--text-secondary); border:1px solid var(--border-subtle); }
 .contract-detail-action.primary { background:var(--accent); color:var(--accent-ink); border-color:transparent; }

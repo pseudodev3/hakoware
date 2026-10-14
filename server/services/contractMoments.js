@@ -6,83 +6,7 @@ const Friendship = require('../models/Friendship');
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
-const MOMENT_OPEN_MS = 12 * HOUR;
 const RESOLVED_VISIBLE_MS = 6 * HOUR;
-const MOMENT_ORDER = Object.freeze(['HOT_SEAT', 'SPLIT_DECISION', 'DOUBLE_DARE']);
-
-const HOT_SEAT_PROMPTS = Object.freeze([
-  { id: 'pretend-not-care', text: 'If this contract vanished tonight, who would pretend not to care?', options: ['Me', 'Them', 'Both of us', 'Neither of us'] },
-  { id: 'dry-reply-power', text: "Who has more power to ruin the other's mood with one dry reply?", options: ['Me', 'Them', 'Both of us', 'Neither of us'] },
-  { id: 'argument-fold', text: 'Who would fold first after a serious argument?', options: ['Me', 'Them', 'Both at once', 'Nobody'] },
-  { id: 'distant-first', text: 'Who notices first when the other starts acting distant?', options: ['Me', 'Them', 'Both instantly', 'Neither'] },
-  { id: 'jealous-normal', text: 'Who is more likely to get jealous and act completely normal?', options: ['Me', 'Them', 'Both of us', 'Nobody admits it'] },
-  { id: 'reply-cares', text: 'Who secretly cares more about getting a reply?', options: ['Me', 'Them', 'Same energy', 'Neither'] },
-  { id: 'done-text-first', text: "Who would text first after saying “I'm done”?", options: ['Me', 'Them', 'Both fold', 'Nobody'] },
-  { id: 'unbothered-act', text: 'Who is better at pretending they are unbothered?', options: ['Me', 'Them', 'Both are frauds', 'Neither'] },
-  { id: 'week-disappear', text: 'Who would take it more personally if the other disappeared for a week?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'one-word-overthink', text: 'Who is more likely to overthink a one-word reply?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'energy-shift', text: "Who notices immediately when the other's energy changes?", options: ['Me', 'Them', 'Both instantly', 'Neither'] },
-  { id: 'cares-contract', text: 'Who actually cares more about keeping this contract alive?', options: ['Me', 'Them', 'Same energy', 'Ask us tomorrow'] },
-  { id: 'double-text', text: 'Who is more likely to double-text and then regret it?', options: ['Me', 'Them', 'Both of us', 'Never happening'] },
-  { id: 'left-on-read', text: 'Who takes being left on read more personally?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'story-view', text: "Who would notice first if the other stopped viewing their stories?", options: ['Me', 'Them', 'Both instantly', 'Neither'] },
-  { id: 'old-chat-reread', text: 'Who is more likely to reread old chats when the vibe feels off?', options: ['Me', 'Them', 'Both of us', 'Nobody'] },
-  { id: 'fake-fine', text: 'Who says “I’m fine” while very obviously not being fine?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'apology-first', text: 'Who is more likely to apologize first even when they still think they were right?', options: ['Me', 'Them', 'Both sometimes', 'Neither folds'] },
-  { id: 'petty-memory', text: 'Who remembers tiny offenses for way too long?', options: ['Me', 'Them', 'Both keep receipts', 'Neither'] },
-  { id: 'attention-hungry', text: 'Who secretly wants more attention than they admit?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'punctuation-overthink', text: 'Who is more likely to overthink a period at the end of a text?', options: ['Me', 'Them', 'Both of us', 'Absolutely neither'] },
-  { id: 'energy-match', text: 'Who mirrors the other person’s energy faster?', options: ['Me', 'Them', 'Both instantly', 'Neither'] },
-  { id: 'no-contact-break', text: 'Who would break a fake “no contact” first?', options: ['Me', 'Them', 'Both fold', 'Nobody'] },
-  { id: 'muted-story', text: 'Who would be more offended to find out they got muted?', options: ['Me', 'Them', 'Both of us', 'Would not care'] },
-  { id: 'screenshot-chat', text: 'Who is more likely to screenshot a conversation and send it to a friend?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'tone-detective', text: 'Who notices a tiny change in texting tone first?', options: ['Me', 'Them', 'Both instantly', 'Neither'] },
-  { id: 'jealous-denial', text: 'Who would deny being jealous even with obvious evidence?', options: ['Me', 'Them', 'Both of us', 'Nobody'] },
-  { id: 'soft-block', text: 'Who is more likely to mute instead of saying they are annoyed?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'miss-first', text: 'After a few quiet days, who misses the other first?', options: ['Me', 'Them', 'Same time', 'Nobody admits it'] },
-  { id: 'care-reveal', text: 'Who would be more embarrassed if the other knew how much they actually cared?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'status-check', text: 'Who is more likely to check if the other is online after getting ignored?', options: ['Me', 'Them', 'Both of us', 'Never'] },
-  { id: 'bad-mood-transfer', text: 'Who can accidentally ruin the other person’s mood faster?', options: ['Me', 'Them', 'Equal damage', 'Neither'] },
-  { id: 'last-seen', text: 'Who would notice the other person’s “last seen” changing first?', options: ['Me', 'Them', 'Both instantly', 'Neither'] },
-  { id: 'silent-treatment', text: 'Who is worse at pretending the silent treatment is not bothering them?', options: ['Me', 'Them', 'Both are terrible', 'Neither'] },
-  { id: 'compliment-memory', text: 'Who remembers one random compliment for months?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'first-to-call', text: 'If texting suddenly stopped working, who would call first?', options: ['Me', 'Them', 'Both at once', 'Nobody'] },
-  { id: 'secret-soft', text: 'Who is secretly softer than they act?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'read-between-lines', text: 'Who reads between the lines even when there are no lines to read between?', options: ['Me', 'Them', 'Both overthink', 'Neither'] },
-  { id: 'grudge-duration', text: 'Who can stay annoyed longer without saying why?', options: ['Me', 'Them', 'Both can drag it', 'Neither'] },
-  { id: 'attention-test', text: 'Who is more likely to go quiet just to see if the other notices?', options: ['Me', 'Them', 'Both of us', 'Never'] },
-  { id: 'replace-jealousy', text: 'Who would take it harder if the other suddenly got very close to someone new?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'unsent-message', text: 'Who has probably typed something dramatic and deleted it before sending?', options: ['Me', 'Them', 'Both of us', 'Nobody'] },
-  { id: 'too-fast-attachment', text: 'Who got emotionally invested faster than they would admit?', options: ['Me', 'Them', 'Same pace', 'Neither'] },
-  { id: 'one-more-chance', text: 'Who gives “one more chance” more easily?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'call-out-distance', text: 'Who is more likely to call out the distance instead of pretending everything is normal?', options: ['Me', 'Them', 'Both eventually', 'Neither'] },
-  { id: 'memory-details', text: 'Who remembers tiny details the other forgot they even mentioned?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'public-private', text: 'Who acts more casual in public than they do in private?', options: ['Me', 'Them', 'Both of us', 'Neither'] },
-  { id: 'ghosting-panic', text: 'If one of you vanished for 24 hours with no warning, who spirals first?', options: ['Me', 'Them', 'Both of us', 'Nobody'] }
-]);
-
-const SPLIT_DECISION_PROMPTS = Object.freeze([
-  { id: 'peace-chaos', text: 'Pick the contract energy for tonight.', options: ['Protect the peace', 'Choose chaos'] },
-  { id: 'last-word', text: 'Only one of you gets the last word. Who takes it?', options: ['Me', 'Them'] },
-  { id: 'reset-receipts', text: 'You can settle one thing without explaining. What do you choose?', options: ['Drop the grudge', 'Keep receipts'] },
-  { id: 'tomorrow-rule', text: 'Choose tomorrow’s one unwritten rule.', options: ['No disappearing', 'No dry replies'] },
-  { id: 'soft-hard', text: 'How should this contract handle the next weird moment?', options: ['Soft reset', 'Call it out'] },
-  { id: 'protect-push', text: 'If the vibe gets tense, what should win?', options: ['Protect the duo', 'Push the issue'] },
-  { id: 'say-wait', text: 'Something feels off. What is the move?', options: ['Say it now', 'Wait and watch'] },
-  { id: 'forgive-receipt', text: 'One tiny offense happens tonight. What survives?', options: ['Instant forgiveness', 'The receipt'] }
-]);
-
-const DOUBLE_DARES = Object.freeze([
-  'Use your next tiny note to roast me.',
-  'Send a 10-second voice check-in with zero context.',
-  'Say one thing you almost kept to yourself.',
-  'Give me one painfully specific compliment.',
-  'Admit the pettiest thing you noticed this week.',
-  'Make your next check-in status “chaos.”',
-  'Send the most unserious voice check-in you can.',
-  'Tell me one thing I do that is annoyingly predictable.'
-]);
-
 const idString = (value) => String(value?._id || value || '');
 
 const partnerIdFor = (friendship, userId) => (
@@ -94,58 +18,6 @@ const partnerNameFor = (friendship, userId) => (
     ? friendship.user2DisplayName || 'your partner'
     : friendship.user1DisplayName || 'your partner'
 );
-
-const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
-const sampleItems = (items, count) => [...items]
-  .map((value) => ({ value, sort: Math.random() }))
-  .sort((a, b) => a.sort - b.sort)
-  .slice(0, count)
-  .map((item) => item.value);
-
-const chooseHotSeatPrompt = async (friendshipId, season) => {
-  const [contractRecent, globalRecent] = await Promise.all([
-    ContractMoment.find({
-      friendshipId,
-      type: 'HOT_SEAT',
-      'metadata.season': season
-    })
-      .sort({ createdAt: -1 })
-      .limit(12)
-      .select('promptId')
-      .lean(),
-    ContractMoment.find({ type: 'HOT_SEAT' })
-      .sort({ createdAt: -1 })
-      .limit(80)
-      .select('promptId createdAt')
-      .lean()
-  ]);
-
-  const contractIds = new Set(contractRecent.map((item) => item.promptId).filter(Boolean));
-  const globalCooldownIds = new Set(globalRecent.slice(0, 18).map((item) => item.promptId).filter(Boolean));
-  const lastGlobalUse = new Map();
-
-  globalRecent.forEach((item, index) => {
-    if (item.promptId && !lastGlobalUse.has(item.promptId)) {
-      lastGlobalUse.set(item.promptId, index);
-    }
-  });
-
-  let candidates = HOT_SEAT_PROMPTS.filter((item) => !contractIds.has(item.id) && !globalCooldownIds.has(item.id));
-
-  if (!candidates.length) {
-    candidates = HOT_SEAT_PROMPTS.filter((item) => !contractIds.has(item.id));
-  }
-
-  if (!candidates.length) {
-    candidates = HOT_SEAT_PROMPTS;
-  }
-
-  const leastRecentlyUsed = [...candidates]
-    .sort((a, b) => (lastGlobalUse.get(b.id) ?? Number.MAX_SAFE_INTEGER) - (lastGlobalUse.get(a.id) ?? Number.MAX_SAFE_INTEGER))
-    .slice(0, Math.min(8, candidates.length));
-
-  return randomItem(leastRecentlyUsed);
-};
 
 const recordMomentEvent = (friendshipId, type, userId, metadata = {}) => ContractEvent.create({
   friendshipId,
@@ -245,84 +117,6 @@ const refreshMoment = async (moment, now = new Date()) => {
   }
 
   return current;
-};
-
-const nextMomentType = async (friendshipId, season) => {
-  const latest = await ContractMoment.findOne({
-    friendshipId,
-    'metadata.season': season
-  }).sort({ createdAt: -1 }).select('type').lean();
-  if (!latest?.type) return MOMENT_ORDER[0];
-  const index = MOMENT_ORDER.indexOf(latest.type);
-  return MOMENT_ORDER[(index + 1 + MOMENT_ORDER.length) % MOMENT_ORDER.length];
-};
-
-const createMutualMenaceMoment = async (friendship, startedByUserId, now = new Date()) => {
-  const season = Number(friendship.season?.number) || 1;
-  const active = await ContractMoment.findOne({
-    friendshipId: friendship._id,
-    status: { $in: ['BREWING', 'OPEN'] },
-    'metadata.season': season
-  }).sort({ createdAt: -1 });
-
-  if (active) return refreshMoment(active, now);
-
-  const type = await nextMomentType(friendship._id, season);
-
-  if (type === 'DOUBLE_DARE') {
-    const expiresAt = new Date(now.getTime() + MOMENT_OPEN_MS);
-    const moment = await ContractMoment.create({
-      friendshipId: friendship._id,
-      type,
-      status: 'OPEN',
-      startedByUserId: startedByUserId || null,
-      promptId: 'double-dare',
-      promptText: 'Pick one to send.',
-      options: sampleItems(DOUBLE_DARES, 3),
-      responses: [],
-      unlockAt: now,
-      expiresAt,
-      metadata: { trigger: 'MUTUAL_POKE', season, stage: 'PICKING' }
-    });
-
-    await recordMomentEvent(friendship._id, 'DOUBLE_DARE_STARTED', startedByUserId, {
-      momentId: String(moment._id),
-      expiresAt
-    }).catch(() => null);
-
-    return moment;
-  }
-
-  const prompt = type === 'SPLIT_DECISION'
-    ? randomItem(SPLIT_DECISION_PROMPTS)
-    : await chooseHotSeatPrompt(friendship._id, season);
-  const brewMinutes = type === 'SPLIT_DECISION'
-    ? 8 + Math.floor(Math.random() * 13)
-    : 15 + Math.floor(Math.random() * 21);
-  const unlockAt = new Date(now.getTime() + brewMinutes * MINUTE);
-  const expiresAt = new Date(unlockAt.getTime() + MOMENT_OPEN_MS);
-
-  const moment = await ContractMoment.create({
-    friendshipId: friendship._id,
-    type,
-    status: 'BREWING',
-    startedByUserId: startedByUserId || null,
-    promptId: prompt.id,
-    promptText: prompt.text,
-    options: prompt.options,
-    responses: [],
-    unlockAt,
-    expiresAt,
-    metadata: { trigger: 'MUTUAL_POKE', season }
-  });
-
-  await recordMomentEvent(friendship._id, `${eventPrefix(type)}_BREWING`, startedByUserId, {
-    momentId: String(moment._id),
-    unlockAt,
-    expiresAt
-  }).catch(() => null);
-
-  return moment;
 };
 
 const sharedHiddenAnswerView = (moment, base, ownResponse, partnerResponse) => {
@@ -691,10 +485,6 @@ const respondToMoment = async (friendship, userId, momentId, value) => {
 };
 
 module.exports = {
-  HOT_SEAT_PROMPTS,
-  SPLIT_DECISION_PROMPTS,
-  DOUBLE_DARES,
-  createMutualMenaceMoment,
   getMomentViews,
   respondToMoment,
   refreshMoment

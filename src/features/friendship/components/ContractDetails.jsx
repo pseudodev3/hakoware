@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Bell, Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy, X } from 'lucide-react';
+import { Check, Flame, MessageCircle, Mic, MoreHorizontal, Send, Share2, Trophy, X } from 'lucide-react';
 import { useDebt } from '../../../hooks/useDebt';
 import { getContractSides } from '../contractState';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
@@ -65,8 +65,15 @@ const checkedInAfterSeasonStart = (perspective, seasonStartedAt) => {
   return lastInteraction > seasonStart;
 };
 
-export const ContractDetails = ({ friendship, currentUserId, onAction, socialState = null, onActivitySeen }) => {
+export const ContractDetails = ({ friendship, currentUserId, onAction, socialState = null, onActivitySeen, onOpenConversation }) => {
   const [chaosShareState, setChaosShareState] = useState('');
+  const [duoSharing, setDuoSharing] = useState(false);
+  const shareThisDuo = async () => {
+    if (duoSharing) return;
+    setDuoSharing(true);
+    try { await onAction('SHARE_DUO', friendship); }
+    finally { setDuoSharing(false); }
+  };
   const [socialBusy, setSocialBusy] = useState('');
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -344,8 +351,8 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
       onAction('ARENA', friendship);
       return;
     }
-    if (checkedInToday || socialState?.pokeBackAvailable || socialState?.mutualMenace) {
-      void runSocialAction('POKE');
+    if (checkedInToday || seasonDone) {
+      onOpenConversation?.();
       return;
     }
     onAction('VOICE_CHECKIN', friendship);
@@ -357,8 +364,8 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
       ? <Share2 size={18} strokeWidth={1.65} />
       : partnerBankrupt
         ? <Flame size={18} strokeWidth={1.65} />
-        : (checkedInToday || socialState?.pokeBackAvailable || socialState?.mutualMenace)
-          ? <Bell size={18} strokeWidth={1.65} />
+        : (checkedInToday || seasonDone)
+          ? <MessageCircle size={18} strokeWidth={1.65} />
           : <Mic size={18} strokeWidth={1.65} />;
 
   const secondaryLabel = hasPartnerCheckin
@@ -367,11 +374,9 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
       ? 'Share Chaos'
       : partnerBankrupt
         ? 'Open Arena'
-        : socialState?.pokeBackAvailable
-          ? 'Poke back'
-          : checkedInToday
-            ? 'Poke'
-            : 'Voice check-in';
+        : (checkedInToday || seasonDone)
+          ? 'Open conversation'
+          : 'Voice check-in';
 
   return (
     <article ref={cardRef} id={`contract-${friendship._id || friendship.id}`} tabIndex={-1} aria-label={`Contract with ${name}`} className={`contract-details ${status.tone} ${friendship.templateId === 'CHAOS' ? 'chaos-contract' : ''} ${activeChaos ? 'chaos-active' : ''} ${wanted ? 'wanted' : ''} ${partnerBankrupt ? 'partner-bankrupt' : ''}`}>
@@ -404,6 +409,7 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
             <strong>{currentXp.toLocaleString()} / {nextXp.toLocaleString()}</strong>
           </div>
         </div>
+        <button type="button" className="contract-detail-share" disabled={duoSharing} onClick={() => void shareThisDuo()}><Share2 size={15} />{duoSharing ? 'Preparing your Duo…' : 'Share Duo'}</button>
       </div>
 
       <div className="contract-detail-actions" aria-label={`Actions for ${name}`}>
@@ -411,7 +417,6 @@ export const ContractDetails = ({ friendship, currentUserId, onAction, socialSta
           type="button"
           className={`contract-detail-action secondary ${replyOpen ? 'active' : ''}`}
           onClick={runHomeSecondary}
-          disabled={socialBusy === 'POKE' || (Boolean(socialState?.mutualMenace) && !hasPartnerCheckin)}
           aria-label={secondaryLabel}
           title={secondaryLabel}
         >

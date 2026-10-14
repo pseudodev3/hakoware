@@ -31,18 +31,13 @@ const { normalizeUsername } = require('../services/username');
 const { recapView } = require('../services/clientViews');
 const { sendRouteError } = require('../services/httpError');
 const {
-  POKE_COOLDOWN_MS,
-  MUTUAL_MENACE_MS,
   REACTIONS,
   REPLY_MAX_LENGTH,
   buildSocialPresence,
   findLatestPartnerCheckin,
-  latestOwnPoke,
-  findReplyForCheckin,
-  findRecentPartnerPoke,
-  findRecentMutualPoke
+  findReplyForCheckin
 } = require('../services/socialPresence');
-const { createMutualMenaceMoment, respondToMoment } = require('../services/contractMoments');
+const { respondToMoment } = require('../services/contractMoments');
 const { FEED_MS: AFTER_HOURS_CONVERSION_WINDOW_MS, scopeFor: afterHoursScopeFor } = require('../services/afterHours');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -221,86 +216,10 @@ router.post('/:id/moments/:momentId/respond', auth, async (req, res) => {
   }
 });
 
-router.post('/:id/poke', auth, async (req, res) => {
-  try {
-    const friendship = await Friendship.findById(req.params.id);
-    if (!friendship) return res.status(404).json({ msg: 'Contract not found' });
-    if (friendship.status !== 'ACTIVE' || friendship.season?.status !== 'ACTIVE') {
-      return res.status(400).json({ msg: 'This contract is not active' });
-    }
-    if (!ensureParticipant(friendship, req.user.id)) return res.status(403).json({ msg: 'Not authorized' });
-
-    const now = new Date();
-    const [lastPoke, recentPartnerPoke] = await Promise.all([
-      latestOwnPoke(friendship._id, req.user.id),
-      findRecentPartnerPoke(friendship, req.user.id, now)
-    ]);
-
-    if (lastPoke) {
-      const nextAvailableAt = new Date(new Date(lastPoke.createdAt).getTime() + POKE_COOLDOWN_MS);
-      if (nextAvailableAt > now) {
-        return res.status(429).json({ msg: 'You already poked them. Give it a little time.', nextAvailableAt });
-      }
-    }
-
-    const partnerId = friendship.user1.toString() === req.user.id ? friendship.user2 : friendship.user1;
-    const actor = await User.findById(req.user.id).select('displayName');
-    const existingMutual = recentPartnerPoke
-      ? await findRecentMutualPoke(friendship._id, recentPartnerPoke.createdAt)
-      : null;
-    const mutualTriggered = Boolean(recentPartnerPoke && !existingMutual);
-    const mutualExpiresAt = mutualTriggered ? new Date(now.getTime() + MUTUAL_MENACE_MS) : null;
-
-    const writes = [
-      recordEvent(friendship._id, 'POKE', {
-        userId: req.user.id,
-        metadata: { targetUserId: String(partnerId) }
-      }),
-      Notification.create({
-        toUserId: partnerId,
-        fromUserId: req.user.id,
-        type: mutualTriggered ? 'MUTUAL_POKE' : 'POKE',
-        title: mutualTriggered ? 'Mutual Menace' : 'Poke',
-        message: mutualTriggered
-          ? `${actor?.displayName || 'Your contract partner'} poked you back. Mutual Menace is live.`
-          : `${actor?.displayName || 'Your contract partner'} poked you. Your move.`,
-        friendshipId: friendship._id
-      })
-    ];
-
-    if (mutualTriggered) {
-      writes.push(recordEvent(friendship._id, 'MUTUAL_POKE', {
-        userId: req.user.id,
-        metadata: {
-          partnerPokeEventId: String(recentPartnerPoke._id),
-          expiresAt: mutualExpiresAt
-        }
-      }));
-    }
-
-    await Promise.all(writes);
-
-    let moment = null;
-    if (mutualTriggered) {
-      moment = await createMutualMenaceMoment(friendship, req.user.id, now);
-    }
-
-    return res.json({
-      success: true,
-      nextAvailableAt: new Date(now.getTime() + POKE_COOLDOWN_MS),
-      mutualMenace: mutualTriggered ? { expiresAt: mutualExpiresAt } : null,
-      moment: moment ? {
-        type: moment.type,
-        status: moment.status,
-        unlockAt: moment.unlockAt,
-        expiresAt: moment.expiresAt
-      } : null
-    });
-  } catch (err) {
-    console.error('Poke contract failed:', err.message);
-    return sendRouteError(res, err, 'Could not poke this contract');
-  }
-});
+// Retained so older installed clients receive a clear response without creating events.
+router.post('/:id/poke', auth, (_req, res) => res.status(410).json({
+  msg: 'Poke has been retired. Open your conversation instead.', code: 'POKE_RETIRED'
+}));
 
 router.get('/meta', auth, (req, res) => {
   res.json({ templates: Object.values(TEMPLATES), worldEvent: getWorldEvent() });

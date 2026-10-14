@@ -197,7 +197,9 @@ const respondToOffer = async (actorId, tradeId, action) => {
   if (action === 'ACCEPT') {
     await participantContract(trade.friendshipId, actorId);
     if (!await holdCard(trade, 'RECIPIENT')) {
-      trade = await readTrade(tradeId);
+      // Another acceptance can deliver this receipt before committing ACCEPTED.
+      // Finish its durable decision before treating the retry as missing a card.
+      trade = await reconcileTrade(tradeId);
       if (trade.status === 'ACCEPTED') return trade;
       if (trade.status !== 'PENDING') fail(409, `This offer is ${trade.status.toLowerCase()}`);
       fail(409, 'You no longer have the requested card. Counter or decline instead.');

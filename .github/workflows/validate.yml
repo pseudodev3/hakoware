@@ -93,6 +93,10 @@ jobs:
         working-directory: server
         run: npm run check:friend-spaces
 
+      - name: Check Poke retirement and historical compatibility
+        working-directory: server
+        run: npm run check:poke-retirement
+
       - name: Check private Sparks, photos, reactions and reply recovery
         working-directory: server
         run: npm run check:sparks

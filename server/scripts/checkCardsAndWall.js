@@ -13,6 +13,7 @@ const AuraTransaction = require('../models/AuraTransaction');
 const Notification = require('../models/Notification');
 const RoomWall = require('../models/RoomWall');
 const { settleExpiredTrades } = require('../services/cardTrading');
+const { reconcileTrade } = require('../services/cardTradeEscrow');
 const { CARD_CATALOG } = require('../services/cardCatalog');
 assert.equal(Object.keys(CARD_CATALOG).length, 12);
 assert.equal(Object.values(CARD_CATALOG).filter((card) => card.purchasable).length, 4);
@@ -158,7 +159,10 @@ const run = async () => {
         }),
       ),
     );
-    assert.ok(accepts.every((item) => item.status === 200));
+    assert.ok(
+      accepts.every((item) => item.status === 200),
+      `Concurrent accept responses: ${JSON.stringify(accepts)}`,
+    );
     assert.equal(copies(await inventory(one), 'ORBIT'), 2);
     assert.equal(copies(await inventory(two), 'PURIFY'), 3);
     assert.equal(copies(await inventory(two), 'ORBIT'), 0);
@@ -322,6 +326,56 @@ const run = async () => {
     assert.equal(snapshot.cards.find((card) => card.id === 'ORBIT').purchasable, false);
     assert.equal(JSON.stringify(snapshot).includes('senderId'), false);
     assert.equal(JSON.stringify(snapshot).includes(String(two._id)), false);
+    const [retrySender, retryRecipient] = await User.create([
+      { email: 'retry-sender@example.test', password: 'fixture-only', displayName: 'Sender', inventory: ['ORBIT'] },
+      { email: 'retry-recipient@example.test', password: 'fixture-only', displayName: 'Recipient', inventory: ['PURIFY'] },
+    ]);
+    const retryFriendship = await Friendship.create({
+      user1: retrySender._id, user2: retryRecipient._id, status: 'ACTIVE', templateId: 'DONT_GHOST',
+    });
+    const retryOffer = await request(retrySender, '/cards/trades', {
+      friendshipId: String(retryFriendship._id), clientId: randomUUID(), offeredCardId: 'ORBIT', requestedCardId: 'PURIFY',
+    });
+    assert.equal(retryOffer.status, 200);
+    // Force a retry to observe cards already delivered by another acceptance,
+    // just before that acceptance commits the trade's terminal status.
+    const originalReservation = User.findOneAndUpdate;
+    let deliveryCheckpointReached = false;
+    User.findOneAndUpdate = function (...args) {
+      const [filter] = args;
+      if (deliveryCheckpointReached || String(filter._id) !== String(retryRecipient._id)
+        || String(filter['cardTradeReceipts.tradeId']?.$ne) !== retryOffer.data.tradeId) {
+        return originalReservation.apply(this, args);
+      }
+      deliveryCheckpointReached = true;
+      return { select: async (selection) => {
+        assert.ok(await originalReservation.apply(this, args).select(selection));
+        const originalSettlement = CardTrade.updateOne;
+        CardTrade.updateOne = function (query, update, ...options) {
+          if (String(query._id) === retryOffer.data.tradeId && update.$set?.status === 'ACCEPTED') {
+            return Promise.resolve({ acknowledged: true, matchedCount: 0, modifiedCount: 0 });
+          }
+          return originalSettlement.call(this, query, update, ...options);
+        };
+        try { await reconcileTrade(retryOffer.data.tradeId); }
+        finally { CardTrade.updateOne = originalSettlement; }
+        return null;
+      } };
+    };
+    let deliveryRetry;
+    try {
+      deliveryRetry = await request(retryRecipient, `/cards/trades/${retryOffer.data.tradeId}/respond`, { action: 'ACCEPT' });
+    } finally { User.findOneAndUpdate = originalReservation; }
+    assert.ok(deliveryCheckpointReached);
+    assert.equal(deliveryRetry.status, 200, JSON.stringify(deliveryRetry));
+    assert.equal(deliveryRetry.data.status, 'ACCEPTED');
+    const deliveryReplays = await Promise.all(Array.from({ length: 4 }, () =>
+      request(retryRecipient, `/cards/trades/${retryOffer.data.tradeId}/respond`, { action: 'ACCEPT' })));
+    assert.ok(deliveryReplays.every(item => item.status === 200));
+    assert.deepEqual(await inventory(retrySender), ['PURIFY']);
+    assert.deepEqual(await inventory(retryRecipient), ['ORBIT']);
+    assert.equal(await ContractEvent.countDocuments({ friendshipId: retryFriendship._id, type: 'CARD_TRADE_ACCEPTED' }), 1);
+    assert.equal(await Notification.countDocuments({ cardTradeId: retryOffer.data.tradeId, title: 'Card trade accepted' }), 1);
     // Ended contracts cancel pending offers and return reserved inventory exactly once.
     await Friendship.updateOne(
       { _id: friendship._id },

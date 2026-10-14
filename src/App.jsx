@@ -6,7 +6,6 @@ import {
   getContractMeta,
   getSocialPresence,
   getUserFriendships,
-  pokeContract,
   reactToLatestCheckin,
   replyToLatestCheckin,
   respondToContractMoment
@@ -22,6 +21,7 @@ import { ContractsView } from './features/friendship/components/ContractsView';
 import { ContractRecapModal } from './features/friendship/components/ContractRecapModal';
 import { GameMoment } from './features/friendship/components/GameMoment';
 import { GameSoundManager } from './shared/components/GameSoundManager';
+import { duoShareFeedback, shareDuo } from './services/duoSharingService';
 import { CheckinModal } from './features/debt/components/CheckinModal';
 import { VoiceCheckinModal } from './features/debt/components/VoiceCheckinModal';
 import { LandingPage } from './features/landing/LandingPage';
@@ -270,25 +270,16 @@ function MainApp({ showToast }) {
       return result;
     }
 
-    if (type === 'POKE') {
-      const result = await pokeContract(friendshipId);
-      const awakened = result.moment?.type === 'SPLIT_DECISION'
-        ? 'Split Decision woke up.'
-        : result.moment?.type === 'DOUBLE_DARE'
-          ? 'Double Dare woke up.'
-          : result.moment?.type === 'HOT_SEAT'
-            ? 'Hot Seat woke up.'
-            : null;
-      const pokeMessage = result.success
-        ? result.mutualMenace
-          ? awakened
-            ? `Mutual Menace. ${awakened}`
-            : 'Mutual Menace.'
-          : 'Poked them.'
-        : result.error || 'Could not poke them';
-      showToast(pokeMessage, result.success ? 'SUCCESS' : 'ERROR');
-      if (result.success) await loadSocial();
-      return result;
+    if (type === 'SHARE_DUO') {
+      try {
+        const result = await shareDuo(friendship, user);
+        const feedback = duoShareFeedback(result);
+        if (feedback) showToast(feedback.message, feedback.type);
+        return result;
+      } catch (error) {
+        showToast(error.message || 'Could not share your Duo', 'ERROR');
+        return { success: false };
+      }
     }
 
     if (type === 'REPLY') {

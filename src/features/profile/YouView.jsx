@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Share2, Zap, Layers } from 'lucide-react';
+import { Camera, Clock3, Eye, EyeOff, Flame, LogOut, Zap, Layers } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { returnTheFavor } from '../../services/auraService';
 import { api } from '../../lib/api';
 import { Button } from '../../shared/components/Button';
 import { getYouSnapshot, peekYouSnapshot } from '../../services/prefetchService';
-import { shareHakoware } from '../../lib/share';
-import { buildDuoShareCard } from '../../lib/duoShareCard';
 import { prepareAvatarImage } from '../../lib/avatarImage';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import { PageHeading } from '../../shared/components/PageHeading';
@@ -15,7 +13,6 @@ import { ProfileShowcase } from './ProfileShowcase';
 import { GameSoundSettings } from './GameSoundSettings';
 import './YouView.css';
 
-const typeLabel = (type) => String(type || '').replaceAll('_', ' ').toLowerCase();
 const daysLeft = (date) => Math.max(1, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
 
 export const YouView = ({ friendships, showToast, onNavigate }) => {
@@ -66,13 +63,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
   const totalDuoXP = friendships.reduce((sum, item) => sum + (item.duoXP || 0), 0);
   const reputation = aura.reputation || { name: 'Spark', lifetimeEarned: aura.totalEarned || 0, nextRankAt: null, progress: 0 };
 
-  const partnerFor = (friendship) => {
-    const isUser1 = String(friendship.user1?._id || friendship.user1) === String(userId);
-    return isUser1 ? friendship.user2 : friendship.user1;
-  };
-
-  const partnerName = (friendship) => partnerFor(friendship)?.displayName || 'Contract partner';
-
   const changeAvatar = async (event) => {
     const sourceFile = event.target.files?.[0];
     event.target.value = '';
@@ -115,49 +105,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       await refresh();
     } catch (error) {
       showToast?.(error.message || 'Could not return the favor', 'ERROR');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const shareStrongestDuo = async () => {
-    if (!strongest) return showToast?.('Start a contract first.', 'ERROR');
-
-    setBusy('share-duo');
-    try {
-      const partnerUser = partnerFor(strongest);
-      const partner = partnerUser?.username ? `@${partnerUser.username}` : partnerName(strongest);
-      const userIdentity = user.username ? `@${user.username}` : user.displayName;
-      const blob = await buildDuoShareCard({
-        userName: userIdentity,
-        partnerName: partner,
-        duoLevel: strongest.duoLevel || 1,
-        duoTitle: strongest.duoTitle || 'New Contract',
-        duoXP: strongest.duoXP || 0,
-        templateName: typeLabel(strongest.templateId || 'Contract'),
-        seasonNumber: strongest.season?.number || 1,
-        seasonStatus: strongest.season?.status,
-        duoName: strongest.identity?.name,
-        palette: strongest.identity?.palette,
-        cover: strongest.identity?.cover
-      });
-      const file = new File([blob], 'hakoware-duo-card.png', { type: 'image/png' });
-      const result = await shareHakoware({
-        source: 'DUO',
-        title: 'Hakoware Duo',
-        text: `${userIdentity} × ${partner} · Duo Lv. ${strongest.duoLevel || 1} · ${strongest.duoTitle || 'New Contract'}`,
-        url: '',
-        files: [file]
-      });
-
-      if (result.cancelled) return;
-      if (result.success && result.method === 'CLIPBOARD') {
-        showToast?.('Duo card text copied - image sharing is not supported here', 'SUCCESS');
-      } else if (!result.success) {
-        showToast?.(result.error || 'Could not share your Duo', 'ERROR');
-      }
-    } catch (error) {
-      showToast?.(error.message || 'Could not build your Duo card', 'ERROR');
     } finally {
       setBusy(null);
     }
@@ -216,11 +163,6 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
               )}
             </div>
           </div>
-          {strongest && (
-            <Button variant="secondary" size="sm" icon={Share2} loading={busy === 'share-duo'} onClick={shareStrongestDuo}>
-              Share Duo
-            </Button>
-          )}
         </div>
 
         <ProfileShowcase user={user} onChanged={async () => { await refreshBootstrap(); await refresh({ silent: true }); }} onNavigate={onNavigate} />
