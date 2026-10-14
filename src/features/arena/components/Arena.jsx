@@ -11,6 +11,7 @@ import { getArenaSnapshot, peekArenaSnapshot } from '../../../services/prefetchS
 import { CardCollection } from '../../cards/CardCollection';
 import { PageHeading } from '../../../shared/components/PageHeading';
 import { ViewTabs } from '../../../shared/components/ViewTabs';
+import { DuelSpace } from '../../duels/DuelSpace';
 import './Arena.css';
 
 const hunterBondFor = (amount) => Math.max(5, Math.min(50, Math.ceil((Number(amount) || 0) * 0.1)));
@@ -32,7 +33,7 @@ const grudgeTimeLeft = (date) => {
   return days > 0 ? `${days}d ${hours}h left` : `${Math.max(1, hours)}h left`;
 };
 
-export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initialView = 'cards' }) => {
+export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, focusDuelId, initialView = 'cards' }) => {
   const { user, refreshUser } = useAuth();
   const cachedArena = peekArenaSnapshot();
   const [tab, setTab] = useState(initialView);
@@ -117,16 +118,16 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
 
   return (
     <div className="arena-view">
-      <PageHeading eyebrow="Arena" title={tab === 'cards' ? <>A few good<br /><span>tricks.</span></> : <>Make your<br /><span>move.</span></>} description={tab === 'cards' ? 'Your tools, your trades, your next move.' : 'Every move leaves a mark. Choose yours.'}>
+      {!(tab === 'duels' && focusDuelId) && <PageHeading eyebrow="Arena" title={tab === 'duels' ? <>Play your<br /><span>person.</span></> : tab === 'cards' ? <>A few good<br /><span>tricks.</span></> : <>Make your<br /><span>move.</span></>} description={tab === 'duels' ? 'A short card game. A little friendly rivalry.' : tab === 'cards' ? 'Your tools, your trades, your next move.' : 'Every move leaves a mark. Choose yours.'}>
         {tab === 'bounties' && bankruptFriendships.length > 0 && (
           <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)}>
             Place bounty
           </Button>
         )}
-      </PageHeading>
+      </PageHeading>}
 
 
-      {tab !== 'cards' && <div className="arena-meta-line" aria-label="Arena summary">
+      {!['cards', 'duels'].includes(tab) && <div className="arena-meta-line" aria-label="Arena summary">
         <span><b>{hunterProfile.rank || 'Rookie Hunter'}</b> · {hunterProfile.rep || 0} Rep</span>
         <span><b>{openTargets}</b> open target{openTargets === 1 ? '' : 's'}</span>
         <span><b>{bountyPool}</b> Aura on the board</span>
@@ -134,10 +135,10 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, initia
         {activeAnomalies > 0 && <span className="danger"><b>{activeAnomalies}</b> live anomal{activeAnomalies === 1 ? 'y' : 'ies'}</span>}
       </div>}
 
-      <ViewTabs id="arena" label="Arena views" className="arena-tabs" value={tab} onChange={(value) => { setTab(value); onNavigate?.('arena', { section: value }); }} items={[{ value: 'cards', label: 'Cards' }, { value: 'bounties', label: 'Bounties' }, { value: 'grudges', label: 'Grudges', count: grudges.length }, { value: 'shame', label: 'Shame', count: shame.length }]} />
+      {!(tab === 'duels' && focusDuelId) && <ViewTabs id="arena" label="Arena views" className="arena-tabs" value={tab} onChange={(value) => { setTab(value); onNavigate?.('arena', { section: value }); }} items={[{ value: 'cards', label: 'Cards' }, { value: 'duels', label: 'Duels' }, { value: 'bounties', label: 'Bounties' }, { value: 'grudges', label: 'Grudges', count: grudges.length }, { value: 'shame', label: 'Shame', count: shame.length }]} />}
 
-      <div role="tabpanel" id={`arena-panel-${tab}`} aria-labelledby={`arena-tab-${tab}`}>
-      {tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
+      <div role={tab === 'duels' && focusDuelId ? 'region' : 'tabpanel'} id={`arena-panel-${tab}`} aria-label={tab === 'duels' && focusDuelId ? 'Friend duel' : undefined} aria-labelledby={tab === 'duels' && focusDuelId ? undefined : `arena-tab-${tab}`}>
+      {tab === 'duels' ? <DuelSpace key={userId} focusDuelId={focusDuelId} onNavigate={onNavigate} /> : tab === 'cards' ? <CardCollection friendships={friendships} showToast={showToast} focusTradeId={focusTradeId} /> : tab === 'bounties' ? (
         <section className="arena-panel">
           <div className="arena-panel-head">
             <div><Target size={18} strokeWidth={1.8} /><strong>Live hunts</strong></div>

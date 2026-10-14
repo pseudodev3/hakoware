@@ -9,6 +9,7 @@ import { SparkPreview } from '../sparks/SparkPreview';
 import { getBankruptPartner, getContractSides } from '../friendship/contractState';
 import './HomeView.css';
 import { HomeReunion } from './HomeReunion';
+import { DuelReturn } from '../duels/DuelReturn';
 
 const contractState = (friendship, userId) => {
   const user1Id = friendship.user1?._id || friendship.user1;
@@ -195,6 +196,7 @@ export const HomeView = ({ user, friendships, pendingInvitations, pendingOutboun
       <HomeReunion friendship={sorted[0]} userId={userId} socialState={socialContracts[sorted[0]._id || sorted[0].id]} onOpenFriend={onOpenFriend} onAction={onAction} />
 
       <NextMove friendships={sorted} userId={userId} socialContracts={socialContracts} onOpenFriend={onOpenFriend} onAction={onAction} firstOnly />
+      <DuelReturn userId={userId} onNavigate={onNavigate} />
 
       {pendingInvitations.length > 0 && (() => {
         const invitation = pendingInvitations[0];

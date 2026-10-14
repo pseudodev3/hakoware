@@ -97,6 +97,10 @@ jobs:
         working-directory: server
         run: npm run check:poke-retirement
 
+      - name: Check friend duels, hidden hands and concurrent turns on standalone MongoDB
+        working-directory: server
+        run: npm run check:duels
+
       - name: Check private Sparks, photos, reactions and reply recovery
         working-directory: server
         run: npm run check:sparks

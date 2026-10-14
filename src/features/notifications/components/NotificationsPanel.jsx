@@ -15,7 +15,7 @@ const notificationId = (item) => String(item.id || item._id);
 const destinationFor = (type = '') => {
   if (type === 'COSMETIC_GIFT') return 'you';
   if (type.startsWith('AFTER_HOURS_') || type.startsWith('SPARK_')) return 'sparks';
-  if (type === 'CARD_TRADE' || type.startsWith('BOUNTY_')) return 'arena';
+  if (type === 'CARD_TRADE' || type.startsWith('BOUNTY_') || type.startsWith('DUEL_')) return 'arena';
   if (type === 'VOICE_NOTE') return 'voice';
   return 'contracts';
 };
@@ -167,6 +167,7 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
     }
     if (destination === 'voice') { setFilter('voice'); setExpanded(null); return; }
     if (notification.cosmeticOrderId) { onNavigate?.('you', { cosmeticOrderId: notification.cosmeticOrderId }); onClose(); return; }
+    if (notification.duelId) { onNavigate?.('arena', { section: 'duels', duelId: notification.duelId }); onClose(); return; }
     if (notification.cardTradeId) { onNavigate?.('arena', { section: 'cards', focusTradeId: notification.cardTradeId }); onClose(); return; }
     if (notification.sparkPostId) { onNavigate?.('sparks', { focusPostId: notification.sparkPostId, focusReplyId: notification.sparkReplyId }); onClose(); return; }
     if (notification.wallPieceId || notification.type === 'AFTER_HOURS_WALL') { onNavigate?.('sparks', { legacy: true }); onClose(); return; }
@@ -197,6 +198,10 @@ export const NotificationsPanel = ({ isOpen, onClose, onUnreadCountChange, onWor
       case NOTIFICATION_TYPES.CONTRACT_ENDED: return <UserMinus size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.BOUNTY_PLACED:
       case NOTIFICATION_TYPES.BOUNTY_HUNTING: return <Swords size={16} strokeWidth={1.8} />;
+      case 'DUEL_INVITE':
+      case 'DUEL_TURN':
+      case 'DUEL_RESULT':
+      case 'DUEL_UPDATE': return <Swords size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.BOUNTY_REWARD: return <Zap size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.BOUNTY_REFUND: return <RotateCcw size={16} strokeWidth={1.8} />;
       case NOTIFICATION_TYPES.AFTER_HOURS_CALLOUT:

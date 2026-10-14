@@ -14,6 +14,7 @@ const Notification = require('../models/Notification');
 const PendingInvite = require('../models/PendingInvite');
 const VoiceNote = require('../models/VoiceNote');
 const CardTrade = require('../models/CardTrade');
+const DuelRoom = require('../models/DuelRoom');
 const CardPurchase = require('../models/CardPurchase');
 const RoomWall = require('../models/RoomWall');
 const SparkPost = require('../models/SparkPost');
@@ -370,6 +371,7 @@ router.delete('/reset', async (req, res) => {
       Notification.deleteMany({ $or: [{ toUserId: { $in: ids } }, { fromUserId: { $in: ids } }, { friendshipId: { $in: friendshipIds } }] }),
       AuraTransaction.deleteMany({ userId: { $in: ids } }),
       CardTrade.deleteMany({ $or: [{ senderId: { $in: ids } }, { recipientId: { $in: ids } }] }),
+      DuelRoom.deleteMany({ _id: { $in: friendshipIds } }),
       CardPurchase.deleteMany({ userId: { $in: ids } }),
       RoomWall.deleteMany({ scopeKey: 'test:' + req.user.id }),
       WorldActivity.deleteMany({ scopeKey: 'test:' + req.user.id }),

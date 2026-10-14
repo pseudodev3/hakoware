@@ -1,6 +1,7 @@
 
 .arena-view { max-width:1120px; margin:0 auto; display:flex; flex-direction:column; gap:20px; }
-.arena-tabs { display:flex; gap:24px; border-bottom:1px solid var(--border-subtle); }
+.arena-tabs { display:flex; gap:clamp(12px,3vw,24px); border-bottom:1px solid var(--border-subtle); overflow-x:auto; padding:3px; scrollbar-width:thin; }
+.arena-tabs button { flex-shrink:0; white-space:nowrap; }
 .arena-tabs button { display:flex; align-items:center; justify-content:center; gap:7px; min-height:48px; padding:10px 2px; border-bottom:2px solid transparent; color:var(--text-muted); font-size:.8125rem; font-weight:550; }
 .arena-tabs button.active { color:var(--text-primary); border-bottom-color:var(--accent-text); }
 .arena-tabs button > span { font-size:.6875rem; font-weight:600; }

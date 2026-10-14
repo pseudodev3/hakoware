@@ -220,6 +220,10 @@ function MainApp({ showToast }) {
     const query = new URLSearchParams({ view: activeTab });
     if (activeTab === 'sparks' && params.get('spark')) query.set('spark', params.get('spark'));
     if (activeTab === 'sparks' && params.get('reply')) query.set('reply', params.get('reply'));
+    if (activeTab === 'arena') {
+      query.set('section', params.get('section') || 'cards');
+      if (params.get('duel')) query.set('duel', params.get('duel'));
+    }
     if (options.focusEventId) query.set('event', options.focusEventId);
     if (options.contract) query.set('contract', '1');
     returnFocusRef.current = activeTab === 'sparks' ? 'sparks-heading' : `friend-open-${friendship._id || friendship.id}`;
@@ -242,7 +246,7 @@ function MainApp({ showToast }) {
     }
     const query = new URLSearchParams({ view: tab });
     if (tab === 'you' && options.cosmeticOrderId) query.set('cosmetic_order', options.cosmeticOrderId);
-    if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); }
+    if (tab === 'arena') { query.set('section', options.section || 'cards'); if (options.focusTradeId) query.set('trade', options.focusTradeId); if (options.duelId) query.set('duel', options.duelId); }
     if (tab === 'sparks' && options.focusPostId) query.set('spark', options.focusPostId);
     if (tab === 'sparks' && options.focusReplyId) query.set('reply', options.focusReplyId);
     if (tab === 'sparks' && (previousRoom || options.legacy)) { query.set('legacy', '1'); if (options.focusActivityId) query.set('activity', options.focusActivityId); }
@@ -257,6 +261,10 @@ function MainApp({ showToast }) {
   }, [friendKey, activeTab]);
 
   const handleAction = async (type, friendship, payload = null) => {
+    if (type === 'DUEL') {
+      navigateTo('arena', { section: 'duels', duelId: friendship._id || friendship.id });
+      return { success: true };
+    }
     if (type === 'ARENA') {
       navigateTo('arena', { section: 'bounties' });
       return { success: true };
@@ -376,7 +384,7 @@ function MainApp({ showToast }) {
           socialState={socialPresence.contracts?.[openedFriend._id || openedFriend.id]}
           focusEventId={params.get('event')}
           initialContract={params.get('contract') === '1'}
-          onBack={() => navigateTo(activeTab, { replace: true, focusPostId: activeTab === 'sparks' ? params.get('spark') : null, focusReplyId: activeTab === 'sparks' ? params.get('reply') : null })}
+          onBack={() => navigateTo(activeTab, { replace: true, section: params.get('section'), duelId: params.get('duel'), focusPostId: activeTab === 'sparks' ? params.get('spark') : null, focusReplyId: activeTab === 'sparks' ? params.get('reply') : null })}
           onAction={handleAction}
           onRefresh={loadData}
           onActivitySeen={markActivitySeen}
@@ -436,7 +444,7 @@ function MainApp({ showToast }) {
             showToast={showToast}
           />
         )}
-        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} onNavigate={navigateTo} focusTradeId={params.get('trade')} initialView={['bounties','grudges','shame'].includes(params.get('section')) ? params.get('section') : 'cards'} />}
+        {!friendKey && activeTab === 'arena' && <Arena friendships={friendships} showToast={showToast} onNavigate={navigateTo} focusTradeId={params.get('trade')} focusDuelId={params.get('duel')} initialView={['duels','bounties','grudges','shame'].includes(params.get('section')) ? params.get('section') : 'cards'} />}
         {!friendKey && activeTab === 'you' && <YouView friendships={friendships} showToast={showToast} onNavigate={navigateTo} />}
         </DeferredView>
       </motion.div>

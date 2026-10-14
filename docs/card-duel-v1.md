@@ -1,6 +1,6 @@
-# Friend card duel — proposed v1
+# Friend card duel — v1
 
-Selected for exploration on 2026-10-06. No game code or new Arena screen is implemented. These rules are a concrete version to try with two people, not a claim that balance or retention has been proven.
+Selected for exploration on 2026-10-06 and approved for implementation on 2026-10-14. The first playable version adds Arena Duels, friend invitations, private hands, turns, results and rematches. See [implementation and validation](friend-duels-review.md). Balance and retention still need voluntary playtesting.
 
 ## What you do
 
@@ -59,10 +59,10 @@ The best card is vulnerable when exposed. Peeking does not guarantee a later gue
 
 Allow one pending/active round per duo. A declined or cancelled invitation has no penalty. Do not reshuffle an accepted game to fish for a better hand. A round can be abandoned explicitly; an inactive round can be archived after seven days without awarding a win or touching contract state. Show when a move was made and send one notification for a new turn, with a direct destination; do not nag on a timer.
 
-An eventual implementation needs participant-only server-authoritative shuffling, held cards and effects; stable retry keys; serialized turn changes; and an Activity target that cannot clear a newer turn notification from an older view. During play, return only the viewer's own hand, their authorized Watcher snapshots and public events. Do not expose the hidden draw pile or live opponent hand through normal match reads. After the round, reveal the remaining held cards and decisive discard. This is an implementation constraint, not a new product flow.
+The implementation uses participant-only server-authoritative shuffling, held cards and effects; stable retry keys; atomic revision checks; and Activity acknowledgement scoped to the exact match and observed revision. During play, responses include only the viewer's own hand, their authorized Watcher memory and public events. The hidden draw pile and live opponent hand never enter normal match reads. After the round, the remaining held cards and decisive discard are revealed.
 
 ## What to test before building progression
 
 Try this exact deck with a pair of friends. Check whether either wants to rematch without rewards, whether the two-card choice is understood, and whether asynchronous waiting ruins the pace. A correct opening Flare can end the round before the other player acts; that is a real risk. Conditional on choosing an opening Flare, an optimal guess can hit about 20%; an always-Flare opener can produce such an early result in about 11.5% of initial deals. These are combinatorial estimates, not observed play or retention data.
 
-The next step is a playable rules prototype and voluntary rematch feedback. Do not assume the game solves a circle with no active friend; any practice opponent must be visibly practice. Do not add a shop advantage or progression layer before the basic round proves enjoyable.
+The next step is voluntary playtesting and rematch feedback. Do not assume the game solves a circle with no active friend; any future practice opponent must be visibly practice. Do not add a shop advantage or progression layer before the basic round proves enjoyable.

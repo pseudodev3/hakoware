@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowDown, ArrowLeft, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, Palette, ScrollText, Send, Smile, X } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowLeft, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, Palette, ScrollText, Send, Smile, Swords, X } from 'lucide-react';
 import { getContractTimeline, sendContractMessage, markContractTimelineRead } from '../../../services/friendshipService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { ContractDetails } from './ContractDetails';
@@ -290,7 +290,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         </form>}
         {emojiOpen && !voiceOpen && <div className="friend-emoji-tray" role="group" aria-label="Message emojis" onKeyDown={(event) => { if (event.key === 'Escape') { setEmojiOpen(false); composerRef.current?.focus({ preventScroll: true }); } }}>{EMOJIS.map((emoji) => <button type="button" key={emoji} aria-label={`Insert ${emoji}`} onClick={() => insertEmoji(emoji)}>{emoji}</button>)}</div>}
         {sendError && <p className="friend-send-error" role="status">{sendError} Your message is kept here so you can retry.</p>}
-        <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}{draft.length >= 850 && <small className="friend-message-count">{draft.length}/1000</small>}</span></div>
+        <div className="friend-composer-context"><span>{sending ? 'Sending…' : room.checkin?.reason || 'Messages stay in your shared space.'}{draft.length >= 850 && <small className="friend-message-count">{draft.length}/1000</small>}</span><button type="button" className="friend-duel-entry" onClick={() => onAction('DUEL', friendship)}><Swords size={14} />Card duel</button></div>
       </>}
       </div>
     </>}
