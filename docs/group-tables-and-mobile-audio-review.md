@@ -22,7 +22,7 @@ There is no entry cost or wager. Inventory cards and Duo progress are unaffected
 
 ## Mobile sound
 
-iPhone and iPad now use one reusable HTML audio element with a generated PCM WAV sprite, activated during a trusted touch/click. This uses media playback instead of relying solely on Web Audio's potentially silent ambient route. Supported Audio Session APIs select playback. Desktop and Android retain the existing Web Audio path. The same cue definitions generate the mobile asset with `npm run generate:game-audio`; all cues are shorter than half a second, have quiet peaks and silent separation, and stop at their individual boundaries.
+iPhone and iPad use one reusable HTML audio element, activated during a trusted touch/click. Each cue is a complete generated PCM WAV file; its native ending replaces sprite seeking and timed pauses, which could truncate later cues on mobile. This uses media playback instead of relying solely on Web Audio's potentially silent ambient route. Supported Audio Session APIs select playback. Desktop and Android retain the existing Web Audio path. The same cue definitions generate mobile assets with `npm run generate:game-audio`; all cues are shorter than half a second with quiet peaks and silent tails.
 
 Game sounds remain opt-in for each account and device. Muting, hiding the app and changing accounts stop playback and pending cues. Existing cooldowns and event deduplication remain. A failed explicit preview reports failure and can be retried on a fresh tap. The settings mention the phone's media volume. There is no background music or typing/navigation sound.
 

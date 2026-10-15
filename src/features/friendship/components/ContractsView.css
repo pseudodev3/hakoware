@@ -42,4 +42,4 @@
 .contracts-empty h2 { font-size:1.75rem; }
 .contracts-empty p { color:var(--text-secondary); font-size:.9375rem; line-height:1.6; }
 @media(max-width:1100px) { .contracts-grid { grid-template-columns:1fr; } }
-@media(max-width:600px) { .contracts-view { gap:20px; } .contracts-view .page-heading { flex-direction:column; gap:16px; } .contracts-view .page-heading-action { padding:0; } .invite-card { padding:14px; gap:10px; flex-wrap:wrap; } .invite-actions { margin-left:auto; } .contracts-empty { padding:20px 0; } }
+@media(max-width:600px) { .contracts-view { gap:20px; } .contracts-view .page-heading { align-items:center; gap:16px; padding-bottom:4px; } .contracts-view .page-heading-action { padding:0; } .invite-card { padding:14px; gap:10px; flex-wrap:wrap; } .invite-actions { margin-left:auto; } .contracts-empty { padding:20px 0; } }

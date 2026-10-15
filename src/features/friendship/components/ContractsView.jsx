@@ -55,6 +55,9 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
 
   return (
     <div className="contracts-view">
+      <PageHeading title="Circle">
+        <Button variant="aura" icon={Plus} onClick={onAddFriend}>New Duo</Button>
+      </PageHeading>
       {pendingReceived.length > 0 && (
         <section className="contract-section priority-invites">
           <div className="contract-section-title"><h2>Challenges</h2><span>{pendingReceived.length}</span></div>
@@ -80,10 +83,6 @@ export const ContractsView = ({ user, friendships, pendingReceived, pendingSent,
           </div>
         </section>
       )}
-
-      <PageHeading eyebrow="Your circle" title={<>Good people.<br /><span>Shared stories.</span></>} description="Every Duo has its own rhythm. Find yours.">
-        <Button variant="aura" icon={Plus} onClick={onAddFriend}>New Duo</Button>
-      </PageHeading>
 
       <div className="contracts-meta" aria-label="Contract summary">
         <span><b>{friendships.length}</b> active</span>

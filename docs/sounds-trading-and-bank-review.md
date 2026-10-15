@@ -30,7 +30,7 @@ Bank ledger entries now use stable primary IDs while preserving existing random-
 
 ## Sounds
 
-**You → Account → Game sounds** controls quiet, short synthesized cues for card purchases/use, accepted exchanges, bank actions, Flare reveals, Duo levels, and season completion. Sounds start off, require a real interaction to unlock playback, and stay scoped to the account on that device. There is a preview button. No audio files, downloads, looping music, or autoplay are added.
+**You → Settings → Game sounds** controls quiet, short synthesized cues for card purchases/use, accepted exchanges, bank actions, Flare reveals, Duo levels, and season completion. Sounds start off, require a real interaction to unlock playback, and stay scoped to the account on that device. There is a preview button. Desktop and Android synthesize cues with Web Audio; iPhone and iPad use small generated WAV clips on one activated media element. There is no looping music or autoplay.
 
 Duplicate event cues are suppressed while the app is loaded; existing reveal history still suppresses repeated automatic game moments. Muting, leaving the account, or hiding the tab stops active cues. Unsupported audio contexts fail quietly. Audio availability and perceived volume on physical devices have not been checked here.
 

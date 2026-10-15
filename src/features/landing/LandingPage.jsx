@@ -157,7 +157,7 @@ export const LandingPage = ({ onEnter }) => {
         </section>
 
         <section className="lp-hangout-section" aria-label="Things to do in Hakoware">
-          <div className="lp-section-intro compact"><span>MORE THAN A CHECK-IN</span><h2>Something worth coming back for.</h2><p>Private friend spaces, useful cards, and a good first round with someone new.</p></div>
+          <div className="lp-section-intro compact"><h2>Something worth coming back for.</h2><p>Private friend spaces, collectible cards, and new faces at the table.</p></div>
           <div className="lp-hangout-grid">
             <article className="lp-hangout-card"><MessageCircle size={22} /><h3>Your friend space.</h3><p>Text, send a voice note, and keep your shared story in one place. An eligible message counts as your check-in.</p><span className="lp-hangout-tag">Between you and your friend</span></article>
             <article className="lp-hangout-card is-cards"><Layers size={22} /><h3>A few good tricks.</h3><div className="lp-card-shelf" aria-label="Examples of collectible cards"><CardArtwork cardId="SIGNAL_FLARE" size={48} /><CardArtwork cardId="PURIFY" size={48} /><CardArtwork cardId="CHAOS_TICKET" size={48} /></div><p>Spend earned Aura on useful tools. Trade a spare with an accepted friend.</p><span className="lp-hangout-tag">Pick the card you actually want</span></article>
@@ -268,7 +268,7 @@ export const LandingPage = ({ onEnter }) => {
           <Button variant="aura" size="lg" onClick={start}>Create your account</Button>
         </section>
         <section className="lp-faq" aria-labelledby="lp-faq-heading">
-          <div className="lp-section-intro compact"><span>BEFORE YOU START</span><h2 id="lp-faq-heading">A few things to know.</h2></div>
+          <div className="lp-section-intro compact"><h2 id="lp-faq-heading">Before you start.</h2></div>
           <div>{QUESTIONS.map(([question, answer]) => <details key={question}><summary>{question}<PlusIcon /></summary><p>{answer}</p></details>)}</div>
         </section>
       </main>

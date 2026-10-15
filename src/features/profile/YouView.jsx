@@ -128,9 +128,8 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
 
   return (
     <div className="you-view">
-      <PageHeading eyebrow="You" title={<>Your corner.<br /><span>Make it yours.</span></>} description="Your Duos, your Aura, your way to play." />
+      <PageHeading title="You" />
       <section className="profile-section" aria-label="Your profile">
-        <p className="eyebrow">Profile</p>
         <div className="profile-identity" data-profile-decoration={user.profileDecoration || 'none'}>
           <div className="profile-avatar-control">
             <button
@@ -173,7 +172,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <section className="you-play-area" aria-label="Your Duos and activity">
-        <div className="you-section-heading you-duo-heading"><div><p className="eyebrow">Your circle</p><h2>Your Duos.</h2></div><button type="button" className="people-text-button" onClick={() => onNavigate?.('contracts')}>Open your Circle</button></div>
+        <div className="you-section-heading you-duo-heading"><div><h2>Duos</h2></div><button type="button" className="people-text-button" onClick={() => onNavigate?.('contracts')}>Open Circle</button></div>
         <div className={`you-duo-overview ${strongest ? '' : 'is-empty'}`}>
           {strongest && <DuoIdentity friendship={strongest} userId={userId} variant="card"><button type="button" className="you-duo-open" onClick={() => onNavigate?.('friend', { contractKey: strongest.contractKey })}>Open your strongest Duo</button></DuoIdentity>}
           <dl className="you-duo-summary" aria-label="Duo progress">
@@ -182,10 +181,10 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
             <div><dt>Duo XP</dt><dd>{totalDuoXP}</dd></div>
           </dl>
         </div>
-        <p className="you-season-note">Every Duo has its own season: usually 30 days, or 45 for Long Distance. Open a Duo to see its time remaining or start the next season.</p>
+        <p className="you-season-note">Seasons last 30 days, or 45 for Long Distance. Manage each season inside its Duo.</p>
         {grudges.length > 0 && (
           <section className="you-section you-grudges" aria-label="Your grudges">
-            <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h3>Somebody made it personal.</h3></div></div>
+            <div className="you-section-heading"><div><h3>Grudges</h3></div></div>
             <div className="grudge-list">
               {grudges.map((grudge) => {
                 const isVictim = grudge.role === 'VICTIM';
@@ -278,7 +277,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
         {aura.gameRewards && <PlayRewards data={aura.gameRewards} onPlay={() => onNavigate?.('arena', { section: 'duels' })} />}
         <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('contracts')} />
         <section className="you-section you-secondary-section">
-          <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Your Aura, accounted for.</h2></div></div>
+          <div className="you-section-heading"><div><h2>Aura history</h2></div></div>
           <div className="transaction-list">
             {aura.history.length === 0 ? <p className="you-empty">No Aura activity yet.</p> : aura.history.slice(0, 8).map((transaction) => (
               <div className="transaction-row" key={transaction._id}>
@@ -292,7 +291,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <section className="you-section you-secondary-section you-privacy-area" aria-label="Privacy and safety">
-        <div className="you-section-heading"><div><p className="eyebrow">Privacy</p><h2>Visibility &amp; safety.</h2></div></div>
+        <div className="you-section-heading"><div><h2>Privacy &amp; safety</h2></div></div>
         <button className="privacy-row" type="button" onClick={toggleShameBoard} disabled={savingPrivacy} aria-pressed={appearsOnShameBoard}>
           <span className="privacy-icon">{appearsOnShameBoard ? <Eye size={18} strokeWidth={1.6} /> : <EyeOff size={18} strokeWidth={1.6} />}</span>
           <span className="privacy-copy"><strong>Appear on the Shame Board</strong><small>{appearsOnShameBoard ? 'If you become bankrupt, the Arena can show your public debt total.' : 'Your bankruptcy stays out of the public ranking.'}</small></span>
@@ -302,7 +301,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
       </section>
 
       <section className="you-section you-secondary-section account-section" aria-label="Account settings">
-        <div className="you-section-heading"><div><p className="eyebrow">Account</p><h2>Your settings.</h2></div></div>
+        <div className="you-section-heading"><div><h2>Settings</h2></div></div>
         <GameSoundSettings userId={String(userId)} />
         <button className="account-logout-row" type="button" onClick={logout}>
           <span className="account-logout-icon"><LogOut size={18} strokeWidth={1.6} /></span>

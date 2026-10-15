@@ -1,9 +1,10 @@
 import moments from '../../../server/config/auraMoments.json';
+import { Coins } from 'lucide-react';
 
 export const PlayRewards = ({ data, onPlay }) => <div className="play-rewards" aria-label="Earn Aura through play">
-  <div><p className="duel-kicker">A little more Aura</p><h3>A little Aura farming.</h3><p>Play at least two turns and finish the round: <strong>+5 Aura</strong>. Win for <strong>+5 more</strong>. An Aura moment adds <strong>+2 for style</strong>. Your first three qualifying rounds each day count.</p></div>
+  <div className="play-rewards-copy"><h2><Coins size={19} strokeWidth={1.6} aria-hidden="true" />Play for Aura</h2><p><strong>+5</strong> finish · <strong>+5</strong> win · <strong>+2</strong> style</p></div>
   <div className="play-reward-progress"><div className="play-reward-dots" aria-hidden="true">{[0, 1, 2].map(value => <i key={value} className={value < (data?.rounds || 0) ? 'is-done' : ''} />)}</div><span>{data?.rounds || 0} of 3 rewarded today · {data?.earned || 0} Aura</span>{data?.resetsAt && <small>Resets at {new Date(data.resetsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small>}{onPlay && <button className="duel-text-action" type="button" onClick={onPlay}>Find a table</button>}</div>
-  <details className="play-aura-guide"><summary>What makes an Aura moment?</summary><dl>{Object.entries(moments).map(([id,moment]) => <div key={id}><dt>{moment.name}</dt><dd>{moment.description}</dd></div>)}</dl><p>One +2 style bonus per qualifying round. Several moments can still make the highlight reel.</p></details>
+  <details className="play-aura-guide"><summary>Reward rules &amp; Aura moments</summary><p>Play at least two turns and finish to qualify. Your first three qualifying rounds each day earn rewards. Leaving earns no Aura.</p><dl>{Object.entries(moments).map(([id,moment]) => <div key={id}><dt>{moment.name}</dt><dd>{moment.description}</dd></div>)}</dl><p>One +2 style bonus per qualifying round.</p></details>
 </div>;
 
 export const RoundReward = ({ data }) => {

@@ -1,19 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { clips } from '../src/lib/gameAudioClips.js';
+import { activationClip, clips } from '../src/lib/gameAudioClips.js';
 
 const fixture = async ({ mobile = false } = {}) => {
   const previous = Object.fromEntries(['window', 'document', 'localStorage', 'performance'].map(key => [key, globalThis[key]]));
   const storage = new Map(), contexts = [], notes = [], peaks = [];
   let now = 1000, denyStorage = false, resumeGate = null, primes = 0;
-  const media = [], timers = new Map(); let timerId = 0, gesture = false, denyMedia = false;
+  const media = [], timers = new Map(); let timerId = 0, gesture = false, denyMedia = false, mediaGate = null;
   class Media {
-    constructor(src) { this.src = src; this.currentTime = 0; this.paused = true; this.activated = false; this.starts = []; media.push(this); }
+    constructor(src) { this.src = src; this.paused = true; this.activated = false; this.starts = []; media.push(this); }
+    set src(value) { this.source = value; this.position = 0; this.ended = false; }
+    get src() { return this.source; }
+    get currentTime() { return this.position; }
+    set currentTime(value) { if (this.rejectSeeks) throw Error('seek unavailable'); this.position = value; }
     setAttribute() {}
     play() {
       if (denyMedia || !this.activated && !gesture) return Promise.reject(Error('media gesture required'));
-      this.activated = true; this.paused = false; this.starts.push(this.currentTime); return Promise.resolve();
+      this.activated = true; this.paused = false; this.starts.push({ src: this.src, at: this.currentTime }); return mediaGate || Promise.resolve();
     }
     pause() { this.paused = true; }
   }
@@ -35,6 +39,7 @@ const fixture = async ({ mobile = false } = {}) => {
   sound.setGameSoundOwner('player');
   return { sound, notes, contexts, peaks, storage, media, timers, get primes() { return primes; }, advance: value => { now += value; }, denyStorage: () => { denyStorage = true; },
     gesture(fn) { gesture = true; try { return fn(); } finally { gesture = false; } }, denyMedia(value) { denyMedia = value; },
+    holdMedia() { let release; mediaGate = new Promise(resolve => { release = () => { mediaGate = null; resolve(); }; }); return release; },
     holdResume() { let release; resumeGate = new Promise(resolve => { release = resolve; }); return release; },
     close() { sound.setGameSoundOwner(null); for (const [key, value] of Object.entries(previous)) globalThis[key] = value; } };
 };
@@ -116,9 +121,9 @@ test('iPhone preview and delayed gameplay share one gesture-activated media elem
     assert.equal(await f.gesture(() => f.sound.previewGameSound('player')), true);
     assert.equal(f.media.length, 1); assert.equal(f.contexts.length, 0, 'mobile uses media output rather than ambient Web Audio');
     assert.equal(globalThis.window.navigator.audioSession.type, 'playback');
-    assert.deepEqual(f.media[0].starts, [0, clips.preview.start]);
+    assert.deepEqual(f.media[0].starts, [{ src: activationClip, at: 0 }, { src: clips.preview.src, at: 0 }]);
     f.advance(1500); assert.equal(f.sound.playGameSound('card', 'player', 'move-one'), true);
-    await Promise.resolve(); assert.equal(f.media[0].starts.at(-1), clips.card.start);
+    await Promise.resolve(); assert.deepEqual(f.media[0].starts.at(-1), { src: clips.card.src, at: 0 });
     assert.equal(f.media.length, 1); assert.equal(f.sound.playGameSound('card', 'player', 'overlap'), false);
     f.sound.setGameSounds('player', false); assert.equal(f.media[0].paused, true); assert.equal(f.timers.size, 0);
     f.advance(1500); assert.equal(f.sound.playGameSound('duel_win', 'player', 'finish'), false);
@@ -140,17 +145,54 @@ test('a rejected mobile preview reports failure and retries on a fresh tap', asy
   } finally { f.close(); }
 });
 
-test('the mobile file contains distinct short cues, quiet peaks and silent sprite gaps', () => {
-  const wav = readFileSync(new globalThis.URL('../src/assets/game-cues.wav', import.meta.url));
-  assert.equal(wav.toString('ascii', 0, 4), 'RIFF'); assert.equal(wav.toString('ascii', 8, 12), 'WAVE');
-  const rate = wav.readUInt32LE(24), length = wav.readUInt32LE(40) / 2;
-  const sample = index => wav.readInt16LE(44 + index * 2) / 32768;
-  let previousEnd = 0;
+test('mobile cues keep playing after native endings without seeks or cutoff timers', async () => {
+  const f = await fixture({ mobile: true });
+  try {
+    f.sound.setGameSounds('player', true);
+    await f.gesture(() => f.sound.previewGameSound('player'));
+    const audio = f.media[0]; audio.rejectSeeks = true;
+    for (const kind of ['duel_win', 'card', 'checkin', 'card', 'duel_end']) {
+      audio.position = 8; audio.ended = true; audio.paused = true; f.advance(2000);
+      assert.equal(f.sound.playGameSound(kind, 'player', `${kind}:${audio.starts.length}`), true);
+      await Promise.resolve();
+      assert.equal(audio.paused, false); assert.equal(audio.ended, false);
+      assert.deepEqual(audio.starts.at(-1), { src: clips[kind].src, at: 0 });
+      assert.equal(f.timers.size, 0, 'buffering cannot run out a wall-clock cue timer');
+    }
+    assert.equal(f.media.length, 1, 'later sources retain the original element’s activation');
+  } finally { f.close(); }
+});
+
+test('delayed mobile playback is cancelled on mute, and rejected gameplay recovers on a fresh gesture', async () => {
+  const f = await fixture({ mobile: true });
+  try {
+    f.sound.setGameSounds('player', true); await f.gesture(() => f.sound.previewGameSound('player')); f.advance(1500);
+    const release = f.holdMedia();
+    assert.equal(f.sound.playGameSound('card', 'player', 'buffering'), true);
+    f.sound.setGameSounds('player', false); release(); await Promise.resolve();
+    assert.equal(f.media[0].paused, true);
+    f.sound.setGameSounds('player', true); f.advance(1500); f.denyMedia(true);
+    assert.equal(f.sound.playGameSound('card', 'player', 'retryable'), true);
+    await new Promise(resolve => globalThis.setTimeout(resolve, 0));
+    f.denyMedia(false); await f.gesture(() => f.sound.unlockGameAudio('touchend')); f.advance(1500);
+    assert.equal(f.sound.playGameSound('card', 'player', 'retryable'), true);
+    await Promise.resolve(); assert.equal(f.media[0].paused, false);
+  } finally { f.close(); }
+});
+
+test('mobile cues are complete short WAV files with quiet peaks and silent tails', () => {
+  const signatures = new Set();
   for (const clip of Object.values(clips)) {
-    const from = Math.round(clip.start * rate), to = Math.round((clip.start + clip.duration) * rate);
-    assert.ok(clip.duration <= .5); assert.ok(to <= length);
-    for (let n = previousEnd; n < from; n += 1) assert.equal(sample(n), 0, 'sprite separation must be silent');
-    let peak = 0; for (let n = from; n < to; n += 1) peak = Math.max(peak, Math.abs(sample(n)));
-    assert.ok(peak > .01 && peak < .09, `peak ${peak}`); previousEnd = to;
+    const wav = readFileSync(new globalThis.URL(clip.src));
+    assert.equal(wav.toString('ascii', 0, 4), 'RIFF'); assert.equal(wav.toString('ascii', 8, 12), 'WAVE');
+    const rate = wav.readUInt32LE(24), length = wav.readUInt32LE(40) / 2;
+    const sample = index => wav.readInt16LE(44 + index * 2) / 32768;
+    assert.ok(clip.duration <= .5); assert.equal(length / rate, clip.duration);
+    let peak = 0; for (let n = 0; n < length; n += 1) peak = Math.max(peak, Math.abs(sample(n)));
+    assert.ok(peak > .01 && peak < .09, `peak ${peak}`);
+    for (let n = length - 200; n < length; n += 1) assert.equal(sample(n), 0);
+    signatures.add(wav.toString('base64'));
   }
+  assert.equal(signatures.size, Object.keys(clips).length);
+  assert.ok(readFileSync(new globalThis.URL(activationClip)).subarray(44).every(value => value === 0));
 });

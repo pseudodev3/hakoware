@@ -118,7 +118,7 @@ export const Arena = ({ friendships, showToast, onNavigate, focusTradeId, focusD
 
   return (
     <div className="arena-view">
-      {!(tab === 'duels' && focusDuelId) && <PageHeading eyebrow="Arena" title={tab === 'duels' ? <>Take your<br /><span>seat.</span></> : tab === 'cards' ? <>A few good<br /><span>tricks.</span></> : <>Make your<br /><span>move.</span></>} description={tab === 'duels' ? 'A friend or a new face. One good round.' : tab === 'cards' ? 'Your tools, your trades, your next move.' : 'Every move leaves a mark. Choose yours.'}>
+      {!(tab === 'duels' && focusDuelId) && <PageHeading title="Arena">
         {tab === 'bounties' && bankruptFriendships.length > 0 && (
           <Button variant="danger" icon={Plus} onClick={() => setShowCreateModal(true)}>
             Place bounty

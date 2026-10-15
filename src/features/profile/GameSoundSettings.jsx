@@ -14,6 +14,6 @@ export const GameSoundSettings = ({ userId }) => {
     if (next && !await previewGameSound(userId)) setError('Sound couldn’t start. Check your media volume, then try again.');
   };
   return <div className="game-sound-settings"><button className="privacy-row" type="button" role="switch" aria-checked={enabled} aria-label="Game sounds" onClick={() => void toggle()}>
-    <span className="privacy-icon">{enabled ? <Volume2 size={20} /> : <VolumeX size={20} />}</span><span className="privacy-copy"><strong>Game sounds</strong><small>Quiet cues for check-ins, cards and duel results. {enabled ? 'On for this account on this device.' : 'Off until you turn them on.'}</small></span><span className={`privacy-switch ${enabled ? 'on' : ''}`} aria-hidden="true"><i /></span>
+    <span className="privacy-icon">{enabled ? <Volume2 size={20} /> : <VolumeX size={20} />}</span><span className="privacy-copy"><strong>Game sounds</strong><small>Quiet cues for cards, check-ins and wins. {enabled ? 'On for this device.' : 'Off.'}</small></span><span className={`privacy-switch ${enabled ? 'on' : ''}`} aria-hidden="true"><i /></span>
   </button>{enabled && <><button className="game-sound-preview" type="button" onClick={async () => { setError(''); if (!await previewGameSound(userId)) setError('Sound couldn’t start. Check your media volume, then try again.'); }}>Try the sound <Volume2 size={14} /></button><p className="game-sound-note">Use your phone’s media volume.</p></>}{error && <p className="game-sound-note" role="status">{error}</p>}</div>;
 };
