@@ -26,6 +26,7 @@ const UserSchema = new mongoose.Schema({
     select: false,
   },
   auraBalance: { type: Number, default: 0, min: 0 },
+  cardBack: { type: String, enum: require('../config/cardBacks.json').map(back => back.id), default: 'original' },
   gameRewardDays: { type: mongoose.Schema.Types.Mixed, default: {}, select: false },
   cardTradeReceipts: { type: [new mongoose.Schema({ tradeId: mongoose.Schema.Types.ObjectId, side: { type: String, enum: ['SENDER', 'RECIPIENT'] }, cardId: String, pairKey: String, state: { type: String, enum: ['HELD', 'REFUNDED', 'DELIVERED'] }, createdAt: Date }, { _id: false })], default: [], select: false },
   avatarFrame: { type: String, enum: ['plain', 'linked', 'orbit', 'crown', ...cosmeticCatalog.frames.map(frame => frame.id)], default: 'plain' },

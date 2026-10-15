@@ -105,7 +105,8 @@ async function run() {
     await Promise.all(Array.from({ length: 12 }, (_, index) => request(participants[index % 4], path)));
     for (const user of participants) {
       const result = (await request(user, path)).data, stored = await User.findById(user._id).select('+auraBank +auraWalletReceipts');
-      const expected = result.winner === 'YOU' ? 10 : 5, repaid = user === two ? Math.ceil(expected / 2) : 0;
+      const style = result.auraMoments.some(moment => moment.playerId === String(user._id)) ? 2 : 0;
+      const expected = (result.winner === 'YOU' ? 10 : 5) + style, repaid = user === two ? Math.ceil(expected / 2) : 0;
       assert.equal(result.rewards.round.amount, expected); assert.equal(result.rewards.round.repaid, repaid);
       assert.equal(stored.auraBalance, 200 + expected - repaid); assert.equal(result.rewards.rounds, 1);
       assert.equal(stored.auraWalletReceipts.filter(receipt => receipt.type === 'GAME_REWARD').length, 1);

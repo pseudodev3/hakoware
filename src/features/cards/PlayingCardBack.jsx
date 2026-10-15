@@ -1,0 +1,23 @@
+import { useId } from 'react';
+import backs from '../../../server/config/cardBacks.json';
+import './PlayingCardBack.css';
+
+const palettes = { original:['#1b2822','#b8ac7a','#d9d1b0'], clubroom:['#d9e2be','#426a4e','#254b3c'], nightshift:['#1e263d','#9baed2','#d9e2f5'], nocturne:['#121b19','#c8a565','#f1ddb2'], prism:['#302344','#b9a1df','#efddfa'], porcelain:['#f1e9d8','#315e8b','#7195b4'] };
+export const PlayingCardBack = ({ backId = 'original', size = 68, decorative = false, className = '' }) => {
+  const uid = useId().replaceAll(':',''), style = palettes[backId] ? backId : 'original', [paper,ink,soft] = palettes[style];
+  return <span className={`playing-card-back back-${style} ${className}`} data-card-back={style} style={{ '--back-size': `${size}px`, '--back-paper':paper, '--back-ink':ink, '--back-soft':soft }} role={decorative ? undefined : 'img'} aria-label={decorative ? undefined : `${backs.find(back => back.id === style).name} card back`} aria-hidden={decorative || undefined}>
+    <svg viewBox="0 0 120 160"><defs><pattern id={`back-grain-${uid}`} width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 0h1M3 3h1" stroke={ink} strokeWidth=".6" opacity=".14" /></pattern><linearGradient id={`back-foil-${uid}`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={soft} /><stop offset=".45" stopColor={ink} /><stop offset=".72" stopColor={soft} /><stop offset="1" stopColor={ink} /></linearGradient></defs>
+      <rect width="120" height="160" rx="7" fill={paper} />
+      <rect x="5" y="5" width="110" height="150" rx="4" fill="none" stroke={ink} strokeWidth="1" />
+      <rect x="9" y="9" width="102" height="142" rx="2" fill="none" stroke={ink} strokeWidth=".45" opacity=".65" />
+      {style === 'original' && <><g stroke={ink} fill="none" opacity=".32" strokeWidth=".6">{Array.from({length:9},(_,i)=><path key={i} d={`M${-100+i*28} 0l160 160M${60+i*28} 0-100 160`} />)}</g><path d="M60 40 88 80 60 120 32 80Z" fill={paper} stroke={ink} /><path d="M46 62v36m28-36v36M46 81h28" stroke={soft} strokeWidth="5" /><path d="m37 100 46-40" stroke={ink} strokeWidth="1" /></>}
+      {style === 'clubroom' && <><g stroke={ink} fill="none" strokeWidth=".8"><path d="M19 128c-6-51 4-83 25-103M101 128c6-51-4-83-25-103M26 119l15-12M23 97l16-10M25 74l17-8M31 51l15-4M94 119l-15-12M97 97 81 87M95 74l-17-8M89 51l-15-4" /></g><g fill={ink}><path d="M60 98c-29 4-28-25-10-27-14-16 14-29 20-10 22-5 30 24 5 29 2 13-7 17-15 8Z" /><path d="M56 88h8v27h-8Z" /></g><path d="M43 126h34M48 131h24" stroke={ink} /><text x="60" y="22" textAnchor="middle" fontSize="4.8" letterSpacing="1.3" fill={ink}>GOOD COMPANY</text></>}
+      {style === 'nightshift' && <><g fill="none" stroke={ink}><circle cx="60" cy="80" r="34" strokeWidth=".7" /><ellipse cx="60" cy="80" rx="19" ry="54" transform="rotate(32 60 80)" strokeWidth=".6" /><path d="M19 80h82M60 27v106" strokeWidth=".5" opacity=".5" /></g><path d="m60 51 7 22 21 7-21 7-7 22-7-22-21-7 21-7Z" fill={soft} /><g fill={ink}><circle cx="26" cy="35" r="1.6" /><circle cx="94" cy="125" r="1.6" /><path d="m92 34 2 5 5 2-5 2-2 5-2-5-5-2 5-2ZM28 112l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></g></>}
+      {style === 'nocturne' && <><g fill="none" stroke={`url(#back-foil-${uid})`}><path d="M21 139V63a39 39 0 0178 0v76M29 139V63a31 31 0 0162 0v76M37 139V63a23 23 0 0146 0v76" strokeWidth="1.1" /><path d="M19 139h82M19 143h82M60 17v17M55 25h10" strokeWidth=".6" /></g><path d="m60 54 18 27-18 27-18-27Z" fill={paper} stroke={ink} /><path d="m60 65 10 16-10 16-10-16Z" fill={`url(#back-foil-${uid})`} /></>}
+      {style === 'prism' && <><g stroke={ink} strokeWidth=".6"><path d="m60 20 37 31-8 64-29 25-29-25-8-64Z" fill="none" /><path d="m60 20 13 49 24-18-37 89-37-89 24 18Z" fill={ink} opacity=".25" /><path d="m60 20-13 49 13 71 13-71ZM23 51l24 18-16 46 29 25 29-25-16-46 24-18M47 69h26" fill="none" /></g><path d="m60 55 13 25-13 25-13-25Z" fill={`url(#back-foil-${uid})`} /><path d="M18 29h9M93 131h9M22 24v10M98 126v10" stroke={soft} strokeWidth=".7" /></>}
+      {style === 'porcelain' && <><g fill="none" stroke={ink} strokeWidth="1.2"><path d="M60 130V33M60 105C21 103 23 66 41 72c15 5 11 20 19 24M60 80c38-2 35-37 18-31-14 4-10 18-18 24M60 115c30 3 36-16 25-20-13-5-16 13-25 12M60 57c-26-4-30-24-18-26 10-2 11 18 18 19" /><circle cx="60" cy="80" r="42" strokeWidth=".5" opacity=".5" /></g><g fill={ink}><path d="M60 25c-15 7-12 20 0 23 12-3 15-16 0-23Z" /><path d="m60 124 7 9-7 9-7-9Z" /></g><path d="M21 20c10-9 16 2 8 5M99 140c-10 9-16-2-8-5" stroke={ink} fill="none" /></>}
+      <rect width="120" height="160" rx="7" fill={`url(#back-grain-${uid})`} />
+      <text x="60" y="147" textAnchor="middle" fontSize="4.1" letterSpacing="1.8" fill={soft}>HAKOWARE</text>
+    </svg>
+  </span>;
+};

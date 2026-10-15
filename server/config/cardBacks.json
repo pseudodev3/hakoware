@@ -1,0 +1,8 @@
+[
+  { "id": "original", "name": "House original", "description": "Green stock. A familiar signature.", "rounds": 0 },
+  { "id": "clubroom", "name": "Clubroom", "description": "A place at the table, earned.", "rounds": 3 },
+  { "id": "nightshift", "name": "Night shift", "description": "For the ones who stay for another round.", "rounds": 10 },
+  { "id": "nocturne", "name": "Nocturne", "description": "Midnight arches and warm gold foil.", "packId": "nocturne" },
+  { "id": "prism", "name": "Prism", "description": "Cut crystal, caught in violet.", "packId": "prism" },
+  { "id": "porcelain", "name": "Porcelain", "description": "Cobalt blooms on warm ivory.", "packId": "porcelain" }
+]

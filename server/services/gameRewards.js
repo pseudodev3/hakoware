@@ -1,23 +1,28 @@
 const User = require('../models/User');
 const { creditAuraEarnings } = require('./auraBank');
 
-const DAILY_ROUNDS = 3, COMPLETION = 5, WIN = 5;
+const { bestMoment } = require('./auraMoments');
+const DAILY_ROUNDS = 3, COMPLETION = 5, WIN = 5, STYLE = 2;
 const dayKey = (now = new Date()) => now.toISOString().slice(0, 10);
 const keyFor = matchId => `game:${matchId}`;
-const policy = Object.freeze({ dailyRounds: DAILY_ROUNDS, completion: COMPLETION, win: WIN, maxDaily: 30, minimumTurns: 2 });
+const policy = Object.freeze({ dailyRounds: DAILY_ROUNDS, completion: COMPLETION, win: WIN, style: STYLE, maxDaily: 36, minimumTurns: 2 });
 const rewardJobs = (game, players, endedAt) => players.filter(player =>
   !game.forfeited?.includes(player) && game.moves.filter(move => move.actorId === player && move.cardId).length >= 2
-).map(player => ({ userId: player, matchId: game.id, day: dayKey(new Date(endedAt)),
-  amount: COMPLETION + (game.winnerId === player || game.winnerIds?.includes(player) && game.reason !== 'DRAW' ? WIN : 0),
-  createdAt: endedAt }));
+).map(player => {
+  const win = game.winnerId === player || game.winnerIds?.includes(player) && game.reason !== 'DRAW' ? WIN : 0;
+  const moment = bestMoment(game, player);
+  return { userId: player, matchId: game.id, day: dayKey(new Date(endedAt)), amount: COMPLETION + win + (moment ? STYLE : 0),
+    breakdown: { completion: COMPLETION, win, style: moment ? STYLE : 0, moment: moment ? { kind: moment.kind, name: moment.name, description: moment.description, turn: moment.turn } : null }, createdAt: endedAt };
+});
 const grantReward = async job => {
   // A repaired job may arrive after midnight. Counters belong to the day the
   // round finished, so a delayed credit cannot reset or evade today's cap.
   const path = `gameRewardDays.${job.day}`;
-  return creditAuraEarnings(job.userId, job.amount, 'GAME_REWARD', `Card game · completed round${job.amount > COMPLETION ? ' and win' : ''}`, keyFor(job.matchId), {
+  const won = job.breakdown ? job.breakdown.win > 0 : job.amount > COMPLETION;
+  return creditAuraEarnings(job.userId, job.amount, 'GAME_REWARD', `Card game · completed round${won ? ' and win' : ''}${job.breakdown?.style ? ' · Aura moment' : ''}`, keyFor(job.matchId), {
     filter: { $expr: { $lt: [{ $ifNull: [`$${path}.rounds`, 0] }, DAILY_ROUNDS] } },
     set: { [`${path}.rounds`]: { $add: [{ $ifNull: [`$${path}.rounds`, 0] }, 1] }, [`${path}.earned`]: { $add: [{ $ifNull: [`$${path}.earned`, 0] }, job.amount] } },
-    metadata: { matchId: job.matchId, rewardDay: job.day },
+    metadata: { matchId: job.matchId, rewardDay: job.day, ...(job.breakdown ? { breakdown: job.breakdown } : {}) },
   });
 };
 const flushRewards = async (model, room) => {
@@ -34,7 +39,7 @@ const rewardView = async (userId, game = null) => {
   const receipt = game && user?.auraWalletReceipts?.find(item => item.key === keyFor(game.id));
   const eligible = game?.rewardVersion === 1 && game.status === 'FINISHED' && rewardJobs(game, [userId], game.updatedAt).length > 0;
   const round = !game || game.status !== 'FINISHED' || game.rewardVersion !== 1 ? null : receipt
-    ? { status: 'EARNED', amount: receipt.amount, repaid: receipt.repaid, spendable: receipt.amount - receipt.repaid }
+    ? { status: 'EARNED', amount: receipt.amount, repaid: receipt.repaid, spendable: receipt.amount - receipt.repaid, breakdown: receipt.metadata?.breakdown || { completion: COMPLETION, win: Math.max(0, receipt.amount - COMPLETION), style: 0, moment: null } }
     : !eligible ? { status: 'SHORT', amount: 0 }
       : (user?.gameRewardDays?.[dayKey(new Date(game.updatedAt))]?.rounds || 0) >= DAILY_ROUNDS ? { status: 'CAPPED', amount: 0 } : { status: 'PENDING', amount: 0 };
   return { ...policy, rounds: today.rounds || 0, earned: today.earned || 0, resetsAt: new Date(Date.parse(`${dayKey()}T00:00:00Z`) + 86400000).toISOString(), round };

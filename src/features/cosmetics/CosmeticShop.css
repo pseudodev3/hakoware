@@ -89,3 +89,8 @@
 @media(max-width:460px) { .shop-grid { grid-template-columns:1fr; gap:32px; } .shop-pack-art { min-height:235px; } .shop-detail-heading h2 { font-size:2.2rem; } .shop-hero-copy h2 { font-size:2.4rem; } }
 @media(max-width:380px) { .shop-hero-art .card-artwork { --art-size:76px!important; } .shop-hero-art .card-artwork:nth-child(2) { --art-size:96px!important; } }
 @media(prefers-reduced-motion:reduce) { .shop-pack-art .card-artwork { transition:none; } }
+.shop-card-pair { position:relative; display:grid; place-items:center; width:100%; max-width:256px; min-width:0; padding:10px 12px 10px 40px; }
+.shop-card-pair > .playing-card-back { position:absolute; left:0; top:12px; width:55%; max-width:126px; transform:rotate(-12deg); }
+.shop-card-pair > .card-artwork { position:relative; z-index:1; width:min(100%,176px); height:auto; aspect-ratio:3 / 4; transform:rotate(4deg); }
+@media(max-width:600px) { .shop-card-pair { transform:scale(.88); margin:-10px -12px; } }
+@media(prefers-reduced-motion:reduce) { .shop-card-pair { transition:none; } }

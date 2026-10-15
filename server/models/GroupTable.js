@@ -7,6 +7,7 @@ const schema = new mongoose.Schema({
   members: { type: [String], required: true },
   hostId: { type: String, required: true },
   status: { type: String, enum: ['WAITING', 'ACTIVE', 'FINISHED', 'CANCELLED', 'EXPIRED'], default: 'WAITING' },
+  presence: { type: mongoose.Schema.Types.Mixed, default: {}, select: false },
   revision: { type: Number, default: 0 },
   expiresAt: { type: Date, required: true },
   state: { type: mongoose.Schema.Types.Mixed, required: true, select: false },

@@ -8,14 +8,18 @@ const people = require('./people');
 const rules = require('./tableRules');
 const { rewardJobs, flushRewards, rewardView } = require('./gameRewards');
 
+const { atTable, touchSeat } = require('./tablePresence');
+const { effectiveBack } = require('./gameStyles');
+const { auraMoments } = require('./auraMoments');
+
 const hash = value => createHash('sha256').update(value).digest('hex');
 const id = value => String(value?._id || value || '');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const codeFor = value => { if (typeof value !== 'string' || !/^[A-F0-9]{12}$/i.test(value)) fail(404, 'Table unavailable.'); return value.toUpperCase(); };
 const retryKey = body => { if (typeof body?.clientId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(body.clientId)) fail(400, 'A retry key is required.'); };
-const read = code => Table.findById(code).select('+state +rewardQueue +noticeQueue').lean();
+const read = code => Table.findById(code).select('+state +rewardQueue +noticeQueue +presence').lean();
 const checkPlayers = async members => {
-  const users = await User.find({ _id: { $in: members } }).select('displayName username avatar avatarFrame isTestAccount testOwnerId').lean();
+  const users = await User.find({ _id: { $in: members } }).select('displayName username avatar avatarFrame cardBack isTestAccount testOwnerId +cosmeticUnlocks +gameRewardDays').lean();
   if (users.length !== members.length) fail(404, 'Table unavailable.');
   const pairs = [];
   for (let a = 0; a < users.length; a += 1) for (let b = a + 1; b < users.length; b += 1) {
@@ -62,7 +66,7 @@ const view = async (room, users, userId, { summary = false } = {}) => {
   const finished = room.status === 'FINISHED';
   const players = room.members.map(playerId => {
     const user = users.find(person => id(person) === playerId);
-    return { ...people.publicPerson(user), id: playerId, me: playerId === userId, host: room.hostId === playerId,
+    return { ...people.publicPerson(user), cardBack: effectiveBack(user), atTable: atTable(room, playerId), id: playerId, me: playerId === userId, host: room.hostId === playerId,
       ready: room.state.ready.includes(playerId), eliminated: game?.eliminated.includes(playerId) || false,
       forfeited: game?.forfeited.includes(playerId) || false, protected: game?.protected.includes(playerId) || false,
       winner: finished && game.winnerIds.includes(playerId),
@@ -77,17 +81,18 @@ const view = async (room, users, userId, { summary = false } = {}) => {
   return { ...base, cards: rules.cards(), hand: room.status === 'ACTIVE' ? [...game.hands[userId]] : [],
     remaining: game?.deck.length || 0, peek: room.status === 'ACTIVE' ? game.peeks[userId] || null : null,
     moves: game?.moves || [], reason: finished ? game.reason : null,
-    rewards: await rewardView(userId, game),
+    rewards: await rewardView(userId, game), auraMoments: auraMoments(game),
   };
 };
 const getTable = async (userId, code) => {
   let { room, users } = await guarded(userId, code, { joining: true });
   if (room.members.includes(userId)) await flush(room);
   ({ room, users } = await guarded(userId, code, { joining: true }));
+  if (room.members.includes(userId)) await touchSeat(Table, room, userId).catch(() => {});
   return view(room, users, userId);
 };
 const listTables = async userId => {
-  const rooms = await Table.find({ members: userId, expiresAt: { $gt: new Date() }, status: { $in: ['WAITING', 'ACTIVE', 'FINISHED'] } }).select('+state +rewardQueue +noticeQueue').sort({ updatedAt: -1 }).limit(12).lean();
+  const rooms = await Table.find({ members: userId, expiresAt: { $gt: new Date() }, status: { $in: ['WAITING', 'ACTIVE', 'FINISHED'] } }).select('+state +rewardQueue +noticeQueue +presence').sort({ updatedAt: -1 }).limit(12).lean();
   const result = [];
   for (const room of rooms) {
     try { await checkPlayers(room.members); await flush(room); const users = await checkPlayers(room.members); result.push(await view(room, users, userId, { summary: true })); }
@@ -169,7 +174,7 @@ const mutateTable = async (userId, code, action, body = {}) => {
       duelId: `table_${code}`, duelMatchId: state.current.id, duelRevision: room.revision + 1, createdAt: now,
     });
     await checkPlayers([...new Set([...members, userId])]);
-    const committed = await Table.updateOne({ _id: code, revision: room.revision }, { $set: { members, hostId, state, status, expiresAt: new Date(+now + (status === 'WAITING' ? 3 * 3600000 : 7 * 86400000)) }, $inc: { revision: 1 }, $push: { rewardQueue: { $each: rewards }, noticeQueue: { $each: jobs, $slice: -32 } } });
+    const committed = await Table.updateOne({ _id: code, revision: room.revision }, { $set: { members, hostId, state, status, expiresAt: new Date(+now + (status === 'WAITING' ? 3 * 3600000 : 7 * 86400000)) }, ...(action === 'LEAVE' && room.status === 'WAITING' ? { $unset: { [`presence.${userId}`]: '' } } : {}), $inc: { revision: 1 }, $push: { rewardQueue: { $each: rewards }, noticeQueue: { $each: jobs, $slice: -32 } } });
     if (committed.matchedCount) {
       if (!members.includes(userId)) return { id: code, status: 'LEFT' };
       return getTable(userId, code);

@@ -1,0 +1,2 @@
+.playing-card-back { display:inline-block; flex:0 0 auto; width:var(--back-size,68px); aspect-ratio:3 / 4; line-height:0; border-radius:calc(var(--back-size,68px) * .06); box-shadow:0 4px 10px #00000021; overflow:hidden; vertical-align:middle; background:var(--back-paper); }
+.playing-card-back svg { width:100%; height:100%; display:block; }

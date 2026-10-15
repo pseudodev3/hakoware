@@ -6,6 +6,8 @@ const { duoStateFromXP, recordEvent } = require('./contractGame');
 const { contractView } = require('./clientViews');
 const { catalog, hasStyle } = require('./cosmetics');
 
+const { effectiveBack, backRequirement } = require('./gameStyles');
+
 const PALETTES = ['citron', 'clay', 'iris', 'sky', 'rose', 'sand'];
 const COVERS = ['orbits', 'waves', 'rays'];
 const FRAMES = [{ id: 'plain', name: 'Original', level: 1 }, { id: 'linked', name: 'Linked', level: 2 }, { id: 'orbit', name: 'Orbit', level: 5 }, { id: 'crown', name: 'Crown', level: 10 }];
@@ -28,7 +30,7 @@ const updateDuoIdentity = async (userId, friendshipId, body) => {
 };
 const profileSnapshot = async userId => {
   const [user, contracts, collection] = await Promise.all([
-    User.findById(userId).select('+showcase +earnedAvatarFrames +cosmeticUnlocks').lean(),
+    User.findById(userId).select('+showcase +earnedAvatarFrames +cosmeticUnlocks +gameRewardDays').lean(),
     Friendship.find(participants(userId)).populate('user1 user2', 'displayName username avatar avatarFrame').lean(),
     collectionSnapshot(userId)
   ]);
@@ -40,7 +42,7 @@ const profileSnapshot = async userId => {
   const cards = collection.cards.filter(card => card.discovered);
   return {
     avatarFrame: user.avatarFrame || 'plain',
-    cardFinish: user.cardFinish || 'classic',
+    cardFinish: user.cardFinish || 'classic', cardBack: effectiveBack(user),
     profileDecoration: user.profileDecoration || 'none',
     frames: [...FRAMES.map(frame => ({ ...frame, unlocked: earnedFrames.has(frame.id) })), ...catalog.frames.map(frame => ({ ...frame, unlocked: hasStyle(user, 'frame', frame.id) }))],
     finishes: catalog.finishes.map(finish => ({ ...finish, unlocked: !finish.packId || hasStyle(user, 'finish', finish.id) })),
@@ -52,10 +54,14 @@ const profileSnapshot = async userId => {
   };
 };
 const updateProfile = async (userId, body) => {
-  validateKeys(body, ['avatarFrame', 'favoriteCardId', 'featuredDuoId', 'cardFinish', 'profileDecoration']);
+  validateKeys(body, ['avatarFrame', 'favoriteCardId', 'featuredDuoId', 'cardFinish', 'profileDecoration', 'cardBack']);
   if (!Object.keys(body).length) fail(400, 'Choose a customization to save');
   const snapshot = await profileSnapshot(userId);
-  const changes = {}, required = [];
+  const changes = {}, required = []; let deckGuard = {};
+  if ('cardBack' in body) {
+    const { back, guard } = backRequirement(body.cardBack); changes.cardBack = back.id;
+    if (back.packId) required.push(`finish:${back.packId}`); else deckGuard = guard;
+  }
   if ('avatarFrame' in body) {
     const frame = snapshot.frames.find(frame => frame.id === body.avatarFrame);
     if (!frame?.unlocked) fail(409, frame?.packId ? 'Unlock that frame’s collection before wearing it.' : 'That frame opens at a higher earned Duo level');
@@ -77,7 +83,7 @@ const updateProfile = async (userId, body) => {
     if (body.featuredDuoId !== null && !snapshot.duos.some(contract => String(contract._id) === body.featuredDuoId)) fail(400, 'Choose one of your accepted Duos');
     changes['showcase.featuredDuoId'] = body.featuredDuoId;
   }
-  const result = await User.updateOne({ _id: userId, ...(required.length ? { cosmeticUnlocks: { $all: required } } : {}) }, { $set: changes });
+  const result = await User.updateOne({ _id: userId, ...deckGuard, ...(required.length ? { cosmeticUnlocks: { $all: required } } : {}) }, { $set: changes });
   if (!result.matchedCount) fail(409, 'Your available styles changed. Refresh the profile.');
   return { success: true, profile: await profileSnapshot(userId) };
 };

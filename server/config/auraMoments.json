@@ -1,0 +1,18 @@
+{
+  "cold_read": {
+    "name": "Cold read",
+    "description": "A correct Flare read with no peek or swap."
+  },
+  "ghosted": {
+    "name": "Unbothered",
+    "description": "Ghost stopped a Signal Flare aimed at you."
+  },
+  "table_sweep": {
+    "name": "Table sweep",
+    "description": "Knocked out two different opponents."
+  },
+  "oath_keeper": {
+    "name": "Oath keeper",
+    "description": "Held Oath all the way to a winning reveal."
+  }
+}

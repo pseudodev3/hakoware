@@ -89,7 +89,7 @@ async function run() {
       const result = await request(actor, roomPath + '/play', { ...input, clientId: randomUUID(), matchId: current.matchId, revision: current.revision });
       assert.equal(result.status, 200, JSON.stringify(result.data)); current = result.data;
     }
-    assert.equal(current.status, 'FINISHED'); assert.equal(current.result.winner, 'YOU'); assert.deepEqual(current.result.partner, []); assert.equal(current.score.you, 1);
+    assert.equal(current.status, 'FINISHED'); assert.equal(current.result.winner, 'YOU'); assert.deepEqual(current.result.partner, []); assert.equal(current.score.you, 1); assert.equal(current.rewards.round.breakdown.moment.kind, 'ghosted'); assert.equal(current.rewards.round.breakdown.style, 2);
     const finalRevision = current.revision;
     assert.equal((await request(two, roomPath + '/play', { cardId: 'OATH', clientId: randomUUID(), matchId: current.matchId, revision: finalRevision })).status, 409);
     const rematch = { clientId: randomUUID(), revision: finalRevision, previousMatchId: current.matchId };
@@ -133,7 +133,7 @@ async function run() {
     for (const wallet of wallets) {
       const original = before.find(value => String(value._id) === String(wallet._id));
       assert.deepEqual(wallet.inventory, original.inventory);
-      assert.equal(wallet.auraBalance - original.auraBalance, String(wallet._id) === String(two._id) ? 10 : 5, 'one capped completion reward and winner bonus; no entry cost');
+      assert.equal(wallet.auraBalance - original.auraBalance, String(wallet._id) === String(two._id) ? 12 : 5, 'one completion reward, winner bonus and Ghost style bonus; no entry cost');
     }
     assert.deepEqual(await Friendship.findById(friendship._id).lean(), contractBefore, 'duels do not touch contract progression or debt');
     assert.deepEqual((await request(outside, '/duels')).data.rooms, []);

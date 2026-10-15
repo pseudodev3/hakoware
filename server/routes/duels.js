@@ -7,6 +7,7 @@ const { getOpenTable, enterOpenTable, leaveOpenTable } = require('../services/op
 const router = express.Router();
 const Connection = require('../models/SocialConnection');
 const tables = require('../services/groupTables');
+const gameStyles = require('../services/gameStyles');
 const { rewardView } = require('../services/gameRewards');
 router.use(auth);
 const moves = createRateLimiter({ name: 'duel-moves', windowMs: 600000, max: 120, keyGenerator: req => req.user.id });
@@ -22,6 +23,8 @@ const run = action => async (req, res) => {
   catch (error) { if (!error.status) console.error('Duel request failed:', error.message); sendRouteError(res, error, 'Could not load or update your duel. Try again.'); }
 };
 router.get('/', run(req => listDuels(req.user.id)));
+router.get('/styles', run(req => gameStyles.styleView(req.user.id)));
+router.patch('/styles', moves, run(req => gameStyles.chooseBack(req.user.id, req.body)));
 router.get('/rewards', run(req => rewardView(req.user.id)));
 router.get('/tables', run(req => tables.listTables(req.user.id)));
 router.post('/tables', invites, run(req => tables.createTable(req.user.id, req.body)));

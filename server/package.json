@@ -35,7 +35,8 @@
     "check:standalone-trades": "node scripts/checkStandaloneCardTrades.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",
     "check:after-hours-social": "node scripts/checkAfterHoursSocial.js",
-    "check:chat-links": "node scripts/checkChatLinks.js"
+    "check:chat-links": "node scripts/checkChatLinks.js",
+    "check:arena-polish": "node scripts/checkArenaPolish.js"
   },
   "engines": {
     "node": ">=20"
