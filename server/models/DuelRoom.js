@@ -6,6 +6,7 @@ const schema = new mongoose.Schema({
   revision: { type: Number, default: 0 },
   state: { type: mongoose.Schema.Types.Mixed, required: true, select: false },
   noticeQueue: { type: [mongoose.Schema.Types.Mixed], default: [], select: false },
+  rewardQueue: { type: [mongoose.Schema.Types.Mixed], default: [], select: false },
 }, { timestamps: true, minimize: false });
 
 module.exports = mongoose.model('DuelRoom', schema);

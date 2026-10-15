@@ -6,12 +6,20 @@ const Message = require('../models/SocialMessage');
 const Report = require('../models/CommunityReport');
 const Notification = require('../models/Notification');
 const DuelRoom = require('../models/DuelRoom');
+const GroupTable = require('../models/GroupTable');
 const FIELDS = 'displayName username usernameNormalized avatar avatarFrame isTestAccount testOwnerId';
 const id = value => String(value?._id || value || '');
 const digest = value => createHash('sha256').update(value).digest('hex');
 const pairId = (a, b) => digest(`social:${[id(a), id(b)].sort().join(':')}`).slice(0, 24);
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const sameScope = (a, b) => a && b && id(a) !== id(b) && Boolean(a.isTestAccount) === Boolean(b.isTestAccount) && (!a.isTestAccount || id(a.testOwnerId) === id(b.testOwnerId));
+const metAtTable = (one, two, finished = false) => {
+  const pair = [id(one), id(two)];
+  return GroupTable.exists({ $or: [
+    { members: { $all: pair }, status: { $in: finished ? ['FINISHED'] : ['WAITING', 'ACTIVE', 'FINISHED'] }, ...(finished ? { 'state.current.forfeited': { $nin: pair } } : {}) },
+    { 'state.history': { $elemMatch: { players: { $all: pair }, forfeited: { $nin: pair } } } },
+  ] });
+};
 const publicPerson = user => ({ displayName: user.displayName, username: user.username, avatar: user.avatar || null, avatarFrame: user.avatarFrame || 'plain' });
 const read = key => Connection.findById(key).select('+blockedBy +receipts +outbox').lean();
 const ensure = async (a, b) => {
@@ -34,11 +42,17 @@ const byUsername = async (userId, username, { allowOwnBlock = false } = {}) => {
   if (!sameScope(actor, other)) fail(404, 'Person unavailable.');
   const connection = await read(pairId(actor, other));
   if (connection?.blockedBy.length && !(allowOwnBlock && connection.blockedBy.includes(userId))) fail(404, 'Person unavailable.');
-  if (!connection || !['CONNECTED', 'PENDING'].includes(connection.status) && !await DuelRoom.exists({ _id: pairId(actor, other), 'state.current.id': { $exists: true } })) fail(404, 'Meet at an open table first.');
+  if ((!connection || !['CONNECTED', 'PENDING'].includes(connection.status)) && !await DuelRoom.exists({ _id: pairId(actor, other), 'state.current.id': { $exists: true } }) && !await metAtTable(actor, other)) fail(404, 'Meet at an open table first.');
   return { actor, other, connection };
 };
 const view = (connection, other, userId) => ({ id: id(connection), revision: connection.revision, status: connection.status, requestedByMe: connection.requestedBy === userId, partner: publicPerson(other), updatedAt: connection.updatedAt });
 const closeCasualDuel = async key => {
+  const connection = await Connection.findById(key).lean();
+  if (connection) {
+    const tables = await GroupTable.find({ members: { $all: connection.participants.map(id) }, status: { $in: ['ACTIVE', 'WAITING'] } }).select('_id').lean();
+    await GroupTable.updateMany({ _id: { $in: tables.map(table => table._id) }, status: { $in: ['ACTIVE', 'WAITING'] } }, { $set: { status: 'CANCELLED', noticeQueue: [] }, $inc: { revision: 1 } });
+    await Notification.deleteMany({ duelId: { $in: tables.map(table => `table_${table._id}`) } });
+  }
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const room = await DuelRoom.findById(key).select('+state').lean();
     if (!room) {
@@ -103,7 +117,7 @@ const mutate = async (userId, key, action, body) => {
   let blockedBy = [...connection.blockedBy], sequence = connection.sequence;
   const outbox = [];
   if (action === 'REQUEST') {
-    if (!await DuelRoom.exists({ _id: key, $or: [{ 'state.current.status': 'FINISHED' }, { 'state.history.0': { $exists: true } }] })) fail(403, 'Finish a round together before connecting.');
+    if (!await DuelRoom.exists({ _id: key, $or: [{ 'state.current.status': 'FINISHED' }, { 'state.history.0': { $exists: true } }] }) && !await metAtTable(actor, other, true)) fail(403, 'Finish a round together before connecting.');
     if (['CONNECTED', 'PENDING'].includes(status)) fail(409, 'A connection or invitation already exists.');
     if (connection.requestedAt && stamp - new Date(connection.requestedAt) < 86400000) fail(429, 'Give this person a day before inviting them again.');
     if (await Connection.countDocuments({ participants: userId, requestedBy: userId, status: 'PENDING' }) >= 5) fail(429, 'You have five invitations waiting. Let people respond first.');

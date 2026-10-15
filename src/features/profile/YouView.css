@@ -83,3 +83,5 @@
 @media(max-width:680px) { .profile-identity > .identity-copy { min-width:140px; } }
 
 @media(max-width:680px) { .you-style-area,.you-play-area { padding-top:24px; } .you-section-heading.you-duo-heading { align-items:flex-start; flex-wrap:wrap; gap:6px; } .you-duo-summary { gap:12px; } .you-duo-summary dd { font-size:1.25rem; } .you-duo-summary dt { font-size:.6875rem; } .you-wallet-area { gap:24px; } }
+.you-season-note { color:var(--text-muted); font-size:.8125rem; line-height:1.8; margin-top:18px; max-width:64ch; }
+.game-sound-note { color:var(--text-muted); font-size:.75rem; line-height:1.7; margin:8px 0; }

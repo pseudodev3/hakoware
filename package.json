@@ -16,6 +16,7 @@
     "check:ui-polish": "node scripts/checkUiPolish.mjs",
     "check:duel-feedback": "node scripts/checkDuelFeedback.mjs",
     "check:game-sounds": "node --test scripts/checkGameSounds.mjs",
+    "generate:game-audio": "node scripts/generateGameAudio.mjs",
     "check:session-boundaries": "node --test scripts/checkSessionBoundaries.mjs"
   },
   "dependencies": {

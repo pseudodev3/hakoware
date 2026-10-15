@@ -1,3 +1,5 @@
+import { cues } from './gameSoundCues.js';
+import { createMobileGameAudio, usesMobileGameAudio } from './mobileGameAudio.js';
 const preferenceKey = userId => `hakoware:game-sounds:${userId}`;
 let context = null;
 let ownerId = null;
@@ -6,24 +8,11 @@ let pendingCue = null;
 let generation = 0;
 let primedContext = null;
 let touchPrimedContext = null;
+let mobile = null;
 const active = new Set();
 const played = new Set();
 const deviceOverrides = new Map();
 export const setGameSoundOwner = userId => { generation += 1; silenceGameSounds(); ownerId = userId ? String(userId) : null; played.clear(); lastPlayed = -Infinity; };
-// Frequency, final frequency, delay, duration, volume, waveform.
-// Low, softly filtered tones keep these cues closer to a tactile gesture.
-const cues = {
-  preview: [[330, 330, 0, .13, .017, 'sine'], [440, 440, .11, .16, .015, 'sine']],
-  card: [[420, 280, 0, .09, .028, 'triangle'], [660, 440, .035, .10, .012, 'sine']],
-  checkin: [[440, 440, 0, .12, .026, 'sine'], [660, 660, .09, .15, .022, 'sine']],
-  duel_win: [[440, 440, 0, .12, .026, 'sine'], [554, 554, .09, .13, .022, 'sine'], [660, 660, .18, .17, .019, 'sine']],
-  duel_end: [[440, 330, 0, .16, .024, 'sine'], [330, 330, .10, .13, .017, 'sine']],
-  trade: [[294, 294, 0, .12, .016, 'sine'], [440, 440, .10, .17, .015, 'sine']],
-  bank: [[262, 262, 0, .12, .016, 'sine'], [330, 330, .09, .13, .013, 'sine']],
-  DUO_LEVEL_UP: [[330, 330, 0, .14, .016, 'sine'], [440, 440, .10, .14, .014, 'sine'], [550, 550, .20, .19, .013, 'sine']],
-  SEASON_COMPLETED: [[262, 262, 0, .19, .014, 'sine'], [330, 330, .06, .20, .012, 'sine'], [392, 392, .14, .25, .010, 'sine'], [524, 524, .25, .21, .009, 'sine']],
-  SIGNAL_FLARE: [[165, 240, 0, .16, .018, 'triangle'], [330, 440, .11, .20, .012, 'sine']]
-};
 export const gameSoundsEnabled = (userId, event = null) => {
   if (!userId) return false;
   const key = preferenceKey(userId);
@@ -33,6 +22,7 @@ export const gameSoundsEnabled = (userId, event = null) => {
 };
 export const silenceGameSounds = () => {
   pendingCue = null;
+  mobile?.stop();
   for (const sound of active) { try {
     sound.gain.gain.cancelAndHoldAtTime(context.currentTime);
     sound.gain.gain.linearRampToValueAtTime(0, context.currentTime + .012);
@@ -50,6 +40,19 @@ export const setGameSounds = (userId, enabled) => {
 };
 export const unlockGameAudio = async (gesture = null) => {
   try {
+    // WebKit's ambient Web Audio route can be silent with the ringer muted.
+    // A gesture-activated media element uses the phone's media output instead.
+    if (window.navigator?.audioSession) {
+      try { window.navigator.audioSession.type = 'playback'; } catch { /* Older WebKit. */ }
+    }
+    if (usesMobileGameAudio()) {
+      if (gesture === 'pointerup') return false;
+      mobile ||= createMobileGameAudio();
+      if (!await mobile.unlock()) return false;
+      const queued = pendingCue; pendingCue = null;
+      if (queued && queued.generation === generation && performance.now() < queued.expiresAt) playGameSound(queued.kind, queued.userId, queued.eventId);
+      return true;
+    }
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!Audio) return false;
     if (!context || context.state === 'closed') context = new Audio({ latencyHint: 'interactive' });
@@ -72,6 +75,18 @@ export const playGameSound = (kind, userId, eventId = null) => {
   if (!cues[kind] || String(userId) !== ownerId || !gameSoundsEnabled(userId) || document.visibilityState !== 'visible') return false;
   const key = eventId ? `${userId}:${kind}:${eventId}` : null;
   if ((key && played.has(key)) || performance.now() - lastPlayed < 900) return false;
+  if (usesMobileGameAudio()) {
+    if (!mobile?.ready()) {
+      if (mobile) { pendingCue = { kind, userId, eventId, generation, expiresAt: performance.now() + 1200 }; void unlockGameAudio(); }
+      return false;
+    }
+    if (!mobile.play(kind)) return false;
+    const owner = generation;
+    void mobile.confirmation().then(ok => { if (!ok && key && owner === generation) played.delete(key); });
+    lastPlayed = performance.now();
+    if (key) { played.add(key); if (played.size > 200) played.delete(played.values().next().value); }
+    return true;
+  }
   if (context?.state !== 'running') {
     // Never queue historical page-load events before a real audio activation.
     // Keep only one fresh confirmation through a brief suspension/interruption.
@@ -101,4 +116,14 @@ export const playGameSound = (kind, userId, eventId = null) => {
     if (key) { played.add(key); if (played.size > 200) played.delete(played.values().next().value); }
     return true;
   } catch { silenceGameSounds(); return false; }
+};
+export const previewGameSound = async userId => {
+  if (String(userId) !== ownerId || !gameSoundsEnabled(userId) || document.visibilityState !== 'visible') return false;
+  const owner = generation;
+  if (!await unlockGameAudio() || generation !== owner || !gameSoundsEnabled(userId) || document.visibilityState !== 'visible') return false;
+  // A deliberate preview may immediately follow the enable confirmation.
+  silenceGameSounds();
+  lastPlayed = -Infinity;
+  if (!playGameSound('preview', userId)) return false;
+  return mobile && usesMobileGameAudio() ? mobile.confirmation() : true;
 };

@@ -10,6 +10,9 @@ import { duelResultCopy } from '../../lib/duelFeedback';
 import { PersonActions } from '../people/PersonActions';
 import { DuelConnection } from '../people/DuelConnection';
 import { OpenTable } from './OpenTable';
+import { GroupLobby } from './GroupLobby';
+import { GroupTableSpace } from './GroupTableSpace';
+import { PlayRewards, RoundReward } from './PlayRewards';
 import './Duels.css';
 
 const time = value => value ? new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
@@ -26,13 +29,16 @@ const moveCopy = (move, cards, partner) => {
   return `${prefix} Oath leaves the hand. Round over.`;
 };
 
-export const DuelSpace = ({ focusDuelId, onNavigate }) => {
-  const { user } = useAuth(), userId = String(user.uid || user.id || user._id);
+export const DuelSpace = props => props.focusDuelId?.startsWith('table_') ? <GroupTableSpace key={props.focusDuelId} code={props.focusDuelId.slice(6)} onNavigate={props.onNavigate} /> : <FriendDuelSpace {...props} />;
+
+const FriendDuelSpace = ({ focusDuelId, onNavigate }) => {
+  const { user, refreshUser } = useAuth(), userId = String(user.uid || user.id || user._id);
   const [data, setData] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false), [selected, setSelected] = useState(null), [guess, setGuess] = useState(''), [target, setTarget] = useState('');
   const [rules, setRules] = useState(false), [leaving, setLeaving] = useState(false);
   const alive = useRef(false), sequence = useRef(0), busyRef = useRef(false), acknowledged = useRef(''), title = useRef(null), context = useRef(''), root = useRef(null), controls = useRef(null);
   const soundView = useRef(null);
+  const refreshAccount = useRef(refreshUser); refreshAccount.current = refreshUser;
   const acknowledge = useCallback(view => {
     const key = `${view.matchId}:${view.revision}`;
     if (!view.matchId || acknowledged.current === key) return;
@@ -46,7 +52,10 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
       const result = await (focusDuelId ? getDuel(focusDuelId) : getDuels());
       if (!alive.current || request !== sequence.current) return;
       const previous = soundView.current; soundView.current = result;
-      if (focusDuelId && previous?.status === 'ACTIVE' && previous.matchId === result.matchId && result.status === 'FINISHED') playGameSound(result.winner === 'YOU' ? 'duel_win' : 'duel_end', userId, `${result.matchId}:${result.revision}`);
+      if (focusDuelId && previous?.status === 'ACTIVE' && previous.matchId === result.matchId && result.status === 'FINISHED') {
+        playGameSound(result.winner === 'YOU' ? 'duel_win' : 'duel_end', userId, `${result.matchId}:${result.revision}`);
+        void refreshAccount.current().catch(() => {});
+      }
       setData(result); setError('');
       if (focusDuelId) acknowledge(result);
     } catch (err) {
@@ -80,6 +89,7 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
       if (!alive.current || requestContext !== context.current) return;
       setData(result); soundView.current = result; acknowledge(result); setLeaving(false);
       if (action === 'PLAY') playGameSound(result.status === 'FINISHED' ? result.winner === 'YOU' ? 'duel_win' : 'duel_end' : 'card', userId, `${result.matchId}:${result.revision}`);
+      if (action === 'PLAY' && result.status === 'FINISHED') void refreshAccount.current().catch(() => {});
     } catch (err) {
       if (alive.current && requestContext === context.current) {
         setError(err.message || 'Could not confirm your move. Your choice is kept so you can retry.');
@@ -95,7 +105,7 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
     <p className="duel-rules-intro">Two cards in hand. Play one, keep one hidden. A correct Flare guess wins; otherwise, the higher held rank wins when the deck runs out.</p>
     <div className="duel-rule-cards">{Object.values(cards).map(card => <article key={card.id}><CardArtwork cardId={card.id} size={42} /><div><strong>{card.rank} · {card.name}</strong><small>{card.copies} in the deck</small><p>{card.effect}</p></div></article>)}</div>
     <p className="duel-rules-note">Ghost blocks moves aimed at its owner until their next turn. Equal final ranks draw. A round takes at most eight turns; you can return later to play yours.</p>
-    <p className="duel-rules-note">The twelve-card deck is free. Your collection, Aura and contract progress stay untouched. Invitations and idle rounds expire after seven days.</p>
+    <p className="duel-rules-note">The twelve-card deck is free. Play two turns and finish for +5 Aura, with +5 more for a win. Your first three qualifying rounds per day count across duels and group tables. Your collection and Duo progress stay as they are. Invitations and idle rounds expire after seven days.</p>
   </ActionSheet>;
   const errorNotice = error && !leaving && <div className="duel-error" role="alert"><p>{error}</p><button type="button" disabled={busy || loading} onClick={() => void load({ quiet: Boolean(data) })}>Refresh duels</button></div>;
   if (!focusDuelId) {
@@ -104,10 +114,12 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
     const recent = rooms.filter(room => room.status === 'FINISHED').slice(0, 6);
     const available = partners.filter(partner => !['INVITED', 'ACTIVE'].includes(partner.status));
     return <section ref={root} className="duel-lobby" aria-label="Card duels">
-      <div className="duel-lobby-intro"><div><p className="duel-kicker">Twelve cards. Two people.</p><h2>A little friendly trouble.</h2><p>Peek, protect, swap. Keep your best card close.</p></div><button className="duel-text-action" type="button" onClick={() => setRules(true)} disabled={!data}><BookOpen size={16} />How to play</button></div>
+      <div className="duel-lobby-intro"><div><p className="duel-kicker">Your next good round.</p><h2>A little friendly trouble.</h2><p>Play one on one, or bring the crew. Keep your best card close.</p></div><button className="duel-text-action" type="button" onClick={() => setRules(true)} disabled={!data}><BookOpen size={16} />How to play</button></div>
       {errorNotice}{loading && !data && <p role="status" className="duel-loading">Finding your table…</p>}
-      <OpenTable onNavigate={onNavigate} />
       {live.length > 0 && <section className="duel-lobby-section"><h3>At the table</h3>{live.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><UserAvatar person={room.partner} size="sm" decorative /><span><strong>{room.partner.displayName}</strong><small>{stateCopy(room)}</small></span><span className={room.myTurn || room.status === 'INVITED' && !room.invitedByMe ? 'duel-row-ready' : ''}>{room.status === 'INVITED' ? room.invitedByMe ? 'View' : 'Review' : room.myTurn ? 'Play' : 'Open'}</span></button>)}</section>}
+      <OpenTable onNavigate={onNavigate} />
+      <GroupLobby userId={userId} onNavigate={onNavigate} />
+      {data?.rewards && <PlayRewards data={data.rewards} />}
       {!loading && data && <section className="duel-lobby-section"><h3>{live.length ? 'Another table' : 'Choose your opponent'}</h3>{available.length ? available.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><UserAvatar person={room.partner} size="sm" decorative /><span><strong>{room.partner.displayName}</strong><small>{room.score.you || room.score.partner ? `${room.score.you} wins · ${room.score.partner} losses` : 'One short round. Your call.'}</small></span><Swords size={19} aria-hidden="true" /></button>) : <p className="duel-empty">{partners.length ? 'Your friends already have a place at the table.' : 'Your next opponent could be someone new.'}</p>}</section>}
       {recent.length > 0 && <section className="duel-lobby-section"><h3>Last rounds</h3>{recent.map(room => <button type="button" className="duel-room-row" key={room.id} onClick={() => open(room)}><Trophy size={21} aria-hidden="true" /><span><strong>{room.partner.displayName}</strong><small>{stateCopy(room)}</small></span><span>Rematch</span></button>)}</section>}
       {rulesSheet}
@@ -148,6 +160,7 @@ export const DuelSpace = ({ focusDuelId, onNavigate }) => {
     {!active && <>
       {completed ? <div className="duel-final-hands">{[['you', 'You'], ['partner', partner]].map(([role, label]) => <div key={role}><span>{label}</span>{data.result[role].length ? data.result[role].map(value => <div key={value}><CardArtwork cardId={value} size={92} /><strong>{cards[value].name}</strong><small>Held rank {cards[value].rank}</small></div>) : <p>Oath discarded</p>}</div>)}</div> : <div className="duel-invitation-art" aria-hidden="true"><CardArtwork cardId="WATCHER" size={86} /><CardArtwork cardId="GHOST" size={86} /><CardArtwork cardId="ORBIT" size={86} /></div>}
       <div className="duel-result-actions">{invited ? data.invitedByMe ? <button type="button" className="duel-text-action" disabled={busy} onClick={() => void act('CANCEL')}>Cancel invitation</button> : <><button type="button" className="duel-primary" disabled={busy} onClick={() => void act('ACCEPT')}>{busy ? 'Opening the table…' : 'Accept duel'}</button><button type="button" className="duel-text-action" disabled={busy} onClick={() => void act('DECLINE')}>Decline</button></> : <button type="button" className="duel-primary" disabled={busy} onClick={() => void act('INVITE')}>{busy ? 'Inviting…' : completed ? 'Rematch' : `Invite ${partner}`}</button>}<button type="button" className="duel-text-action" onClick={conversation}>{data.casual ? data.connectionStatus === 'CONNECTED' ? 'Open conversation' : 'Back to tables' : 'Back to conversation'}</button></div>
+      {completed && <RoundReward data={data.rewards} />}
       {completed && data.casual && <DuelConnection person={data.partner} onNavigate={onNavigate} />}
       {completed && <details className="duel-move-history"><summary>The deciding moves</summary><ol>{data.moves.map(move => <li key={move.turn}><CardArtwork cardId={move.cardId} size={28} /><div><p>{moveCopy(move, cards, partner)}</p><small>Turn {move.turn}</small></div></li>)}</ol></details>}
       {!invited && data.history.length > 1 && <details className="duel-move-history"><summary>Your rivalry <span>{data.history.length} recent rounds</span></summary><ol>{data.history.map(round => <li key={round.matchId}><Trophy size={16} /><div><p>{round.winner === 'YOU' ? 'You won' : round.winner === 'PARTNER' ? `${partner} won` : 'A draw'}</p><time dateTime={round.endedAt}>{new Date(round.endedAt).toLocaleDateString()}</time></div></li>)}</ol></details>}

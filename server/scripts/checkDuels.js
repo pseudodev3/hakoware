@@ -129,14 +129,19 @@ async function run() {
     assert.deepEqual(decisions.map(result => result.status).sort(), [200, 409], 'accept and cancel have one durable winner');
     await Notification.deleteMany({ duelId: String(friendship._id) });
     await request(one, roomPath); assert.equal(await Notification.countDocuments({ duelId: String(friendship._id) }), 0, 'delivered/dismissed activity stays dismissed');
-    assert.deepEqual(await User.find({ _id: { $in: [one._id, two._id] } }).select('auraBalance inventory').sort({ _id: 1 }).lean(), before);
+    const wallets = await User.find({ _id: { $in: [one._id, two._id] } }).select('auraBalance inventory').sort({ _id: 1 }).lean();
+    for (const wallet of wallets) {
+      const original = before.find(value => String(value._id) === String(wallet._id));
+      assert.deepEqual(wallet.inventory, original.inventory);
+      assert.equal(wallet.auraBalance - original.auraBalance, String(wallet._id) === String(two._id) ? 10 : 5, 'one capped completion reward and winner bonus; no entry cost');
+    }
     assert.deepEqual(await Friendship.findById(friendship._id).lean(), contractBefore, 'duels do not touch contract progression or debt');
     assert.deepEqual((await request(outside, '/duels')).data.rooms, []);
     await Friendship.updateOne({ _id: friendship._id }, { $set: { status: 'BLOCKED' } });
     assert.equal((await request(one, roomPath)).status, 404); assert.equal((await request(two, '/duels')).data.rooms.length, 0);
     const notifications = (await request(one, '/notifications')).data;
     assert.ok(notifications.every(item => !('state' in item) && !('hands' in item)));
-    console.log('Standalone duels: private hands/peeks, real six-turn game, invitations/rematches, concurrent retries, role/scope guards, expiry/abandonment, activity recovery/exact acknowledgement and unchanged Aura/inventory/contracts passed.');
+    console.log('Standalone duels: private hands/peeks, real six-turn game, exact completion/win rewards, invitations/rematches, concurrent retries, role/scope guards, expiry/abandonment, activity recovery/exact acknowledgement and unchanged inventory/contracts passed.');
   } finally { if (server) await new Promise(resolve => server.close(resolve)); await mongoose.disconnect(); await mongo.stop(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -12,6 +12,7 @@ import { PageHeading } from '../../shared/components/PageHeading';
 import { AuraBank } from './AuraBank';
 import { ProfileShowcase } from './ProfileShowcase';
 import { GameSoundSettings } from './GameSoundSettings';
+import { PlayRewards } from '../duels/PlayRewards';
 import { BlockedPeople } from '../people/BlockedPeople';
 import './YouView.css';
 
@@ -181,6 +182,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
             <div><dt>Duo XP</dt><dd>{totalDuoXP}</dd></div>
           </dl>
         </div>
+        <p className="you-season-note">Every Duo has its own season: usually 30 days, or 45 for Long Distance. Open a Duo to see its time remaining or start the next season.</p>
         {grudges.length > 0 && (
           <section className="you-section you-grudges" aria-label="Your grudges">
             <div className="you-section-heading"><div><p className="eyebrow">Grudge</p><h3>Somebody made it personal.</h3></div></div>
@@ -273,6 +275,7 @@ export const YouView = ({ friendships, showToast, onNavigate }) => {
 
         </section>
 
+        {aura.gameRewards && <PlayRewards data={aura.gameRewards} onPlay={() => onNavigate?.('arena', { section: 'duels' })} />}
         <AuraBank userId={userId} walletBalance={aura.balance} onChanged={() => void refresh()} onExploreDuo={() => onNavigate?.('contracts')} />
         <section className="you-section you-secondary-section">
           <div className="you-section-heading"><div><p className="eyebrow">Aura ledger</p><h2>Your Aura, accounted for.</h2></div></div>

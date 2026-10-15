@@ -9,6 +9,9 @@ export const enterOpenTable = clientId => api.post('/duels/open-table/enter', { 
 export const leaveOpenTable = ticketId => api.post('/duels/open-table/leave', { ticketId });
 const refreshActivity = () => {
   invalidateResource(RESOURCE_KEYS.notifications);
+  invalidateResource(RESOURCE_KEYS.aura);
+  invalidateResource(RESOURCE_KEYS.you);
+  invalidateResource(RESOURCE_KEYS.user);
   window.dispatchEvent(new Event('hakoware-notifications-read'));
   window.dispatchEvent(new Event('hakoware-duels-refresh'));
 };

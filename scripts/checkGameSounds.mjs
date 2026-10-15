@@ -1,10 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { clips } from '../src/lib/gameAudioClips.js';
 
-const fixture = async () => {
+const fixture = async ({ mobile = false } = {}) => {
   const previous = Object.fromEntries(['window', 'document', 'localStorage', 'performance'].map(key => [key, globalThis[key]]));
   const storage = new Map(), contexts = [], notes = [], peaks = [];
   let now = 1000, denyStorage = false, resumeGate = null, primes = 0;
+  const media = [], timers = new Map(); let timerId = 0, gesture = false, denyMedia = false;
+  class Media {
+    constructor(src) { this.src = src; this.currentTime = 0; this.paused = true; this.activated = false; this.starts = []; media.push(this); }
+    setAttribute() {}
+    play() {
+      if (denyMedia || !this.activated && !gesture) return Promise.reject(Error('media gesture required'));
+      this.activated = true; this.paused = false; this.starts.push(this.currentTime); return Promise.resolve();
+    }
+    pause() { this.paused = true; }
+  }
   const param = () => ({ value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {}, cancelAndHoldAtTime() {}, linearRampToValueAtTime(value) { peaks.push(value); } });
   class Audio {
     constructor() { this.state = 'suspended'; this.currentTime = 0; this.sampleRate = 48000; this.destination = {}; contexts.push(this); }
@@ -15,13 +27,14 @@ const fixture = async () => {
     createGain() { return { gain: param(), connect() {}, disconnect() {} }; }
     createBiquadFilter() { return { frequency: {}, Q: {}, connect() {}, disconnect() {} }; }
   }
-  globalThis.window = { AudioContext: Audio, dispatchEvent() {} };
+  globalThis.window = { AudioContext: Audio, Audio: Media, dispatchEvent() {}, navigator: mobile ? { userAgent: 'iPhone', audioSession: { type: 'ambient' } } : {}, setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); } };
   globalThis.document = { visibilityState: 'visible' };
   globalThis.localStorage = { getItem(key) { if (denyStorage) throw Error('storage denied'); return storage.get(key) ?? null; }, setItem(key, value) { if (denyStorage) throw Error('storage denied'); storage.set(key, value); } };
   globalThis.performance = { now: () => now };
   const sound = await import(`../src/lib/gameSounds.js?fixture=${Math.random()}`);
   sound.setGameSoundOwner('player');
-  return { sound, notes, contexts, peaks, storage, get primes() { return primes; }, advance: value => { now += value; }, denyStorage: () => { denyStorage = true; },
+  return { sound, notes, contexts, peaks, storage, media, timers, get primes() { return primes; }, advance: value => { now += value; }, denyStorage: () => { denyStorage = true; },
+    gesture(fn) { gesture = true; try { return fn(); } finally { gesture = false; } }, denyMedia(value) { denyMedia = value; },
     holdResume() { let release; resumeGate = new Promise(resolve => { release = resolve; }); return release; },
     close() { sound.setGameSoundOwner(null); for (const [key, value] of Object.entries(previous)) globalThis[key] = value; } };
 };
@@ -92,4 +105,52 @@ test('confirmed gameplay has distinct cues, a quiet gain ceiling and a cooldown'
     }
     assert.ok(f.peaks.every(peak => peak <= .035));
   } finally { f.close(); }
+});
+
+test('iPhone preview and delayed gameplay share one gesture-activated media element', async () => {
+  const f = await fixture({ mobile: true });
+  try {
+    f.sound.setGameSounds('player', true);
+    assert.equal(f.sound.playGameSound('card', 'player', 'before-tap'), false); assert.equal(f.media.length, 0);
+    assert.equal(await f.sound.unlockGameAudio('pointerup'), false); assert.equal(f.media.length, 0, 'an earlier pointer event cannot consume touch activation');
+    assert.equal(await f.gesture(() => f.sound.previewGameSound('player')), true);
+    assert.equal(f.media.length, 1); assert.equal(f.contexts.length, 0, 'mobile uses media output rather than ambient Web Audio');
+    assert.equal(globalThis.window.navigator.audioSession.type, 'playback');
+    assert.deepEqual(f.media[0].starts, [0, clips.preview.start]);
+    f.advance(1500); assert.equal(f.sound.playGameSound('card', 'player', 'move-one'), true);
+    await Promise.resolve(); assert.equal(f.media[0].starts.at(-1), clips.card.start);
+    assert.equal(f.media.length, 1); assert.equal(f.sound.playGameSound('card', 'player', 'overlap'), false);
+    f.sound.setGameSounds('player', false); assert.equal(f.media[0].paused, true); assert.equal(f.timers.size, 0);
+    f.advance(1500); assert.equal(f.sound.playGameSound('duel_win', 'player', 'finish'), false);
+    f.sound.setGameSoundOwner('other'); f.sound.setGameSounds('other', true);
+    assert.equal(f.sound.playGameSound('card', 'player', 'old-account'), false);
+    assert.equal(f.sound.playGameSound('card', 'other', 'new-account'), true);
+  } finally { f.close(); }
+});
+
+test('a rejected mobile preview reports failure and retries on a fresh tap', async () => {
+  const f = await fixture({ mobile: true });
+  try {
+    f.sound.setGameSounds('player', true); f.denyMedia(true);
+    assert.equal(await f.gesture(() => f.sound.previewGameSound('player')), false);
+    f.denyMedia(false); assert.equal(await f.gesture(() => f.sound.previewGameSound('player')), true);
+    f.sound.silenceGameSounds(); assert.equal(f.media[0].paused, true); assert.equal(f.timers.size, 0);
+    globalThis.document.visibilityState = 'hidden'; f.advance(1500);
+    assert.equal(await f.gesture(() => f.sound.previewGameSound('player')), false);
+  } finally { f.close(); }
+});
+
+test('the mobile file contains distinct short cues, quiet peaks and silent sprite gaps', () => {
+  const wav = readFileSync(new globalThis.URL('../src/assets/game-cues.wav', import.meta.url));
+  assert.equal(wav.toString('ascii', 0, 4), 'RIFF'); assert.equal(wav.toString('ascii', 8, 12), 'WAVE');
+  const rate = wav.readUInt32LE(24), length = wav.readUInt32LE(40) / 2;
+  const sample = index => wav.readInt16LE(44 + index * 2) / 32768;
+  let previousEnd = 0;
+  for (const clip of Object.values(clips)) {
+    const from = Math.round(clip.start * rate), to = Math.round((clip.start + clip.duration) * rate);
+    assert.ok(clip.duration <= .5); assert.ok(to <= length);
+    for (let n = previousEnd; n < from; n += 1) assert.equal(sample(n), 0, 'sprite separation must be silent');
+    let peak = 0; for (let n = from; n < to; n += 1) peak = Math.max(peak, Math.abs(sample(n)));
+    assert.ok(peak > .01 && peak < .09, `peak ${peak}`); previousEnd = to;
+  }
 });

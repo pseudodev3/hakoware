@@ -8,12 +8,13 @@ const people = require('./people');
 const Notification = require('../models/Notification');
 const { publicKey } = require('./clientViews');
 const { CARDS, deal, play } = require('./duelRules');
+const { rewardJobs, flushRewards, rewardView } = require('./gameRewards');
 const WEEK = 7 * 86400000;
 const LIVE = ['INVITED', 'ACTIVE'];
 const id = value => String(value?._id || value || '');
 const hash = value => createHash('sha256').update(value).digest('hex');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
-const readRoom = roomId => DuelRoom.findById(roomId).select('+state +noticeQueue').lean();
+const readRoom = roomId => DuelRoom.findById(roomId).select('+state +noticeQueue +rewardQueue').lean();
 const person = value => ({ displayName: value.displayName || 'Your friend', username: value.username || null, avatar: value.avatar || null, avatarFrame: value.avatarFrame || 'plain' });
 const relation = async (userId, roomId) => {
   if (!mongoose.isValidObjectId(roomId)) fail(404, 'Duo not found.');
@@ -36,6 +37,7 @@ const expireRoom = async room => {
   return readRoom(room._id);
 };
 const flushNotices = async room => {
+  await flushRewards(DuelRoom, room);
   for (const job of room?.noticeQueue || []) {
     // A superseded invitation/turn is no longer actionable. Never resend it.
     if (job.duelRevision !== room.revision || job.duelMatchId !== room.state.current?.id) {
@@ -62,12 +64,12 @@ const summary = (room, friendship, userId) => {
     score: { you: room?.state.wins?.[userId] || 0, partner: room?.state.wins?.[id(partner)] || 0, draws: room?.state.draws || 0 },
   };
 };
-const detail = (room, friendship, userId) => {
+const detail = async (room, friendship, userId) => {
   const base = summary(room, friendship, userId), current = room?.state.current;
   const otherId = id(friendship.user1) === userId ? id(friendship.user2) : id(friendship.user1);
   const role = value => value === userId ? 'YOU' : 'PARTNER';
   return {
-    ...base, cards: Object.values(CARDS), hand: current?.status === 'ACTIVE' ? [...current.hands[userId]] : [],
+    ...base, rewards: await rewardView(userId, current), cards: Object.values(CARDS), hand: current?.status === 'ACTIVE' ? [...current.hands[userId]] : [],
     remaining: current?.deck?.length || 0,
     protected: { you: current?.protected?.includes(userId) || false, partner: current?.protected?.includes(otherId) || false },
     peek: current?.status === 'ACTIVE' && current.peeks[userId] ? { cardId: current.peeks[userId].cardId, turn: current.peeks[userId].turn, createdAt: current.peeks[userId].createdAt, stale: current.peeks[userId].stale } : null,
@@ -99,11 +101,11 @@ const listDuels = async userId => {
     const actor = connection.participants.find(value => id(value) === userId), other = connection.participants.find(value => id(value) !== userId);
     if (people.sameScope(actor, other)) allowed.push({ _id: connection._id, user1: actor, user2: other, casual: true, connectionStatus: connection.status });
   }
-  const rooms = await DuelRoom.find({ _id: { $in: allowed.map(f => f._id) } }).select('+state +noticeQueue').lean();
+  const rooms = await DuelRoom.find({ _id: { $in: allowed.map(f => f._id) } }).select('+state +noticeQueue +rewardQueue').lean();
   const byId = new Map();
   for (const value of rooms) { const room = await expireRoom(value); await flushNotices(room); byId.set(id(room), room); }
   const partners = allowed.filter(value => !value.casual || value.connectionStatus === 'CONNECTED' || byId.get(id(value))?.state.current).map(friendship => summary(byId.get(id(friendship)), friendship, userId));
-  return { rooms: partners.filter(item => item.matchId).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)), partners, cards: Object.values(CARDS) };
+  return { rooms: partners.filter(item => item.matchId).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)), partners, cards: Object.values(CARDS), rewards: await rewardView(userId) };
 };
 const notices = (roomId, revision, current, userId, otherId, actorName, kind) => {
   const jobs = [];
@@ -161,15 +163,18 @@ const mutateDuel = async (userId, roomId, kind, body) => {
       } else fail(400, 'Unknown duel action.');
       state.current.updatedAt = stamp; state.current.expiresAt = new Date(now.getTime() + WEEK).toISOString();
     }
+    const rewards = [];
     if (state.current.status === 'FINISHED' && before.status !== 'FINISHED') {
+      state.current.rewardVersion = 1;
       if (state.current.winnerId) state.wins[state.current.winnerId] = (state.wins[state.current.winnerId] || 0) + 1;
       else state.draws += 1;
       state.history = [{ id: state.current.id, winnerId: state.current.winnerId, reason: state.current.reason, endedAt: stamp }, ...state.history].slice(0, 20);
+      rewards.push(...rewardJobs(state.current, players, stamp));
     }
     state.receipts = [...state.receipts, { userId, key: body.clientId, signature }].slice(-64);
     const actor = id(friendship.user1) === userId ? friendship.user1 : friendship.user2;
     const jobs = notices(roomId, room.revision + 1, state.current, userId, otherId, actor.displayName || 'Your friend', kind);
-    const result = await DuelRoom.updateOne({ _id: roomId, revision: room.revision }, { $set: { state }, $inc: { revision: 1 }, $push: { noticeQueue: { $each: jobs, $slice: -24 } } });
+    const result = await DuelRoom.updateOne({ _id: roomId, revision: room.revision }, { $set: { state }, $inc: { revision: 1 }, $push: { noticeQueue: { $each: jobs, $slice: -24 }, rewardQueue: { $each: rewards } } });
     if (result.matchedCount) { const committed = await readRoom(roomId); await flushNotices(committed); return detail(committed, friendship, userId); }
   }
   fail(409, 'The duel changed. Refresh to see the latest turn.');

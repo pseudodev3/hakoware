@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Swords } from 'lucide-react';
 import { getDuels } from '../../services/duelService';
+import { getTables } from '../../services/tableService';
 import './Duels.css';
 
 export const DuelReturn = ({ userId, onNavigate }) => {
@@ -10,7 +11,10 @@ export const DuelReturn = ({ userId, onNavigate }) => {
     setRooms([]);
     const load = async () => {
       const request = ++sequence;
-      try { const result = await getDuels(); if (alive && request === sequence) setRooms(result.rooms || []); }
+      try {
+        const [duels, groups] = await Promise.allSettled([getDuels(), getTables()]);
+        if (alive && request === sequence) setRooms([...(duels.status === 'fulfilled' ? duels.value?.rooms || [] : []), ...(groups.status === 'fulfilled' ? (groups.value?.tables || []).map(table => ({ ...table, id: `table_${table.id}`, partner: { displayName: 'Your group' } })) : [])]);
+      }
       catch { /* Arena retains the explicit loading/error state. */ }
     };
     const visible = () => { if (document.visibilityState === 'visible') void load(); };

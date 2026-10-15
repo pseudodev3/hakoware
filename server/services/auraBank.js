@@ -109,7 +109,7 @@ const bankAction = async (userId, kind, body = {}) => {
 // Balance, loan repayment and its durable receipt commit in one user update.
 const creditAuraEarnings = async (userId, amount, type, description, key, extra = {}) => {
   if (!Number.isSafeInteger(amount) || amount <= 0) return false;
-  if (!['DAILY_BONUS', 'CHAOS_BONUS', 'BOUNTY_REWARD'].includes(type)) throw new Error('Unsupported bank earnings type');
+  if (!['DAILY_BONUS', 'CHAOS_BONUS', 'BOUNTY_REWARD', 'GAME_REWARD'].includes(type)) throw new Error('Unsupported bank earnings type');
   let user = await User.findById(userId).select(projection);
   if (!user) return false;
   let receipt = user.auraWalletReceipts.find(value => value.key === key);

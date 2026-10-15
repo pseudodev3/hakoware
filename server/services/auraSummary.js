@@ -173,6 +173,7 @@ const buildAuraSummary = async (userId) => {
   const lifetimeEarned = reputationEarned[0]?.total || 0;
   return {
     balance: Number(user.auraBalance) || 0,
+    gameRewards: await require('./gameRewards').rewardView(String(user._id)),
     totalEarned: earned[0]?.total || 0,
     totalSpent: Math.abs(spent[0]?.total || 0),
     totalTransactions: count,
