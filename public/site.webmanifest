@@ -1,7 +1,7 @@
 {
   "name": "Hakoware",
   "short_name": "Hakoware",
-  "description": "A friendship game for staying in touch. Chat, check in and grow a Duo with your friend.",
+  "description": "Play card games, meet people and grow closer to friends through Duos, chats and shared seasons.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101313",
