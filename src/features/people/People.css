@@ -9,9 +9,6 @@
 .people-connection-row .user-avatar,.connection-chat-header .user-avatar { border-radius:50%; }
 .people-text-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; background:none; padding:10px 0; color:var(--accent-text); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .people-text-button:disabled { opacity:.5; cursor:default; }
-.people-primary { color:var(--accent-ink); background:var(--accent); border:0; border-radius:12px; padding:14px 20px; font:inherit; font-size:14px; font-weight:650; cursor:pointer; }
-.people-primary:disabled { opacity:.45; cursor:default; }
-.people-primary.is-danger { background:var(--danger,#ef7777); color:#171c1a; }
 .people-more { display:inline-flex; flex-shrink:0; align-items:center; justify-content:center; width:44px; height:44px; padding:8px; border:0; background:none; color:var(--text-muted); cursor:pointer; border-radius:8px; }
 .people-more:hover { color:var(--text-primary); }
 .people-note { font-size:13px; color:var(--text-muted); line-height:1.65; }
@@ -41,14 +38,12 @@
 .connection-chat-header p { font-size:12px; color:var(--text-muted); margin:0; }
 .connection-chat-tools { display:flex; gap:24px; justify-content:flex-end; padding:9px 0; }
 .connection-messages { height:clamp(240px,52dvh,650px); overflow:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:12px; padding:16px 3px; }
-.connection-message { align-self:flex-start; background:var(--bg-card); max-width:82%; border-radius:18px 18px 18px 4px; padding:12px 16px 8px; }
+.connection-message { flex-shrink:0; align-self:flex-start; background:var(--bg-card); max-width:82%; border-radius:18px 18px 18px 4px; padding:12px 16px 8px; }
 .connection-message.from-me { align-self:flex-end; background:color-mix(in srgb,var(--accent) 16%,var(--bg-elevated)); border-radius:18px 18px 4px 18px; }
 .connection-message p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:15px; line-height:1.55; }
 .connection-message time { display:block; text-align:right; font-size:10px; color:var(--text-muted); margin-top:7px; }
 .connection-composer { display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--border-subtle); border-radius:24px; margin-top:10px; background:var(--bg-elevated); }
 .connection-composer textarea { background:none; border:0; color:var(--text-primary); padding:3px 0; width:100%; min-width:0; font:inherit; font-size:16px; line-height:1.5; resize:none; }
-.connection-composer button { background:none; border:0; color:var(--accent-text); font:inherit; font-size:13px; font-weight:650; cursor:pointer; padding:10px 0; }
-.connection-composer button:disabled { opacity:.4; }
 .connection-note { font-size:11px; margin:12px 0; }
 @media(max-width:600px) {
   .circle-space-tabs { gap:24px; margin-bottom:24px; }

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { AlertCircle, ArrowDown, ArrowLeft, Check, CheckCheck, ChevronDown, LoaderCircle, MessageCircle, Mic, Palette, ScrollText, Send, Smile, Swords, X } from 'lucide-react';
 import { getContractTimeline, sendContractMessage, markContractTimelineRead } from '../../../services/friendshipService';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
+import { ChatMessageText } from '../../../shared/components/ChatMessageText';
 import { ContractDetails } from './ContractDetails';
 import { canCheckin, friendSummary, getContractSides } from '../contractState';
 import { VoiceMessage, VoiceMessageComposer } from './VoiceMessage';
@@ -60,6 +61,9 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
   const requestRef = useRef(0);
   const initialRef = useRef(true);
   const nearBottomRef = useRef(true);
+  const followPreview = useCallback(() => {
+    if (nearBottomRef.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, []);
   const scrollRef = useRef(null);
   const acknowledged = useRef(new Set());
   const failedSend = useRef(readRetry(`${draftKey}:retry`));
@@ -240,7 +244,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
       {conversation ? <>
         <div className={`friend-message-bubble ${item.voice || item.voiceUnavailable ? 'has-voice' : ''}`}>
         {!item.mine && <span className="friend-message-author friend-space-sr-only">{item.actorName}</span>}
-        {item.voice ? <VoiceMessage voice={item.voice} /> : <p>{item.text}</p>}
+        {item.voice ? <VoiceMessage voice={item.voice} /> : <ChatMessageText text={item.text} kind="duo" messageId={item.id} onLayout={followPreview} />}
         {item.voiceUnavailable && <small>Audio is no longer available.</small>}
         <span className="friend-message-meta"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>{item.receipt && <span className={`friend-message-receipt ${item.receipt.status === 'READ' ? 'is-read' : ''}`} role="img" aria-label={item.receipt.status === 'READ' ? 'Read by your friend' : 'Sent'} title={item.receipt.status === 'READ' ? 'Read by your friend' : 'Sent'}>{item.receipt.status === 'READ' ? <CheckCheck size={16} /> : <Check size={16} />}</span>}</span>
         {item.mine && item.checkin?.status === 'NEEDS_ACTION' && <span className="friend-message-checkin-note">{item.checkin.reason}</span>}

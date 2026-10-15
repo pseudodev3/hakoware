@@ -1,19 +1,47 @@
-.btn { min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:var(--radius-md); border:1px solid transparent; font-size:.8rem; font-weight:660; letter-spacing:-.01em; transition:transform 140ms var(--ease-out), background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), opacity 140ms var(--ease-out); -webkit-tap-highlight-color:transparent; user-select:none; }
-.btn-sm { min-height:44px; padding:8px 14px; font-size:.82rem; }
-.btn-md { padding:11px 17px; }
-.btn-lg { min-height:50px; padding:14px 21px; font-size:.88rem; }
-.btn:active:not(:disabled) { transform:scale(.96); }
-.btn-primary { background:var(--text-primary); color:var(--bg-dark); box-shadow:0 1px 0 color-mix(in srgb,var(--bg-card-strong) 28%,transparent) inset, 0 8px 22px rgba(0,0,0,.12); }
-.btn-secondary { background:var(--surface-soft); color:var(--text-primary); border-color:var(--border-subtle); }
-.btn-danger { background:var(--aura-red-glow); color:var(--aura-red); border-color:color-mix(in srgb,var(--aura-red) 25%,transparent); }
-.btn-aura { background:var(--accent); color:var(--accent-ink); box-shadow:none; }
-.btn-ghost { color:var(--text-secondary); }
-@media (hover:hover) and (pointer:fine) {
-  .btn-primary:hover { filter:brightness(1.04); }
-  .btn-secondary:hover { background:var(--surface-soft-strong); border-color:var(--border-active); }
-  .btn-danger:hover { background:color-mix(in srgb,var(--aura-red-glow) 72%,var(--aura-red) 8%); }
-  .btn-aura:hover { background:var(--accent-hover); }
-  .btn-ghost:hover { color:var(--text-primary); background:var(--surface-soft); }
+/* One action language across the app. Cards, tabs and navigation keep their own shapes. */
+button:is(.btn,.duel-primary,.people-primary,.next-move-action,.lp-action,.lp-demo-play,.card-primary-action) {
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  min-height:48px; max-width:100%; padding:12px 22px; border:1px solid transparent; border-radius:8px;
+  font-size:.875rem; line-height:1.4; font-weight:650; letter-spacing:-.015em; text-align:center;
+  cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent;
+  transition:background-color 160ms var(--ease-out),border-color 160ms var(--ease-out),color 160ms var(--ease-out),box-shadow 160ms var(--ease-out),transform 160ms var(--ease-out);
 }
-.btn:disabled { opacity:.42; }
-.btn-spinner { width:16px; height:16px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin .75s linear infinite; }
+button.btn-primary { background:var(--text-primary); color:var(--bg-dark); }
+button:is(.btn-aura,.duel-primary,.people-primary,.lp-action-primary,.lp-demo-play,.card-primary-action),.next-move.is-first button.next-move-action { background:var(--accent); color:var(--accent-ink); }
+button:is(.btn-primary,.btn-aura,.duel-primary,.people-primary,.lp-action-primary,.lp-demo-play,.card-primary-action),.next-move.is-first button.next-move-action { border-color:#00000012; box-shadow:inset 0 1px 0 #ffffff38,0 2px 0 #00000030; }
+button:is(.btn-secondary,.next-move-action,.lp-action-secondary) { color:var(--text-primary); background:transparent; border-color:var(--border-active); text-decoration:none; box-shadow:none; }
+button.btn-danger { color:var(--aura-red); background:var(--aura-red-glow); border-color:color-mix(in srgb,var(--aura-red) 30%,transparent); box-shadow:none; }
+button:is(.duel-primary,.people-primary).is-danger { background:var(--aura-red); color:#fff; }
+button.btn-ghost { color:var(--text-secondary); background:transparent; box-shadow:none; }
+button.btn-sm,button.lp-action-compact { min-height:44px; padding:9px 16px; font-size:.8125rem; }
+button.btn-lg,button.lp-action:not(.lp-action-compact) { min-height:54px; padding:15px 26px; font-size:.9375rem; }
+button:is(.btn,.duel-primary,.people-primary,.next-move-action,.lp-action,.lp-demo-play,.card-primary-action):disabled { opacity:.42; cursor:default; box-shadow:none; }
+.btn-spinner { width:16px; height:16px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:button-spin .75s linear infinite; }
+.btn-spinner-icon { animation:button-spin .9s linear infinite; }
+@keyframes button-spin { to { transform:rotate(360deg); } }
+button:is(.friend-compose-send,.connection-compose-send) { flex:0 0 44px; width:44px; height:44px; min-height:44px; padding:0; display:grid; place-items:center; border:1px solid #00000012; border-radius:14px; background:var(--accent); color:var(--accent-ink); box-shadow:inset 0 1px 0 #ffffff38,0 1px 0 #00000030; transition:background-color 140ms,transform 140ms; }
+button:is(.friend-compose-send,.connection-compose-send):disabled { background:var(--surface-soft); color:var(--text-muted); border-color:transparent; box-shadow:none; opacity:.55; }
+button:is(.friend-compose-send,.connection-compose-send):active:not(:disabled) { transform:translateY(1px); }
+.friend-composer button:is(.friend-compose-voice,.friend-compose-emoji) { border-radius:12px; transition:color 140ms,background-color 140ms; }
+.friend-composer.friend-composer { border-radius:20px; }
+.connection-composer.connection-composer { padding:6px 6px 6px 16px; gap:10px; border-radius:20px; }
+.connection-composer:focus-within { border-color:var(--accent-text); }
+.connection-composer textarea:focus-visible { outline:none; }
+@media(hover:hover) and (pointer:fine) {
+  button:is(.btn-primary,.btn-aura,.duel-primary,.people-primary,.lp-action-primary,.lp-demo-play,.card-primary-action):hover:not(:disabled),.next-move.is-first button.next-move-action:hover:not(:disabled) { transform:translateY(-1px); box-shadow:inset 0 1px 0 #ffffff4d,0 3px 0 #00000030; }
+  button:is(.btn-aura,.duel-primary,.people-primary,.lp-action-primary,.lp-demo-play,.card-primary-action):hover:not(:disabled) { background:var(--accent-hover); }
+  button:is(.btn-secondary,.next-move-action,.lp-action-secondary):hover:not(:disabled) { background:var(--surface-soft); border-color:var(--text-muted); }
+  button.btn-ghost:hover:not(:disabled) { color:var(--text-primary); background:var(--surface-soft); }
+  button.btn-danger:hover:not(:disabled) { border-color:var(--aura-red); }
+  button:is(.duel-primary,.people-primary).is-danger:hover:not(:disabled) { background:var(--aura-red); }
+  button:is(.friend-compose-send,.connection-compose-send):hover:not(:disabled) { background:var(--accent-hover); }
+  .friend-composer button:is(.friend-compose-voice,.friend-compose-emoji):hover { background:var(--surface-soft); color:var(--text-primary); }
+  button:is(.duel-text-action,.people-text-button,.friend-duel-entry):hover:not(:disabled) { text-decoration:underline; text-underline-offset:5px; }
+}
+button:is(.btn,.duel-primary,.people-primary,.next-move-action,.lp-action,.lp-demo-play,.card-primary-action):active:not(:disabled),.next-move.is-first button.next-move-action:active:not(:disabled) { transform:translateY(2px); box-shadow:inset 0 1px 2px #00000018; }
+@media(max-width:600px) { .lp-hero-actions button.lp-action { min-width:0; min-height:50px; padding:13px 10px; font-size:.875rem; } }
+@media(prefers-reduced-motion:reduce) {
+  button:is(.btn,.duel-primary,.people-primary,.next-move-action,.lp-action,.lp-demo-play,.card-primary-action,.friend-compose-send,.connection-compose-send) { transition:none; }
+  button:is(.btn,.duel-primary,.people-primary,.next-move-action,.lp-action,.lp-demo-play,.card-primary-action,.friend-compose-send,.connection-compose-send):is(:hover,:active):not(:disabled),.next-move.is-first button.next-move-action:is(:hover,:active):not(:disabled) { transform:none; }
+  .btn-spinner,.btn-spinner-icon { animation-duration:1.8s; }
+}

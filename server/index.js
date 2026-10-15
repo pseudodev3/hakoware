@@ -79,6 +79,7 @@ app.use('/api/aura/bank', require('./routes/auraBank'));
 app.use('/api/cards', require('./routes/cards'));
 app.use('/api/duels', require('./routes/duels'));
 app.use('/api/people', require('./routes/people'));
+app.use('/api/chat-links', require('./routes/chatLinks')());
 app.use('/api/after-hours/wall', require('./routes/roomWall'));
 app.use('/api/bounties', require('./routes/bounties'));
 app.use('/api/after-hours', require('./routes/afterHours'));

@@ -1,0 +1,115 @@
+const assert = require('node:assert/strict');
+const { PassThrough } = require('node:stream');
+const { EventEmitter } = require('node:events');
+const { gzipSync } = require('node:zlib');
+const { randomBytes } = require('node:crypto');
+const mongoose = require('mongoose');
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const { MongoMemoryServer } = require('mongodb-memory-server-core');
+const { publicAddress, publicURL, createPublicLinkFetcher } = require('../services/publicLinkFetch');
+const { firstLink, parsePage, createChatLinkPreviews } = require('../services/chatLinkPreviews');
+const User = require('../models/User');
+const Friendship = require('../models/Friendship');
+const Event = require('../models/ContractEvent');
+const Message = require('../models/SocialMessage');
+const Connection = require('../models/SocialConnection');
+const { pairId } = require('../services/people');
+const html = '<head><base href="http://127.0.0.1/"><meta property="og:title" content="A &amp; B &lt;img onerror=alert(1)&gt;"><meta name="description" content="A good read."><meta property="og:image" content="/cover.png"></head><body><meta property="og:title" content="Ignored"></body>';
+const png = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../public/favicon.png'));
+
+(async () => {
+  for (const address of ['127.0.0.1', '10.0.0.1', '169.254.169.254', '168.63.129.16', '100.64.0.1', '192.168.1.1', '0.0.0.0', '::1', '::ffff:127.0.0.1', 'fd00::1', 'fe80::1', '224.0.0.1']) assert.equal(publicAddress(address), false, address);
+  for (const address of ['93.184.216.34', '2606:4700:4700::1111']) assert.equal(publicAddress(address), true, address);
+  for (const url of ['file:///etc/passwd', 'http://2130706433', 'http://0x7f000001', 'http://[::ffff:127.0.0.1]', 'http://localhost', 'https://example.local', 'https://example.com:8080', 'https://user:pass@example.com', 'https://example.com/?token=private', 'https://example.com/?X-Amz-Signature=private', 'https://example.com/reset-password', 'https://hakoware.xyz/?view=contracts']) assert.throws(() => publicURL(url), undefined, url);
+  assert.equal(firstLink('Look (www.example.com/article).'), 'https://www.example.com/article');
+  assert.equal(firstLink('https://example.com/wiki/A_(B).'), 'https://example.com/wiki/A_(B)');
+  assert.equal(firstLink('WWW.example.com'), 'https://www.example.com/');
+  assert.equal(firstLink('https://example.com/?code=private'), null);
+  assert.deepEqual(parsePage(Buffer.from(html), 'https://example.com/story'), { title: 'A & B <img onerror=alert(1)>', description: 'A good read.', imageURL: 'https://example.com/cover.png' });
+  assert.equal(parsePage(Buffer.from('<head><title>Fallback</title><meta property="og:image" content="http://127.0.0.1/image"></head>'), 'https://example.com').imageURL, null);
+  let requests = 0;
+  const transport = (url, options, callback) => {
+    requests++;
+    assert.equal(options.agent, false); assert.equal(options.headers.Cookie, undefined); assert.equal(options.headers.Authorization, undefined);
+    options.lookup(url.hostname, {}, (error, address) => { assert.equal(error, null); assert.equal(address, '93.184.216.34'); });
+    const req = new EventEmitter(); req.destroy = () => {}; req.end = () => queueMicrotask(() => {
+      const res = new PassThrough(); res.statusCode = 200; res.headers = { 'content-type': 'text/html' };
+      if (url.pathname === '/redirect') { res.statusCode = 302; res.headers.location = 'http://127.0.0.1/private'; }
+      if (url.pathname === '/loop') { res.statusCode = 302; res.headers.location = '/loop'; }
+      if (url.pathname === '/downgrade') { res.statusCode = 302; res.headers.location = 'http://example.com/'; }
+      if (url.pathname === '/gzip') res.headers['content-encoding'] = 'gzip';
+      if (url.pathname === '/image') res.headers['content-type'] = 'image/png';
+      callback(res);
+      res.end(url.pathname === '/gzip' ? gzipSync(Buffer.from('x'.repeat(600000))) : url.pathname === '/image' ? Buffer.alloc(600000) : Buffer.from(html));
+    }); return req;
+  };
+  const publicLookup = async () => [{ address: '93.184.216.34', family: 4 }];
+  const safe = createPublicLinkFetcher({ lookup: publicLookup, request: transport });
+  assert.equal((await safe('https://example.com')).contentType, 'text/html');
+  await assert.rejects(safe('https://example.com/redirect'), { code: 'LINK_ADDRESS' });
+  await assert.rejects(safe('https://example.com/downgrade'), { code: 'LINK_REDIRECT' });
+  await assert.rejects(safe('https://example.com/loop'), { code: 'LINK_REDIRECT' });
+  assert.equal((await safe('https://example.com/gzip')).body.length, 512 * 1024);
+  await assert.rejects(safe('https://example.com/image', { image: true }), { code: 'LINK_SIZE' });
+  const before = requests;
+  await assert.rejects(createPublicLinkFetcher({ lookup: async () => [{ address: '93.184.216.34', family: 4 }, { address: '127.0.0.1', family: 4 }], request: transport })('https://example.com'), { code: 'LINK_ADDRESS' });
+  assert.equal(requests, before, 'mixed DNS answers are rejected before connection');
+  const mongo = await MongoMemoryServer.create({ binary: { version: '8.0.12' } }); let server;
+  try {
+    mongoose.set('autoIndex', false); await mongoose.connect(mongo.getUri()); process.env.JWT_SECRET = randomBytes(32).toString('hex');
+    const [one, two, outside] = await User.create(['Ari', 'Maya', 'Sol'].map(name => ({ displayName: name, username: name.toLowerCase(), email: name+'@example.test', password: 'fixture' })));
+    const friendship = await Friendship.create({ user1: one._id, user2: two._id, user1DisplayName: 'Ari', user2DisplayName: 'Maya', templateId: 'DONT_GHOST', status: 'ACTIVE' });
+    const event = await Event.create({ friendshipId: friendship._id, userId: one._id, type: 'MESSAGE', metadata: { text: 'https://example.com/article', notified: true } });
+    const hidden = await Event.create({ friendshipId: friendship._id, userId: one._id, type: 'MESSAGE', metadata: { text: 'https://example.com/hidden', notified: false } });
+    const connection = await Connection.create({ _id: pairId(one, two), participants: [one._id, two._id], status: 'CONNECTED' });
+    const message = await Message.create({ connectionId: connection._id, senderId: String(one._id), sequence: 1, text: 'https://example.com/article', createdAt: new Date() });
+    let calls = 0, gate = null;
+    const service = createChatLinkPreviews({ fetchLink: async (url, options) => { calls++; if (gate) await gate(); return { body: options?.image ? png : Buffer.from(html), url, contentType: options?.image ? 'image/png' : 'text/html' }; } });
+    const app = express(); app.use(express.json()); app.use('/api/chat-links', require('../routes/chatLinks')(service));
+    server = await new Promise(resolve => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
+    const request = async (user, body, endpoint = 'preview') => {
+      const response = await fetch(`http://127.0.0.1:${server.address().port}/api/chat-links/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(user ? { 'x-auth-token': jwt.sign({ user: { id: String(user._id), v: 0 } }, process.env.JWT_SECRET) } : {}) }, body: JSON.stringify(body) });
+      return { response, data: response.headers.get('content-type').includes('json') ? await response.json() : Buffer.from(await response.arrayBuffer()) };
+    };
+    const duo = { kind: 'duo', messageId: String(event._id) }, chat = { kind: 'connection', messageId: String(message._id) };
+    assert.equal((await request(null, duo)).response.status, 401);
+    assert.equal((await request(outside, duo)).response.status, 404);
+    assert.equal((await request(two, { kind: 'duo', messageId: String(hidden._id) })).response.status, 404);
+    assert.equal((await request(one, { url: 'https://example.com' })).response.status, 404, 'caller cannot supply a URL');
+    const previews = await Promise.all([request(one, duo), request(two, duo), request(two, chat)]);
+    assert.ok(previews.every(result => result.data.status === 'READY')); assert.equal(calls, 1, 'concurrent messages share one cached fetch');
+    assert.match(previews[0].response.headers.get('cache-control'), /no-store/);
+    const version = previews[0].data.imageVersion;
+    assert.equal((await request(one, { ...duo, imageVersion: 'wrong' }, 'image')).response.status, 404);
+    const picture = await request(one, { ...duo, imageVersion: version }, 'image'); assert.equal(picture.response.status, 200); assert.deepEqual(picture.data, png);
+    assert.equal((await request(two, { ...chat, imageVersion: version }, 'image')).response.status, 200); assert.equal(calls, 2);
+    await Connection.updateOne({ _id: connection._id }, { $set: { blockedBy: [String(two._id)] } });
+    for (const body of [duo, chat]) assert.equal((await request(one, body)).response.status, 404, 'cache never bypasses a block');
+    assert.equal((await request(one, { ...duo, imageVersion: version }, 'image')).response.status, 404);
+    await Connection.updateOne({ _id: connection._id }, { $set: { blockedBy: [] } });
+    const privateEvent = await Event.create({ friendshipId: friendship._id, userId: one._id, type: 'MESSAGE', metadata: { text: 'https://example.com/?token=private', notified: true } });
+    const previousCalls = calls;
+    assert.equal((await request(one, { kind: 'duo', messageId: String(privateEvent._id) })).data.status, 'UNAVAILABLE');
+    assert.equal(calls, previousCalls, 'private links are not fetched');
+    await User.updateOne({ _id: two._id }, { $set: { isTestAccount: true, testOwnerId: outside._id } });
+    assert.equal((await request(one, duo)).response.status, 404, 'test scope changes invalidate cached previews');
+    await User.updateOne({ _id: two._id }, { $set: { isTestAccount: false, testOwnerId: null } });
+    await Friendship.updateOne({ _id: friendship._id }, { $set: { status: 'PENDING' } });
+    assert.equal((await request(one, duo)).response.status, 404, 'pending Duo is not a chat');
+    await Friendship.updateOne({ _id: friendship._id }, { $set: { status: 'ACTIVE' } });
+    const fallback = createChatLinkPreviews({ fetchLink: async () => { throw new Error('Site unavailable'); } });
+    assert.equal((await fallback.preview(String(one._id), duo)).status, 'UNAVAILABLE');
+    const broken = createChatLinkPreviews({ fetchLink: async (url, options) => { if (options?.image) { calls++; return { body: Buffer.from('<svg onload=alert(1)></svg>'), url, contentType: 'image/png' }; } return { body: Buffer.from(html), url }; } });
+    const badPreview = await broken.preview(String(one._id), duo), badContext = { ...duo, imageVersion: badPreview.imageVersion };
+    const badCalls = calls;
+    await assert.rejects(broken.image(String(one._id), badContext));
+    await assert.rejects(broken.image(String(one._id), badContext));
+    assert.equal(calls, badCalls + 1, 'invalid images are rejected and negatively cached');
+    const fresh = await Event.create({ friendshipId: friendship._id, userId: one._id, type: 'MESSAGE', metadata: { text: 'https://example.com/slow', notified: true } });
+    gate = async () => { await Connection.updateOne({ _id: connection._id }, { $set: { blockedBy: [String(two._id)] } }); };
+    assert.equal((await request(one, { kind: 'duo', messageId: String(fresh._id) })).response.status, 404, 'block during fetch is rechecked');
+    assert.equal(await Event.countDocuments(), 4); assert.equal(await Message.countDocuments(), 1, 'preview does not create chat or reward events');
+    console.log('Chat links passed: SSRF, pinned DNS, redirects, compressed limits, metadata, authentication, hidden messages, both chats, coalescing, image proxy and block races.');
+  } finally { if (server) await new Promise(resolve => server.close(resolve)); await mongoose.disconnect(); await mongo.stop(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

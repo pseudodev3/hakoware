@@ -55,8 +55,7 @@
 .duel-text-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:8px 0; font-size:.8125rem; color:var(--text-secondary); }
 .duel-text-action:hover { color:var(--text-primary); }
 .duel-text-action:disabled,.duel-primary:disabled { opacity:.5; cursor:default; }
-.duel-primary { min-height:48px; max-width:100%; overflow-wrap:anywhere; padding:13px 24px; border-radius:10px; background:var(--accent); color:var(--accent-ink); font-weight:650; font-size:.9375rem; line-height:1.4; }
-.duel-primary.is-danger { background:var(--aura-red); color:#fff; }
+.duel-primary { overflow-wrap:anywhere; }
 .duel-lobby-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; padding:10px 0 28px; }
 .duel-kicker { color:var(--accent-text); font-size:.6875rem; text-transform:uppercase; letter-spacing:.13em; margin-bottom:12px; }
 .duel-lobby-intro h2 { font-size:clamp(1.6rem,4vw,2.3rem); font-weight:650; letter-spacing:-.04em; line-height:1.15; }

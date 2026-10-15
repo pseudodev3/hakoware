@@ -9,7 +9,6 @@
 .lp-hero h1 em { font-style:normal; color:var(--accent-text); }
 .lp-hero-description { max-width:475px; color:var(--text-secondary); font-size:1.0625rem; line-height:1.7; margin-top:28px; }
 .lp-hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-top:30px; }
-.lp-action { border-radius:8px; }
 .lp-start-note { color:var(--text-muted); font-size:.8125rem; margin-top:15px; }
 .lp-hero-features { display:flex; flex-wrap:wrap; gap:14px 24px; margin-top:36px; padding-top:24px; border-top:1px solid var(--border-subtle); }
 .lp-hero-features > span { display:inline-flex; gap:8px; align-items:center; color:var(--text-secondary); font-size:.75rem; white-space:nowrap; }
@@ -41,7 +40,7 @@
 .lp-demo-message p { font-size:.875rem; line-height:1.55; }
 .lp-demo-message > span { display:flex; align-items:center; gap:4px; font-size:.625rem; color:var(--text-muted); margin-top:8px; line-height:1.5; }
 .lp-demo-nudge { color:var(--text-muted); font-size:.75rem; text-align:center; margin:auto 0 0; padding-top:12px; }
-.lp-demo-play { display:block; width:100%; min-height:48px; padding:12px 18px; border-radius:9px; font-size:.8125rem; font-weight:650; color:var(--accent-ink); background:var(--accent); }
+.lp-demo-play { width:100%; }
 .lp-demo-play:focus-visible { outline:3px solid var(--accent-text); outline-offset:4px; }
 .lp-demo-footer { min-height:44px; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 2px; color:var(--text-muted); font-size:.5625rem; line-height:1.5; }
 .lp-demo-footer button { min-height:44px; color:var(--text-secondary); font-size:.625rem; text-decoration:underline; text-underline-offset:4px; }

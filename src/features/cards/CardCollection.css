@@ -185,15 +185,7 @@
   background: var(--surface-soft);
   color:var(--accent-text);
 }
-.card-primary-action {
-  min-height: 48px;
-  width: 100%;
-  color: var(--accent-ink);
-  background: var(--accent);
-  font-weight: 650;
-  font-size:.875rem;
-  border-radius:12px;
-}
+.card-primary-action { width:100%; }
 .card-form {
   display: flex;
   flex-direction: column;

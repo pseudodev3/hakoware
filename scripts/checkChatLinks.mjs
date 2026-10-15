@@ -1,0 +1,12 @@
+import console from 'node:console';
+import assert from 'node:assert/strict';
+import { messageParts } from '../src/lib/chatLinks.js';
+const links = value => messageParts(value).filter(part => part.href);
+assert.deepEqual(links('See (https://example.com/story).'), [{ text: 'https://example.com/story', href: 'https://example.com/story' }]);
+assert.equal(links('https://example.com/wiki/A_(B).')[0].href, 'https://example.com/wiki/A_(B)');
+assert.equal(links('WWW.example.com')[0].href, 'https://www.example.com/');
+assert.equal(links('www.example.com?a=1&b=2')[0].href, 'https://www.example.com/?a=1&b=2');
+assert.equal(links('https://one.example/a\nhttps://two.example/b').length, 2);
+for (const value of ['javascript:alert(1)', 'data:text/html,<script>', 'https://user:pass@example.com', '<script>alert(1)</script>']) assert.equal(links(value).length, 0);
+for (const value of ['Look (https://example.com/a). End.', 'www.example.com!\nThanks', '❤️ https://example.com/🙂 hello', 'not a url', 'https://user:pass@example.com']) assert.equal(messageParts(value).map(part => part.text).join(''), value, 'linkification preserves all original text');
+console.log('Chat link text preservation, punctuation, multiple URLs and unsafe schemes passed.');

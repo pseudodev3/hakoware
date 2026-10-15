@@ -10,12 +10,15 @@ export const Button = ({
   loading = false,
   disabled = false,
   className = '',
-  type = 'button'
+  type = 'button',
+  ...props
 }) => (
   <button
+    {...props}
     type={type}
     onClick={onClick}
     disabled={disabled || loading}
+    aria-busy={loading || undefined}
     className={`btn btn-${variant} btn-${size} ${className} ${loading ? 'loading' : ''}`}
   >
     {loading ? (

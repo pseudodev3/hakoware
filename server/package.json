@@ -34,7 +34,8 @@
     "check:cards-wall": "node scripts/checkCardsAndWall.js",
     "check:standalone-trades": "node scripts/checkStandaloneCardTrades.js",
     "check:card-purchases": "node scripts/checkCardPurchases.js",
-    "check:after-hours-social": "node scripts/checkAfterHoursSocial.js"
+    "check:after-hours-social": "node scripts/checkAfterHoursSocial.js",
+    "check:chat-links": "node scripts/checkChatLinks.js"
   },
   "engines": {
     "node": ">=20"
@@ -46,6 +47,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "htmlparser2": "10.0.0",
+    "image-size": "2.0.4",
+    "ipaddr.js": "2.5.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
     "multer": "^2.4.0",
