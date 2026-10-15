@@ -33,7 +33,7 @@
 .header-actions { display:flex; align-items:center; gap:8px; }
 .header-aura { display:flex; align-items:center; gap:6px; min-height:44px; padding:0 12px; border:1px solid var(--border-subtle); border-radius:100px; color:var(--aura-gold); font-size:.8125rem; font-weight:650; font-variant-numeric:tabular-nums; }
 .header-aura small { font-size:.6875rem; font-weight:500; }
-.theme-btn,.notification-btn,.header-account-btn { width:44px; height:44px; flex:0 0 auto; position:relative; display:grid; place-items:center; color:var(--text-secondary); border-radius:100px; }
+.notification-btn,.header-account-btn { width:44px; height:44px; flex:0 0 auto; position:relative; display:grid; place-items:center; color:var(--text-secondary); border-radius:100px; }
 .header-account-btn { display:none; }
 .header-account-summary { display:flex; align-items:center; gap:14px; padding:4px 4px 22px; }
 .header-account-summary > div { min-width:0; }
@@ -62,7 +62,7 @@
 .friend-unavailable h1 { font-size:1.5rem; }
 .friend-unavailable p { margin:16px 0; color:var(--text-secondary); }
 .friend-unavailable button { min-height:44px; margin-right:16px; color:var(--accent-text); }
-@media(hover:hover) and (pointer:fine) { .nav-item:not(.active):hover,.new-contract-btn:hover,.theme-btn:hover,.notification-btn:hover,.header-account-btn:hover,.header-account-actions > button:hover { background:var(--surface-soft-strong); color:var(--text-primary); } }
+@media(hover:hover) and (pointer:fine) { .nav-item:not(.active):hover,.new-contract-btn:hover,.notification-btn:hover,.header-account-btn:hover,.header-account-actions > button:hover { background:var(--surface-soft-strong); color:var(--text-primary); } }
 @media(max-width:1000px) and (min-width:769px) { .sidebar { width:210px; flex-basis:210px; padding-inline:14px; } .sidebar-brand { padding-inline:3px; gap:8px; } .nav-item { padding-inline:10px; } }
 @media(max-width:768px) {
  .sidebar,.desktop-page-label { display:none; }
@@ -73,7 +73,7 @@
  .mobile-brand strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1rem; letter-spacing:-.04em; }
  .mobile-brand span { display:none; }
  .header-actions { gap:8px; }
- .header-aura,.header-actions > .theme-btn { display:none; }
+ .header-aura { display:none; }
  .header-account-btn { display:grid; }
  .scroll-content { padding:8px 20px calc(var(--mobile-dock-height) + 28px + var(--safe-area-bottom)); }
  .mobile-dock { display:block; position:fixed; bottom:0; inset-inline:0; z-index:1000; padding:6px 12px max(8px,var(--safe-area-bottom)); background:var(--bg-dark); border-top:1px solid var(--border-subtle); }

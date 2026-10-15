@@ -94,7 +94,12 @@
 .friend-composer-dock { position:relative; flex:0 0 auto; padding:16px 24px 12px; background:var(--surface-sidebar); border-top:1px solid var(--border-subtle); }
 .friend-composer { display:flex; align-items:flex-end; gap:4px; padding:6px; border:1px solid var(--border-active); border-radius:24px; background:var(--surface-input); transition:border-color 160ms,box-shadow 160ms; }
 .friend-composer:focus-within { border-color:var(--accent-text); box-shadow:0 0 0 3px var(--accent-soft); }
-.friend-composer textarea { flex:1; min-width:0; min-height:44px; max-height:120px; padding:11px 6px; resize:none; border:0; outline:none; border-radius:0; background:transparent; font-size:1rem; line-height:1.4; color:var(--text-primary); }
+.friend-compose-field { --composer-max-height:120px; flex:1; min-width:0; display:grid; }
+.friend-compose-field::after,.friend-composer textarea { box-sizing:border-box; grid-area:1 / 1; min-width:0; min-height:44px; max-height:var(--composer-max-height); padding:11px 6px; border:0; font:inherit; font-size:1rem; line-height:1.4; overflow-wrap:anywhere; white-space:pre-wrap; }
+/* The mirror grows the row without resetting the focused textarea's height.
+   Repeated height=auto writes can leave WebKit's native caret behind. */
+.friend-compose-field::after { content:attr(data-draft) ' '; visibility:hidden; overflow:hidden; }
+.friend-composer textarea { width:100%; height:100%; resize:none; outline:none; border-radius:0; background:transparent; color:var(--text-primary); overflow-y:auto; }
 .friend-composer textarea::placeholder { color:var(--text-muted); }
 .friend-compose-voice,.friend-compose-send,.friend-compose-emoji { width:44px; height:44px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; color:var(--text-secondary); }
 .friend-compose-send { background:var(--accent); color:var(--accent-ink); }
@@ -109,7 +114,7 @@
 .friend-keyboard-open .friend-space-header { min-height:calc(64px + var(--safe-area-top)); padding-top:calc(10px + var(--safe-area-top)); padding-bottom:10px; }
 .friend-keyboard-open .friend-composer-context { display:none; }
 .friend-keyboard-open .friend-composer-dock { padding-block:8px; }
-.friend-keyboard-open .friend-composer textarea { max-height:clamp(44px,calc(var(--friend-viewport-height) * .25),120px); }
+.friend-keyboard-open .friend-compose-field { --composer-max-height:clamp(44px,calc(var(--friend-viewport-height) * .25),120px); }
 .friend-send-error { color:var(--aura-red); font-size:.8125rem; line-height:1.5; margin-top:8px; }
 .friend-new-updates { align-self:center; margin:-8px 0 10px; min-height:44px; display:flex; align-items:center; gap:7px; padding:0 16px; border-radius:100px; background:var(--accent); color:var(--accent-ink); font-size:.75rem; }
 .friend-space-contract { flex:1; min-height:0; overflow-y:auto; padding:28px; }

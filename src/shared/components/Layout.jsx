@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell, Home, Layers, LogOut, Moon, Plus, Sparkles, Sun, Users, UserRound, UserRoundPlus, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyTheme, getInitialTheme } from '../../lib/theme';
+import { trackChatViewport } from '../../lib/chatViewport';
 import { NotificationsPanel } from '../../features/notifications/components/NotificationsPanel';
 import { UserAvatar } from './UserAvatar';
 import { ActionSheet } from './ActionSheet';
@@ -39,23 +40,8 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
     return () => mobile.removeEventListener('change', closeOnDesktop);
   }, []);
   useEffect(() => {
-    if (!friendSpace || !window.visualViewport) return undefined;
-    const viewport = window.visualViewport;
-    const shell = shellRef.current;
-    const update = () => {
-      if (viewport.scale !== 1) return;
-      shell?.style.setProperty('--friend-viewport-height', `${viewport.height}px`);
-      // Safari can pan the visual viewport after opening the keyboard without
-      // resizing it again. Keep the entire conversation in that visible area.
-      shell?.style.setProperty('--friend-viewport-top', `${viewport.offsetTop}px`);
-      shell?.classList.toggle('friend-keyboard-open', viewport.height < window.innerHeight - 100);
-    };
-    update(); viewport.addEventListener('resize', update); viewport.addEventListener('scroll', update);
-    return () => {
-      viewport.removeEventListener('resize', update); viewport.removeEventListener('scroll', update);
-      shell?.style.removeProperty('--friend-viewport-height'); shell?.style.removeProperty('--friend-viewport-top');
-      shell?.classList.remove('friend-keyboard-open');
-    };
+    if (friendSpace) return trackChatViewport(shellRef.current);
+    return undefined;
   }, [friendSpace]);
   useEffect(() => { if (shellRef.current) shellRef.current.inert = showNotifications; }, [showNotifications]);
   useEffect(() => {
@@ -129,9 +115,6 @@ export const Layout = ({ children, activeTab, onTabChange, onAddFriend, pendingI
           <div className="header-actions">
             <button type="button" className="header-aura" onClick={() => onTabChange('you')} aria-label={`Your balance: ${user?.auraBalance || 0} Aura. Open your profile.`}>
               <Zap size={15} strokeWidth={2} /><span>{user?.auraBalance || 0}</span><small>Aura</small>
-            </button>
-            <button className="theme-btn" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
-              <ThemeIcon size={18} strokeWidth={1.8} />
             </button>
             <button className="notification-btn" onClick={() => setShowNotifications(true)} aria-label="Open notifications">
               <Bell size={19} strokeWidth={1.8} />

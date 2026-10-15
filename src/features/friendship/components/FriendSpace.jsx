@@ -87,10 +87,6 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
     try { if (draft) localStorage.setItem(draftKey, draft); else localStorage.removeItem(draftKey); } catch { /* Sending remains available when storage is unavailable. */ }
   }, [draft, draftKey]);
   useLayoutEffect(() => {
-    const input = composerRef.current;
-    if (!input) return;
-    input.style.height = 'auto';
-    input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
     if (nearBottomRef.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [draft, voiceOpen, contractOpen, pendingMessage]);
   useEffect(() => {
@@ -290,7 +286,7 @@ export const FriendSpace = ({ friendship, currentUserId, socialState, focusEvent
         {unavailable ? <div className="friend-space-ended" role="status"><p>This contract is no longer available.</p><button onClick={onBack}>Back to your circle</button></div> : <>
         {voiceOpen ? <VoiceMessageComposer friendshipId={id} onCancel={() => { setVoiceOpen(false); composerRef.current?.focus({ preventScroll: true }); }} onSend={async (payload) => { await send(payload); if (aliveRef.current) setVoiceOpen(false); }} /> : <form className={`friend-composer ${draft.trim() ? 'has-draft' : ''}`} onSubmit={sendText}>
           <button type="button" className="friend-compose-voice" onClick={() => setVoiceOpen(true)} disabled={sending} aria-label="Record a voice message"><Mic size={19} /></button>
-          <textarea ref={composerRef} aria-label={`Message ${partner?.displayName || 'your friend'}`} placeholder={`Message ${partner?.displayName || 'your friend'}…`} value={draft} maxLength={1000} rows={1} onChange={(event) => { setDraft(event.target.value); if (pendingMessage?.status === 'FAILED' && event.target.value.trim() !== pendingMessage.text) setPendingMessage(null); }} onKeyDown={(event) => { if (event.key === 'Escape') setEmojiOpen(false); if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia('(pointer:fine)').matches) { event.preventDefault(); void sendText(); } }} />
+          <div className="friend-compose-field" data-draft={draft}><textarea ref={composerRef} aria-label={`Message ${partner?.displayName || 'your friend'}`} placeholder={`Message ${partner?.displayName || 'your friend'}…`} value={draft} maxLength={1000} rows={1} onChange={(event) => { setDraft(event.target.value); if (pendingMessage?.status === 'FAILED' && event.target.value.trim() !== pendingMessage.text) setPendingMessage(null); }} onKeyDown={(event) => { if (event.key === 'Escape') setEmojiOpen(false); if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia('(pointer:fine)').matches) { event.preventDefault(); void sendText(); } }} /></div>
           <button type="button" className="friend-compose-emoji" aria-label="Add an emoji" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((value) => !value)}><Smile size={19} /></button>
           <button className="friend-compose-send" type="submit" disabled={!draft.trim() || sending} aria-label={sending ? 'Sending message' : 'Send message'}>{sending ? <LoaderCircle size={18} className="friend-sending-icon" /> : <Send size={18} />}</button>
         </form>}

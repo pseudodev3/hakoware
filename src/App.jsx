@@ -374,8 +374,8 @@ function MainApp({ showToast }) {
       <motion.div
         key={`${user.uid || user.id || user._id}:${friendKey || activeTab}`}
         className="tab-stage"
-        initial={shouldReduceMotion ? false : { opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={shouldReduceMotion || friendKey ? false : { opacity: 0, y: 5 }}
+        animate={friendKey ? { opacity: 1 } : { opacity: 1, y: 0 }}
         transition={{ duration: shouldReduceMotion ? 0 : .17, ease: [0.2, 0, 0, 1] }}
       >
         <DeferredView key={`${user.uid || user.id || user._id}:${friendKey || activeTab}`}>
