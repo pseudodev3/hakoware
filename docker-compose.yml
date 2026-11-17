@@ -1,0 +1,71 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    command: ["mongod", "--quiet", "--bind_ip_all"]
+    volumes:
+      - ${DATA_DIR:-./.vps-data}/mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.runCommand({ ping: 1 }).ok ? 0 : 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ./server
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - ./server/.env
+    volumes:
+      - ${DATA_DIR:-./.vps-data}/media:/data/media
+    ports:
+      - "${API_BIND_HOST:-0.0.0.0}:${PORT:-5001}:5001"
+    networks:
+      - internal
+
+  # Cloudflare Tunnel for https://api.hakoware.xyz on outbound-only / NAT VPS (e.g. Instabox):
+  # Set TUNNEL_TOKEN in server/.env, map api.hakoware.xyz -> http://api:5001, and run:
+  # docker compose --profile tunnel up -d
+  cloudflared:
+    profiles: ["tunnel"]
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - api
+    env_file:
+      - ./server/.env
+    command: ["tunnel", "--no-autoupdate", "--protocol", "http2", "run"]
+    networks:
+      - internal
+
+  # Optional auto-HTTPS reverse proxy when binding ports 80/443 directly on a dedicated-IP VPS:
+  # API_DOMAIN=api.hakoware.xyz TRUST_PROXY_HOPS=2 docker compose --profile caddy up -d
+  caddy:
+    profiles: ["caddy"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-api.hakoware.xyz}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:-./.vps-data}/caddy-data:/data
+      - ${DATA_DIR:-./.vps-data}/caddy-config:/config
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

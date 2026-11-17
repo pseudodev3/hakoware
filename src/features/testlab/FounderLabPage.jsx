@@ -54,9 +54,9 @@ export const FounderLabPage = ({ showToast }) => {
       }
 
       const detail = error.status === 404
-        ? 'The Founder Lab backend route is not deployed yet. Railway needs the latest main build.'
+        ? 'The Founder Lab backend route is not deployed yet. Deploy the latest main build on the VPS.'
         : error.status === 500
-          ? 'The Founder Lab backend returned a server error. Check the latest Railway deployment log.'
+          ? 'The Founder Lab backend returned a server error. Check the latest VPS API logs.'
           : error.message || 'Could not reach the Hakoware API.';
 
       setErrorDetail(detail);

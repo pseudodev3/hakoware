@@ -1,4 +1,8 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const fsp = require('fs/promises');
+const path = require('path');
+const { Readable } = require('stream');
 
 const SERVICE = 's3';
 const ALGORITHM = 'AWS4-HMAC-SHA256';
@@ -15,7 +19,33 @@ function encodeKey(key) {
   return key.split('/').map(encodeURIComponent).join('/');
 }
 
-function getConfig() {
+function hasS3Env() {
+  return Boolean(
+    process.env.BUCKET &&
+    process.env.ENDPOINT &&
+    process.env.ACCESS_KEY_ID &&
+    process.env.SECRET_ACCESS_KEY
+  );
+}
+
+function getLocalRoot() {
+  const dir = String(process.env.LOCAL_STORAGE_DIR || '').trim();
+  return dir ? path.resolve(dir) : '';
+}
+
+function resolveSafeLocalPath(rootDir, key) {
+  const cleanKey = String(key || '').replace(/^\/+/, '');
+  if (!cleanKey || cleanKey.includes('\0')) {
+    throw new Error('Invalid storage key');
+  }
+  const resolved = path.resolve(rootDir, cleanKey);
+  if (resolved !== rootDir && !resolved.startsWith(rootDir + path.sep)) {
+    throw new Error('Storage key escapes root directory');
+  }
+  return resolved;
+}
+
+function getS3Config() {
   const config = {
     bucket: process.env.BUCKET,
     endpoint: process.env.ENDPOINT,
@@ -30,7 +60,7 @@ function getConfig() {
     .map(([key]) => key);
 
   if (missing.length > 0) {
-    throw new Error(`Railway bucket configuration missing: ${missing.join(', ')}`);
+    throw new Error(`Object storage configuration missing: ${missing.join(', ')} (or set LOCAL_STORAGE_DIR)`);
   }
 
   return config;
@@ -85,7 +115,19 @@ function signRequest(method, url, payload, config) {
 }
 
 async function putObject(key, buffer, contentType = 'application/octet-stream') {
-  const config = getConfig();
+  if (!hasS3Env() && getLocalRoot()) {
+    const rootDir = getLocalRoot();
+    const targetPath = resolveSafeLocalPath(rootDir, key);
+    const metaPath = `${targetPath}.meta.json`;
+    const tempPath = `${targetPath}.${crypto.randomUUID()}.tmp`;
+    await fsp.mkdir(path.dirname(targetPath), { recursive: true });
+    await fsp.writeFile(tempPath, buffer);
+    await fsp.rename(tempPath, targetPath);
+    await fsp.writeFile(metaPath, JSON.stringify({ contentType }), 'utf8');
+    return;
+  }
+
+  const config = getS3Config();
   const url = buildObjectUrl(key, config);
   const headers = signRequest('PUT', url, buffer, config);
   headers['content-type'] = contentType;
@@ -103,7 +145,38 @@ async function putObject(key, buffer, contentType = 'application/octet-stream') 
 }
 
 async function getObject(key) {
-  const config = getConfig();
+  if (!hasS3Env() && getLocalRoot()) {
+    const rootDir = getLocalRoot();
+    const targetPath = resolveSafeLocalPath(rootDir, key);
+    let stat;
+    try {
+      stat = await fsp.stat(targetPath);
+    } catch (err) {
+      if (err?.code === 'ENOENT') {
+        const notFound = new Error('Object not found');
+        notFound.status = 404;
+        throw notFound;
+      }
+      throw err;
+    }
+    let contentType = 'application/octet-stream';
+    try {
+      const meta = JSON.parse(await fsp.readFile(`${targetPath}.meta.json`, 'utf8'));
+      if (meta?.contentType) contentType = meta.contentType;
+    } catch {
+      // Fallback to application/octet-stream when sidecar metadata is absent
+    }
+    const stream = Readable.toWeb(fs.createReadStream(targetPath));
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        'content-type': contentType,
+        'content-length': String(stat.size)
+      }
+    });
+  }
+
+  const config = getS3Config();
   const url = buildObjectUrl(key, config);
   const headers = signRequest('GET', url, Buffer.alloc(0), config);
   const response = await fetch(url, { method: 'GET', headers });
@@ -119,7 +192,15 @@ async function getObject(key) {
 }
 
 async function deleteObject(key) {
-  const config = getConfig();
+  if (!hasS3Env() && getLocalRoot()) {
+    const rootDir = getLocalRoot();
+    const targetPath = resolveSafeLocalPath(rootDir, key);
+    await fsp.rm(targetPath, { force: true });
+    await fsp.rm(`${targetPath}.meta.json`, { force: true });
+    return;
+  }
+
+  const config = getS3Config();
   const url = buildObjectUrl(key, config);
   const headers = signRequest('DELETE', url, Buffer.alloc(0), config);
   const response = await fetch(url, { method: 'DELETE', headers });
@@ -131,7 +212,11 @@ async function deleteObject(key) {
 }
 
 function assertBucketConfig() {
-  getConfig();
+  if (!hasS3Env() && getLocalRoot()) {
+    fs.mkdirSync(getLocalRoot(), { recursive: true });
+    return;
+  }
+  getS3Config();
 }
 
 module.exports = {

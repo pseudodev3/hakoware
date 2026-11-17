@@ -48,7 +48,7 @@ if (!process.env.COSMETIC_PAYMENT_PROVIDER || process.env.COSMETIC_PAYMENT_PROVI
 
 const app = express();
 app.disable('x-powered-by');
-app.set('trust proxy', 1);
+app.set('trust proxy', Math.max(1, Number(process.env.TRUST_PROXY_HOPS) || 1));
 app.use(securityHeaders);
 
 app.get('/brand/hakoware-mark.jpg', (req, res) => {

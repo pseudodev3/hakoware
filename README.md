@@ -191,12 +191,12 @@ Test users, bounties, Grudges and Shame Board state remain isolated from real us
 - MongoDB + Mongoose
 - JWT authentication
 - bcrypt
-- Railway
+- Docker Compose on VPS
 
 ### Services
 
 - Brevo for transactional email
-- Railway object storage for private voice notes
+- S3-compatible object storage (MinIO / R2 / S3) for private voice notes, avatars and Sparks photos
 - GitHub Actions for validation and security gates
 
 ## Local development
@@ -266,13 +266,13 @@ See the in-app legal pages for the current user-facing policies.
 
 ## Deployment
 
-- Frontend: [hakoware.xyz](https://hakoware.xyz)
-- Backend: Railway
-- Database: MongoDB
+- Frontend: [hakoware.xyz](https://hakoware.xyz) (Vercel)
+- Backend: VPS (`docker-compose.yml`)
+- Database: MongoDB 7 (isolated Docker network, persistent `/data` storage)
 
 A merged commit is not automatically considered live. Deployment status should be checked separately before announcing a feature as deployed.
 
-Cosmetic sales use Stripe Checkout and stay disabled until the merchant account, keys and one-time prices are configured. See [checkout and gifting setup](docs/stripe-checkout-and-gifting.md). Sparks publishing remains deferred on Railway trial storage; [VPS preparation](docs/sparks-vps-move.md) documents the readiness and migration checks.
+Cosmetic sales use Stripe Checkout or NOWPayments and stay disabled until the merchant account, keys and one-time prices are configured. See [checkout and gifting setup](docs/stripe-checkout-and-gifting.md). See [VPS preparation](docs/sparks-vps-move.md) for `npm run sparks:readiness` and `npm run sparks:prepare` checks.
 
 ## Project continuity
 
