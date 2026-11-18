@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { AlertCircle, CheckCircle2, Sparkles, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Flame, X } from 'lucide-react';
 import './Toast.css';
 
 const Toast = ({ message, type = 'SUCCESS', onClose }) => {
@@ -12,7 +12,7 @@ const Toast = ({ message, type = 'SUCCESS', onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const Icon = tone === 'ERROR' ? AlertCircle : tone === 'MERCY' ? Sparkles : CheckCircle2;
+  const Icon = tone === 'ERROR' ? AlertCircle : tone === 'MERCY' ? Flame : CheckCircle2;
 
   return (
     <motion.div

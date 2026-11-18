@@ -3,7 +3,7 @@
 .circle-space-tabs button.active { color:var(--text-primary); }
 .circle-space-tabs button.active::after { content:''; position:absolute; bottom:0; height:2px; left:0; right:0; background:var(--accent-text); }
 .people-intro { padding:12px 0 34px; }
-.people-eyebrow { display:flex; align-items:center; gap:8px; color:var(--accent-text); font-size:11px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; margin:0 0 14px; }
+.people-eyebrow { display:flex; align-items:center; gap:8px; color:var(--accent-text); font-size:.8125rem; font-weight:580; letter-spacing:0; margin:0 0 14px; }
 .people-intro h1 { font-size:clamp(32px,5vw,56px); line-height:1.06; letter-spacing:-.045em; max-width:620px; margin:0 0 18px; }
 .people-intro > p:last-child { color:var(--text-muted); line-height:1.6; margin:0; max-width:560px; }
 .people-connection-row .user-avatar,.connection-chat-header .user-avatar { border-radius:50%; }

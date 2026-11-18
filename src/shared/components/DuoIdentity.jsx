@@ -13,6 +13,6 @@ export const DuoIdentity = ({ friendship, userId, variant = 'card', children }) 
   return <section className={`duo-identity duo-identity-${variant}`} style={duoStyle(friendship)} aria-label="Your shared Duo">
     <DuoCover cover={friendship.identity?.cover} />
     <div className="duo-identity-people"><UserAvatar person={own} size="lg" decorative /><UserAvatar person={partner} size="lg" decorative /><span>You + {partner?.displayName || 'your friend'}</span></div>
-    <div className="duo-identity-copy"><span className="duo-identity-kicker">Season {friendship.season?.number || 1} · Duo Lv. {friendship.duoLevel || 1}</span><h2>{duoLabel(friendship, `${own?.displayName || 'You'} + ${partner?.displayName || 'your friend'}`)}</h2>{children}</div>
+    <div className="duo-identity-copy"><span className="duo-identity-kicker"><span>Season {friendship.season?.number || 1}</span><span>Duo Lv. {friendship.duoLevel || 1}</span></span><h2>{duoLabel(friendship, `${own?.displayName || 'You'} + ${partner?.displayName || 'your friend'}`)}</h2>{children}</div>
   </section>;
 };

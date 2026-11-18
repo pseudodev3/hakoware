@@ -94,7 +94,7 @@
 .duel-hand-card > strong { font-size:.8125rem; font-weight:600; line-height:1.4; }
 .duel-hand-card:disabled { cursor:default; }
 .duel-card-label { width:100%; display:flex; justify-content:space-between; align-items:center; color:var(--text-muted); }
-.duel-card-label small { font-size:.5625rem; text-transform:uppercase; letter-spacing:.14em; }
+.duel-card-label small { font-size:.6875rem; letter-spacing:0; }
 .duel-card-label b { font-size:.875rem; color:var(--text-primary); }
 .duel-peek { display:flex; align-items:center; gap:10px; margin:0 0 20px; padding:12px 0; border-top:1px solid var(--border-subtle); color:var(--accent-text); }
 .duel-peek strong { font-size:.8125rem; font-weight:550; }

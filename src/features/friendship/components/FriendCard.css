@@ -1,13 +1,13 @@
 
-.friend-card { --duo-label:var(--duo-accent); --duo-surface:color-mix(in srgb,var(--duo-accent) 10%,var(--surface-card)); display:flex; flex-direction:column; min-width:0; padding:0; position:relative; border-bottom:1px solid var(--border-subtle); }
-.friend-card.has-new { border:1px solid color-mix(in srgb,var(--duo-label) 35%,var(--border-subtle)); border-radius:20px; background:var(--duo-surface); overflow:hidden; }
-.friend-card.danger { border:1px solid color-mix(in srgb,var(--aura-red) 42%,var(--border-subtle)); border-radius:20px; background:var(--duo-surface); overflow:hidden; }
-.friend-card-open { width:100%; min-height:100px; display:flex; align-items:center; gap:16px; padding:20px; text-align:left; color:var(--text-primary); }
+.friend-card { --duo-label:var(--duo-accent); --duo-surface:color-mix(in srgb,var(--duo-accent) 10%,var(--surface-card)); display:flex; flex-direction:column; min-width:0; padding:0; position:relative; border-bottom:1px solid var(--border-subtle); transition:transform var(--duration-std) var(--ease-out), box-shadow var(--duration-std) var(--ease-out); }
+.friend-card.has-new { border:1px solid color-mix(in srgb,var(--duo-label) 35%,var(--border-subtle)); border-radius:var(--radius-lg); background:var(--duo-surface); overflow:hidden; box-shadow:var(--shadow-sm); }
+.friend-card.danger { border:1px solid color-mix(in srgb,var(--aura-red) 42%,var(--border-subtle)); border-radius:var(--radius-lg); background:var(--duo-surface); overflow:hidden; box-shadow:var(--shadow-sm); }
+.friend-card-open { width:100%; min-height:100px; display:flex; align-items:center; gap:16px; padding:20px; text-align:left; color:var(--text-primary); transition:background-color 140ms var(--ease-out); }
 .friend-card-open > .user-avatar { width:54px; height:54px; flex:0 0 54px; border-radius:50%; font-size:1.25rem; }
 .friend-card-copy { min-width:0; flex:1; }
 .friend-card-identity { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:7px; }
-.friend-card-identity > strong { font-size:1.25rem; font-weight:650; letter-spacing:-.035em; overflow-wrap:anywhere; line-height:1.15; }
-.friend-card-time { font-size:.6875rem; color:var(--text-muted); flex:0 0 auto; font-weight:450; }
+.friend-card-identity > strong { font-size:1.25rem; font-weight:650; letter-spacing:-.025em; overflow-wrap:anywhere; line-height:1.15; }
+.friend-card-time { font-size:.75rem; color:var(--text-muted); flex:0 0 auto; font-weight:450; font-variant-numeric:tabular-nums; }
 .friend-card-preview-line { display:flex; align-items:center; gap:12px; }
 .friend-card-preview { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; flex:1; font-size:.9375rem; line-height:1.55; color:var(--text-secondary); }
 .friend-card-preview.is-empty { color:var(--text-muted); }
@@ -25,7 +25,8 @@
 .friend-card-moment { width:100%; min-height:48px; padding:10px 20px; display:flex; align-items:center; gap:8px; background:var(--play-violet-soft); color:var(--play-violet); text-align:left; font-size:.75rem; line-height:1.5; }
 .friend-card-moment > span { min-width:0; flex:1; }
 .friend-card-moment > svg { flex:0 0 auto; }
-@media(hover:hover) and (pointer:fine) { .friend-card-open:hover { background:var(--surface-soft); } .friend-card-checkin:not(:disabled):hover { filter:brightness(1.1); } }
+@media(hover:hover) and (pointer:fine) { .friend-card:is(.has-new,.danger):hover { transform:translateY(-2px); box-shadow:var(--shadow-md); } .friend-card-open:hover { background:var(--surface-soft); } .friend-card-checkin:not(:disabled):hover { filter:brightness(1.08); } }
+.friend-card-checkin:active:not(:disabled) { transform:scale(.96); }
 @media(max-width:600px) { .friend-card-open { gap:12px; padding:18px 16px; } .friend-card-open > .user-avatar { width:46px; height:46px; flex-basis:46px; } .friend-card-identity > strong { font-size:1.125rem; } .friend-card-preview { font-size:.875rem; } .friend-card-footer { padding-inline:16px; } }
 .friend-card-surface { flex:1; display:flex; flex-direction:column; position:relative; isolation:isolate; overflow:hidden; }
 .friend-card-surface > .friend-card-cover { opacity:.065; z-index:-1; }

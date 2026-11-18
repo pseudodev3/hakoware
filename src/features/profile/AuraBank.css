@@ -2,21 +2,21 @@
 .aura-bank > header { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
 .aura-bank-mark { width:40px; height:48px; display:grid; place-items:center; flex:0 0 auto; color:var(--aura-gold); }
 .aura-bank > header > div { min-width:0; flex:1; }
-.aura-bank > header .eyebrow { font-size:.625rem; letter-spacing:.09em; color:var(--text-muted); }
-.aura-bank h2 { font-size:1.4rem; letter-spacing:-.04em; margin-top:6px; font-weight:600; }
+.aura-bank > header .eyebrow { font-size:.75rem; letter-spacing:0; color:var(--text-muted); }
+.aura-bank h2 { font-size:1.4rem; letter-spacing:-.03em; margin-top:6px; font-weight:600; }
 .aura-bank h3 { font-size:.875rem; font-weight:600; letter-spacing:-.015em; }
-.aura-bank-interest { font-size:.6875rem; color:var(--accent-text); padding:7px 10px; border:1px solid var(--border-subtle); border-radius:100px; white-space:nowrap; }
-.aura-bank-hero { position:relative; isolation:isolate; display:grid; grid-template-columns:minmax(0,1fr) minmax(130px,.55fr); gap:20px; padding:28px; overflow:hidden; border:1px solid color-mix(in srgb,var(--aura-gold) 32%,var(--border-subtle)); border-radius:20px; background:linear-gradient(135deg,var(--aura-gold-soft),var(--surface-2) 74%); }
+.aura-bank-interest { font-size:.75rem; color:var(--accent-text); padding:7px 12px; border:1px solid var(--border-subtle); border-radius:var(--radius-full); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.aura-bank-hero { position:relative; isolation:isolate; display:grid; grid-template-columns:minmax(0,1fr) minmax(130px,.55fr); gap:20px; padding:28px; overflow:hidden; border:1px solid color-mix(in srgb,var(--aura-gold) 32%,var(--border-subtle)); border-radius:var(--radius-lg); background:var(--aura-gold-soft); box-shadow:var(--shadow-sm); }
 .aura-bank-hero::before { content:''; position:absolute; right:-70px; top:-130px; width:360px; height:360px; border:1px solid color-mix(in srgb,var(--aura-gold) 17%,transparent); border-radius:50%; box-shadow:0 0 0 30px color-mix(in srgb,var(--aura-gold) 3%,transparent),0 0 0 62px color-mix(in srgb,var(--aura-gold) 3%,transparent); z-index:-1; pointer-events:none; }
 .aura-bank-credit { min-width:0; }
-.aura-bank-tier { display:inline-flex; align-items:center; gap:6px; color:var(--aura-gold); font-size:.6875rem; padding:6px 10px; border:1px solid color-mix(in srgb,var(--aura-gold) 25%,transparent); border-radius:100px; }
-.aura-bank-number-label { display:block; margin-top:23px; color:var(--text-secondary); font-size:.75rem; }
-.aura-bank-credit-number { display:block; margin-top:8px; font-size:clamp(3.25rem,6vw,5rem); line-height:1.1; font-weight:550; letter-spacing:-.065em; }
-.aura-bank-credit-number small { margin-left:10px; font-size:1rem; color:var(--text-secondary); letter-spacing:0; font-weight:450; }
+.aura-bank-tier { display:inline-flex; align-items:center; gap:6px; color:var(--aura-gold); font-size:.75rem; padding:6px 10px; border:1px solid color-mix(in srgb,var(--aura-gold) 25%,transparent); border-radius:var(--radius-full); }
+.aura-bank-number-label { display:block; margin-top:23px; color:var(--text-secondary); font-size:.8125rem; }
+.aura-bank-credit-number { display:block; margin-top:8px; font-family:var(--font-display); font-variation-settings:'SOFT' 40,'opsz' 72; font-size:clamp(3.25rem,6vw,5rem); line-height:1.05; font-weight:550; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+.aura-bank-credit-number small { margin-left:10px; font-family:var(--font-main); font-size:1rem; color:var(--text-secondary); letter-spacing:0; font-weight:450; }
 .aura-bank-credit > p { margin-top:12px; font-size:.8125rem; color:var(--text-secondary); line-height:1.5; }
 .aura-bank-wallet { min-width:0; align-self:end; border-left:1px solid var(--border-subtle); padding-left:24px; padding-bottom:3px; }
 .aura-bank-wallet > span { font-size:.75rem; color:var(--text-muted); }
-.aura-bank-wallet > strong { display:block; margin:8px 0; font-size:2rem; line-height:1.3; letter-spacing:-.04em; font-weight:550; }
+.aura-bank-wallet > strong { display:block; margin:8px 0; font-size:2rem; line-height:1.3; letter-spacing:-.03em; font-weight:600; font-variant-numeric:tabular-nums; }
 .aura-bank-wallet strong small { font-size:.6875rem; margin-left:6px; letter-spacing:0; font-weight:450; }
 .aura-bank-wallet > small { display:block; font-size:.6875rem; color:var(--text-muted); line-height:1.5; }
 .aura-bank-private { grid-column:1/-1; display:flex; align-items:center; gap:6px; padding-top:15px; border-top:1px solid var(--border-subtle); font-size:.625rem; color:var(--text-muted); }
