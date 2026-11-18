@@ -1,6 +1,6 @@
 
 .home-view { max-width:1120px; margin:0 auto; display:flex; flex-direction:column; gap:20px; }
-.eyebrow { color:var(--text-muted); font-size:.6875rem; font-weight:650; letter-spacing:.07em; text-transform:uppercase; }
+.eyebrow { color:var(--text-muted); font-size:.8125rem; font-weight:550; letter-spacing:0; }
 .home-hangout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr); align-items:start; gap:32px; }
 .home-friends,.home-side { min-width:0; }
 .home-side { display:flex; flex-direction:column; gap:30px; padding-top:6px; }
@@ -29,7 +29,7 @@
 .circle-pulse-row.good i { background:var(--aura-green); }
 .circle-pulse-row.gold i { background:var(--aura-gold); }
 .circle-pulse-row.danger i { background:var(--aura-red); }
-.circle-pulse-row time { color:var(--text-muted); font-size:.6875rem; }
+.circle-pulse-row time { color:var(--text-muted); font-size:.75rem; font-variant-numeric:tabular-nums; }
 .circle-pulse-row > span { overflow-wrap:anywhere; }
 .home-world-event { display:flex; align-items:baseline; gap:12px; padding:20px 0; margin-top:12px; border-top:1px solid var(--border-subtle); font-size:.75rem; color:var(--text-muted); }
 .home-world-event strong { color:var(--aura-gold); font-size:.8125rem; }

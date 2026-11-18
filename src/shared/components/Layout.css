@@ -8,17 +8,18 @@
 .sidebar-brand > span { font-size:1.125rem; font-weight:750; letter-spacing:-.04em; }
 .sidebar-brand small { display:block; margin-top:4px; font-size:.6875rem; font-weight:450; letter-spacing:0; color:var(--text-muted); }
 .sidebar-nav { flex:1; padding-top:32px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
-.nav-item { display:flex; align-items:center; gap:12px; min-height:68px; padding:12px 14px; color:var(--text-secondary); border-radius:14px; text-align:left; }
+.nav-item { display:flex; align-items:center; gap:12px; min-height:64px; padding:12px 14px; color:var(--text-secondary); border-radius:var(--radius-md); text-align:left; transition:background-color 140ms var(--ease-out), color 140ms var(--ease-out), transform var(--duration-micro) var(--ease-out); }
+.nav-item:active { transform:scale(.96); }
 .nav-item > svg { flex:0 0 auto; }
 .nav-item > span { min-width:0; font-size:.875rem; font-weight:600; }
-.nav-item small { display:block; margin-top:5px; font-size:.625rem; color:var(--text-muted); font-weight:450; }
+.nav-item small { display:block; margin-top:4px; font-size:.75rem; color:var(--text-muted); font-weight:450; }
 .nav-item.active { color:var(--accent-ink); background:var(--accent); }
-.nav-item.active small { color:var(--accent-ink); opacity:.8; }
-.nav-count { margin-left:auto; }
-.nav-count { font-size:.75rem; color:var(--accent-text); }
+.nav-item.active small { color:var(--accent-ink); opacity:.82; }
+.nav-count { margin-left:auto; font-size:.75rem; font-weight:600; font-variant-numeric:tabular-nums; color:var(--accent-text); }
 .nav-item.active .nav-count { color:var(--accent-ink); }
 .sidebar-footer { display:flex; flex-direction:column; gap:12px; padding-top:20px; }
-.new-contract-btn { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:10px 16px; border:1px solid var(--border-active); border-radius:12px; color:var(--text-primary); font-size:.8125rem; font-weight:600; }
+.new-contract-btn { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:10px 16px; border:1px solid var(--border-active); border-radius:var(--radius-sm); color:var(--text-primary); font-size:.8125rem; font-weight:600; transition:background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform var(--duration-micro) var(--ease-out); }
+.new-contract-btn:active { transform:scale(.96); }
 .sidebar-user { display:flex; align-items:center; gap:10px; padding:18px 0 8px; border-top:1px solid var(--border-subtle); text-align:left; }
 .sidebar-avatar { width:40px; height:40px; flex:0 0 auto; }
 .sidebar-user-copy { min-width:0; }
@@ -33,7 +34,8 @@
 .header-actions { display:flex; align-items:center; gap:8px; }
 .header-aura { display:flex; align-items:center; gap:6px; min-height:44px; padding:0 12px; border:1px solid var(--border-subtle); border-radius:100px; color:var(--aura-gold); font-size:.8125rem; font-weight:650; font-variant-numeric:tabular-nums; }
 .header-aura small { font-size:.6875rem; font-weight:500; }
-.notification-btn,.header-account-btn { width:44px; height:44px; flex:0 0 auto; position:relative; display:grid; place-items:center; color:var(--text-secondary); border-radius:100px; }
+.notification-btn,.header-account-btn { width:44px; height:44px; flex:0 0 auto; position:relative; display:grid; place-items:center; color:var(--text-secondary); border-radius:var(--radius-full); transition:background-color 140ms var(--ease-out), color 140ms var(--ease-out), transform var(--duration-micro) var(--ease-out); }
+.notification-btn:active,.header-account-btn:active { transform:scale(.96); }
 .header-account-btn { display:none; }
 .header-account-summary { display:flex; align-items:center; gap:14px; padding:4px 4px 22px; }
 .header-account-summary > div { min-width:0; }
@@ -49,7 +51,7 @@
 .header-account-balance > span { flex:1; font-size:.8125rem; color:var(--text-secondary); }
 .header-account-balance > strong { min-width:0; max-width:50%; overflow-wrap:anywhere; font-size:1rem; font-weight:600; font-variant-numeric:tabular-nums; }
 .header-account-balance > svg { flex:0 0 auto; }
-.notification-badge { position:absolute; top:2px; right:1px; min-width:17px; height:17px; padding:0 4px; display:grid; place-items:center; border-radius:100px; color:var(--bg-dark); background:var(--accent-text); font-size:.625rem; font-weight:700; }
+.notification-badge { position:absolute; top:2px; right:1px; min-width:17px; height:17px; padding:0 4px; display:grid; place-items:center; border-radius:var(--radius-full); color:var(--bg-dark); background:var(--accent-text); font-size:.625rem; font-weight:700; font-variant-numeric:tabular-nums; }
 .scroll-content { flex:1; min-height:0; overflow-y:auto; padding:8px clamp(24px,4vw,56px) 48px; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; }
 .tab-stage { width:100%; min-height:100%; }
 .deferred-view-state { padding:32px; color:var(--text-secondary); font-size:.875rem; line-height:1.6; }
@@ -78,7 +80,8 @@
  .scroll-content { padding:8px 20px calc(var(--mobile-dock-height) + 28px + var(--safe-area-bottom)); }
  .mobile-dock { display:block; position:fixed; bottom:0; inset-inline:0; z-index:1000; padding:6px 12px max(8px,var(--safe-area-bottom)); background:var(--bg-dark); border-top:1px solid var(--border-subtle); }
  .mobile-nav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; min-height:62px; }
- .mobile-nav-item { min-width:0; min-height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--text-muted); border-radius:12px; font-size:.625rem; font-weight:550; }
+ .mobile-nav-item { min-width:0; min-height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--text-muted); border-radius:12px; font-size:.6875rem; font-weight:550; transition:color 140ms var(--ease-out), transform var(--duration-micro) var(--ease-out); }
+ .mobile-nav-item:active { transform:scale(.96); }
  .mobile-nav-item.active { color:var(--accent-text); background:transparent; font-weight:650; }
  .mobile-nav-item.active .nav-icon { stroke-width:2.2; }
  .mobile-nav-item .nav-icon { width:22px; height:22px; }

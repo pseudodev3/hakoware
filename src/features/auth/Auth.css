@@ -1,14 +1,12 @@
 .auth-container {
   position: relative;
   min-height: 100dvh;
-  width: 100vw;
+  width: 100%;
   padding: 32px 20px;
   display: grid;
   place-items: center;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 18%, var(--aura-gold-soft), transparent 26rem),
-    var(--bg-dark);
+  overflow-x: clip;
+  background: var(--bg-dark);
 }
 
 .auth-orbit {
@@ -68,7 +66,7 @@
 
 .auth-header { margin-bottom: 30px; }
 .auth-logo { width: 52px; height: 52px; margin-bottom: 24px; filter: drop-shadow(0 12px 24px rgba(0,0,0,.18)); }
-.auth-eyebrow { display: block; margin-bottom: 8px; color: var(--aura-gold); font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; }
+.auth-eyebrow { display: block; margin-bottom: 8px; color: var(--accent-text); font-size: .8125rem; font-weight: 580; letter-spacing: 0; }
 .auth-header h1 { font-size: 2rem; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; }
 .auth-header p { max-width: 360px; margin-top: 9px; color: var(--text-secondary); font-size: .85rem; line-height: 1.58; }
 .auth-form { display: flex; flex-direction: column; gap: 18px; }

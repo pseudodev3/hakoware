@@ -34,7 +34,7 @@
 .mode-person small { display:block; margin-top:1px; color:var(--text-muted); font-size:.57rem; }
 .mode-intro strong { display:block; margin-top:3px; font-size:.92rem; font-weight:680; letter-spacing:-.02em; }
 .mode-intro > span { color:var(--text-muted); font-size:.66rem; }
-.mode-kicker { color:var(--aura-gold); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.mode-kicker { color:var(--aura-gold); font-size:.75rem; font-weight:600; letter-spacing:0; }
 .template-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .template-option { min-height:68px; padding:10px 11px; display:flex; align-items:center; gap:10px; position:relative; overflow:hidden; border:1px solid transparent; border-bottom-color:var(--border-subtle); border-radius:12px; color:var(--text-secondary); text-align:left; transition:color 140ms var(--ease-out), background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 140ms var(--ease-out); }
 .template-option:active { transform:scale(.96); }

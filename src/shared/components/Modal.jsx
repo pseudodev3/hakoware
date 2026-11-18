@@ -111,10 +111,10 @@ export const Modal = ({
         transition: { duration: .14, ease: [0.2, 0, 0, 1] }
       }
     : {
-        initial: { opacity: 0, transform: 'translateY(10px) scale(.97)' },
+        initial: { opacity: 0, transform: 'translateY(8px) scale(.95)' },
         animate: { opacity: 1, transform: 'translateY(0) scale(1)' },
-        exit: { opacity: 0, transform: 'translateY(6px) scale(.985)' },
-        transition: { type: 'spring', duration: .3, bounce: 0 }
+        exit: { opacity: 0, transform: 'translateY(4px) scale(.97)' },
+        transition: { duration: .2, ease: [0.2, 0, 0, 1] }
       };
 
   const modal = (
