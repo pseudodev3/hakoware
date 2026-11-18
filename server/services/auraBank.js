@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Friendship = require('../models/Friendship');
 const AuraTransaction = require('../models/AuraTransaction');
-const { duoStateFromXP } = require('./contractGame');
+const { duoStateFromXP } = require('./duoXp');
 const mongoose = require('mongoose');
 const { createHash } = require('node:crypto');
 const DAY = 86400000;

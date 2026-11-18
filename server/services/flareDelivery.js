@@ -3,6 +3,7 @@ const User = require('../models/User');
 const ContractEvent = require('../models/ContractEvent');
 const Notification = require('../models/Notification');
 const { createNotification } = require('./notificationDelivery');
+const { publishWorldEvent } = require('./worldEventPublisher');
 const notifyRecipient = async (contract, receipt) => {
   const query = { toUserId: receipt.targetId, contractEventId: receipt.eventId };
   if (await Notification.exists(query)) return;
@@ -20,7 +21,7 @@ const reconcileFlareDelivery = async friendshipId => {
     try { await ContractEvent.updateOne({ _id: receipt.eventId }, { $setOnInsert: { friendshipId: contract._id, userId: receipt.senderId, type: 'SIGNAL_FLARE', createdAt: receipt.createdAt, metadata: { targetId: receipt.targetId, cooldownHours: 48, publicFlare: true, worldEligible: true } } }, { upsert: true }); }
     catch (error) { if (error.code !== 11000 || !await ContractEvent.exists({ _id: receipt.eventId })) throw error; }
     const event = await ContractEvent.findById(receipt.eventId).lean();
-    const deliveries = await Promise.allSettled([require('./worldActivity').publishWorldEvent(event), notifyRecipient(contract, receipt)]);
+    const deliveries = await Promise.allSettled([publishWorldEvent(event), notifyRecipient(contract, receipt)]);
     const failure = deliveries.find(result => result.status === 'rejected');
     if (failure) { pendingError ||= failure.reason; continue; }
     await Friendship.updateOne({ _id: contract._id }, { $set: { 'flareReceipts.$[receipt].done': true } }, { arrayFilters: [{ 'receipt.eventId': receipt.eventId }] });
