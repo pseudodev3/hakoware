@@ -1,43 +1,44 @@
 .recap-wrap { display:flex; flex-direction:column; gap:16px; }
-.recap-loading { min-height:260px; display:flex; align-items:center; justify-content:center; gap:9px; color:var(--text-muted); font-size:.76rem; }
-.recap-hero { padding:20px 0 18px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.recap-loading { min-height:260px; display:flex; align-items:center; justify-content:center; gap:9px; color:var(--text-muted); font-size:.875rem; }
+.recap-hero { position:relative; isolation:isolate; overflow:hidden; padding:20px 0 18px; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .recap-hero.chaos { border-color:color-mix(in srgb,var(--aura-red) 24%,var(--border-subtle)); }
+.recap-hero .duo-cover { z-index:-1; opacity:.16; }
 .recap-hero-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.recap-label { color:var(--aura-gold); font-family:var(--font-mono); font-size:.58rem; font-weight:700; letter-spacing:.08em; }
-.recap-mode { color:var(--text-muted); font-size:.63rem; font-weight:600; }
-.recap-hero h2 { margin-top:18px; font-size:clamp(1.8rem,7vw,3.15rem); line-height:1; letter-spacing:-.055em; font-weight:720; }
-.recap-hero > p { max-width:580px; margin-top:10px; color:var(--text-secondary); font-size:.84rem; line-height:1.5; }
-.duo-level-row { margin-top:22px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.recap-label { color:var(--aura-gold); font-size:.75rem; font-weight:600; letter-spacing:0; }
+.recap-mode { color:var(--text-muted); font-size:.75rem; font-weight:550; }
+.recap-hero h2 { margin-top:16px; font-family:var(--font-display); font-variation-settings:'SOFT' 40,'opsz' 72; font-size:clamp(1.8rem,6vw,2.85rem); line-height:1.05; letter-spacing:-.03em; font-weight:560; }
+.recap-hero > p { max-width:58ch; margin-top:10px; color:var(--text-secondary); font-size:.9375rem; line-height:1.55; }
+.duo-level-row { margin-top:20px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .duo-level-row > div { min-width:0; display:flex; align-items:center; gap:7px; color:var(--aura-gold); }
-.duo-level-row span { color:var(--text-muted); font-family:var(--font-mono); font-size:.64rem; }
-.duo-level-row > div span { color:var(--text-secondary); font-family:var(--font-main); font-size:.68rem; font-weight:650; }
-.duo-level-row strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); font-size:.72rem; font-weight:650; }
-.duo-progress { height:5px; margin-top:9px; overflow:hidden; border-radius:999px; background:var(--surface-soft-strong); }
-.duo-progress span { display:block; height:100%; border-radius:inherit; background:var(--aura-gold); transition:width 150ms var(--ease-out); }
+.duo-level-row span { color:var(--text-muted); font-size:.75rem; font-variant-numeric:tabular-nums; }
+.duo-level-row > div span { color:var(--text-secondary); font-size:.8125rem; font-weight:600; }
+.duo-level-row strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); font-size:.8125rem; font-weight:600; }
+.duo-progress { height:5px; margin-top:9px; overflow:hidden; border-radius:var(--radius-full); background:var(--surface-soft-strong); }
+.duo-progress span { display:block; width:100%; height:100%; border-radius:inherit; background:var(--aura-gold); transform-origin:left center; transition:transform 200ms var(--ease-out); }
 .recap-tabs { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border-subtle); }
-.recap-tabs button { min-height:40px; position:relative; color:var(--text-muted); font-size:.72rem; font-weight:620; transition:color 140ms var(--ease-out), transform 140ms var(--ease-out); }
-.recap-tabs button:active { transform:scale(.97); }
+.recap-tabs button { min-height:44px; position:relative; color:var(--text-muted); font-size:.8125rem; font-weight:600; transition:color 140ms var(--ease-out), transform var(--duration-micro) var(--ease-out); }
+.recap-tabs button:active { transform:scale(.96); }
 .recap-tabs button.active { color:var(--text-primary); }
 .recap-tabs button.active::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--aura-gold); }
 .recap-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .recap-stat-grid > div { min-height:86px; padding:12px 10px; display:flex; flex-direction:column; align-items:flex-start; }
 .recap-stat-grid > div + div { border-left:1px solid var(--border-subtle); }
 .recap-stat-grid svg { color:var(--aura-gold); }
-.recap-stat-grid span { margin-top:auto; padding-top:10px; color:var(--text-muted); font-size:.59rem; }
-.recap-stat-grid strong { margin-top:2px; font-family:var(--font-mono); font-size:1.15rem; line-height:1; font-weight:620; }
+.recap-stat-grid span { margin-top:auto; padding-top:10px; color:var(--text-muted); font-size:.75rem; }
+.recap-stat-grid strong { margin-top:2px; font-size:1.25rem; line-height:1.1; font-weight:620; font-variant-numeric:tabular-nums; }
 .season-report { display:grid; grid-template-columns:150px minmax(0,1fr); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
 .season-grade { min-height:176px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--aura-gold); border-right:1px solid var(--border-subtle); }
-.season-grade span { font-family:var(--font-mono); font-size:.58rem; font-weight:700; letter-spacing:.1em; }
-.season-grade strong { margin-top:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:4rem; line-height:1; font-weight:720; }
+.season-grade span { font-size:.75rem; font-weight:600; letter-spacing:0; }
+.season-grade strong { margin-top:6px; color:var(--text-primary); font-family:var(--font-display); font-variation-settings:'SOFT' 40,'opsz' 96; font-size:4.25rem; line-height:.95; font-weight:560; }
 .season-lines { overflow:hidden; }
-.season-lines > div { min-height:38px; padding:0 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.season-lines > div { min-height:40px; padding:0 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .season-lines > div + div { border-top:1px solid var(--border-subtle); }
-.season-lines span { color:var(--text-muted); font-size:.67rem; }
-.season-lines strong { font-family:var(--font-mono); font-size:.72rem; font-weight:600; }
+.season-lines span { color:var(--text-muted); font-size:.8125rem; }
+.season-lines strong { font-size:.875rem; font-weight:600; font-variant-numeric:tabular-nums; }
 .recap-chaos-state { min-height:62px; padding:10px 0; display:flex; align-items:center; gap:10px; color:var(--aura-red); border-top:1px solid color-mix(in srgb,var(--aura-red) 22%,var(--border-subtle)); border-bottom:1px solid color-mix(in srgb,var(--aura-red) 22%,var(--border-subtle)); }
 .recap-chaos-state > div { min-width:0; display:flex; flex-direction:column; }
-.recap-chaos-state strong { color:var(--text-primary); font-size:.76rem; font-weight:650; }
-.recap-chaos-state span { margin-top:2px; color:var(--text-muted); font-size:.65rem; }
+.recap-chaos-state strong { color:var(--text-primary); font-size:.875rem; font-weight:620; }
+.recap-chaos-state span { margin-top:2px; color:var(--text-muted); font-size:.75rem; }
 .recap-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; }
 
 @media (max-width:640px) {
@@ -48,8 +49,7 @@
   .recap-stat-grid > div:nth-child(4) { border-top:1px solid var(--border-subtle); }
   .season-report { grid-template-columns:104px minmax(0,1fr); }
   .season-grade { min-height:184px; }
-  .season-grade strong { font-size:3.3rem; }
+  .season-grade strong { font-size:3.4rem; }
   .recap-actions { grid-template-columns:1fr; }
 }
-.recap-hero { position:relative; isolation:isolate; overflow:hidden; }
-.recap-hero .duo-cover { z-index:-1; opacity:.16; }
+@media (prefers-reduced-motion:reduce) { .duo-progress span { transition:none; } }

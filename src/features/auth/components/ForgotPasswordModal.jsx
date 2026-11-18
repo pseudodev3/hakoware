@@ -25,33 +25,33 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="PASSWORD RECOVERY"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Password recovery"
       size="md"
     >
       <div className="recovery-content" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {!submitted ? (
           <>
-            <div className="association-notice glass" style={{ 
-              padding: '16px', 
-              borderRadius: 'var(--radius-md)', 
-              background: 'rgba(255, 255, 255, 0.02)',
+            <div className="association-notice glass" style={{
+              padding: '16px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--surface-soft)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               gap: '12px',
               alignItems: 'flex-start'
             }}>
-              <AlertCircle size={20} color="var(--aura-gold)" />
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+              <AlertCircle size={20} color="var(--aura-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.55' }}>
                 Enter the email address connected to your Hakoware account and we will send you a password reset link.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <Input 
-                label="EMAIL ADDRESS"
+              <Input
+                label="Email address"
                 type="email"
                 placeholder="you@example.com"
                 icon={Mail}
@@ -60,20 +60,22 @@ export const ForgotPasswordModal = ({ isOpen, onClose, showToast }) => {
                 required
               />
               <Button variant="aura" type="submit" loading={loading} className="w-full">
-                SEND RESET LINK
+                Send reset link
               </Button>
             </form>
           </>
         ) : (
           <div className="success-view" style={{ textAlign: 'center', padding: '20px 0' }}>
-             <ShieldCheck size={48} color="var(--aura-green)" style={{ margin: '0 auto 20px auto' }} />
-             <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '12px' }}>CHECK YOUR EMAIL</h3>
-             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-               We sent a password reset link to <strong>{email}</strong>.
-             </p>
-             <Button variant="secondary" onClick={onClose} style={{ marginTop: '32px' }} className="w-full">
-               RETURN TO LOGIN
-             </Button>
+            <ShieldCheck size={48} color="var(--aura-green)" style={{ margin: '0 auto 20px auto' }} />
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.375rem', fontWeight: 560, color: 'var(--text-primary)', marginBottom: '12px' }}>
+              Check your email
+            </h3>
+            <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+              We sent a password reset link to <strong>{email}</strong>.
+            </p>
+            <Button variant="secondary" onClick={onClose} style={{ marginTop: '28px' }} className="w-full">
+              Return to login
+            </Button>
           </div>
         )}
       </div>

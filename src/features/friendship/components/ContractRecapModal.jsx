@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Flame, Mic, RefreshCw, Share2, Sparkles, Trophy, UsersRound, Zap } from 'lucide-react';
+import { CalendarDays, Flame, Mic, RefreshCw, Share2, Trophy, UsersRound, Zap } from 'lucide-react';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import { getContractRecap, runContractBack } from '../../../services/friendshipService';
@@ -89,17 +89,17 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
           <section style={duoStyle(friendship)} className={`recap-hero ${recap.template?.chaos ? 'chaos' : ''}`}>
             <DuoCover cover={friendship?.identity?.cover} />
             <div className="recap-hero-top">
-              <span className="recap-label">HAKOWARE · {tab === 'week' ? 'THIS WEEK' : `SEASON ${recap.season?.number || 1}`}</span>
+              <span className="recap-label">{tab === 'week' ? 'Hakoware, This week' : `Hakoware, Season ${recap.season?.number || 1}`}</span>
               <span className="recap-mode">{recap.template?.name}</span>
             </div>
             <h2>{friendship?.identity?.name || names || 'Contract duo'}</h2>
-            <p>{tab === 'week' ? recap.weekly?.line : `Grade ${grade} · ${recap.duo?.title}`}</p>
+            <p>{tab === 'week' ? recap.weekly?.line : `Grade ${grade}, ${recap.duo?.title}`}</p>
 
             <div className="duo-level-row">
               <div><UsersRound size={17} strokeWidth={1.8} /><span>Duo Lv. {recap.duo?.level || 1}</span><strong>{recap.duo?.title}</strong></div>
               <span>{recap.duo?.xp || 0} XP</span>
             </div>
-            <div className="duo-progress"><span style={{ width: `${recap.duo?.progress || 0}%` }} /></div>
+            <div className="duo-progress"><span style={{ transform: `scaleX(${Math.max(0, Math.min(100, recap.duo?.progress || 0)) / 100})` }} /></div>
           </section>
 
           <div className="recap-tabs" role="tablist" aria-label="Report range">
@@ -116,7 +116,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
             </div>
           ) : (
             <div className="season-report">
-              <div className="season-grade"><span>GRADE</span><strong>{grade}</strong></div>
+              <div className="season-grade"><span>Grade</span><strong>{grade}</strong></div>
               <div className="season-lines">
                 <div><span>Check-ins</span><strong>{recap.season?.checkins || 0}</strong></div>
                 <div><span>Voice notes</span><strong>{recap.season?.voiceNotes || 0}</strong></div>
@@ -130,7 +130,7 @@ export const ContractRecapModal = ({ isOpen, onClose, friendship, onRefresh, sho
 
           {recap.chaos && (
             <section className="recap-chaos-state">
-              <Sparkles size={18} strokeWidth={1.8} />
+              <Flame size={18} strokeWidth={1.8} />
               <div><strong>Chaos Level {recap.chaos.level || 1}</strong><span>{recap.chaos.activeEvent ? `${recap.chaos.activeEvent.name} is live now.` : recap.chaos.lastConsequence ? `Last consequence: ${recap.chaos.lastConsequence}` : 'No active anomaly.'}</span></div>
             </section>
           )}
